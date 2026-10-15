@@ -1,4 +1,6 @@
-## Git
+## Git Workflow
 
-- Create branches from the latest `origin/main`. Submit every code change through a PR; never edit `main` directly. After review, squash-merge into `main`.
+- Branch from the latest `origin/main`; never commit directly to `main`.
+- Submit all code changes through PRs and keep them mergeable into `main`.
+- Squash-merge PRs after review.
 - Use the commit format `<type>(<scope>): <description>`.
