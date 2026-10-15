@@ -9,12 +9,49 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Getting started",
-        "pages": [
-          "index",
-          "quickstart"
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "General",
+            "pages": ["index", "quickstart"]
+          }
+        ]
+      },
+      {
+        "tab": "API",
+        "groups": [
+          { "group": "General", "pages": ["api/overview"] },
+          { "group": "API endpoints", "pages": ["api/endpoints"] }
+        ]
+      },
+      {
+        "tab": "Auth",
+        "groups": [
+          { "group": "General", "pages": ["auth/overview"] },
+          { "group": "API endpoints", "pages": ["auth/endpoints"] }
+        ]
+      },
+      {
+        "tab": "Notify",
+        "groups": [
+          { "group": "General", "pages": ["notify/overview"] },
+          { "group": "API endpoints", "pages": ["notify/endpoints"] }
+        ]
+      },
+      {
+        "tab": "CLI",
+        "groups": [
+          { "group": "General", "pages": ["cli/overview"] },
+          { "group": "API endpoints", "pages": ["cli/endpoints"] }
+        ]
+      },
+      {
+        "tab": "Web",
+        "groups": [
+          { "group": "General", "pages": ["web/overview"] },
+          { "group": "API endpoints", "pages": ["web/endpoints"] }
         ]
       }
     ]
