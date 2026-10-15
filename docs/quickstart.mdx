@@ -1,47 +1,68 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Run the web scaffold, inspect the CLI, and preview the documentation."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+## Clone the repository
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+```bash
+git clone https://github.com/brojyf/keysy.git
+cd keysy
+```
 
-## Prerequisites
+Run each section below from the repository root in a separate terminal.
 
-Before you begin, you must have:
+## Run the web app
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+Install [Bun](https://bun.sh/docs/installation) and Node.js `22.12.0` or later.
 
-## Get started
+```bash
+cd web
+bun install --frozen-lockfile
+bun run dev
+```
 
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+Open the local URL printed by Vite. You should see the React starter page.
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+To check the web build:
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+```bash
+bun run build
+```
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+## Inspect the CLI
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+Install the Go version declared in `cli/go.mod` (currently `1.27.2`).
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+```bash
+cd cli
+go run . --help
+```
+
+You should see the Cobra scaffold's help output. Product commands are not
+implemented yet.
+
+## Preview the documentation
+
+Install Node.js `20.17.0` or later and the
+[Mintlify CLI](https://www.mintlify.com/docs/cli/install).
+
+```bash
+npm install -g mint
+cd docs
+mint dev
+```
+
+Open `http://localhost:3000`. Edit the MDX pages to update the preview.
+
+Before submitting documentation changes, run these checks from `docs/`:
+
+```bash
+mint validate
+mint broken-links --check-anchors
+```
+
+<Note>
+  The API, authentication, and notification service directories are placeholders.
+  There is no backend startup command or end-to-end setup yet.
+</Note>
