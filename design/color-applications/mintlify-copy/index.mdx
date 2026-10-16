@@ -1,0 +1,22 @@
+---
+title: "Introduction"
+description: "Understand Keysy's monorepo and find the code you need."
+---
+
+Keysy uses a **monorepo**: the web app, CLI, service directories, API contracts,
+and infrastructure files live in a single Git repository.
+
+## Repository structure
+
+| Directory | Purpose |
+| --- | --- |
+| `web/` | React and TypeScript web app, built with Vite. |
+| `cli/` | Go CLI, built with Cobra. |
+| `api/` | Reserved for the application API service. |
+| `auth/` | Reserved for the authentication service. |
+| `notify/` | Reserved for the notification service. |
+| `contracts/openapi/` | Shared OpenAPI definitions for the API and authentication services. |
+| `docs/` | Mintlify documentation and site configuration. |
+| `deploy/` | Deployment configuration. |
+| `otel/` | OpenTelemetry Collector Docker image definition. |
+| `supabase/` | Reserved for Supabase configuration. |
