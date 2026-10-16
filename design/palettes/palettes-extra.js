@@ -1,16 +1,6 @@
 // Keysy palette proposals. Stable numbers preserve review history. See palette-research.md.
 globalThis.keysyExtraPalettes = [
   {
-    id: 'oxblood', number: '06', name: 'Oxblood', english: 'Oxblood',
-    light: {"bg": "#f9f7f7", "surface": "#fffdfd", "text": "#2b2426", "muted": "#71616a", "accent": "#843d54", "button": "#843d54", "on-button": "#ffffff", "soft": "#f0e7eb", "line": "#e4dcdf"},
-    dark: {"bg": "#191618", "surface": "#231f21", "text": "#efe8ec", "muted": "#b3a3ab", "accent": "#d8a1b1", "button": "#c58296", "on-button": "#21151a", "soft": "#30232a", "line": "#3d3137"},
-  },
-  {
-    id: 'petrol', number: '08', name: 'Petrol', english: 'Petrol',
-    light: {"bg": "#f5f8f7", "surface": "#fcfffe", "text": "#202c2d", "muted": "#5b6a69", "accent": "#236569", "button": "#236569", "on-button": "#ffffff", "soft": "#e5efed", "line": "#d9e3e0"},
-    dark: {"bg": "#131a1a", "surface": "#1c2525", "text": "#e4eeec", "muted": "#a0b0ae", "accent": "#8eb8b8", "button": "#79adb0", "on-button": "#121c1d", "soft": "#233332", "line": "#30413f"},
-  },
-  {
     id: 'cobalt', number: '10', name: 'Cobalt', english: 'Cobalt',
     light: {"bg": "#f7f7f2", "surface": "#ffffff", "text": "#202122", "muted": "#66665f", "accent": "#2444cc", "button": "#2444cc", "on-button": "#ffffff", "soft": "#e9edfc", "line": "#dcdedc"},
     dark: {"bg": "#151619", "surface": "#202126", "text": "#f0f0e9", "muted": "#aeafb8", "accent": "#a9b8ff", "button": "#a9b8ff", "on-button": "#141c4b", "soft": "#282e49", "line": "#373a47"},

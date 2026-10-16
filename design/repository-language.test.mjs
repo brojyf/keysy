@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const repositoryRoot = new URL('../../', import.meta.url);
+const repositoryRoot = new URL('../', import.meta.url);
 
 test('repository text stays free of Chinese copy and Chinese HTML language tags', () => {
   const paths = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],

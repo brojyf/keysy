@@ -4,7 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
-const source = [read('../../web/mockups/palettes.js'), read('../../web/mockups/palettes-extra.js'), read('preview.js')].join('\n');
+const source = [read('../palettes/palettes.js'), read('../palettes/palettes-extra.js'), read('preview.js')].join('\n');
 
 function loadPreview(search = '') {
   const nodes = new Map();
@@ -35,8 +35,8 @@ test('both layouts render every retained palette in both modes, with matching to
   for (const button of layoutButtons) {
     button.handlers.click();
     const gallery = nodes.get('#palette-gallery').innerHTML;
-    assert.equal((gallery.match(/class="palette-pair"/g) || []).length, 10);
-    assert.equal((gallery.match(/class="mock-screen /g) || []).length, 20);
+    assert.equal((gallery.match(/class="palette-pair"/g) || []).length, 8);
+    assert.equal((gallery.match(/class="mock-screen /g) || []).length, 16);
     for (const palette of vm.runInContext('palettes', context)) for (const mode of ['light','dark']) {
       assert.ok(gallery.includes(`data-palette="${palette.id}" data-mode="${mode}"`));
       for (const [role, color] of Object.entries(palette[mode])) assert.ok(gallery.includes(`--${role}:${color}`));
@@ -69,8 +69,8 @@ test('opening a comparison selects its exact palette and mode', () => {
 test('removed palettes stay out of controls and comparisons and old URLs fall back', () => {
   const {context, nodes} = loadPreview();
   assert.deepEqual(Array.from(vm.runInContext('palettes', context), p => p.number),
-    ['02', '04', '06', '08', '10', '13', '14', '15', '16', '19']);
-  for (const id of ['olive', 'ochre', 'pinechalk', 'aubergineceladon']) {
+    ['02', '04', '10', '13', '14', '15', '16', '19']);
+  for (const id of ['olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol']) {
     assert.ok(!nodes.get('#palette-select').innerHTML.includes(`value="${id}"`));
     assert.ok(!nodes.get('#palette-gallery').innerHTML.includes(`data-palette="${id}"`));
     const old = loadPreview(`?layout=supabase&palette=${id}&mode=dark`);

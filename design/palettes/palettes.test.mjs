@@ -3,11 +3,9 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
-const target = { innerHTML: '' };
-const source = ['palettes.js', 'palettes-extra.js', 'dashboard.js'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')).join('\n');
-const palettes = runInNewContext(`${source}\n;palettes`, {
-  document: { querySelector: () => target },
-});
+const source = ['palettes.js', 'palettes-extra.js']
+  .map(file => readFileSync(new URL(file, import.meta.url), 'utf8')).join('\n');
+const palettes = runInNewContext(`${source}\n;[...keysyPalettes, ...keysyExtraPalettes]`);
 
 function luminance(hex) {
   const channels = hex.slice(1).match(/../g).map(channel => {
@@ -23,9 +21,13 @@ function contrast(first, second) {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-test('all ten palettes have complete light and dark roles', () => {
-  assert.equal(palettes.length, 10);
-  assert.equal(new Set(palettes.map(palette => palette.id)).size, 10);
+test('eight retained palettes keep stable numbers and complete light and dark roles', () => {
+  assert.equal(palettes.length, 8);
+  assert.deepEqual(Array.from(palettes, palette => palette.number), ['02', '04', '10', '13', '14', '15', '16', '19']);
+  assert.equal(new Set(palettes.map(palette => palette.id)).size, 8);
+  for (const id of ['jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
+    assert.ok(!palettes.some(palette => palette.id === id));
+  }
   const roles = ['bg', 'surface', 'text', 'muted', 'accent', 'button', 'on-button', 'soft', 'line'];
   for (const palette of palettes) {
     for (const role of roles) {
@@ -54,15 +56,3 @@ for (const palette of palettes) {
     });
   }
 }
-
-test('renders ten paired previews with stable numbers and labeled hex swatches', () => {
-  const html = target.innerHTML;
-  assert.equal((html.match(/class="palette"/g) || []).length, 10);
-  assert.equal((html.match(/data-mode="light"/g) || []).length, 10);
-  assert.equal((html.match(/data-mode="dark"/g) || []).length, 10);
-  assert.equal((html.match(/class="swatch-hex"/g) || []).length, 120);
-  assert.equal((html.match(/✓ Selected/g) || []).length, 20);
-  for (const number of ['02','04','06','08','10','13','14','15','16','19']) assert.ok(html.includes(`class="palette-number">${number}</span>`));
-  assert.doesNotMatch(html, /<(button|input|dialog|form)\b/);
-  assert.doesNotMatch(html, /violet|midnight|\u9e22\u5c3e|\u6f6e\u6c50/);
-});

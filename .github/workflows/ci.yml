@@ -35,6 +35,7 @@ jobs:
           filters: |
             web:
               - 'web/**'
+              - 'design/**'
               - '.github/**'
             cli:
               - 'cli/**'
