@@ -61,8 +61,8 @@ test('renders ten paired previews with stable numbers and labeled hex swatches',
   assert.equal((html.match(/data-mode="light"/g) || []).length, 10);
   assert.equal((html.match(/data-mode="dark"/g) || []).length, 10);
   assert.equal((html.match(/class="swatch-hex"/g) || []).length, 120);
-  assert.equal((html.match(/✓ 已选中/g) || []).length, 20);
+  assert.equal((html.match(/✓ Selected/g) || []).length, 20);
   for (const number of ['02','04','06','08','10','13','14','15','16','19']) assert.ok(html.includes(`class="palette-number">${number}</span>`));
   assert.doesNotMatch(html, /<(button|input|dialog|form)\b/);
-  assert.doesNotMatch(html, /violet|midnight|鸢尾|潮汐/);
+  assert.doesNotMatch(html, /violet|midnight|\u9e22\u5c3e|\u6f6e\u6c50/);
 });

@@ -61,7 +61,7 @@ test('palette, mode, and layout controls update the focused preview and shareabl
 test('opening a comparison selects its exact palette and mode', () => {
   const {nodes} = loadPreview();
   nodes.get('#palette-gallery').handlers.click({target:{closest: () => ({dataset:{open:'inkiris',openMode:'dark'}})}});
-  assert.match(nodes.get('#focus-title').textContent, /19 墨黑与鸢紫/);
+  assert.match(nodes.get('#focus-title').textContent, /19 Ink \/ Iris/);
   assert.match(nodes.get('#focus-preview').innerHTML, /data-palette="inkiris" data-mode="dark"/);
   assert.equal(nodes.get('#focus').scrolled, true);
 });

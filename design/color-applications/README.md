@@ -1,36 +1,36 @@
-# Keysy · 配色应用对照
+# Keysy color applications
 
-直接打开 [index.html](index.html)。在顶部切换 **Supabase Dashboard / Mintlify 文档**、10 套颜色及深浅模式；下方始终并排列出当前布局的全部配色，点击「放大」返回完整预览。
+Open [index.html](index.html) directly. Use the toolbar to switch between **Supabase Dashboard / Mintlify docs**, 10 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
 
-- 两种布局 × 10 套配色 × 深浅模式，共 **40 个组合**。已删除 07、09、17、18，其他配色保留原编号。
-- 使用现有 `web/mockups/palettes*.js` 色值与 Logo 33；布局、文字和图形固定，只改变颜色。
-- 1200 × 800 的桌面 mock 按容器等比缩放，小屏把深浅对照改为上下排列。
-- 支持 URL 参数，例如 `?layout=mintlify&palette=slate&mode=dark`。切换按钮可操作，产品内部控件仅为静态外观。
-- 无构建或网络依赖，不安装 SDK，不连接真实项目。
+- Two layouts × 10 palettes × two modes: **40 combinations**. Options 07, 09, 17, and 18 are removed; other numbers stay unchanged.
+- Uses existing `web/mockups/palettes*.js` values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
+- The 1200 × 800 desktop mock scales proportionally to its container. On small screens, paired modes stack vertically.
+- Supports URL parameters such as `?layout=mintlify&palette=slate&mode=dark`. Preview controls work; product controls are static visual samples.
+- No build or network dependency, SDK installation, or connection to a real project.
 
-## Supabase 参考
+## Supabase reference
 
-[Supabase 官方 Studio 更新](https://supabase.com/blog/tabs-dashboard-updates)及其[表格编辑器截图](https://supabase.com/images/blog/lw14-tabs-dashboard-updates/table-editor-tabs.jpg)：组织/项目导航、窄图标栏、资源列表、标签页、工具栏与紧凑表格。Keysy mock 增加密值详情侧栏，使用虚构 API key / `.p8` 记录。不是 Supabase 原界面的逐像素复制，也不代表 Keysy 已实现这些功能。
+The [official Supabase Studio update](https://supabase.com/blog/tabs-dashboard-updates) and its [table editor screenshot](https://supabase.com/images/blog/lw14-tabs-dashboard-updates/table-editor-tabs.jpg) inform the organization/project navigation, narrow icon rail, resource list, tabs, toolbar, and compact table. The Keysy mock adds a secret details sidebar with fictional API key and `.p8` records. It is not a pixel-perfect Supabase replica or a claim that Keysy implements these features.
 
-## Mintlify 副本
+## Mintlify copy
 
-`mintlify-copy/` 是开始本次工作时 `docs/` 的 20 个文件的原样副本。正式 `docs/` 没有改动。
+`mintlify-copy/` is an unchanged copy of 20 files from `docs/` at the start of this study. Production `docs/` is unchanged.
 
-参照 [Mintlify 主题文档](https://www.mintlify.com/docs/customize/themes)及副本中的 `theme: mint`：顶部搜索、模块标签、左侧导航、正文与右侧目录。mock 的标题、描述、目录表和顶部模块来自副本；没有虚构产品接口文档。预览是本地 HTML 对外观的模拟，不是 Mintlify 引擎渲染；没有修改副本的主题配置，也没有启动或部署文档站。
+The [Mintlify theme documentation](https://www.mintlify.com/docs/customize/themes) and the copy's `theme: mint` inform the top search, module tabs, left navigation, body, and right table of contents. The mock's title, description, directory table, and module tabs come from that copy; no product API documentation was invented. This is a local HTML appearance mock, not a Mintlify-rendered site. The copied theme configuration is unchanged; no documentation site was started or deployed.
 
-## 配色观察
+## Palette observations
 
-- **14 雾蓝**：表格和文档都比较安静；正文、选中态与背景容易区分，品牌个性较弱。
-- **16 可可与冰蓝**：深色 Dashboard 的冷暖关系更明显；文档长表格中也有温度，但深浅主色交换需要保持品牌一致性。
-- **04 黑白**：最接近中性的工具界面；彩色反馈的辨识优势较少。
-- **10 钴蓝、19 墨黑与鸢紫**：按钮和导航强调更醒目；在文档密集的行内代码中彩色面积会增加。
+- **14 Slate**: quiet in tables and documentation, with clear text, selection, and background separation; less distinctive branding.
+- **16 Cocoa / Ice**: stronger warm/cool contrast in the dark Dashboard and some warmth in long documentation tables; swapping primary colors between modes needs consistent brand treatment.
+- **04 Mono**: closest to a neutral tool interface, but lacks the recognition advantage of colored feedback.
+- **10 Cobalt and 19 Ink / Iris**: more prominent buttons and navigation accents; dense inline code increases the colored area in documentation.
 
-这是配色取舍，不是最终主题选择。更简单的最终方案是统一选一套深浅体系，同时用于 Dashboard 和文档。
+These are palette trade-offs, not a final theme selection. The simpler final approach is one light/dark system shared by the Dashboard and documentation.
 
-## 验证
+## Verification
 
 ```sh
 node --test design/color-applications/preview.test.mjs web/mockups/brand-review.test.mjs
 ```
 
-检查 40 种布局/配色/模式组合、换色与布局切换、URL 恢复、放大操作、文档副本内容一致性、无网络依赖，以及既有文字/按钮对比度。
+Checks cover 40 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.

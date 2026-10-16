@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Keysy · Dashboard 与文档配色对照</title>
+  <title>Keysy · Dashboard and documentation palettes</title>
   <link rel="stylesheet" href="preview.css">
   <script src="../../web/mockups/palettes.js" defer></script>
   <script src="../../web/mockups/palettes-extra.js" defer></script>
@@ -11,18 +11,18 @@
 </head>
 <body>
   <header class="workbench-header">
-    <div class="workbench-heading"><a href="../../web/mockups/review.html">keysy / design studies</a><span>10 套颜色 · 2 种布局 · 深浅模式</span></div>
+    <div class="workbench-heading"><a href="../../web/mockups/review.html">keysy / design studies</a><span>10 palettes · 2 layouts · Light and dark</span></div>
     <div class="workbench-controls">
-      <div class="segmented" role="group" aria-label="参考布局">
+      <div class="segmented" role="group" aria-label="Reference layout">
         <button type="button" data-layout="supabase" aria-pressed="true">Supabase Dashboard</button>
-        <button type="button" data-layout="mintlify" aria-pressed="false">Mintlify 文档</button>
+        <button type="button" data-layout="mintlify" aria-pressed="false">Mintlify docs</button>
       </div>
-      <label class="palette-select">配色 <select id="palette-select" aria-label="放大预览配色"></select></label>
-      <div class="segmented" role="group" aria-label="外观模式">
-        <button type="button" data-mode="light" aria-pressed="true">浅色</button>
-        <button type="button" data-mode="dark" aria-pressed="false">深色</button>
+      <label class="palette-select">Palette <select id="palette-select" aria-label="Focused preview palette"></select></label>
+      <div class="segmented" role="group" aria-label="Appearance mode">
+        <button type="button" data-mode="light" aria-pressed="true">Light</button>
+        <button type="button" data-mode="dark" aria-pressed="false">Dark</button>
       </div>
-      <a class="gallery-link" href="#comparison">看全部配色 ↓</a>
+      <a class="gallery-link" href="#comparison">Compare all palettes ↓</a>
     </div>
   </header>
   <main>
@@ -32,11 +32,11 @@
       <p id="layout-note" class="layout-note"></p>
     </section>
     <section id="comparison" aria-labelledby="comparison-title">
-      <header class="section-heading"><div><p class="eyebrow">SIDE BY SIDE / 02</p><h2 id="comparison-title">每套颜色，同一张界面。</h2></div><p>点击「放大」查看细节；原色值保持不变。</p></header>
+      <header class="section-heading"><div><p class="eyebrow">SIDE BY SIDE / 02</p><h2 id="comparison-title">Every palette. The same interface.</h2></div><p>Click Expand for details; original color values are unchanged.</p></header>
       <div id="palette-gallery"></div>
     </section>
-    <footer>仅作视觉比较。Dashboard 使用虚构数据；文档内容来自 design 下的 docs 副本。<a href="README.md">参考与说明</a></footer>
-    <noscript>请启用 JavaScript 查看配色对照。</noscript>
+    <footer>Visual comparison only. The Dashboard uses fictional records; documentation content comes from the docs copy under design.<a href="README.md">References and notes</a></footer>
+    <noscript>Enable JavaScript to compare palettes.</noscript>
   </main>
 </body>
 </html>

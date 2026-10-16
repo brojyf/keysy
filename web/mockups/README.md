@@ -1,25 +1,25 @@
-# Keysy 设计预览
+# Keysy design previews
 
-打开 [review.html](review.html)：十套深浅配色、Logo 30—36（新增 33—36）、二十款保留的往期 Logo，以及设计师参考。单文件可离线使用，顶部切换颜色会同步更新 Logo。
+Open [review.html](review.html) for 10 light/dark palettes, Logos 30–36 (including new options 33–36), 20 retained earlier logos, and credited design references. The self-contained page works offline; toolbar palette switching recolors every logo.
 
-- 颜色保留原编号：02、04、06、08、10、13、14、15、16、19；其余色值不变。
-- 已删除 07 橄榄、09 赭黄、17 松墨与白垩、18 茄紫与浅青。
-- 本轮增加 33 契合、34 托管、35 轮换、36 分域，原有 23 款 Logo 及全部 SVG 保留。
-- 上轮已排除 01 翠绿、03 暖砂、05 砖红、11 朱橙、12 硫黄。
-- 新 Logo 表达 Secrets 管理的隐藏值、受控访问、集中保管。26、29 已删除；27、28 保留在往期候选中。
-- 本轮推荐 16 可可与冰蓝 × 33 契合。
-- 上轮推荐 14 雾蓝 × 30 密值边界；独立图标可比较 13 梅墨 × 32 密仓。
+- Stable palette numbers: 02, 04, 06, 08, 10, 13, 14, 15, 16, and 19. Retained color values are unchanged.
+- Removed 07 Olive, 09 Ochre, 17 Pine / Chalk, and 18 Aubergine / Celadon.
+- This round adds 33 Fit, 34 Custody, 35 Rotate, and 36 Namespace, retaining all 23 earlier logos and their SVG files.
+- Earlier exclusions: 01 Jade, 03 Sand, 05 Clay, 11 Vermilion, and 12 Sulfur.
+- New logos explore hidden values, controlled access, and centralized custody in secrets management. Options 26 and 29 are removed; 27 and 28 remain among earlier candidates.
+- Current recommendation: 16 Cocoa / Ice × 33 Fit.
+- Earlier recommendation: 14 Slate × 30 Scope; compare 13 Plum × 32 Store for a standalone symbol.
 
-[配色来源与取舍](palette-research.md) · [新 Logo 设计说明](logos/round-9/README.md) · [上轮说明](logos/round-8/README.md) · [可编辑 Figma](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=24-2)
+[Palette sources and trade-offs](palette-research.md) · [New logo rationale](logos/round-9/README.md) · [Previous round](logos/round-8/README.md) · [Editable Figma](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=24-2)
 
-统一分支：`design/ui-studies`。Dashboard / 文档配色应用见 [color-applications](../../design/color-applications/index.html)；原始三种交互布局完整保留在 [dashboard-layouts](../../design/dashboard-layouts/dashboard.html)。
+Unified branch: `design/ui-studies`. See [color-applications](../../design/color-applications/index.html) for Dashboard/documentation palette applications. The three original interactive layouts are preserved in [dashboard-layouts](../../design/dashboard-layouts/dashboard.html).
 
-`dashboard.html` 只比较颜色；`palettes.js` 和 `palettes-extra.js` 为色值源。`icons/preview.html` 与 `logos/preview.html` 使用相同的可选颜色。`logo-studies/` 是分支已有的独立历史研究，保持原有文件。
+`dashboard.html` compares colors only. `palettes.js` and `palettes-extra.js` are the color sources. `icons/preview.html` and `logos/preview.html` use the same available palettes. `logo-studies/` preserves the branch's initial independent logo studies, with English preview copy.
 
-从仓库根目录运行：
+Run from the repository root:
 
 ```sh
-node --test web/mockups/brand-review.test.mjs web/mockups/dashboard.test.mjs
+npm --prefix web test
 ```
 
-检查覆盖稳定编号、排除项、文字和按钮对比度、颜色切换及 SVG 自包含。Figma 已检查正反色和 16/24/32px 图形。均为设计提案，没有更改正式产品界面或架构。
+Checks cover stable numbers, exclusions, text/button contrast, palette switching, self-contained SVGs, and the repository's English-only copy policy. Figma was inspected in positive/negative color and at 16/24/32px symbol sizes. These are design proposals, not production UI or architecture changes.

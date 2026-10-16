@@ -1,13 +1,13 @@
-# Keysy 设计研究
+# Keysy design studies
 
-UI、配色与 Logo 统一维护在 `design/ui-studies`，均为设计预览，不修改正式产品架构。
+UI, palette, and logo studies are maintained together on `design/ui-studies`. These are visual previews, not changes to the production architecture.
 
-- [Dashboard / 文档配色应用](color-applications/index.html)：Supabase、Mintlify 两种布局，10 套深浅配色；已排除 07、09、17、18，保留其余编号。
-- [颜色与 Logo 总预览](../web/mockups/review.html)：当前与往期 Logo、独立图形及配色切换。
-- [初始 Logo 研究](../web/mockups/logo-studies/preview.html)：原 `design/keysy-logo-studies` 的矢量、预览及许可证。
-- [初始 Dashboard 布局](dashboard-layouts/dashboard.html)：原 `design/dashboard-mockups` 的 Workspace / Command / Cabinet，按原提交归档，历史配色不作为当前候选。
+- [Dashboard and documentation palettes](color-applications/index.html): Supabase and Mintlify layouts with 10 light/dark palettes. Options 07, 09, 17, and 18 are excluded; other numbers stay unchanged.
+- [Color and logo review](../web/mockups/review.html): current and earlier logos, standalone symbols, and palette switching.
+- [Initial logo studies](../web/mockups/logo-studies/preview.html): vectors, previews, and licenses from `design/keysy-logo-studies`.
+- [Initial Dashboard layouts](dashboard-layouts/dashboard.html): Workspace, Command, and Cabinet from `design/dashboard-mockups`, archived from the original commit. Their historical palettes are not current candidates.
 
-从仓库根目录验证：
+Verify from the repository root:
 
 ```sh
 npm --prefix web test
