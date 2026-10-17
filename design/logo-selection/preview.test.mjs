@@ -20,6 +20,7 @@ test('retained candidates keep their source artwork and removed candidates are a
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
       assert.match(artwork, /currentColor/);
       assert.doesNotMatch(artwork, /<(?:text|image|script)\b|href=|\bvar\(/);
+      assert.doesNotMatch(artwork, /\b(?:style|color|fill|stroke)="[^"]*#[0-9a-f]{3,8}\b/i);
     }
   }
   for (const icon of data.icons) assert.match(icon.image, /^data:image\/png;base64,[A-Za-z0-9+/=]+$/);
@@ -29,7 +30,7 @@ test('retained candidates keep their source artwork and removed candidates are a
 test('the single grid renders every candidate and recolors each preview', () => {
   assert.deepEqual(data.palettes, shared);
   assert.deepEqual(data.palettes.map(palette => palette.number), ['02', '04', '10', '13', '14', '15', '16', '19']);
-  const panels = data.palettes.flatMap(() => ['light', 'dark'].map(mode => ({ dataset: { mode }, style: {} })));
+  const panels = Array.from({ length: 45 }).flatMap(() => ['light', 'dark'].map(mode => ({ dataset: { mode }, style: {} })));
   const buttons = [];
   const targets = new Map();
   const context = vm.createContext({
@@ -39,26 +40,34 @@ test('the single grid renders every candidate and recolors each preview', () => 
     },
   });
   for (const [, script] of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) vm.runInContext(script, context);
-  const cocoa = data.palettes.find(palette => palette.id === 'cocoaice');
-  vm.runInContext('setPalette("cocoaice")', context);
-  for (const panel of panels) assert.ok(panel.style.cssText.includes(`--accent:${cocoa[panel.dataset.mode].accent}`));
-  assert.match(targets.get('#palette-status').textContent, /16 Cocoa \/ Ice/);
+  for (const palette of data.palettes) {
+    vm.runInContext(`setPalette(${JSON.stringify(palette.id)})`, context);
+    for (const panel of panels) assert.ok(panel.style.cssText.includes(`--accent:${palette[panel.dataset.mode].accent}`));
+    assert.ok(targets.get('#palette-status').textContent.includes(`${palette.number} ${palette.name}`));
+  }
   const grid = targets.get('#comparisons').innerHTML;
-  assert.equal((grid.match(/class="theme-pair"/g) || []).length, 30);
+  assert.equal((grid.match(/class="theme-pair"/g) || []).length, 45);
   for (const id of ['logo-02', 'logo-22', 'logo-28', 'logo-36', 'study-B', 'study-C', 'icon-B', 'icon-D', 'generated-37', 'generated-38', 'generated-39', 'generated-40', 'generated-41', 'generated-42', 'generated-43', 'generated-44', 'generated-45', 'generated-46', 'generated-47', 'generated-48', 'generated-49', 'generated-50', 'generated-51']) {
     assert.ok(grid.includes(`id="${id}"`), id);
   }
-  assert.equal((grid.match(/class="logo-art"/g) || []).length, 54);
+  assert.equal((grid.match(/class="logo-art"/g) || []).length, 84);
   assert.equal((grid.match(/class="icon-art"/g) || []).length, 6);
   for (const id of ['logo-01', 'logo-03', 'logo-09', 'logo-16', 'logo-33', 'logo-34', 'study-A', 'icon-A']) {
     assert.ok(!grid.includes(`id="${id}"`), id);
   }
   const candidateNumbers = [...grid.matchAll(/<header class="option-heading"><span>([^<]+)<\/span>/g)].map(([, number]) => number);
   assert.deepEqual(candidateNumbers, Array.from({ length: 45 }, (_, index) => String(index + 1)));
-  const generatedImages = [...grid.matchAll(/<img class="generated-art" src="([^"]+)"/g)];
-  assert.equal(generatedImages.length, 15);
-  for (const [, path] of generatedImages) {
-    assert.deepEqual([...readFileSync(new URL(path, import.meta.url)).subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.doesNotMatch(grid, /<img\b|unaffected by palette switching/);
+  const generated = JSON.parse(vm.runInContext('JSON.stringify(generatedLogos)', context));
+  assert.equal(generated.length, 15);
+  for (const logo of generated) {
+    assert.match(logo.svg, /viewBox="0 0 [\d.]+ [\d.]+"/);
+    assert.match(logo.svg, /fill="currentColor"/);
+    assert.doesNotMatch(logo.svg, /<(?:text|image|script)\b|href=|data:|#[0-9a-f]{3,8}\b/i);
+    assert.equal(logo.svg, read(logo.source));
+    const article = grid.match(new RegExp(`<article id="generated-${logo.id}"[\\s\\S]*?<\\/article>`))[0];
+    assert.equal((article.match(/class="theme-preview identity-preview"/g) || []).length, 2);
+    assert.equal(article.split(logo.svg).length - 1, 4);
   }
 });
 
