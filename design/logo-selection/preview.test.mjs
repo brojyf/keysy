@@ -29,7 +29,7 @@ test('retained candidates keep their source artwork and removed candidates are a
 
 test('the single grid renders every candidate and recolors each preview', () => {
   assert.deepEqual(data.palettes, shared);
-  assert.deepEqual(data.palettes.map(palette => palette.number), ['02', '04', '10', '13', '14', '15', '16', '19']);
+  assert.deepEqual(data.palettes.map(palette => palette.number), ['1', '2', '3', '4', '5', '6', '7', '8']);
   const panels = Array.from({ length: 45 }).flatMap(() => ['light', 'dark'].map(mode => ({ dataset: { mode }, style: {} })));
   const buttons = [];
   const targets = new Map();

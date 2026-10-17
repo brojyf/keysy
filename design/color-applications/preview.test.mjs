@@ -61,7 +61,7 @@ test('palette, mode, and layout controls update the focused preview and shareabl
 test('opening a comparison selects its exact palette and mode', () => {
   const {nodes} = loadPreview();
   nodes.get('#palette-gallery').handlers.click({target:{closest: () => ({dataset:{open:'inkiris',openMode:'dark'}})}});
-  assert.match(nodes.get('#focus-title').textContent, /19 Ink \/ Iris/);
+  assert.match(nodes.get('#focus-title').textContent, /8 Ink \/ Iris/);
   assert.match(nodes.get('#focus-preview').innerHTML, /data-palette="inkiris" data-mode="dark"/);
   assert.equal(nodes.get('#focus').scrolled, true);
 });
@@ -69,7 +69,7 @@ test('opening a comparison selects its exact palette and mode', () => {
 test('removed palettes stay out of controls and comparisons and old URLs fall back', () => {
   const {context, nodes} = loadPreview();
   assert.deepEqual(Array.from(vm.runInContext('palettes', context), p => p.number),
-    ['02', '04', '10', '13', '14', '15', '16', '19']);
+    ['1', '2', '3', '4', '5', '6', '7', '8']);
   for (const id of ['olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol']) {
     assert.ok(!nodes.get('#palette-select').innerHTML.includes(`value="${id}"`));
     assert.ok(!nodes.get('#palette-gallery').innerHTML.includes(`data-palette="${id}"`));

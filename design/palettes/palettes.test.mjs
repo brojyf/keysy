@@ -21,9 +21,9 @@ function contrast(first, second) {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-test('eight retained palettes keep stable numbers and complete light and dark roles', () => {
+test('eight retained palettes use consecutive numbers and complete light and dark roles', () => {
   assert.equal(palettes.length, 8);
-  assert.deepEqual(Array.from(palettes, palette => palette.number), ['02', '04', '10', '13', '14', '15', '16', '19']);
+  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2', '3', '4', '5', '6', '7', '8']);
   assert.equal(new Set(palettes.map(palette => palette.id)).size, 8);
   for (const id of ['jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
     assert.ok(!palettes.some(palette => palette.id === id));

@@ -1,9 +1,11 @@
 # Keysy palette candidates
 
-Updated: 2026-10-16. [Logo selection](../logo-selection/index.html) · [Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Numbers are stable and are not reassigned after removal.
+Updated: 2026-10-17. [Logo selection](../logo-selection/index.html) · [Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Retained candidates are numbered 1–8 in review order.
 
-Excluded: 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 17 Pine / Chalk, and 18 Aubergine / Celadon.
-Retained: 02 Ink, 04 Mono, 10 Cobalt, 13 Plum, 14 Slate, 15 Navy / Rose, 16 Cocoa / Ice, and 19 Ink / Iris.
+Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 17 Pine / Chalk, and 18 Aubergine / Celadon.
+Retained: 1 Ink, 2 Mono, 3 Cobalt, 4 Plum, 5 Slate, 6 Navy / Rose, 7 Cocoa / Ice, and 8 Ink / Iris.
+
+The historical research below uses original palette and logo numbers, matching the linked Figma boards. Some candidates were subsequently removed.
 
 ## Previous round: 13–15
 
@@ -34,6 +36,6 @@ All sources are publicly credited studio projects, not generated reference image
 
 ## Values and checks
 
-`palettes.js` and `palettes-extra.js` contain 8 complete light/dark palettes. Each has a stable number and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The [color applications](../color-applications/index.html) and [logo selection](../logo-selection/index.html) pages embed the same values for offline use.
+`palettes.js` and `palettes-extra.js` contain 8 complete light/dark palettes. Each has a consecutive display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The [color applications](../color-applications/index.html) and [logo selection](../logo-selection/index.html) pages embed the same values for offline use.
 
 `node --test design/palettes/palettes.test.mjs` checks each mode: text, muted text, and accent against background/surface/selection ≥ 4.5:1; button text ≥ 4.5:1; button against adjacent surfaces ≥ 3:1. The 8 palettes cover 192 combinations. Borders are decorative, not focus rings or interactive boundaries.
