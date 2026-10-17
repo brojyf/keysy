@@ -74,6 +74,12 @@ const generatedLogos = [
   {id:'43',name:'Seal ring',image:'images/43-seal-ring.png'},
   {id:'44',name:'Key hierarchy',image:'images/44-key-hierarchy.png'},
   {id:'45',name:'Wordmark',image:'images/45-wordmark.png'},
+  {id:'46',name:'Terminal',image:'images/46-terminal.png'},
+  {id:'47',name:'App icon',image:'images/47-app-icon.png'},
+  {id:'48',name:'Hex key',image:'images/48-hex-key.png'},
+  {id:'49',name:'Dial',image:'images/49-dial.png'},
+  {id:'50',name:'Bold K',image:'images/50-bold-k.png'},
+  {id:'51',name:'Cipher / Plain',image:'images/51-cipher-plain.png'},
 ];
 const modeLabel = mode => mode === 'light' ? 'LIGHT' : 'DARK';
 const properties = colors => Object.entries(colors).map(([role,color])=>`--${role}:${color}`).join(';');
@@ -83,7 +89,7 @@ function artwork(entry) {
   return `<div class="logo-art" role="img" aria-label="${entry.name}">${entry.svg}</div><div class="small-logo" aria-hidden="true">${entry.svg}<span>28px</span></div>${entry.symbol?`<div class="symbol-sizes" aria-hidden="true">${[16,24,32].map(size=>`<span style="--symbol-size:${size}px">${entry.symbol}</span>`).join('')}<small>16 / 24 / 32px</small></div>`:''}`;
 }
 document.querySelector('#comparisons').innerHTML = [...logos.map(entry=>({...entry,kind:'logo'})), ...studies.map(entry=>({...entry,kind:'study'})), ...icons.map(entry=>({...entry,kind:'icon'}))].map(entry=>`<article id="${entry.kind}-${entry.id}"${entry.image?` style="--image:url(${entry.image})"`:''}><header class="option-heading"><span>${entry.id}</span><h3>${entry.name}</h3></header>${entry.meaning||entry.note?`<p class="concept-note">${entry.meaning||entry.note}</p>`:''}<div class="theme-pair">${['light','dark'].map(mode=>identityPanel(mode,artwork(entry))).join('')}</div></article>`).join('');
-document.querySelector('#comparisons').innerHTML += generatedLogos.map(entry=>`<article id="generated-${entry.id}"><header class="option-heading"><span>${entry.id}</span><h3>${entry.name}</h3></header><p class="concept-note">Original monochrome study · unaffected by palette switching</p><a href="${entry.image}" aria-label="Open ${entry.name} original"><img class="generated-art" src="${entry.image}" alt="${entry.name} logo with light and dark versions" loading="lazy"></a></article>`).join('');
+document.querySelector('#comparisons').innerHTML += generatedLogos.map(entry=>`<article id="generated-${entry.id}"><header class="option-heading"><span>${entry.id}</span><h3>${entry.name}</h3></header><p class="concept-note">Original artwork · unaffected by palette switching</p><a href="${entry.image}" aria-label="Open ${entry.name} original"><img class="generated-art" src="${entry.image}" alt="${entry.name} logo with light and dark versions" loading="lazy"></a></article>`).join('');
 document.querySelector('#palette-options').innerHTML = palettes.map(palette=>`<button type="button" class="palette-button" data-palette="${palette.id}" aria-pressed="false" style="--swatch:${palette.light.accent}">${palette.number} ${palette.name}</button>`).join('');
 function setPalette(id) {
   const palette = palettes.find(option=>option.id===id);

@@ -45,13 +45,13 @@ test('the single grid renders every candidate and recolors each preview', () => 
   assert.match(targets.get('#palette-status').textContent, /16 Cocoa \/ Ice/);
   const grid = targets.get('#comparisons').innerHTML;
   assert.equal((grid.match(/class="theme-pair"/g) || []).length, 38);
-  for (const id of ['logo-01', 'logo-22', 'logo-28', 'logo-36', 'study-A', 'study-C', 'icon-A', 'icon-D', 'generated-37', 'generated-38', 'generated-39', 'generated-40', 'generated-41', 'generated-42', 'generated-43', 'generated-44', 'generated-45']) {
+  for (const id of ['logo-01', 'logo-22', 'logo-28', 'logo-36', 'study-A', 'study-C', 'icon-A', 'icon-D', 'generated-37', 'generated-38', 'generated-39', 'generated-40', 'generated-41', 'generated-42', 'generated-43', 'generated-44', 'generated-45', 'generated-46', 'generated-47', 'generated-48', 'generated-49', 'generated-50', 'generated-51']) {
     assert.ok(grid.includes(`id="${id}"`), id);
   }
   assert.equal((grid.match(/class="logo-art"/g) || []).length, 68);
   assert.equal((grid.match(/class="icon-art"/g) || []).length, 8);
   const generatedImages = [...grid.matchAll(/<img class="generated-art" src="([^"]+)"/g)];
-  assert.equal(generatedImages.length, 9);
+  assert.equal(generatedImages.length, 15);
   for (const [, path] of generatedImages) {
     assert.deepEqual([...readFileSync(new URL(path, import.meta.url)).subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
   }
