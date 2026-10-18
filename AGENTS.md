@@ -1,6 +1,6 @@
 ## Working Principles
 
-- Use English for all repository content, including UI copy, documentation, comments, and test descriptions.
+- Use English for all repository content (including UI copy, documentation, comments, and test descriptions), commit messages, PR titles, and PR descriptions.
 
 - Start implementation only after I finalize the architecture myself or agree on it with the agents.
 - When proposing architecture, research online how major tech companies handle similar cases; explain options, trade-offs, and your recommendation.
@@ -16,7 +16,6 @@
 
 ## Git Workflow
 
-- Write all Git workflow content in English.
 - Branch from the latest `origin/main`; never commit directly to `main`.
 - Submit all code changes through PRs and keep them mergeable into `main`.
 - Squash-merge PRs after review.
