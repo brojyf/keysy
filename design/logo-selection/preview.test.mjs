@@ -13,7 +13,7 @@ test('retained candidates keep their source artwork and removed candidates are a
   assert.deepEqual(data.logos.map(logo => logo.id),
     ['02', '04', '05', '06', '07', '08', '10', '11', '12', '13', '14', '15', '17', '18', '19',
       '20', '21', '22', '27', '28', '30', '31', '32', '35', '36']);
-  assert.deepEqual(data.studies.map(study => study.id), ['B', 'C']);
+  assert.deepEqual(data.studies.map(study => study.id), ['B']);
   assert.deepEqual(data.icons.map(icon => icon.id), ['B', 'C', 'D']);
   for (const logo of [...data.logos, ...data.studies]) {
     for (const artwork of [logo.svg, logo.symbol].filter(Boolean)) {
@@ -30,7 +30,7 @@ test('retained candidates keep their source artwork and removed candidates are a
 test('the single grid renders every candidate and recolors each preview', () => {
   assert.deepEqual(data.palettes, shared);
   assert.deepEqual(data.palettes.map(palette => palette.number), ['1', '2', '3', '4', '5', '6', '7', '8']);
-  const panels = Array.from({ length: 45 }).flatMap(() => ['light', 'dark'].map(mode => ({ dataset: { mode }, style: {} })));
+  const panels = Array.from({ length: 40 }).flatMap(() => ['light', 'dark'].map(mode => ({ dataset: { mode }, style: {} })));
   const buttons = [];
   const targets = new Map();
   const context = vm.createContext({
@@ -46,20 +46,20 @@ test('the single grid renders every candidate and recolors each preview', () => 
     assert.ok(targets.get('#palette-status').textContent.includes(`${palette.number} ${palette.name}`));
   }
   const grid = targets.get('#comparisons').innerHTML;
-  assert.equal((grid.match(/class="theme-pair"/g) || []).length, 45);
-  for (const id of ['logo-02', 'logo-22', 'logo-28', 'logo-36', 'study-B', 'study-C', 'icon-B', 'icon-D', 'generated-37', 'generated-38', 'generated-39', 'generated-40', 'generated-41', 'generated-42', 'generated-43', 'generated-44', 'generated-45', 'generated-46', 'generated-47', 'generated-48', 'generated-49', 'generated-50', 'generated-51']) {
+  assert.equal((grid.match(/class="theme-pair"/g) || []).length, 40);
+  for (const id of ['logo-02', 'logo-22', 'logo-28', 'logo-36', 'study-B', 'icon-B', 'icon-D', 'generated-37', 'generated-38', 'generated-40', 'generated-42', 'generated-43', 'generated-45', 'generated-46', 'generated-47', 'generated-48', 'generated-49', 'generated-51']) {
     assert.ok(grid.includes(`id="${id}"`), id);
   }
-  assert.equal((grid.match(/class="logo-art"/g) || []).length, 84);
+  assert.equal((grid.match(/class="logo-art"/g) || []).length, 74);
   assert.equal((grid.match(/class="icon-art"/g) || []).length, 6);
-  for (const id of ['logo-01', 'logo-03', 'logo-09', 'logo-16', 'logo-33', 'logo-34', 'study-A', 'icon-A']) {
+  for (const id of ['logo-01', 'logo-03', 'logo-09', 'logo-16', 'logo-33', 'logo-34', 'study-A', 'study-C', 'icon-A', 'generated-39', 'generated-41', 'generated-44', 'generated-50']) {
     assert.ok(!grid.includes(`id="${id}"`), id);
   }
   const candidateNumbers = [...grid.matchAll(/<header class="option-heading"><span>([^<]+)<\/span>/g)].map(([, number]) => number);
-  assert.deepEqual(candidateNumbers, Array.from({ length: 45 }, (_, index) => String(index + 1)));
+  assert.deepEqual(candidateNumbers, Array.from({ length: 40 }, (_, index) => String(index + 1)));
   assert.doesNotMatch(grid, /<img\b|unaffected by palette switching/);
   const generated = JSON.parse(vm.runInContext('JSON.stringify(generatedLogos)', context));
-  assert.equal(generated.length, 15);
+  assert.deepEqual(generated.map(logo => logo.id), ['37', '38', '40', '42', '43', '45', '46', '47', '48', '49', '51']);
   for (const logo of generated) {
     assert.match(logo.svg, /viewBox="0 0 [\d.]+ [\d.]+"/);
     assert.match(logo.svg, /fill="currentColor"/);
