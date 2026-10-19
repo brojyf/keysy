@@ -15,8 +15,7 @@
 
 ## Tech Stack
 
-- Use Bun as the runtime for web applications.
-- Use TypeScript 7 with the native Go-based compiler for web applications.
+- Use Bun and TypeScript 7 for web applications.
 
 ## Git Workflow
 
