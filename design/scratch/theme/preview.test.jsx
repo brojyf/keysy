@@ -29,7 +29,7 @@ test('both React layouts render every retained palette in both modes with matchi
 test('palette, mode, and layout controls update the focused preview and shareable URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  await user.selectOptions(screen.getByRole('combobox'), 'cocoaice');
+  await user.click(screen.getByRole('button', { name: '7 Cocoa / Ice', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');
@@ -73,7 +73,7 @@ for (const id of ['missing', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 
     assert.equal(focus.dataset.palette, 'blue');
     assert.equal(focus.dataset.mode, 'light');
     assert.ok(focus.classList.contains('supabase'));
-    assert.equal(container.querySelector(`option[value="${id}"]`), null);
+    assert.equal(container.querySelector(`button[data-palette="${id}"]`), null);
     assert.equal(container.querySelector(`[data-palette="${id}"]`), null);
   });
 }
@@ -120,5 +120,5 @@ test('React previews use only local runtime assets and no product services', () 
     assert.doesNotMatch(read(file), /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/);
     assert.doesNotMatch(read(file), /innerHTML|querySelector/);
   }
-  assert.match(read('main.jsx'), /createRoot/);
+  assert.match(read('../main.jsx'), /createRoot/);
 });

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { palettes } from './palettes.js';
 import SupabaseScreen from './SupabaseScreen.jsx';
 import MintlifyScreen from './MintlifyScreen.jsx';
+import PalettePicker from '../components/PalettePicker.jsx';
 
 function initialSelection() {
   const params = new URLSearchParams(location.search);
@@ -31,49 +32,51 @@ function Screen({ palette, mode, layout }) {
   </div>;
 }
 
-export default function ThemePreview() {
+export default function ThemePreview({ active = true }) {
   const [{ layout, paletteId, mode }, setSelection] = useState(initialSelection);
   const focus = useRef(null);
   const palette = palettes.find(option => option.id === paletteId);
   const select = changes => setSelection(selection => ({ ...selection, ...changes }));
 
   useEffect(() => {
+    if (!active) return;
     const url = new URL(location.href);
     url.searchParams.set('layout', layout);
     url.searchParams.set('palette', paletteId);
     url.searchParams.set('mode', mode);
     history.replaceState(null, '', url);
-  }, [layout, paletteId, mode]);
+  }, [active, layout, paletteId, mode]);
 
   function expand(paletteId, mode) {
     select({ paletteId, mode });
     focus.current.scrollIntoView({ behavior: 'instant', block: 'start' });
   }
 
-  return <>
-    <header className="workbench-header">
-      <div className="workbench-heading"><a href="../logo/">keysy / logo selection</a><span>8 palettes · 2 layouts · Light and dark</span></div>
-      <div className="workbench-controls">
+  return <div className="theme-workspace preview-content">
+    <header className="preview-heading">
+      <div><p className="preview-eyebrow">THE COLOR COLLECTION</p><h1>A palette in context.</h1>
+        <p className="preview-description">Eight color systems, from the first impression to the smallest detail.</p>
+      </div>
+      <span className="preview-count">8 palettes · 2 layouts</span>
+    </header>
+    <div className="preview-controls">
+      <PalettePicker value={paletteId} onChange={paletteId => select({ paletteId })} label="Theme palette" />
+      <div className="theme-options-row">
         <div className="segmented" role="group" aria-label="Reference layout">
           {['supabase', 'mintlify'].map(option => <button key={option} type="button" data-layout={option}
             aria-pressed={layout === option} onClick={() => select({ layout: option })}>
             {option === 'supabase' ? 'Supabase Dashboard' : 'Mintlify docs'}
           </button>)}
         </div>
-        <label className="palette-select">Palette <select id="palette-select" aria-label="Focused preview palette"
-          value={paletteId} onChange={event => select({ paletteId: event.target.value })}>
-          {palettes.map(option => <option key={option.id} value={option.id}>{option.number} {option.name}</option>)}
-        </select></label>
         <div className="segmented" role="group" aria-label="Appearance mode">
           {['light', 'dark'].map(option => <button key={option} type="button" data-mode={option}
             aria-pressed={mode === option} onClick={() => select({ mode: option })}>{option === 'light' ? 'Light' : 'Dark'}</button>)}
         </div>
-        <a className="gallery-link" href="#comparison">Compare all palettes ↓</a>
+        <a className="gallery-link" href="#comparison">Compare all palettes <span aria-hidden="true">↓</span></a>
       </div>
-    </header>
-    <main>
+    </div>
       <section id="focus" ref={focus} aria-labelledby="focus-title">
-        <header className="section-heading"><div><p className="eyebrow">IN CONTEXT / 01</p><h1 id="focus-title">{palette.number} {palette.name}</h1></div>
+        <header className="section-heading"><div><p className="eyebrow">IN CONTEXT / 01</p><h2 id="focus-title">{palette.number} {palette.name}</h2></div>
           <p id="focus-status" role="status" aria-live="polite">{layout === 'supabase' ? 'Supabase Dashboard' : 'Mintlify docs'} / {mode === 'light' ? 'Light' : 'Dark'}</p>
         </header>
         <div id="focus-preview"><Screen palette={palette} mode={mode} layout={layout} /></div>
@@ -100,7 +103,6 @@ export default function ThemePreview() {
           </section>)}
         </div>
       </section>
-      <footer>Visual comparison only. The Dashboard uses fictional records; documentation content comes from the docs copy under design.</footer>
-    </main>
-  </>;
+      <p className="preview-footnote">Visual studies only. Dashboard records are fictional; documentation comes from the historical docs copy.</p>
+  </div>;
 }

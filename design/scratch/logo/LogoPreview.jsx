@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import candidates from './candidates.json';
 import { palettes } from '../theme/palettes.js';
+import PalettePicker from '../components/PalettePicker.jsx';
 
 // Source-controlled SVG artwork is kept verbatim, including its outlined typography.
 function Artwork({ entry }) {
@@ -24,24 +25,17 @@ export default function LogoPreview() {
   const [paletteId, setPaletteId] = useState('graphite');
   const palette = palettes.find(option => option.id === paletteId);
 
-  return <>
-    <div className="toolbar"><div className="toolbar-inner">
-      <div className="color-controls" role="group" aria-label="Logo palette">
-        <span className="control-label">Logo palette</span>
-        <span id="palette-options" className="color-controls">
-          {palettes.map(option => <button key={option.id} type="button" className="palette-button"
-            data-palette={option.id} aria-pressed={option.id === paletteId}
-            style={{ '--swatch': option.light.accent }} onClick={() => setPaletteId(option.id)}>
-            {option.number} {option.name}
-          </button>)}
-        </span>
-      </div>
-      <a href="../theme/">Theme preview ↗</a>
-    </div></div>
-    <main>
-      <header className="page-heading"><h1>keysy / logo selection</h1>
-        <p id="palette-status" role="status" aria-live="polite">Current palette: {palette.number} {palette.name} · switch in the toolbar</p>
+  return <div className="logo-workspace preview-content">
+      <header className="preview-heading">
+        <div><p className="preview-eyebrow">THE IDENTITY COLLECTION</p><h1>Find the right mark.</h1>
+          <p className="preview-description">33 directions. One color system. See what feels like Keysy.</p>
+        </div>
+        <span className="preview-count">33 candidates · 0–32</span>
       </header>
+      <div className="preview-controls"><PalettePicker value={paletteId} onChange={setPaletteId} label="Logo palette" /></div>
+      <div className="collection-heading"><h2>All directions <span>33</span></h2>
+        <p id="palette-status" role="status" aria-live="polite">{palette.number} {palette.name} <span> / </span> Light & dark</p>
+      </div>
       <div id="comparisons" className="comparison-grid">
         {candidates.map((entry, index) => <article key={`${entry.kind}-${entry.id}`} id={`${entry.kind}-${entry.id}`}
           style={entry.image ? { '--image': `url(${entry.image})` } : undefined}>
@@ -56,7 +50,6 @@ export default function LogoPreview() {
           </div>
         </article>)}
       </div>
-      <footer>Palette switching reuses the same artwork. These are review previews, not production UI.</footer>
-    </main>
-  </>;
+      <p className="preview-footnote">The same artwork in every palette. Original outlines, unchanged.</p>
+  </div>;
 }

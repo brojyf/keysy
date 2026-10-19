@@ -3,7 +3,7 @@
 Design studies are maintained on `design/theme-and-logo`. These are visual previews, not changes to the production architecture.
 
 - [`figma/`](figma/README.md): Figma boards and related design references.
-- [`scratch/`](scratch/README.md): an independent React + Vite preview project running on Bun.
+- [`scratch/`](scratch/README.md): a unified React + Vite Design Studio running on Bun, with Logo / Theme tabs and native HMR.
   - [`logo/`](scratch/logo/): 33 candidates numbered 0–32, recolored by the 8 retained light/dark palettes. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
   - [`theme/`](scratch/theme/): shared palette values, research, and Dashboard/documentation previews. Palettes are numbered 1–8; the logo preview imports the same values.
 
@@ -15,7 +15,7 @@ Removed rounds, source artwork, and earlier preview pages stay in Git history. P
 cd design/scratch
 bun install --frozen-lockfile
 bun run dev
-# Open /logo/ or /theme/ on the local Vite server.
+# Open / on the local Vite server; /logo/ and /theme/ still work.
 bun run lint
 bun test
 bun run build

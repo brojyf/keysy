@@ -63,7 +63,7 @@ test('React palette controls recolor every logo panel with the shared theme toke
 
 test('the React entry uses local assets and has no runtime network dependency', () => {
   assert.match(read('index.html'), /lang="en"/);
-  assert.match(read('main.jsx'), /createRoot/);
+  assert.match(read('../main.jsx'), /createRoot/);
   assert.doesNotMatch(read('LogoPreview.jsx'), /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/);
   assert.doesNotMatch(read('index.html'), /(?:src|href)="https?:\/\//);
 });
