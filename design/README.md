@@ -1,15 +1,24 @@
 # Keysy design studies
 
-UI, palette, and logo studies are maintained together on `design/ui-studies`. These are visual previews, not changes to the production architecture.
+Design studies are maintained on `design/theme-and-logo`. These are visual previews, not changes to the production architecture.
 
-- [Logo selection](logo-selection/index.html): 40 candidates numbered 1–40, all recolored by the 8 retained light/dark palettes. The former bitmap concepts use single-color SVG outlines; reusable files are in `logo-selection/vectors/`. Original bitmap references remain in `logo-selection/images/`.
-- [Dashboard and documentation palettes](color-applications/index.html): Supabase and Mintlify layouts with 8 light/dark palettes numbered 1–8 in review order.
-- [Palette values and research](palettes/palette-research.md): current numbering, historical sources, and measurements shared by both pages.
+- [`figma/`](figma/README.md): Figma boards and related design references.
+- [`scratch/`](scratch/README.md): an independent React + Vite preview project running on Bun.
+  - [`logo/`](scratch/logo/): 33 candidates numbered 0–32, recolored by the 8 retained light/dark palettes. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
+  - [`theme/`](scratch/theme/): shared palette values, research, and Dashboard/documentation previews. Palettes are numbered 1–8; the logo preview imports the same values.
 
-Removed rounds, source artwork, and earlier preview pages stay in git history.
+Removed rounds, source artwork, and earlier preview pages stay in Git history. Production `web/` and `docs/` remain independent of the scratch app.
 
-Verify from the repository root:
+## Run and verify
 
 ```sh
-npm --prefix web test
+cd design/scratch
+bun install --frozen-lockfile
+bun run dev
+# Open /logo/ or /theme/ on the local Vite server.
+bun run lint
+bun test
+bun run build
 ```
+
+See [scratch setup](scratch/README.md) for built-preview instructions.

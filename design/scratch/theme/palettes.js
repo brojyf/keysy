@@ -1,5 +1,7 @@
 // Keysy palette proposals. Candidates are numbered consecutively in review order. See palette-research.md.
-globalThis.keysyPalettes = [
+import { extraPalettes } from './palettes-extra.js';
+
+const basePalettes = [
   {
     id: 'blue', number: '1', name: 'Ink', english: 'Ink',
     light: {"bg": "#fafafa", "surface": "#ffffff", "text": "#1b1c1e", "muted": "#64666b", "accent": "#315fc4", "button": "#315fc4", "on-button": "#ffffff", "soft": "#eef2fa", "line": "#e3e4e6"},
@@ -11,3 +13,5 @@ globalThis.keysyPalettes = [
     dark: {"bg": "#0a0a0a", "surface": "#171717", "text": "#ededed", "muted": "#a1a1a1", "accent": "#ededed", "button": "#ededed", "on-button": "#0a0a0a", "soft": "#262626", "line": "#2e2e2e"},
   },
 ];
+
+export const palettes = [...basePalettes, ...extraPalettes];

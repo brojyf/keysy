@@ -66,8 +66,15 @@ jobs:
         run: bun run lint
       - name: Typecheck and build
         run: bun run build
-      - name: Test if configured
-        run: npm run --if-present test
+      - name: Repository language test
+        run: bun run test
+      - name: Verify design scratch
+        working-directory: design/scratch
+        run: |
+          bun install --frozen-lockfile
+          bun run lint
+          bun test
+          bun run build
 
   cli:
     name: CLI

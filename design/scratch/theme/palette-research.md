@@ -1,6 +1,6 @@
 # Keysy palette candidates
 
-Updated: 2026-10-17. [Logo selection](../logo-selection/index.html) · [Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Retained candidates are numbered 1–8 in review order.
+Updated: 2026-10-17. [Logo selection](../logo/index.html) · [Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Retained candidates are numbered 1–8 in review order.
 
 Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 17 Pine / Chalk, and 18 Aubergine / Celadon.
 Retained: 1 Ink, 2 Mono, 3 Cobalt, 4 Plum, 5 Slate, 6 Navy / Rose, 7 Cocoa / Ice, and 8 Ink / Iris.
@@ -21,7 +21,7 @@ Start with 14 Slate, then 13 Plum. These are comparison candidates, not a requir
 
 ## New studies: 16–19
 
-[New palettes](../color-applications/index.html) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; 17 and 18 have been removed from previews.
+[New palettes](index.html) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; 17 and 18 have been removed from previews.
 
 | Number | Color relationship | Credited design source and Keysy interpretation | Pros / cons |
 | --- | --- | --- | --- |
@@ -36,6 +36,6 @@ All sources are publicly credited studio projects, not generated reference image
 
 ## Values and checks
 
-`palettes.js` and `palettes-extra.js` contain 8 complete light/dark palettes. Each has a consecutive display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The [color applications](../color-applications/index.html) and [logo selection](../logo-selection/index.html) pages embed the same values for offline use.
+`palettes.js` and `palettes-extra.js` contain 8 complete light/dark palettes. Each has a consecutive display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
 
-`node --test design/palettes/palettes.test.mjs` checks each mode: text, muted text, and accent against background/surface/selection ≥ 4.5:1; button text ≥ 4.5:1; button against adjacent surfaces ≥ 3:1. The 8 palettes cover 192 combinations. Borders are decorative, not focus rings or interactive boundaries.
+`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks each mode: text, muted text, and accent against background/surface/selection ≥ 4.5:1; button text ≥ 4.5:1; button against adjacent surfaces ≥ 3:1. The 8 palettes cover 192 combinations. Borders are decorative, not focus rings or interactive boundaries.

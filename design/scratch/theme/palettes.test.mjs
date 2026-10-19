@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import test from 'node:test';
-import { runInNewContext } from 'node:vm';
-
-const source = ['palettes.js', 'palettes-extra.js']
-  .map(file => readFileSync(new URL(file, import.meta.url), 'utf8')).join('\n');
-const palettes = runInNewContext(`${source}\n;[...keysyPalettes, ...keysyExtraPalettes]`);
+import { test } from 'bun:test';
+import { palettes } from './palettes.js';
 
 function luminance(hex) {
   const channels = hex.slice(1).match(/../g).map(channel => {

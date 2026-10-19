@@ -1,12 +1,12 @@
 # Keysy color applications
 
-Open [index.html](index.html) directly. Use the toolbar to switch between **Supabase Dashboard / Mintlify docs**, 8 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
+Run `bun run dev` from `design/scratch/` and open `/theme/`. This React preview includes the shared palette definitions used by both previews. Use the toolbar to switch between **Supabase Dashboard / Mintlify docs**, 8 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
 
 - Two layouts × 8 palettes × two modes: **32 combinations**. Options 06, 07, 08, 09, 17, and 18 are removed; other numbers stay unchanged.
-- Uses the shared [palettes](../palettes/palettes.js) values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
+- Uses the shared [palettes](palettes.js) values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
 - The 1200 × 800 desktop mock scales proportionally to its container. On small screens, paired modes stack vertically.
 - Supports URL parameters such as `?layout=mintlify&palette=slate&mode=dark`. Preview controls work; product controls are static visual samples.
-- No build or network dependency, SDK installation, or connection to a real project.
+- Runs on Bun with Vite; requires dependency installation for development and a build for static hosting. No runtime CDN dependency, product SDK installation, or connection to a real project.
 
 ## Supabase reference
 
@@ -30,7 +30,8 @@ These are palette trade-offs, not a final theme selection. The simpler final app
 ## Verification
 
 ```sh
-node --test design/color-applications/preview.test.mjs design/palettes/palettes.test.mjs
+cd design/scratch
+bun test theme/
 ```
 
 Checks cover 32 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.

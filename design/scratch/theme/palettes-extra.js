@@ -1,5 +1,5 @@
 // Keysy palette proposals. Candidates are numbered consecutively in review order. See palette-research.md.
-globalThis.keysyExtraPalettes = [
+export const extraPalettes = [
   {
     id: 'cobalt', number: '3', name: 'Cobalt', english: 'Cobalt',
     light: {"bg": "#f7f7f2", "surface": "#ffffff", "text": "#202122", "muted": "#66665f", "accent": "#2444cc", "button": "#2444cc", "on-button": "#ffffff", "soft": "#e9edfc", "line": "#dcdedc"},
