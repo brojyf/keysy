@@ -1,7 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: bun
-    directory: /web
+    directories:
+      - '/**'
     schedule:
       interval: weekly
     commit-message:
