@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import LogoPreview from './logo/LogoPreview.jsx';
 import ThemePreview from './theme/ThemePreview.jsx';
+import CssPreview from './css/CssPreview';
 import candidates from './logo/candidates.json';
 import { palettes } from './theme/palettes.js';
 
-const tabs = ['Logo', 'Theme'];
+const tabs = ['Logo', 'Theme', 'CSS'];
 
 function initialTab() {
   const tab = new URLSearchParams(location.search).get('tab');
-  if (tab === 'logo' || tab === 'theme') return tab;
+  if (tab === 'logo' || tab === 'theme' || tab === 'css') return tab;
+  if (/\/css(?:\/|$)/.test(location.pathname)) return 'css';
   return /\/theme(?:\/|$)/.test(location.pathname) ? 'theme' : 'logo';
 }
 
@@ -20,7 +22,7 @@ export default function DesignStudio() {
     const url = new URL(location.href);
     url.searchParams.set('tab', activeTab);
     history.replaceState(null, '', url);
-    document.title = `Keysy — ${activeTab === 'logo' ? 'Logo' : 'Theme'} · Design Studio`;
+    document.title = `Keysy — ${tabs.find(label => label.toLowerCase() === activeTab)} · Design Studio`;
   }, [activeTab]);
 
   function navigateTabs(event, index) {
@@ -61,6 +63,9 @@ export default function DesignStudio() {
       </section>
       <section id="panel-theme" role="tabpanel" aria-labelledby="tab-theme" hidden={activeTab !== 'theme'} tabIndex={0}>
         <ThemePreview active={activeTab === 'theme'} />
+      </section>
+      <section id="panel-css" role="tabpanel" aria-labelledby="tab-css" hidden={activeTab !== 'css'} tabIndex={0}>
+        <CssPreview active={activeTab === 'css'} />
       </section>
     </main>
     <footer className="design-footer"><span>KEYSY / DESIGN STUDIES</span><p>A space to explore. Not production UI.</p></footer>

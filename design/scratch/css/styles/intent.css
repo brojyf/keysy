@@ -1,0 +1,6 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@import "../vendor/intent/theme.css";
+@plugin "tailwindcss-react-aria-components";
+@source "../vendor/intent";
+@custom-variant dark (&:where(.dark, .dark *));

@@ -10,36 +10,77 @@ import { palettes } from './palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('both React layouts render every retained palette in both modes with matching tokens', async () => {
+test('the theme workspace starts with an untitled preview beside the full-height color rail', () => {
+  const { container } = render(<ThemePreview />);
+  assert.equal(container.querySelector('.theme-workspace').firstElementChild.className, 'theme-split');
+  const preview = screen.getByRole('region', { name: 'Theme preview', exact: true });
+  assert.equal(preview.firstElementChild.className, 'theme-preview-stage');
+  assert.equal(container.querySelector('.preview-heading, .section-heading, #focus-title'), null);
+  assert.equal(screen.getByRole('status').textContent, '1 Ink · Supabase Dashboard / Light');
+});
+
+test('the theme workspace separates the preview and its controls from scrollable color choices', () => {
+  const { container } = render(<ThemePreview />);
+  const workspace = container.querySelector('.theme-split');
+  assert.equal(workspace.children.length, 2);
+  const [preview, choices] = workspace.children;
+  assert.ok(preview.classList.contains('theme-preview-pane'));
+  assert.ok(choices.classList.contains('theme-palette-panel'));
+  assert.ok(preview.querySelector('#focus-preview'));
+  assert.ok(preview.querySelector('[aria-label="Reference layout"]'));
+  assert.ok(preview.querySelector('[aria-label="Appearance mode"]'));
+  assert.ok(preview.querySelector('#focus-preview').compareDocumentPosition(preview.querySelector('.theme-options-row')) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const scroll = screen.getByRole('region', { name: 'Color choices', exact: true });
+  assert.ok(choices.contains(scroll));
+  assert.equal(scroll.tabIndex, 0);
+  assert.equal(scroll.querySelectorAll('button').length, palettes.length);
+  assert.equal(container.querySelector('#comparison, #palette-gallery, .gallery-link'), null);
+  assert.equal(screen.queryByRole('button', { name: /^Expand / }), null);
+});
+
+test('color choices include swatches and thumbnails matching both layouts and appearance modes', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
   for (const layout of ['Supabase Dashboard', 'Mintlify docs']) {
     await user.click(screen.getByRole('button', { name: layout, exact: true }));
-    const gallery = container.querySelector('#palette-gallery');
-    assert.equal(gallery.querySelectorAll('.palette-pair').length, 7);
-    assert.equal(gallery.querySelectorAll('.mock-screen').length, 14);
-    assert.equal(container.querySelector('.preview-count').textContent, '7 palettes · 2 layouts');
-    assert.equal(container.querySelector('.preview-description').textContent, '7 color systems, from the first impression to the smallest detail.');
-    for (const palette of palettes) for (const mode of ['light', 'dark']) {
-      const preview = gallery.querySelector(`[data-palette="${palette.id}"][data-mode="${mode}"]`);
-      assert.ok(preview);
-      for (const [role, color] of Object.entries(palette[mode])) assert.equal(preview.style.getPropertyValue(`--${role}`), color);
+    for (const mode of ['light', 'dark']) {
+      await user.click(screen.getByRole('button', { name: mode === 'light' ? 'Light' : 'Dark', exact: true }));
+      const choices = screen.getByRole('group', { name: 'Theme palette', exact: true });
+      assert.equal(choices.querySelectorAll('.mock-screen').length, palettes.length);
+      for (const palette of palettes) {
+        const choice = choices.querySelector(`button[data-palette="${palette.id}"]`);
+        assert.ok(choice);
+        assert.equal(choice.querySelectorAll('.palette-swatches i').length, 4);
+        const card = choice.closest('.theme-color-choice');
+        assert.equal(card.querySelector('.theme-choice-preview').getAttribute('aria-hidden'), 'true');
+        const preview = card.querySelector('.mock-screen');
+        assert.equal(preview.dataset.palette, palette.id);
+        assert.equal(preview.dataset.mode, mode);
+        assert.ok(preview.classList.contains(layout === 'Supabase Dashboard' ? 'supabase' : 'mintlify'));
+        for (const [role, color] of Object.entries(palette[mode])) assert.equal(preview.style.getPropertyValue(`--${role}`), color);
+      }
     }
   }
+  assert.equal(container.querySelector('.theme-palette-heading > span').textContent, '7 choices');
 });
 
-test('a new reference palette restores from a shareable URL and expands in either mode', async () => {
+test('a reference palette restores from a shareable URL and choices retain the current layout and mode', async () => {
   history.replaceState(null, '', '/?tab=theme&palette=terminal&layout=mintlify&mode=dark');
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
   assert.equal(screen.getByRole('button', { name: '7 Terminal', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'terminal');
   for (const mode of ['Light', 'Dark']) {
-    await user.click(screen.getByRole('button', { name: `Expand 10 Evergreen ${mode}`, exact: true }));
+    await user.click(screen.getByRole('button', { name: mode, exact: true }));
+    await user.click(screen.getByRole('button', { name: '10 Evergreen', exact: true }));
     const focus = container.querySelector('#focus-preview .mock-screen');
     assert.equal(focus.dataset.palette, 'evergreen');
     assert.equal(focus.dataset.mode, mode.toLowerCase());
-    assert.equal(new URLSearchParams(location.search).get('palette'), 'evergreen');
+    assert.ok(focus.classList.contains('mintlify'));
+    const params = new URLSearchParams(location.search);
+    assert.equal(params.get('palette'), 'evergreen');
+    assert.equal(params.get('mode'), mode.toLowerCase());
+    assert.equal(params.get('layout'), 'mintlify');
   }
 });
 
@@ -61,14 +102,18 @@ test('palette, mode, and layout controls update the focused preview and shareabl
   assert.equal(params.get('mode'), 'dark');
 });
 
-test('expanding a comparison selects its exact palette and mode and scrolls to focus', async () => {
+test('keyboard selection updates the preview without scrolling away from the color choices', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  await user.click(screen.getByRole('button', { name: 'Expand 6 Ink / Iris Dark', exact: true }));
-  assert.equal(container.querySelector('#focus-title').textContent, '6 Ink / Iris');
-  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.mode, 'dark');
+  const choice = screen.getByRole('button', { name: '6 Ink / Iris', exact: true });
+  choice.focus();
+  await user.keyboard('{Enter}');
+  assert.equal(screen.getByRole('status').textContent, '6 Ink / Iris · Supabase Dashboard / Light');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'inkiris');
-  assert.equal(Element.prototype.scrollIntoView.mock.calls.length, 1);
+  assert.equal(choice.getAttribute('aria-pressed'), 'true');
+  assert.equal(document.activeElement, choice);
+  assert.equal(screen.getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'false');
+  assert.equal(Element.prototype.scrollIntoView.mock.calls.length, 0);
 });
 
 test('valid URLs restore selections without dropping unrelated parameters or hashes', () => {
@@ -124,7 +169,7 @@ test('screen scaling follows viewport measurements and disconnects observers on 
     observe(target) { this.target = target; }
   };
   const { unmount } = render(<ThemePreview />);
-  assert.equal(observers.length, 15);
+  assert.equal(observers.length, 8);
   act(() => observers[0].callback([{ target: observers[0].target, contentRect: { width: 600 } }]));
   assert.equal(observers[0].target.style.getPropertyValue('--screen-scale'), '0.5');
   unmount();

@@ -44,8 +44,9 @@ test('arrow, Home, and End keys activate and focus tabs without entering hidden 
   render(<DesignStudio />);
   const logo = screen.getByRole('tab', { name: 'Logo', exact: true });
   const theme = screen.getByRole('tab', { name: 'Theme', exact: true });
+  const css = screen.getByRole('tab', { name: 'CSS', exact: true });
   logo.focus();
-  for (const [key, target] of [['{ArrowRight}', theme], ['{ArrowRight}', logo], ['{ArrowLeft}', theme], ['{Home}', logo], ['{End}', theme]]) {
+  for (const [key, target] of [['{ArrowRight}', theme], ['{ArrowRight}', css], ['{ArrowRight}', logo], ['{ArrowLeft}', css], ['{Home}', logo], ['{End}', css]]) {
     await user.keyboard(key);
     assert.equal(document.activeElement, target);
     assert.equal(target.getAttribute('aria-selected'), 'true');
@@ -53,11 +54,11 @@ test('arrow, Home, and End keys activate and focus tabs without entering hidden 
   }
 });
 
-for (const path of ['/logo/', '/logo/index.html', '/theme/', '/theme/index.html']) {
+for (const path of ['/logo/', '/logo/index.html', '/theme/', '/theme/index.html', '/css/', '/css/index.html']) {
   test(`legacy entry ${path} opens the matching studio tab`, () => {
     history.replaceState(null, '', path);
     render(<DesignStudio />);
-    const name = path.includes('/theme') ? 'Theme' : 'Logo';
+    const name = path.includes('/css') ? 'CSS' : path.includes('/theme') ? 'Theme' : 'Logo';
     assert.equal(screen.getByRole('tab', { name, exact: true }).getAttribute('aria-selected'), 'true');
   });
 }

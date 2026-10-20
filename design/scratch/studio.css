@@ -46,12 +46,9 @@ button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible { outline
 .palette-option-label { display: flex; align-items: baseline; gap: 6px; font-size: 11px; white-space: nowrap; }
 .palette-option-label > small { font: 9px ui-monospace, monospace; color: #62675e; }
 .palette-option-label > span { overflow: hidden; text-overflow: ellipsis; }
-.theme-options-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #e8eae1; }
 .segmented { display: flex; padding: 3px; border: 1px solid #e2e5da; border-radius: 8px; background: #f1f3ec; }
 .segmented button { border: 1px solid transparent; border-radius: 5px; padding: 7px 11px; color: #686f5c; background: transparent; font-size: 11px; }
 .segmented button[aria-pressed="true"] { color: #2c3323; background: #fff; border-color: #747b6a; box-shadow: 0 1px 2px #2b36100a; }
-.gallery-link { margin-left: auto; font-size: 11px; color: #626b54; text-decoration: none; }
-.gallery-link > span { margin-left: 6px; }
 .collection-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .collection-heading h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 14px; font-weight: 550; letter-spacing: -.2px; }
 .collection-heading h2 > span { padding: 3px 6px; border: 1px solid #dfe3d4; border-radius: 5px; font: 9px ui-monospace, monospace; color: #62675e; }
@@ -64,7 +61,6 @@ button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible { outline
 @media (hover: hover) and (pointer: fine) {
   .palette-option:hover { border-color: #a0ab90; background: #fff; }
   .design-tabs button:not([aria-selected="true"]):hover { color: #292e23; background: #e9ebe7; }
-  .gallery-link:hover { text-decoration: underline; }
 }
 .palette-option:active, .design-tabs button:active, .segmented button:active { transform: scale(.98); }
 @media (max-width: 1100px) {
@@ -76,7 +72,8 @@ button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible { outline
 @media (max-width: 700px) {
   .design-header-inner { padding: 12px 18px; justify-content: space-between; gap: 12px; }
   .design-brand > span { display: none; }
-  .design-tabs button { min-width: 84px; padding: 9px 12px; }
+  .design-tabs button { min-width: 64px; padding: 9px 10px; }
+  .design-tabs button svg { display: none; }
   .preview-content { padding: 32px 18px 28px; }
   .preview-heading { align-items: start; margin-bottom: 24px; }
   .preview-count { display: none; }
@@ -86,8 +83,6 @@ button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible { outline
   .palette-option { padding: 11px 10px; }
   .palette-option-label { gap: 5px; }
   .palette-swatches i { width: 14px; height: 14px; }
-  .theme-options-row { gap: 12px; }
-  .gallery-link { margin-left: 0; }
   .collection-heading { align-items: start; }
   .collection-heading p { max-width: 150px; text-align: right; line-height: 1.5; }
   .design-footer { margin: 0 18px; flex-wrap: wrap; }

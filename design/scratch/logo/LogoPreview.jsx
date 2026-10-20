@@ -3,6 +3,14 @@ import candidates from './candidates.json';
 import { palettes } from '../theme/palettes.js';
 import PalettePicker from '../components/PalettePicker.jsx';
 
+const candidateGroups = [
+  { id: 'wordmarks', name: 'Wordmarks', numbers: [0, 12] },
+  { id: 'brackets-asterisks', name: 'Brackets & asterisks', numbers: [3, 4, 6] },
+  { id: 'keys-keyholes', name: 'Keys & keyholes', numbers: [1, 7, 9, 10, 14, 15] },
+  { id: 'rings-links', name: 'Rings & links', numbers: [2, 5, 11, 16, 18] },
+  { id: 'geometric-blocks', name: 'K & geometric blocks', numbers: [8, 13, 17, 19] },
+];
+
 // Source-controlled SVG artwork is kept verbatim, including its outlined typography.
 function Artwork({ entry }) {
   if (entry.image) return <>
@@ -36,19 +44,27 @@ export default function LogoPreview() {
       <div className="collection-heading"><h2>All directions <span>{candidates.length}</span></h2>
         <p id="palette-status" role="status" aria-live="polite">{palette.number} {palette.name} <span> / </span> Light & dark</p>
       </div>
-      <div id="comparisons" className="comparison-grid">
-        {candidates.map((entry, index) => <article key={`${entry.kind}-${entry.id}`} id={`${entry.kind}-${entry.id}`}
-          style={entry.image ? { '--image': `url(${entry.image})` } : undefined}>
-          <header className="option-heading"><span>{index}</span><h3>{entry.name}</h3></header>
-          {(entry.meaning || entry.note) && <p className="concept-note">{entry.meaning || entry.note}</p>}
-          <div className="theme-pair">
-            {['light', 'dark'].map(mode => <div key={mode} className="theme-preview identity-preview" data-mode={mode}
-              style={Object.fromEntries(Object.entries(palette[mode]).map(([role, color]) => [`--${role}`, color]))}>
-              <span className="mode-label">{mode.toUpperCase()}</span>
-              <Artwork entry={entry} />
-            </div>)}
+      <div id="comparisons">
+        {candidateGroups.map(group => <section key={group.id} className="logo-group" aria-labelledby={`logo-group-${group.id}`}>
+          <header className="collection-heading"><h2 id={`logo-group-${group.id}`}>{group.name}<span aria-hidden="true">{group.numbers.length}</span></h2></header>
+          <div className="comparison-grid">
+            {group.numbers.map(number => {
+              const entry = candidates[number];
+              return <article key={`${entry.kind}-${entry.id}`} id={`${entry.kind}-${entry.id}`}
+                style={entry.image ? { '--image': `url(${entry.image})` } : undefined}>
+                <header className="option-heading"><span>{number}</span><h3>{entry.name}</h3></header>
+                {(entry.meaning || entry.note) && <p className="concept-note">{entry.meaning || entry.note}</p>}
+                <div className="theme-pair">
+                  {['light', 'dark'].map(mode => <div key={mode} className="theme-preview identity-preview" data-mode={mode}
+                    style={Object.fromEntries(Object.entries(palette[mode]).map(([role, color]) => [`--${role}`, color]))}>
+                    <span className="mode-label">{mode.toUpperCase()}</span>
+                    <Artwork entry={entry} />
+                  </div>)}
+                </div>
+              </article>;
+            })}
           </div>
-        </article>)}
+        </section>)}
       </div>
       <p className="preview-footnote">The same artwork in every palette. Original outlines, unchanged.</p>
   </div>;

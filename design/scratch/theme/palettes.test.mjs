@@ -58,12 +58,35 @@ test('every palette keeps page, panel, selection, and divider colors close to ne
   }
 });
 
+for (const palette of palettes) {
+  test(`${palette.english} dark: all structural surfaces use achromatic black or gray`, () => {
+    for (const role of ['bg', 'surface', 'soft', 'line']) {
+      const [red, green, blue] = palette.dark[role].slice(1).match(/../g);
+      assert.ok(red === green && green === blue, `${role}: ${palette.dark[role]} must have equal RGB channels`);
+    }
+  });
+}
+
+for (const id of ['terminal', 'evergreen']) {
+  test(`${id} dark: panels, selected fills, and dividers remain distinguishable from the canvas`, () => {
+    const colors = palettes.find(palette => palette.id === id).dark;
+    assert.ok(luminance(colors.bg) < luminance(colors.surface));
+    assert.ok(luminance(colors.surface) < luminance(colors.soft));
+    for (const [foreground, background, minimum] of [
+      ['surface', 'bg', 1.25], ['soft', 'bg', 1.45], ['line', 'surface', 1.8],
+    ]) {
+      const ratio = contrast(colors[foreground], colors[background]);
+      assert.ok(ratio >= minimum, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected ${minimum}:1`);
+    }
+  });
+}
+
 test('studio instructions, candidate labels, and selection outlines remain visible on their actual surfaces', () => {
   const canvas = cssHex('../studio.css', ':root', 'background');
   const card = cssHex('../studio.css', '.preview-controls', 'background');
   const header = cssHex('../studio.css', '.design-header', 'background');
   const picker = cssHex('../studio.css', '.palette-option', 'background');
-  const comparisons = cssHex('preview.css', '.comparison-label', 'background');
+  const choices = cssHex('preview.css', '.theme-color-choice', 'background');
   const pairs = [
     ['../studio.css', '.design-meta', header],
     ...['.preview-eyebrow', '.preview-description', '.preview-count', '.collection-heading h2 > span',
@@ -72,10 +95,10 @@ test('studio instructions, candidate labels, and selection outlines remain visib
     ['../studio.css', '.palette-option-label > small', picker],
     ['../logo/preview.css', '.option-heading > span', card],
     ['../logo/preview.css', '.concept-note', card],
-    ...['.theme-workspace .section-heading .eyebrow', '.theme-workspace .section-heading > p', '.layout-note']
+    ...['.layout-note', '.theme-palette-heading > span']
       .map(selector => ['preview.css', selector, canvas]),
-    ['preview.css', '.palette-pair header span', card],
-    ['preview.css', '.comparison-label', comparisons],
+    ['preview.css', '.theme-color-select', choices],
+    ['../studio.css', '.palette-option-label > small', choices],
   ];
   for (const [file, selector, background] of pairs) {
     const ratio = contrast(cssHex(file, selector, 'color'), background);
@@ -84,8 +107,11 @@ test('studio instructions, candidate labels, and selection outlines remain visib
   for (const selector of ['.design-tabs button[aria-selected="true"]', '.segmented button[aria-pressed="true"]']) {
     assert.ok(contrast(cssHex('../studio.css', selector, 'border-color'), '#ffffff') >= 3, selector);
   }
+  assert.ok(contrast(cssHex('preview.css', '.theme-color-choice:has(button[aria-pressed="true"])', 'border-color'), choices) >= 3);
   const focus = cssHex('../studio.css', 'button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible', 'outline');
-  for (const background of [canvas, card, header, picker, comparisons, cssHex('../studio.css', '.segmented', 'background')]) {
+  assert.equal(cssHex('preview.css', '.theme-color-select:focus-visible::after', 'outline'), focus);
+  assert.equal(cssHex('preview.css', '.theme-palette-scroll:focus-visible', 'outline'), focus);
+  for (const background of [canvas, card, header, picker, choices, cssHex('../studio.css', '.segmented', 'background')]) {
     assert.ok(contrast(focus, background) >= 3, 'keyboard focus must contrast with its adjacent surface');
   }
 });
