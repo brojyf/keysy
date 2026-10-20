@@ -11,11 +11,11 @@ const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['02', '07', '08', '10', '11', '12', '13', '14', '15', '17', '18', '19', '20', '21', '22', '30', '31', '32', '35', '36']);
+    ['07', '08', '10', '11', '12', '13', '15', '18', '19', '20', '21', '22', '30', '31', '32', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), ['B']);
-  assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['B', 'D']);
+  assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['37', '40', '42', '43', '45', '46', '47', '48', '49', '51']);
+    ['40', '42', '43', '45', '46', '47', '48', '49', '51']);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -28,14 +28,17 @@ test('retained candidates keep their source artwork and removed candidates are a
   }
 });
 
-test('the React grid preserves all 33 candidates, consecutive numbering, and both modes', () => {
+test('the React grid preserves all 27 candidates, consecutive numbering, and both modes', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('article').length, 33);
-  assert.equal(container.querySelectorAll('.identity-preview').length, 66);
-  assert.equal(container.querySelectorAll('.logo-art').length, 62);
-  assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 4);
+  assert.equal(container.querySelectorAll('article').length, 27);
+  assert.equal(container.querySelector('.preview-description').textContent, '27 directions. One color system. See what feels like Keysy.');
+  assert.equal(container.querySelector('.preview-count').textContent, '27 candidates · 0–26');
+  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '27');
+  assert.equal(container.querySelectorAll('.identity-preview').length, 54);
+  assert.equal(container.querySelectorAll('.logo-art').length, 52);
+  assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => node.textContent),
-    Array.from({ length: 33 }, (_, index) => String(index)));
+    Array.from({ length: 27 }, (_, index) => String(index)));
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelectorAll('.theme-preview').length, 2);

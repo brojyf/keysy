@@ -16,8 +16,10 @@ test('both React layouts render every retained palette in both modes with matchi
   for (const layout of ['Supabase Dashboard', 'Mintlify docs']) {
     await user.click(screen.getByRole('button', { name: layout, exact: true }));
     const gallery = container.querySelector('#palette-gallery');
-    assert.equal(gallery.querySelectorAll('.palette-pair').length, 8);
-    assert.equal(gallery.querySelectorAll('.mock-screen').length, 16);
+    assert.equal(gallery.querySelectorAll('.palette-pair').length, 6);
+    assert.equal(gallery.querySelectorAll('.mock-screen').length, 12);
+    assert.equal(container.querySelector('.preview-count').textContent, '6 palettes · 2 layouts');
+    assert.equal(container.querySelector('.preview-description').textContent, 'Six color systems, from the first impression to the smallest detail.');
     for (const palette of palettes) for (const mode of ['light', 'dark']) {
       const preview = gallery.querySelector(`[data-palette="${palette.id}"][data-mode="${mode}"]`);
       assert.ok(preview);
@@ -29,7 +31,7 @@ test('both React layouts render every retained palette in both modes with matchi
 test('palette, mode, and layout controls update the focused preview and shareable URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  await user.click(screen.getByRole('button', { name: '7 Cocoa / Ice', exact: true }));
+  await user.click(screen.getByRole('button', { name: '5 Cocoa / Ice', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');
@@ -47,8 +49,8 @@ test('palette, mode, and layout controls update the focused preview and shareabl
 test('expanding a comparison selects its exact palette and mode and scrolls to focus', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  await user.click(screen.getByRole('button', { name: 'Expand 8 Ink / Iris Dark', exact: true }));
-  assert.equal(container.querySelector('#focus-title').textContent, '8 Ink / Iris');
+  await user.click(screen.getByRole('button', { name: 'Expand 6 Ink / Iris Dark', exact: true }));
+  assert.equal(container.querySelector('#focus-title').textContent, '6 Ink / Iris');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.mode, 'dark');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'inkiris');
   assert.equal(Element.prototype.scrollIntoView.mock.calls.length, 1);
@@ -65,7 +67,7 @@ test('valid URLs restore selections without dropping unrelated parameters or has
   assert.equal(location.hash, '#comparison');
 });
 
-for (const id of ['missing', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol']) {
+for (const id of ['missing', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol', 'plum', 'navyrose']) {
   test(`invalid URL palette ${id} falls back and removed choices stay absent`, () => {
     history.replaceState(null, '', `/theme/?layout=invalid&palette=${id}&mode=invalid`);
     const { container } = render(<ThemePreview />);
@@ -107,7 +109,7 @@ test('screen scaling follows viewport measurements and disconnects observers on 
     observe(target) { this.target = target; }
   };
   const { unmount } = render(<ThemePreview />);
-  assert.equal(observers.length, 17);
+  assert.equal(observers.length, 13);
   act(() => observers[0].callback([{ target: observers[0].target, contentRect: { width: 600 } }]));
   assert.equal(observers[0].target.style.getPropertyValue('--screen-scale'), '0.5');
   unmount();

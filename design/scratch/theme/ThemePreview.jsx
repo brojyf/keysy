@@ -55,9 +55,9 @@ export default function ThemePreview({ active = true }) {
   return <div className="theme-workspace preview-content">
     <header className="preview-heading">
       <div><p className="preview-eyebrow">THE COLOR COLLECTION</p><h1>A palette in context.</h1>
-        <p className="preview-description">Eight color systems, from the first impression to the smallest detail.</p>
+        <p className="preview-description">Six color systems, from the first impression to the smallest detail.</p>
       </div>
-      <span className="preview-count">8 palettes · 2 layouts</span>
+      <span className="preview-count">6 palettes · 2 layouts</span>
     </header>
     <div className="preview-controls">
       <PalettePicker value={paletteId} onChange={paletteId => select({ paletteId })} label="Theme palette" />

@@ -50,7 +50,7 @@ export default function DesignStudio() {
             </button>;
           })}
         </div>
-        <span className="design-meta">33 marks <span>·</span> 8 color systems</span>
+        <span className="design-meta">27 marks <span>·</span> 6 color systems</span>
       </div>
     </header>
     <main>

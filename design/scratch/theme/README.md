@@ -1,8 +1,8 @@
 # Keysy color applications
 
-Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 8 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
+Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 6 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
 
-- Two layouts × 8 palettes × two modes: **32 combinations**. Options 06, 07, 08, 09, 17, and 18 are removed; other numbers stay unchanged.
+- Two layouts × 6 palettes × two modes: **24 combinations**. Plum and Navy / Rose are removed; retained palettes are numbered 1–6.
 - Uses the shared [palettes](palettes.js) values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
 - The 1200 × 800 desktop mock scales proportionally to its container. On small screens, paired modes stack vertically.
 - Supports URL parameters such as `/?tab=theme&layout=mintlify&palette=slate&mode=dark`; the legacy `/theme/` URL remains supported. Preview controls work; product controls are static visual samples.
@@ -34,4 +34,4 @@ cd design/scratch
 bun test theme/
 ```
 
-Checks cover 32 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.
+Checks cover 24 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.
