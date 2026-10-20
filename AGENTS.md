@@ -22,6 +22,10 @@
 - Open PRs as drafts with a `WIP: ` title prefix; remove the prefix and draft status only when ready to merge. Merge only after explicit human confirmation.
 - Never run destructive Git operations unless explicitly requested.
 
+## CI/CD
+
+- Supabase continuous deployment (CD) is configured.
+
 ## CLI tools
 
 - Use `fly` to manage Fly.io deployments.
