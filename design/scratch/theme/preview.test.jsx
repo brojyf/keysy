@@ -10,6 +10,15 @@ import { palettes } from './palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
+test('the theme workspace starts with an untitled preview beside the full-height color rail', () => {
+  const { container } = render(<ThemePreview />);
+  assert.equal(container.querySelector('.theme-workspace').firstElementChild.className, 'theme-split');
+  const preview = screen.getByRole('region', { name: 'Theme preview', exact: true });
+  assert.equal(preview.firstElementChild.className, 'theme-preview-stage');
+  assert.equal(container.querySelector('.preview-heading, .section-heading, #focus-title'), null);
+  assert.equal(screen.getByRole('status').textContent, '1 Ink · Supabase Dashboard / Light');
+});
+
 test('the theme workspace separates the preview and its controls from scrollable color choices', () => {
   const { container } = render(<ThemePreview />);
   const workspace = container.querySelector('.theme-split');
@@ -52,7 +61,7 @@ test('color choices include swatches and thumbnails matching both layouts and ap
       }
     }
   }
-  assert.equal(container.querySelector('.preview-count').textContent, '9 palettes · 2 layouts');
+  assert.equal(container.querySelector('.theme-palette-heading > span').textContent, '9 choices');
 });
 
 test('a reference palette restores from a shareable URL and choices retain the current layout and mode', async () => {
@@ -99,7 +108,7 @@ test('keyboard selection updates the preview without scrolling away from the col
   const choice = screen.getByRole('button', { name: '6 Ink / Iris', exact: true });
   choice.focus();
   await user.keyboard('{Enter}');
-  assert.equal(container.querySelector('#focus-title').textContent, '6 Ink / Iris');
+  assert.equal(screen.getByRole('status').textContent, '6 Ink / Iris · Supabase Dashboard / Light');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'inkiris');
   assert.equal(choice.getAttribute('aria-pressed'), 'true');
   assert.equal(document.activeElement, choice);

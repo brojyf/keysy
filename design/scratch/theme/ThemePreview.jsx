@@ -45,22 +45,13 @@ export default function ThemePreview({ active = true }) {
     history.replaceState(null, '', url);
   }, [active, layout, paletteId, mode]);
 
-  return <div className="theme-workspace preview-content">
-    <header className="preview-heading">
-      <div><p className="preview-eyebrow">THE COLOR COLLECTION</p><h1>A palette in context.</h1>
-        <p className="preview-description">Choose a color system. See it in the details.</p>
-      </div>
-      <span className="preview-count">{palettes.length} palettes · 2 layouts</span>
-    </header>
+  return <div className="theme-workspace">
     <div className="theme-split">
-      <section id="focus" className="theme-preview-pane" aria-labelledby="focus-title">
-        <header className="section-heading">
-          <h2 id="focus-title">{palette.number} {palette.name}</h2>
-          <p id="focus-status" role="status" aria-live="polite">{layout === 'supabase' ? 'Supabase Dashboard' : 'Mintlify docs'} / {mode === 'light' ? 'Light' : 'Dark'}</p>
-        </header>
+      <section id="focus" className="theme-preview-pane" aria-label="Theme preview">
         <div className="theme-preview-stage">
           <div id="focus-preview"><Screen palette={palette} mode={mode} layout={layout} /></div>
         </div>
+        <p id="focus-status" className="theme-status" role="status" aria-live="polite">{palette.number} {palette.name} · {layout === 'supabase' ? 'Supabase Dashboard' : 'Mintlify docs'} / {mode === 'light' ? 'Light' : 'Dark'}</p>
         <div className="theme-options-row">
           <div className="segmented" role="group" aria-label="Reference layout">
             {['supabase', 'mintlify'].map(option => <button key={option} type="button" data-layout={option}

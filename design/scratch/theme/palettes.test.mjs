@@ -72,7 +72,7 @@ test('studio instructions, candidate labels, and selection outlines remain visib
     ['../studio.css', '.palette-option-label > small', picker],
     ['../logo/preview.css', '.option-heading > span', card],
     ['../logo/preview.css', '.concept-note', card],
-    ...['.theme-workspace .section-heading > p', '.layout-note', '.theme-palette-heading > span']
+    ...['.layout-note', '.theme-palette-heading > span']
       .map(selector => ['preview.css', selector, canvas]),
     ['preview.css', '.theme-color-select', choices],
     ['../studio.css', '.palette-option-label > small', choices],

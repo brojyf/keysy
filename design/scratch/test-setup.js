@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { afterEach, beforeEach, mock } from 'bun:test';
 
-GlobalRegistrator.register({ url: 'http://localhost/' });
+GlobalRegistrator.register({ url: 'http://localhost/', settings: { navigation: { disableChildFrameNavigation: true } } });
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const { cleanup } = await import('@testing-library/react');
 

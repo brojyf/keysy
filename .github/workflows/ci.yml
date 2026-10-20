@@ -140,6 +140,11 @@ jobs:
           bun run lint
           bun test
           bun run build
+      - name: Verify CSS browser integrations
+        working-directory: design/scratch
+        run: |
+          bunx playwright install --with-deps chromium
+          bun run test:browser
 
   cli:
     name: CLI
