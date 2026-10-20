@@ -4,7 +4,8 @@ updates:
     directories:
       - '/**'
     schedule:
-      interval: weekly
+      interval: cron
+      cronjob: '0 0 * * mon%2'
     commit-message:
       prefix: chore
       include: scope
@@ -12,7 +13,8 @@ updates:
   - package-ecosystem: gomod
     directory: /cli
     schedule:
-      interval: weekly
+      interval: cron
+      cronjob: '0 0 * * mon%2'
     commit-message:
       prefix: chore
       include: scope
@@ -20,7 +22,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: cron
+      cronjob: '0 0 * * mon%2'
     commit-message:
       prefix: chore
       include: scope
