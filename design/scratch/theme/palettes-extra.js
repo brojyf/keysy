@@ -18,7 +18,7 @@ export const extraPalettes = [
   {
     id: 'terminal', number: '7', name: 'Terminal', english: 'Terminal',
     light: {"bg":"#f8faf9","surface":"#ffffff","text":"#17251e","muted":"#59695f","accent":"#087443","button":"#087443","on-button":"#ffffff","soft":"#eef2ef","line":"#dfe4e1"},
-    dark: {"bg":"#111413","surface":"#1d211f","text":"#edf3ef","muted":"#a6b5ab","accent":"#7aceaa","button":"#7aceaa","on-button":"#132c20","soft":"#292f2c","line":"#363d39"},
+    dark: {"bg":"#111413","surface":"#232b27","text":"#edf3ef","muted":"#a6b5ab","accent":"#7aceaa","button":"#7aceaa","on-button":"#132c20","soft":"#2e3431","line":"#4b534e"},
   },
   {
     id: 'ember', number: '8', name: 'Ember', english: 'Ember',
@@ -33,6 +33,6 @@ export const extraPalettes = [
   {
     id: 'evergreen', number: '10', name: 'Evergreen', english: 'Evergreen',
     light: {"bg":"#f8f9f6","surface":"#fdfefc","text":"#213c32","muted":"#5c6c60","accent":"#2c6652","button":"#2c6652","on-button":"#ffffff","soft":"#eef0eb","line":"#e0e3dd"},
-    dark: {"bg":"#111312","surface":"#1b1e1c","text":"#eff1ee","muted":"#acb3ad","accent":"#b3cbb8","button":"#b3cbb8","on-button":"#243b2b","soft":"#272b28","line":"#343a35"},
+    dark: {"bg":"#111312","surface":"#252a24","text":"#eff1ee","muted":"#acb3ad","accent":"#b3cbb8","button":"#b3cbb8","on-button":"#243b2b","soft":"#30342e","line":"#50564e"},
   },
 ];

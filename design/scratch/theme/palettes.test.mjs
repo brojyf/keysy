@@ -58,6 +58,20 @@ test('every palette keeps page, panel, selection, and divider colors close to ne
   }
 });
 
+for (const id of ['terminal', 'evergreen']) {
+  test(`${id} dark: panels, selected fills, and dividers remain distinguishable from the canvas`, () => {
+    const colors = palettes.find(palette => palette.id === id).dark;
+    assert.ok(luminance(colors.bg) < luminance(colors.surface));
+    assert.ok(luminance(colors.surface) < luminance(colors.soft));
+    for (const [foreground, background, minimum] of [
+      ['surface', 'bg', 1.25], ['soft', 'bg', 1.45], ['line', 'surface', 1.8],
+    ]) {
+      const ratio = contrast(colors[foreground], colors[background]);
+      assert.ok(ratio >= minimum, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected ${minimum}:1`);
+    }
+  });
+}
+
 test('studio instructions, candidate labels, and selection outlines remain visible on their actual surfaces', () => {
   const canvas = cssHex('../studio.css', ':root', 'background');
   const card = cssHex('../studio.css', '.preview-controls', 'background');

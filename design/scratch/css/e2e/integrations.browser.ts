@@ -100,6 +100,19 @@ test('Theme uses an untitled preview and a full-height rail below the unchanged 
   await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'evergreen');
 });
 
+test('Terminal and Evergreen dark layers reach both Theme layouts', async ({ page }) => {
+  for (const id of ['terminal', 'evergreen']) for (const layout of ['supabase', 'mintlify']) {
+    const colors = palettes.find(palette => palette.id === id)!.dark;
+    await page.goto(`/?tab=theme&palette=${id}&layout=${layout}&mode=dark`);
+    const preview = page.locator('#focus-preview .mock-screen');
+    await expect(preview).toHaveAttribute('data-mode', 'dark');
+    await expect(preview).toHaveCSS('background-color', rgb(colors.bg));
+    await expect(preview.locator(layout === 'supabase' ? '.secret-detail' : '.mint-search')).toHaveCSS('background-color', rgb(colors.surface));
+    await expect(preview.locator(layout === 'supabase' ? '.selected-row' : '.mint-nav-selected')).toHaveCSS('background-color', rgb(colors.soft));
+    await expect(preview.locator(layout === 'supabase' ? '.studio-topbar' : '.mint-topnav')).toHaveCSS('border-bottom-color', rgb(colors.line));
+  }
+});
+
 test('mobile studio and component previews avoid horizontal page overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/css/?library=intent&cssMode=dark');

@@ -14,6 +14,8 @@ Checked on October 20, 2026. Applies to all 9 palettes in both modes, the Dashbo
 
 Contrast is calculated from sRGB relative luminance, using the exact ratio without rounding to decide pass/fail. The current mock text does not use opacity or color mixing, so its declared tokens determine the foreground/background pairings. Decorative shadows and swatch edges do not attenuate text.
 
+Terminal (#7) and Evergreen (#10) dark modes also enforce design-only separation targets: panel/canvas at least 1.25:1, selected fill/canvas at least 1.45:1, and decorative divider/panel at least 1.8:1. Panels remain lighter than the canvas, and selected fills remain lighter than panels. These targets improve layer visibility; they are not WCAG thresholds for decorative backgrounds or separators.
+
 ## Measured minima
 
 Each number is the minimum across both modes and all applicable page, panel, and selected surfaces. Values below are truncated to two decimals; tests compare full precision.
@@ -26,12 +28,12 @@ Each number is the minimum across both modes and all applicable page, panel, and
 | 4 Slate | 11.12 | 4.71 | 5.45 | 6.24 | 5.45 |
 | 5 Cocoa / Ice | 11.97 | 5.17 | 8.53 | 8.33 | 8.53 |
 | 6 Ink / Iris | 11.83 | 4.98 | 7.66 | 8.71 | 7.66 |
-| 7 Terminal | 12.14 | 5.14 | 5.17 | 5.85 | 5.17 |
+| 7 Terminal | 11.30 | 5.14 | 5.17 | 5.85 | 5.17 |
 | 8 Ember | 12.14 | 4.97 | 5.18 | 5.93 | 5.18 |
 | 9 Orchid | 11.57 | 4.95 | 5.76 | 6.61 | 5.76 |
 | 10 Evergreen | 10.41 | 4.85 | 5.84 | 6.71 | 5.84 |
 
-The expanded tests cover 234 palette pairings, plus studio label, selected-outline, and focus colors. Ink's dark button was slightly brightened to retain separation from the selected surface. Previously faint studio captions and candidate numbers were darkened.
+The expanded tests cover 240 palette pairings, plus studio label, selected-outline, and focus colors. Ink's dark button was slightly brightened to retain separation from the selected surface. Previously faint studio captions and candidate numbers were darkened.
 
 ## Verification and limits
 
