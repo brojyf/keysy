@@ -63,7 +63,7 @@ test('studio instructions, candidate labels, and selection outlines remain visib
   const card = cssHex('../studio.css', '.preview-controls', 'background');
   const header = cssHex('../studio.css', '.design-header', 'background');
   const picker = cssHex('../studio.css', '.palette-option', 'background');
-  const comparisons = cssHex('preview.css', '.comparison-label', 'background');
+  const choices = cssHex('preview.css', '.theme-color-choice', 'background');
   const pairs = [
     ['../studio.css', '.design-meta', header],
     ...['.preview-eyebrow', '.preview-description', '.preview-count', '.collection-heading h2 > span',
@@ -72,10 +72,10 @@ test('studio instructions, candidate labels, and selection outlines remain visib
     ['../studio.css', '.palette-option-label > small', picker],
     ['../logo/preview.css', '.option-heading > span', card],
     ['../logo/preview.css', '.concept-note', card],
-    ...['.theme-workspace .section-heading .eyebrow', '.theme-workspace .section-heading > p', '.layout-note']
+    ...['.theme-workspace .section-heading > p', '.layout-note', '.theme-palette-heading > span']
       .map(selector => ['preview.css', selector, canvas]),
-    ['preview.css', '.palette-pair header span', card],
-    ['preview.css', '.comparison-label', comparisons],
+    ['preview.css', '.theme-color-select', choices],
+    ['../studio.css', '.palette-option-label > small', choices],
   ];
   for (const [file, selector, background] of pairs) {
     const ratio = contrast(cssHex(file, selector, 'color'), background);
@@ -84,8 +84,11 @@ test('studio instructions, candidate labels, and selection outlines remain visib
   for (const selector of ['.design-tabs button[aria-selected="true"]', '.segmented button[aria-pressed="true"]']) {
     assert.ok(contrast(cssHex('../studio.css', selector, 'border-color'), '#ffffff') >= 3, selector);
   }
+  assert.ok(contrast(cssHex('preview.css', '.theme-color-choice:has(button[aria-pressed="true"])', 'border-color'), choices) >= 3);
   const focus = cssHex('../studio.css', 'button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible', 'outline');
-  for (const background of [canvas, card, header, picker, comparisons, cssHex('../studio.css', '.segmented', 'background')]) {
+  assert.equal(cssHex('preview.css', '.theme-color-select:focus-visible::after', 'outline'), focus);
+  assert.equal(cssHex('preview.css', '.theme-palette-scroll:focus-visible', 'outline'), focus);
+  for (const background of [canvas, card, header, picker, choices, cssHex('../studio.css', '.segmented', 'background')]) {
     assert.ok(contrast(focus, background) >= 3, 'keyboard focus must contrast with its adjacent surface');
   }
 });

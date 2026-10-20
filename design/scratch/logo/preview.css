@@ -1,3 +1,4 @@
+.logo-group + .logo-group { margin-top: 32px; }
 .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .comparison-grid > article { min-width: 0; padding: 18px; border: 1px solid #e1e4d9; border-radius: 14px; background: #fdfdfa; }
 .option-heading { display: flex; align-items: baseline; gap: 9px; margin: 0 0 15px; }

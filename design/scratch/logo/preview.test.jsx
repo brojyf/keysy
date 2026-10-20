@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { test } from 'bun:test';
 import LogoPreview from './LogoPreview.jsx';
@@ -31,7 +31,7 @@ test('retained candidates keep their source artwork and removed candidates are a
   }
 });
 
-test('the React grid preserves all 29 candidates, consecutive numbering, and both modes', () => {
+test('the React grid preserves all 29 candidates, original review numbers, and both modes', () => {
   const { container } = render(<LogoPreview />);
   assert.equal(container.querySelectorAll('article').length, 29);
   assert.equal(container.querySelector('.preview-description').textContent, '29 directions. One color system. See what feels like Keysy.');
@@ -40,17 +40,18 @@ test('the React grid preserves all 29 candidates, consecutive numbering, and bot
   assert.equal(container.querySelectorAll('.identity-preview').length, 58);
   assert.equal(container.querySelectorAll('.logo-art').length, 56);
   assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
-  assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => node.textContent),
-    Array.from({ length: 29 }, (_, index) => String(index)));
+  assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)).sort((a, b) => a - b),
+    Array.from({ length: 29 }, (_, index) => index));
   assert.equal(container.querySelector('#generated-51, #reference-53'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
-  assert.deepEqual([...container.querySelectorAll('article')].slice(26).map(article => [
+  assert.deepEqual(['52', '54', '55'].map(id => container.querySelector(`#reference-${id}`)).map(article => [
     article.querySelector('.option-heading > span').textContent,
     article.querySelector('h3').textContent,
   ]), [['26', 'Node K'], ['27', 'Relay'], ['28', 'Secret cell']]);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
+    assert.equal(article.querySelector('.option-heading > span').textContent, String(candidates.indexOf(entry)));
     assert.equal(article.querySelectorAll('.theme-preview').length, 2);
     if (entry.svg) {
       assert.equal(article.querySelector('.logo-art').innerHTML, new DOMParser().parseFromString(entry.svg, 'text/html').body.innerHTML);
@@ -58,6 +59,29 @@ test('the React grid preserves all 29 candidates, consecutive numbering, and bot
         'only the size label may inherit the muted span color, not the SVG wrapper');
     }
   }
+});
+
+test('similar logos appear in five labeled groups without changing their review numbers or source identities', () => {
+  const { container } = render(<LogoPreview />);
+  const groups = [
+    ['Wordmarks', [1, 2, 21]],
+    ['Brackets & asterisks', [0, 4, 6, 7, 8, 9, 10, 11, 12, 14]],
+    ['Keys & keyholes', [3, 16, 18, 19, 23, 24]],
+    ['Rings & links', [5, 13, 20, 25, 27]],
+    ['K & geometric blocks', [15, 17, 22, 26, 28]],
+  ];
+  assert.equal(container.querySelectorAll('#comparisons > section').length, groups.length);
+  for (const [name, numbers] of groups) {
+    const group = screen.getByRole('region', { name, exact: true });
+    assert.equal(within(group).getByRole('heading', { level: 2, name, exact: true }).textContent, `${name}${numbers.length}`);
+    assert.deepEqual([...group.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)), numbers);
+    assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id),
+      numbers.map(number => `${candidates[number].kind}-${candidates[number].id}`));
+  }
+  const articles = [...container.querySelectorAll('#comparisons article')];
+  assert.deepEqual(articles.map(article => article.id), groups.flatMap(([, numbers]) =>
+    numbers.map(number => `${candidates[number].kind}-${candidates[number].id}`)));
+  assert.equal(new Set(articles.map(article => article.id)).size, candidates.length);
 });
 
 test('new reference studies include reusable lockups and symbols at all three review sizes', () => {

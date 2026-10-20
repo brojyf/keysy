@@ -44,4 +44,4 @@ bun run build
 
 The component suite renders all 36 layout/palette/mode combinations and checks shared tokens, selection controls, URL restoration, and all logo recoloring. The background constraint prevents a later palette from reintroducing visibly colored surface areas.
 
-These results verify the covered color pairings, not full WCAG conformance of a production application. The Dashboard and documentation screens are static visual mocks, and comparison thumbnails scale down their content. Use Expand for the larger reading view. Production forms, error states, zoom/reflow, and assistive-technology behavior require verification when those interfaces are implemented.
+These results verify the covered color pairings, not full WCAG conformance of a production application. The Dashboard and documentation screens are static visual mocks, and color-choice thumbnails scale down their content. Select a choice to inspect it in the larger preview. Production forms, error states, zoom/reflow, and assistive-technology behavior require verification when those interfaces are implemented.
