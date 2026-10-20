@@ -1,11 +1,6 @@
 // Keysy palette proposals. Retained candidates keep their review numbers. See palette-research.md.
 export const extraPalettes = [
   {
-    id: 'slate', number: '4', name: 'Slate', english: 'Slate',
-    light: {"bg": "#f6f7f8", "surface": "#fdfefe", "text": "#29343b", "muted": "#5f6c75", "accent": "#486477", "button": "#486477", "on-button": "#ffffff", "soft": "#edf0f2", "line": "#dfe2e4"},
-    dark: {"bg": "#171a1c", "surface": "#23272a", "text": "#e9f0f4", "muted": "#abb9c3", "accent": "#acc8d8", "button": "#90afc2", "on-button": "#162630", "soft": "#2c3033", "line": "#3b4043"},
-  },
-  {
     id: 'cocoaice', number: '5', name: 'Cocoa / Ice', english: 'Cocoa / Ice',
     light: {"bg":"#f8f8f7","surface":"#ffffff","text":"#322724","muted":"#6b625f","accent":"#51403b","button":"#51403b","on-button":"#ffffff","soft":"#f1efed","line":"#e2e0de"},
     dark: {"bg":"#1b1918","surface":"#272423","text":"#f4efeb","muted":"#c1b2aa","accent":"#b6d4e5","button":"#b6d4e5","on-button":"#26333d","soft":"#302d2b","line":"#413e3c"},
@@ -19,11 +14,6 @@ export const extraPalettes = [
     id: 'terminal', number: '7', name: 'Terminal', english: 'Terminal',
     light: {"bg":"#f8faf9","surface":"#ffffff","text":"#17251e","muted":"#59695f","accent":"#087443","button":"#087443","on-button":"#ffffff","soft":"#eef2ef","line":"#dfe4e1"},
     dark: {"bg":"#111413","surface":"#1d211f","text":"#edf3ef","muted":"#a6b5ab","accent":"#7aceaa","button":"#7aceaa","on-button":"#132c20","soft":"#292f2c","line":"#363d39"},
-  },
-  {
-    id: 'ember', number: '8', name: 'Ember', english: 'Ember',
-    light: {"bg":"#faf9f8","surface":"#ffffff","text":"#30241e","muted":"#756359","accent":"#99502c","button":"#99502c","on-button":"#ffffff","soft":"#f2efed","line":"#e5e1de"},
-    dark: {"bg":"#191715","surface":"#262320","text":"#f6efe8","muted":"#bfb0a3","accent":"#e5b08c","button":"#e5b08c","on-button":"#38251a","soft":"#302c29","line":"#423d3a"},
   },
   {
     id: 'orchid', number: '9', name: 'Orchid', english: 'Orchid',

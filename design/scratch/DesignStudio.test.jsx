@@ -6,7 +6,7 @@ import DesignStudio from './DesignStudio.jsx';
 
 test('the studio starts with accessible Logo tabs and one visible panel', () => {
   const { container } = render(<DesignStudio />);
-  assert.equal(container.querySelector('.design-meta').textContent, '29 marks · 9 color systems');
+  assert.equal(container.querySelector('.design-meta').textContent, '20 marks · 7 color systems');
   const logo = screen.getByRole('tab', { name: 'Logo', exact: true });
   const theme = screen.getByRole('tab', { name: 'Theme', exact: true });
   assert.equal(logo.getAttribute('aria-selected'), 'true');
@@ -21,14 +21,14 @@ test('the studio starts with accessible Logo tabs and one visible panel', () => 
 test('switching tabs retains each preview selection and updates the shareable tab URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<DesignStudio />);
-  await user.click(screen.getByRole('button', { name: '4 Slate', exact: true }));
+  await user.click(screen.getByRole('button', { name: '7 Terminal', exact: true }));
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   await user.click(screen.getByRole('button', { name: '5 Cocoa / Ice', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   assert.equal(new URLSearchParams(location.search).get('tab'), 'theme');
   await user.click(screen.getByRole('tab', { name: 'Logo', exact: true }));
-  assert.equal(screen.getByRole('button', { name: '4 Slate', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '7 Terminal', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(new URLSearchParams(location.search).get('tab'), 'logo');
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');
@@ -63,10 +63,10 @@ for (const path of ['/logo/', '/logo/index.html', '/theme/', '/theme/index.html'
 }
 
 test('a shareable theme URL restores both its tab and theme controls', () => {
-  history.replaceState(null, '', '/?tab=theme&layout=mintlify&palette=slate&mode=dark&review=1#comparison');
+  history.replaceState(null, '', '/?tab=theme&layout=mintlify&palette=terminal&mode=dark&review=1#comparison');
   const { container } = render(<DesignStudio />);
   assert.equal(screen.getByRole('tab', { name: 'Theme', exact: true }).getAttribute('aria-selected'), 'true');
-  assert.equal(screen.getByRole('button', { name: '4 Slate', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '7 Terminal', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.mode, 'dark');
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   assert.equal(location.hash, '#comparison');
@@ -82,5 +82,5 @@ test('an explicit tab overrides a legacy path and hidden theme updates do not ch
   assert.equal(new URLSearchParams(location.search).get('palette'), null);
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   const palettes = within(screen.getByRole('tabpanel', { name: 'Logo', exact: true })).getByRole('group', { name: 'Logo palette' });
-  assert.equal(within(palettes).getAllByRole('button').length, 9);
+  assert.equal(within(palettes).getAllByRole('button').length, 7);
 });

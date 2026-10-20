@@ -16,10 +16,10 @@ test('both React layouts render every retained palette in both modes with matchi
   for (const layout of ['Supabase Dashboard', 'Mintlify docs']) {
     await user.click(screen.getByRole('button', { name: layout, exact: true }));
     const gallery = container.querySelector('#palette-gallery');
-    assert.equal(gallery.querySelectorAll('.palette-pair').length, 9);
-    assert.equal(gallery.querySelectorAll('.mock-screen').length, 18);
-    assert.equal(container.querySelector('.preview-count').textContent, '9 palettes · 2 layouts');
-    assert.equal(container.querySelector('.preview-description').textContent, '9 color systems, from the first impression to the smallest detail.');
+    assert.equal(gallery.querySelectorAll('.palette-pair').length, 7);
+    assert.equal(gallery.querySelectorAll('.mock-screen').length, 14);
+    assert.equal(container.querySelector('.preview-count').textContent, '7 palettes · 2 layouts');
+    assert.equal(container.querySelector('.preview-description').textContent, '7 color systems, from the first impression to the smallest detail.');
     for (const palette of palettes) for (const mode of ['light', 'dark']) {
       const preview = gallery.querySelector(`[data-palette="${palette.id}"][data-mode="${mode}"]`);
       assert.ok(preview);
@@ -72,17 +72,17 @@ test('expanding a comparison selects its exact palette and mode and scrolls to f
 });
 
 test('valid URLs restore selections without dropping unrelated parameters or hashes', () => {
-  history.replaceState(null, '', '/theme/?layout=mintlify&palette=slate&mode=dark&review=1#comparison');
+  history.replaceState(null, '', '/theme/?layout=mintlify&palette=terminal&mode=dark&review=1#comparison');
   const { container } = render(<ThemePreview />);
   const focus = container.querySelector('#focus-preview .mock-screen');
-  assert.equal(focus.dataset.palette, 'slate');
+  assert.equal(focus.dataset.palette, 'terminal');
   assert.equal(focus.dataset.mode, 'dark');
   assert.ok(focus.classList.contains('mintlify'));
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   assert.equal(location.hash, '#comparison');
 });
 
-for (const id of ['missing', 'cobalt', 'citron', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol', 'plum', 'navyrose']) {
+for (const id of ['missing', 'slate', 'ember', 'cobalt', 'citron', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol', 'plum', 'navyrose']) {
   test(`invalid URL palette ${id} falls back and removed choices stay absent`, () => {
     history.replaceState(null, '', `/theme/?layout=invalid&palette=${id}&mode=invalid`);
     const { container } = render(<ThemePreview />);
@@ -124,7 +124,7 @@ test('screen scaling follows viewport measurements and disconnects observers on 
     observe(target) { this.target = target; }
   };
   const { unmount } = render(<ThemePreview />);
-  assert.equal(observers.length, 19);
+  assert.equal(observers.length, 15);
   act(() => observers[0].callback([{ target: observers[0].target, contentRect: { width: 600 } }]));
   assert.equal(observers[0].target.style.getPropertyValue('--screen-scale'), '0.5');
   unmount();

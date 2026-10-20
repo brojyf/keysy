@@ -7,11 +7,11 @@ import LogoPreview from './LogoPreview.jsx';
 import candidates from './candidates.json';
 import { palettes } from '../theme/palettes.js';
 
-const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
+const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['07', '08', '10', '11', '12', '13', '15', '18', '19', '20', '21', '22', '30', '31', '32', '36']);
+    ['10', '11', '13', '19', '21', '31', '32']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), ['B']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
@@ -26,29 +26,29 @@ test('retained candidates keep their source artwork and removed candidates are a
       assert.doesNotMatch(artwork, /\b(?:style|color|fill|stroke)="[^"]*#[0-9a-f]{3,8}\b/i);
     }
     if (entry.image) assert.match(entry.image, /^data:image\/png;base64,[A-Za-z0-9+/=]+$/);
-    if (entry.source) assert.equal(entry.svg, read(entry.source));
-    if (entry.symbolSource) assert.equal(entry.symbol, read(entry.symbolSource));
+    if (entry.source) assert.equal(entry.svg.replace(/\r\n/g, '\n'), read(entry.source));
+    if (entry.symbolSource) assert.equal(entry.symbol.replace(/\r\n/g, '\n'), read(entry.symbolSource));
   }
 });
 
-test('the React grid preserves all 29 candidates, consecutive numbering, and both modes', () => {
+test('the React grid preserves all 20 candidates, consecutive numbering, and both modes', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('article').length, 29);
-  assert.equal(container.querySelector('.preview-description').textContent, '29 directions. One color system. See what feels like Keysy.');
-  assert.equal(container.querySelector('.preview-count').textContent, '29 candidates · 0–28');
-  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '29');
-  assert.equal(container.querySelectorAll('.identity-preview').length, 58);
-  assert.equal(container.querySelectorAll('.logo-art').length, 56);
+  assert.equal(container.querySelectorAll('article').length, 20);
+  assert.equal(container.querySelector('.preview-description').textContent, '20 directions. One color system. See what feels like Keysy.');
+  assert.equal(container.querySelector('.preview-count').textContent, '20 candidates · 0–19');
+  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '20');
+  assert.equal(container.querySelectorAll('.identity-preview').length, 40);
+  assert.equal(container.querySelectorAll('.logo-art').length, 38);
   assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => node.textContent),
-    Array.from({ length: 29 }, (_, index) => String(index)));
+    Array.from({ length: 20 }, (_, index) => String(index)));
   assert.equal(container.querySelector('#generated-51, #reference-53'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
-  assert.deepEqual([...container.querySelectorAll('article')].slice(26).map(article => [
+  assert.deepEqual([...container.querySelectorAll('article')].slice(17).map(article => [
     article.querySelector('.option-heading > span').textContent,
     article.querySelector('h3').textContent,
-  ]), [['26', 'Node K'], ['27', 'Relay'], ['28', 'Secret cell']]);
+  ]), [['17', 'Node K'], ['18', 'Relay'], ['19', 'Secret cell']]);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelectorAll('.theme-preview').length, 2);
