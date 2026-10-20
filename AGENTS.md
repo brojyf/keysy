@@ -9,6 +9,10 @@
 - Define success criteria first and a verification check for each plan step; support correctness claims with tests, logs, or results.
 - For bugs, write a failing test before fixing. Verify new features with tests as you go.
 
+## Tech Stack
+
+- Use Bun and TypeScript 7 for web applications.
+
 ## Git Workflow
 
 - Branch from the latest `origin/main`; never commit directly to `main`.
