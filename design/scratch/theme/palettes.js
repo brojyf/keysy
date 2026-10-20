@@ -1,4 +1,4 @@
-// Keysy palette proposals. Candidates are numbered consecutively in review order. See palette-research.md.
+// Keysy palette proposals. Retained candidates keep their review numbers. See palette-research.md.
 import { extraPalettes } from './palettes-extra.js';
 
 const basePalettes = [

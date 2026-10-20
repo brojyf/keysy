@@ -1,0 +1,134 @@
+{
+  "captured_on": "2026-10-19",
+  "purpose": "Local brand and interface design research for Keysy. References only; no Keysy design direction is approved by this archive.",
+  "assets": [
+    {
+      "company": "infisical",
+      "file": "infisical/logo.svg",
+      "kind": "logo",
+      "source_url": "https://infisical.com/images/v2/infisical-logo.svg",
+      "capture_method": "Downloaded without modifying artwork. Standalone export: Set explicit width/height from the original viewBox and use xMidYMid meet instead of responsive stretching. Geometry and colors are unchanged; original preserved in logo-source.svg.",
+      "sha256": "ab3d23e0cf61c17cd1be22ad23a6788c5c8d5360f390e9d257a33384f17e4369"
+    },
+    {
+      "company": "doppler",
+      "file": "doppler/logo.svg",
+      "kind": "logo",
+      "source_url": "https://cdn.sanity.io/images/q3zajrd2/production/ca504eb965b366981679016924e0d709deb6768f-563x108.svg",
+      "capture_method": "Downloaded without modifying artwork.",
+      "sha256": "31211f7abd8543e62d91e74495a7ab825277e1e0bf65a9573b5830dd5ebd7034"
+    },
+    {
+      "company": "neon",
+      "file": "neon/logo.svg",
+      "kind": "logo",
+      "source_url": "https://neon.com/brand/neon-logo-light-color.svg?updated=2026-06-03&dpl=dpl_JVpSyMmpdUeS89e3tkjR6EiM2Kv8",
+      "capture_method": "Downloaded without modifying artwork.",
+      "sha256": "8b4c35a0f158c82788e164b3044ff7ef0b27eb3707e099c78ce96ff6e6232c5f"
+    },
+    {
+      "company": "vercel",
+      "file": "vercel/logo.svg",
+      "kind": "logo",
+      "source_url": "https://vercel.com/vc-ap-b3331f/_next/static/immutable/media/logo-vercel-light.1xgi91gcqswpt.svg",
+      "capture_method": "Downloaded without modifying artwork.",
+      "sha256": "27622083391fe7729d41233aa75e24fa6f7ea25b37f43f6cb1b7917f0be0a2dc"
+    },
+    {
+      "company": "openbao",
+      "file": "openbao/logo.svg",
+      "kind": "logo",
+      "source_url": "https://raw.githubusercontent.com/openbao/artwork/main/color/openbao-text-color.svg",
+      "capture_method": "Downloaded without modifying artwork.",
+      "sha256": "de91252d8e7f7c393f37a868c040830b0bc1de49006dff2689325873ff0f7620"
+    },
+    {
+      "company": "tailscale",
+      "file": "tailscale/logo.svg",
+      "kind": "logo",
+      "source_url": "https://tailscale.com/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork.",
+      "sha256": "e9021b2d8a19e3f3540468115f31eeecf7a964ae4c838d31aa83e51d378e3551"
+    },
+    {
+      "company": "supabase",
+      "file": "supabase/logo.svg",
+      "kind": "logo",
+      "source_url": "https://supabase.com/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork. Added the SVG namespace for standalone viewing.",
+      "sha256": "9b69efdc5206f6b503a2ed1b185574efab4d8a94a6a7831fa5fd0346e53dc9cd"
+    },
+    {
+      "company": "fly",
+      "file": "fly/logo.svg",
+      "kind": "logo",
+      "source_url": "https://fly.io/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork. Added the SVG namespace for standalone viewing. Standalone export: Set explicit 259x84 viewport dimensions and remove responsive root sizing. Resolve the original fill-current CSS class to fill=currentColor. Geometry and color values are unchanged; original preserved in logo-source.svg.",
+      "sha256": "570d5063b1954bbda6b97a7c8300f752db89d0b1d4b49d3aef5df3c8c19371bf"
+    },
+    {
+      "company": "cloudflare",
+      "file": "cloudflare/logo.svg",
+      "kind": "logo",
+      "source_url": "https://www.cloudflare.com/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork. Standalone export: Export the existing full-color cf-logo-base group by omitting the duplicate CSS-controlled monochrome layer. Set explicit viewport dimensions. Geometry and original orange colors are unchanged; original preserved in logo-source.svg.",
+      "sha256": "d9f642ae9e66267e9fdd7d0abfc52e23d84c8ab31dbd25360ebfdc104c77f8e1"
+    },
+    {
+      "company": "infisical",
+      "file": "infisical/brand-preview.png",
+      "kind": "official-social-preview",
+      "source_url": "https://infisical.com/images/ogimage.png",
+      "capture_method": "Downloaded without modification. Social preview artwork, not a browser screenshot.",
+      "sha256": "73c58a598be92d8ad072bc6ab93b4819fc6a799dada8cd7ebea1e25b40513540"
+    },
+    {
+      "company": "doppler",
+      "file": "doppler/brand-preview.png",
+      "kind": "official-social-preview",
+      "source_url": "https://cdn.sanity.io/images/q3zajrd2/production/d19dd120622b42ec12c9dd5e4f1cd00b92c698e3-2400x1260.png",
+      "capture_method": "Downloaded without modification. Social preview artwork, not a browser screenshot.",
+      "sha256": "e53de2408e4f98604353a21ea96dff6f6e9056f25048535b9d6471cfac7ebcd5"
+    },
+    {
+      "company": "tailscale",
+      "file": "tailscale/brand-preview.png",
+      "kind": "official-social-preview",
+      "source_url": "https://cdn.sanity.io/images/w77i7m8x/production-v2/8e0455b2d9b33c6151016afdf2ea81d7623c2f04-1200x628.png",
+      "capture_method": "Downloaded without modification. Social preview artwork, not a browser screenshot.",
+      "sha256": "e23eb3fe8291a3c7a629811528e19372536239d0a5aaae7d3113fbcef4a802a4"
+    },
+    {
+      "company": "fly",
+      "file": "fly/brand-preview.jpg",
+      "kind": "official-social-preview",
+      "source_url": "https://fly.io/phx/images/og/home-afaefc54c2631fc9c08c8342d49c041f.jpg?vsn=d",
+      "capture_method": "Downloaded without modification. Social preview artwork, not a browser screenshot.",
+      "sha256": "a1e603015294037b76889323d445b6562094ada74444f0e80c1b5a1dc5fb3e6a"
+    },
+    {
+      "company": "infisical",
+      "file": "infisical/logo-source.svg",
+      "kind": "original-logo-source",
+      "source_url": "https://infisical.com/images/v2/infisical-logo.svg",
+      "capture_method": "Downloaded without modifying artwork.",
+      "sha256": "08e25e9a85952e464020ae854079e92280ad77f57c2643a8fd90a01eacd18442"
+    },
+    {
+      "company": "fly",
+      "file": "fly/logo-source.svg",
+      "kind": "original-logo-source",
+      "source_url": "https://fly.io/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork. Added the SVG namespace for standalone viewing.",
+      "sha256": "0569a9e5059fdb61bc200302e049d244b6232bbdf1fcd860460e0dcf3b6fa419"
+    },
+    {
+      "company": "cloudflare",
+      "file": "cloudflare/logo-source.svg",
+      "kind": "original-logo-source",
+      "source_url": "https://www.cloudflare.com/",
+      "capture_method": "Extracted the inline logo SVG from the official homepage without changing artwork.",
+      "sha256": "e3929f8a768fbcfa345fb9d2cbb42b78e55b0915a2e3d0708f8b5d1e3494bf03"
+    }
+  ]
+}

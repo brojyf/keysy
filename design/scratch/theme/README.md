@@ -1,9 +1,9 @@
 # Keysy color applications
 
-Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 11 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
+Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 9 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
 
-- Two layouts × 11 palettes × two modes: **44 combinations**. The six retained palettes keep their numbers; the new reference-inspired palettes are numbered 7–11. All eleven use near-neutral backgrounds, panels, selections, and dividers in both modes.
-- The [research notes](palette-research.md) explain Terminal, Citron, Ember, Orchid, and Evergreen. Evergreen dark mode uses near-black `#111312`, neutral gray-green panels `#1b1e1c`, and a restrained selection fill `#272b28`; green is concentrated in the accent.
+- Two layouts × 9 palettes × two modes: **36 combinations**. Cobalt (3) has been removed; the other palettes keep their numbers (1, 2, and 4–10). All nine use near-neutral backgrounds, panels, selections, and dividers in both modes.
+- The [research notes](palette-research.md) explain Terminal, Ember, Orchid, and Evergreen. Evergreen dark mode uses near-black `#111312`, neutral gray-green panels `#1b1e1c`, and a restrained selection fill `#272b28`; green is concentrated in the accent.
 - Uses the shared [palettes](palettes.js) values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
 - The 1200 × 800 desktop mock scales proportionally to its container. On small screens, paired modes stack vertically.
 - Supports URL parameters such as `/?tab=theme&layout=mintlify&palette=slate&mode=dark`; the legacy `/theme/` URL remains supported. Preview controls work; product controls are static visual samples.
@@ -25,7 +25,7 @@ The [Mintlify theme documentation](https://www.mintlify.com/docs/customize/theme
 - **14 Slate**: quiet in tables and documentation, with clear text, selection, and background separation; less distinctive branding.
 - **16 Cocoa / Ice**: stronger warm/cool contrast in the dark Dashboard and some warmth in long documentation tables; swapping primary colors between modes needs consistent brand treatment.
 - **04 Mono**: closest to a neutral tool interface, but lacks the recognition advantage of colored feedback.
-- **10 Cobalt and 19 Ink / Iris**: more prominent buttons and navigation accents; dense inline code increases the colored area in documentation.
+- **6 Ink / Iris**: more prominent buttons and navigation accents; dense inline code increases the colored area in documentation.
 
 These are palette trade-offs, not a final theme selection. The simpler final approach is one light/dark system shared by the Dashboard and documentation.
 
@@ -36,4 +36,4 @@ cd design/scratch
 bun test theme/
 ```
 
-Checks cover 44 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.
+Checks cover 36 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.

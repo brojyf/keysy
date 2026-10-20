@@ -15,9 +15,9 @@ test('retained candidates keep their source artwork and removed candidates are a
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), ['B']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['40', '42', '43', '45', '46', '47', '48', '49', '51']);
+    ['40', '42', '43', '45', '46', '47', '48', '49']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
-    ['52', '53', '54', '55']);
+    ['52', '54', '55']);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -31,17 +31,24 @@ test('retained candidates keep their source artwork and removed candidates are a
   }
 });
 
-test('the React grid preserves all 31 candidates, consecutive numbering, and both modes', () => {
+test('the React grid preserves all 29 candidates, consecutive numbering, and both modes', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('article').length, 31);
-  assert.equal(container.querySelector('.preview-description').textContent, '31 directions. One color system. See what feels like Keysy.');
-  assert.equal(container.querySelector('.preview-count').textContent, '31 candidates · 0–30');
-  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '31');
-  assert.equal(container.querySelectorAll('.identity-preview').length, 62);
-  assert.equal(container.querySelectorAll('.logo-art').length, 60);
+  assert.equal(container.querySelectorAll('article').length, 29);
+  assert.equal(container.querySelector('.preview-description').textContent, '29 directions. One color system. See what feels like Keysy.');
+  assert.equal(container.querySelector('.preview-count').textContent, '29 candidates · 0–28');
+  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '29');
+  assert.equal(container.querySelectorAll('.identity-preview').length, 58);
+  assert.equal(container.querySelectorAll('.logo-art').length, 56);
   assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => node.textContent),
-    Array.from({ length: 31 }, (_, index) => String(index)));
+    Array.from({ length: 29 }, (_, index) => String(index)));
+  assert.equal(container.querySelector('#generated-51, #reference-53'), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
+  assert.deepEqual([...container.querySelectorAll('article')].slice(26).map(article => [
+    article.querySelector('.option-heading > span').textContent,
+    article.querySelector('h3').textContent,
+  ]), [['26', 'Node K'], ['27', 'Relay'], ['28', 'Secret cell']]);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelectorAll('.theme-preview').length, 2);
@@ -55,9 +62,9 @@ test('the React grid preserves all 31 candidates, consecutive numbering, and bot
 
 test('new reference studies include reusable lockups and symbols at all three review sizes', () => {
   const { container } = render(<LogoPreview />);
-  const additions = candidates.slice(27);
-  assert.deepEqual(additions.map(entry => entry.name), ['Node K', 'Notch K', 'Relay', 'Secret cell']);
-  assert.equal(new Set(additions.map(entry => entry.symbol)).size, 4);
+  const additions = candidates.filter(entry => entry.kind === 'reference');
+  assert.deepEqual(additions.map(entry => entry.name), ['Node K', 'Relay', 'Secret cell']);
+  assert.equal(new Set(additions.map(entry => entry.symbol)).size, 3);
   for (const entry of additions) {
     assert.ok(entry.meaning && entry.source && entry.symbolSource);
     const article = container.querySelector(`#reference-${entry.id}`);

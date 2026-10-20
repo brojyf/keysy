@@ -6,7 +6,7 @@ import DesignStudio from './DesignStudio.jsx';
 
 test('the studio starts with accessible Logo tabs and one visible panel', () => {
   const { container } = render(<DesignStudio />);
-  assert.equal(container.querySelector('.design-meta').textContent, '31 marks · 11 color systems');
+  assert.equal(container.querySelector('.design-meta').textContent, '29 marks · 9 color systems');
   const logo = screen.getByRole('tab', { name: 'Logo', exact: true });
   const theme = screen.getByRole('tab', { name: 'Theme', exact: true });
   assert.equal(logo.getAttribute('aria-selected'), 'true');
@@ -77,9 +77,10 @@ test('an explicit tab overrides a legacy path and hidden theme updates do not ch
   history.replaceState(null, '', '/theme/?tab=logo&review=1');
   render(<DesignStudio />);
   assert.equal(screen.getByRole('tab', { name: 'Logo', exact: true }).getAttribute('aria-selected'), 'true');
-  await user.click(screen.getByRole('button', { name: '3 Cobalt', exact: true }));
+  assert.equal(screen.queryByRole('button', { name: '3 Cobalt', exact: true }), null);
+  await user.click(screen.getByRole('button', { name: '7 Terminal', exact: true }));
   assert.equal(new URLSearchParams(location.search).get('palette'), null);
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   const palettes = within(screen.getByRole('tabpanel', { name: 'Logo', exact: true })).getByRole('group', { name: 'Logo palette' });
-  assert.equal(within(palettes).getAllByRole('button').length, 11);
+  assert.equal(within(palettes).getAllByRole('button').length, 9);
 });

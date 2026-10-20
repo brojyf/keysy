@@ -1,6 +1,6 @@
 # Color and readability
 
-Checked on October 20, 2026. Applies to all 11 palettes in both modes, the Dashboard and documentation mocks, and the Design Studio controls.
+Checked on October 20, 2026. Applies to all 9 palettes in both modes, the Dashboard and documentation mocks, and the Design Studio controls.
 
 ## Requirements and design choices
 
@@ -23,17 +23,15 @@ Each number is the minimum across both modes and all applicable page, panel, and
 | Target | 7.00 | 4.50 | 4.50 | 4.50 | 3.00 |
 | 1 Ink | 12.28 | 5.08 | 5.21 | 4.57 | 3.14 |
 | 2 Mono | 12.92 | 5.03 | 12.92 | 16.91 | 12.92 |
-| 3 Cobalt | 12.17 | 5.08 | 6.65 | 7.57 | 6.65 |
 | 4 Slate | 11.12 | 4.71 | 5.45 | 6.24 | 5.45 |
 | 5 Cocoa / Ice | 11.97 | 5.17 | 8.53 | 8.33 | 8.53 |
 | 6 Ink / Iris | 11.83 | 4.98 | 7.66 | 8.71 | 7.66 |
 | 7 Terminal | 12.14 | 5.14 | 5.17 | 5.85 | 5.17 |
-| 8 Citron | 11.85 | 5.03 | 5.60 | 6.30 | 5.60 |
-| 9 Ember | 12.14 | 4.97 | 5.18 | 5.93 | 5.18 |
-| 10 Orchid | 11.57 | 4.95 | 5.76 | 6.61 | 5.76 |
-| 11 Evergreen | 10.41 | 4.85 | 5.84 | 6.71 | 5.84 |
+| 8 Ember | 12.14 | 4.97 | 5.18 | 5.93 | 5.18 |
+| 9 Orchid | 11.57 | 4.95 | 5.76 | 6.61 | 5.76 |
+| 10 Evergreen | 10.41 | 4.85 | 5.84 | 6.71 | 5.84 |
 
-The expanded tests cover 286 palette pairings, plus studio label, selected-outline, and focus colors. Ink's dark button was slightly brightened to retain separation from the selected surface. Previously faint studio captions and candidate numbers were darkened.
+The expanded tests cover 234 palette pairings, plus studio label, selected-outline, and focus colors. Ink's dark button was slightly brightened to retain separation from the selected surface. Previously faint studio captions and candidate numbers were darkened.
 
 ## Verification and limits
 
@@ -44,6 +42,6 @@ bun run lint
 bun run build
 ```
 
-The component suite renders all 44 layout/palette/mode combinations and checks shared tokens, selection controls, URL restoration, and all logo recoloring. The background constraint prevents a later palette from reintroducing visibly colored surface areas.
+The component suite renders all 36 layout/palette/mode combinations and checks shared tokens, selection controls, URL restoration, and all logo recoloring. The background constraint prevents a later palette from reintroducing visibly colored surface areas.
 
 These results verify the covered color pairings, not full WCAG conformance of a production application. The Dashboard and documentation screens are static visual mocks, and comparison thumbnails scale down their content. Use Expand for the larger reading view. Production forms, error states, zoom/reflow, and assistive-technology behavior require verification when those interfaces are implemented.
