@@ -1,12 +1,14 @@
 # Keysy color applications
 
-Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 6 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
+Run `bun run dev` from `design/scratch/` and open `/theme/`. The Theme tab is part of the unified Design Studio; switching to Logo preserves the current selections. This React preview includes the shared palette definitions used by both previews. Use the swatch cards and toolbar to switch between **Supabase Dashboard / Mintlify docs**, 11 palettes, and light/dark modes. The comparison section always pairs both modes for every palette in the selected layout. Click **Expand** to return to the full preview.
 
-- Two layouts × 6 palettes × two modes: **24 combinations**. Plum and Navy / Rose are removed; retained palettes are numbered 1–6.
+- Two layouts × 11 palettes × two modes: **44 combinations**. The six retained palettes keep their numbers; the new reference-inspired palettes are numbered 7–11. All eleven use near-neutral backgrounds, panels, selections, and dividers in both modes.
+- The [research notes](palette-research.md) explain Terminal, Citron, Ember, Orchid, and Evergreen. Evergreen dark mode uses near-black `#111312`, neutral gray-green panels `#1b1e1c`, and a restrained selection fill `#272b28`; green is concentrated in the accent.
 - Uses the shared [palettes](palettes.js) values and Logo 33. Layout, copy, and artwork stay fixed; only colors change.
 - The 1200 × 800 desktop mock scales proportionally to its container. On small screens, paired modes stack vertically.
 - Supports URL parameters such as `/?tab=theme&layout=mintlify&palette=slate&mode=dark`; the legacy `/theme/` URL remains supported. Preview controls work; product controls are static visual samples.
 - Runs on Bun with Vite; requires dependency installation for development and a build for static hosting. No runtime CDN dependency, product SDK installation, or connection to a real project.
+- [Color accessibility](color-accessibility.md) records the WCAG sources, pairing requirements, tested minimum ratios, and the distinction between decorative dividers and meaningful state indicators.
 
 ## Supabase reference
 
@@ -34,4 +36,4 @@ cd design/scratch
 bun test theme/
 ```
 
-Checks cover 24 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.
+Checks cover 44 layout/palette/mode combinations, palette and layout switching, URL restoration, expanding comparisons, consistency with the documentation copy, no network dependency, and existing text/button contrast requirements.

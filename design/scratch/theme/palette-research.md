@@ -1,9 +1,25 @@
 # Keysy palette candidates
 
-Updated: 2026-10-17. [Logo selection](../logo/index.html) · [Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Retained candidates are numbered 1–6 in review order.
+Updated: 2026-10-20. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Current candidates are numbered 1–11 in review order; the new studies are available in Design Studio.
 
 Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 13 Plum, 15 Navy / Rose, 17 Pine / Chalk, and 18 Aubergine / Celadon.
 Retained: 1 Ink, 2 Mono, 3 Cobalt, 4 Slate, 5 Cocoa / Ice, and 6 Ink / Iris.
+
+## Infrastructure reference studies: 7–11
+
+These studies translate the official brand references collected for this project into restrained interface colors. HEX values are composed for Keysy, not sampled or presented as the companies' design tokens. Palettes 1–6 retain their identities and numbering; the near-neutral surface rule now applies to all eleven palettes in both modes.
+
+| Number | Reference and interpretation | Pros / cons |
+| --- | --- | --- |
+| 7 Terminal | [Neon's green and neutral palette](https://neon.com/brand), with [Supabase's separation of readable accents and button colors](https://supabase.com/design-system/docs/color-usage). Cool neutral surfaces and a softened mint accent in dark mode. | Clear technical character; green is common among infrastructure products. |
+| 8 Citron | The yellow-green areas in the archived [Infisical homepage](https://infisical.com/) social artwork. Pale neutral surfaces, a dark yellow-green light-mode accent, and a muted citron reverse. | Distinct from the existing blue and purple options; avoid treating the brand accent as a warning state. |
+| 9 Ember | The orange emphasis of [Cloudflare](https://www.cloudflare.com/), interpreted as a deeper copper accent with warm grays. [Cloudflare's color-system article](https://blog.cloudflare.com/thinking-about-color/) informs the role-based approach. | Warm but restrained; saturated orange is deliberately reduced for dense operational screens. |
+| 10 Orchid | Pink-purple details in the archived Doppler artwork and its [Fuzzco rebrand](https://www.doppler.com/blog/rebrand-of-doppler). Muted orchid accents sit on near-neutral charcoal, without gradients or texture. | Softer and warmer than Ink / Iris; still belongs to the familiar purple software family. |
+| 11 Evergreen | [OpenBao's greens and warm neutrals](https://openbao.org/community/policies/brand/), adapted to a subtle gray-green white in light mode and nearly neutral black in dark mode. | Quiet and grounded; less immediate brand impact than Terminal. |
+
+All eleven palettes use near-white/light-gray surfaces in light mode and near-black/dark-gray surfaces in dark mode, allowing only slight hue shifts. Background, surface, selection, and divider channels differ by at most 8/255. This is Keysy's design constraint, not a WCAG requirement. Evergreen uses background `#111312`, surface `#1b1e1c`, selected surface `#272b28`, and decorative border `#343a35` in dark mode. Its pale green accent `#b3cbb8` is reserved for foreground emphasis and primary actions.
+
+The simplest final application is one selected light/dark pair. These five additions are comparison candidates, not five new product themes.
 
 The historical research below uses original palette and logo numbers, matching the linked Figma boards. Some candidates were subsequently removed.
 
@@ -36,6 +52,6 @@ All sources are publicly credited studio projects, not generated reference image
 
 ## Values and checks
 
-`palettes.js` and `palettes-extra.js` contain 6 complete light/dark palettes. Each has a consecutive display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
+`palettes.js` and `palettes-extra.js` contain 11 complete light/dark palettes. Each has a consecutive display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
 
-`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks each mode: text, muted text, and accent against background/surface/selection ≥ 4.5:1; button text ≥ 4.5:1; button against adjacent surfaces ≥ 3:1. The 6 palettes cover 144 combinations. Borders are decorative, not focus rings or interactive boundaries.
+`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 286 palette pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.

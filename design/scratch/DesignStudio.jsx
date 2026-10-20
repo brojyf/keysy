@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import LogoPreview from './logo/LogoPreview.jsx';
 import ThemePreview from './theme/ThemePreview.jsx';
+import candidates from './logo/candidates.json';
+import { palettes } from './theme/palettes.js';
 
 const tabs = ['Logo', 'Theme'];
 
@@ -50,7 +52,7 @@ export default function DesignStudio() {
             </button>;
           })}
         </div>
-        <span className="design-meta">27 marks <span>·</span> 6 color systems</span>
+        <span className="design-meta">{candidates.length} marks <span>·</span> {palettes.length} color systems</span>
       </div>
     </header>
     <main>

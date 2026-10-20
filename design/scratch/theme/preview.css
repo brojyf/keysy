@@ -1,22 +1,22 @@
 .theme-workspace .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 18px; }
-.theme-workspace .section-heading .eyebrow { font: 9px ui-monospace, monospace; letter-spacing: 1.1px; margin: 0 0 10px; color: #7a826d; }
+.theme-workspace .section-heading .eyebrow { font: 9px ui-monospace, monospace; letter-spacing: 1.1px; margin: 0 0 10px; color: #62675e; }
 .theme-workspace .section-heading h2 { font-size: 20px; font-weight: 550; letter-spacing: -.6px; margin: 0; }
-.theme-workspace .section-heading > p { font-size: 11px; color: #727b65; margin: 0 0 3px; }
+.theme-workspace .section-heading > p { font-size: 11px; color: #62675e; margin: 0 0 3px; }
 #focus { max-width: 1200px; margin: auto; scroll-margin-top: 112px; }
 #focus-preview { border: 1px solid #d6dbcc; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px #28311006; }
-.layout-note { font-size: 11px; line-height: 1.8; color: #757e69; margin: 14px 0 0; }
+.layout-note { font-size: 11px; line-height: 1.8; color: #62675e; margin: 14px 0 0; }
 #comparison { margin-top: 52px; scroll-margin-top: 112px; }
 .palette-pair { margin-bottom: 26px; padding: 18px; border: 1px solid #e1e5d8; border-radius: 14px; background: #fdfdfa; }
 .palette-pair > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .palette-pair > header > div { display: flex; align-items: baseline; gap: 10px; }
 .palette-pair h3 { font-size: 13px; font-weight: 550; margin: 0; }
-.palette-pair header span { font-size: 10px; color: #7b836d; }
+.palette-pair header span { font-size: 10px; color: #62675e; }
 .palette-number { font-family: ui-monospace, monospace; }
 .palette-pair .mini-swatches { gap: 4px; }
 .mini-swatches i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid #00000012; }
 .comparison-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
 .comparison-item { border: 1px solid #dde2d3; border-radius: 8px; overflow: hidden; }
-.comparison-label { padding: 8px 11px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dde2d3; background: #f2f4ed; font: 9px ui-monospace, monospace; letter-spacing: .6px; color: #7b846e; }
+.comparison-label { padding: 8px 11px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dde2d3; background: #f2f4ed; font: 9px ui-monospace, monospace; letter-spacing: .6px; color: #62675e; }
 .comparison-label button { border: 0; background: none; font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #4c593c; padding: 4px; }
 @media (hover: hover) and (pointer: fine) { .comparison-label button:hover { text-decoration: underline; } }
 .screen-viewport { position: relative; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; --screen-scale: 1; }
@@ -41,7 +41,7 @@
 .icon-rail { padding: 13px 7px; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; }
 .rail-item { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--muted); margin-bottom: 9px; border-radius: 5px; }
 .rail-item .icon { width: 19px; height: 19px; }
-.rail-item.active { color: var(--accent); background: var(--soft); }
+.rail-item.active { color: var(--accent); background: var(--soft); box-shadow: inset 2px 0 var(--accent); }
 .icon-rail hr { border: 0; border-top: 1px solid var(--line); margin: 16px 3px; }
 .rail-avatar { margin: 10px 6px 0; border-radius: 50%; }
 .resource-sidebar { background: var(--bg); border-right: 1px solid var(--line); position: relative; padding-top: 18px; }
@@ -133,7 +133,7 @@
 .mint-body { display: grid; grid-template-columns: 200px minmax(0,1fr) 150px; gap: 38px; padding: 0 40px; height: 686px; }
 .mint-sidebar { position: relative; padding-top: 34px; }
 .mint-nav-heading { display: block; font-size: 11px; font-weight: 550; margin: 0 0 12px 10px; }
-.mint-nav-selected { display: flex; align-items: center; gap: 9px; font-size: 12px; padding: 8px 10px; border-radius: 6px; background: var(--soft); color: var(--accent); }
+.mint-nav-selected { display: flex; align-items: center; gap: 9px; font-size: 12px; padding: 8px 10px; border-radius: 6px; background: var(--soft); color: var(--accent); box-shadow: inset 2px 0 var(--accent); }
 .mint-nav-selected .icon { width: 14px; height: 14px; }
 .mint-sidebar-foot { position: absolute; bottom: 26px; left: 10px; font-size: 10px; color: var(--muted); display: flex; gap: 7px; align-items: center; }
 .mint-sidebar-foot .icon { width: 13px; height: 13px; }

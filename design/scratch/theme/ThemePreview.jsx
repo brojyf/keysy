@@ -55,9 +55,9 @@ export default function ThemePreview({ active = true }) {
   return <div className="theme-workspace preview-content">
     <header className="preview-heading">
       <div><p className="preview-eyebrow">THE COLOR COLLECTION</p><h1>A palette in context.</h1>
-        <p className="preview-description">Six color systems, from the first impression to the smallest detail.</p>
+        <p className="preview-description">{palettes.length} color systems, from the first impression to the smallest detail.</p>
       </div>
-      <span className="preview-count">6 palettes · 2 layouts</span>
+      <span className="preview-count">{palettes.length} palettes · 2 layouts</span>
     </header>
     <div className="preview-controls">
       <PalettePicker value={paletteId} onChange={paletteId => select({ paletteId })} label="Theme palette" />
@@ -87,7 +87,7 @@ export default function ThemePreview({ active = true }) {
         </p>
       </section>
       <section id="comparison" aria-labelledby="comparison-title">
-        <header className="section-heading"><div><p className="eyebrow">SIDE BY SIDE / 02</p><h2 id="comparison-title">Every palette. The same interface.</h2></div><p>Click Expand for details; original color values are unchanged.</p></header>
+        <header className="section-heading"><div><p className="eyebrow">SIDE BY SIDE / 02</p><h2 id="comparison-title">Every palette. The same interface.</h2></div><p>Neutral surfaces, distinct accents. Click Expand for details.</p></header>
         <div id="palette-gallery">
           {palettes.map(option => <section key={option.id} className="palette-pair">
             <header><div><span className="palette-number">{option.number}</span><h3>{option.name}</h3><span>{option.english}</span></div>

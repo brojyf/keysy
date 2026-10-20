@@ -16,6 +16,8 @@ test('retained candidates keep their source artwork and removed candidates are a
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
     ['40', '42', '43', '45', '46', '47', '48', '49', '51']);
+  assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
+    ['52', '53', '54', '55']);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -25,20 +27,21 @@ test('retained candidates keep their source artwork and removed candidates are a
     }
     if (entry.image) assert.match(entry.image, /^data:image\/png;base64,[A-Za-z0-9+/=]+$/);
     if (entry.source) assert.equal(entry.svg, read(entry.source));
+    if (entry.symbolSource) assert.equal(entry.symbol, read(entry.symbolSource));
   }
 });
 
-test('the React grid preserves all 27 candidates, consecutive numbering, and both modes', () => {
+test('the React grid preserves all 31 candidates, consecutive numbering, and both modes', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('article').length, 27);
-  assert.equal(container.querySelector('.preview-description').textContent, '27 directions. One color system. See what feels like Keysy.');
-  assert.equal(container.querySelector('.preview-count').textContent, '27 candidates · 0–26');
-  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '27');
-  assert.equal(container.querySelectorAll('.identity-preview').length, 54);
-  assert.equal(container.querySelectorAll('.logo-art').length, 52);
+  assert.equal(container.querySelectorAll('article').length, 31);
+  assert.equal(container.querySelector('.preview-description').textContent, '31 directions. One color system. See what feels like Keysy.');
+  assert.equal(container.querySelector('.preview-count').textContent, '31 candidates · 0–30');
+  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '31');
+  assert.equal(container.querySelectorAll('.identity-preview').length, 62);
+  assert.equal(container.querySelectorAll('.logo-art').length, 60);
   assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => node.textContent),
-    Array.from({ length: 27 }, (_, index) => String(index)));
+    Array.from({ length: 31 }, (_, index) => String(index)));
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelectorAll('.theme-preview').length, 2);
@@ -46,6 +49,21 @@ test('the React grid preserves all 27 candidates, consecutive numbering, and bot
       assert.equal(article.querySelector('.logo-art').innerHTML, new DOMParser().parseFromString(entry.svg, 'text/html').body.innerHTML);
       assert.equal(article.querySelector('.small-logo').querySelectorAll(':scope > span').length, 1,
         'only the size label may inherit the muted span color, not the SVG wrapper');
+    }
+  }
+});
+
+test('new reference studies include reusable lockups and symbols at all three review sizes', () => {
+  const { container } = render(<LogoPreview />);
+  const additions = candidates.slice(27);
+  assert.deepEqual(additions.map(entry => entry.name), ['Node K', 'Notch K', 'Relay', 'Secret cell']);
+  assert.equal(new Set(additions.map(entry => entry.symbol)).size, 4);
+  for (const entry of additions) {
+    assert.ok(entry.meaning && entry.source && entry.symbolSource);
+    const article = container.querySelector(`#reference-${entry.id}`);
+    for (const panel of article.querySelectorAll('.identity-preview')) {
+      assert.deepEqual([...panel.querySelectorAll('.symbol-sizes > span')]
+        .map(node => node.style.getPropertyValue('--symbol-size')), ['16px', '24px', '32px']);
     }
   }
 });

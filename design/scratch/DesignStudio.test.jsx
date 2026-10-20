@@ -6,7 +6,7 @@ import DesignStudio from './DesignStudio.jsx';
 
 test('the studio starts with accessible Logo tabs and one visible panel', () => {
   const { container } = render(<DesignStudio />);
-  assert.equal(container.querySelector('.design-meta').textContent, '27 marks · 6 color systems');
+  assert.equal(container.querySelector('.design-meta').textContent, '31 marks · 11 color systems');
   const logo = screen.getByRole('tab', { name: 'Logo', exact: true });
   const theme = screen.getByRole('tab', { name: 'Theme', exact: true });
   assert.equal(logo.getAttribute('aria-selected'), 'true');
@@ -81,5 +81,5 @@ test('an explicit tab overrides a legacy path and hidden theme updates do not ch
   assert.equal(new URLSearchParams(location.search).get('palette'), null);
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   const palettes = within(screen.getByRole('tabpanel', { name: 'Logo', exact: true })).getByRole('group', { name: 'Logo palette' });
-  assert.equal(within(palettes).getAllByRole('button').length, 6);
+  assert.equal(within(palettes).getAllByRole('button').length, 11);
 });

@@ -4,8 +4,8 @@ import { extraPalettes } from './palettes-extra.js';
 const basePalettes = [
   {
     id: 'blue', number: '1', name: 'Ink', english: 'Ink',
-    light: {"bg": "#fafafa", "surface": "#ffffff", "text": "#1b1c1e", "muted": "#64666b", "accent": "#315fc4", "button": "#315fc4", "on-button": "#ffffff", "soft": "#eef2fa", "line": "#e3e4e6"},
-    dark: {"bg": "#111214", "surface": "#1a1b1e", "text": "#ededee", "muted": "#a3a4a8", "accent": "#8daaf0", "button": "#426dc9", "on-button": "#ffffff", "soft": "#202a40", "line": "#2d2e32"},
+    light: {"bg": "#fafafa", "surface": "#ffffff", "text": "#1b1c1e", "muted": "#64666b", "accent": "#315fc4", "button": "#315fc4", "on-button": "#ffffff", "soft": "#f0f1f3", "line": "#e3e4e6"},
+    dark: {"bg": "#111214", "surface": "#1a1b1e", "text": "#ededee", "muted": "#a3a4a8", "accent": "#8daaf0", "button": "#4773cc", "on-button": "#ffffff", "soft": "#282a2e", "line": "#2d2e32"},
   },
   {
     id: 'graphite', number: '2', name: 'Mono', english: 'Mono',

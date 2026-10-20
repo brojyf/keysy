@@ -28,12 +28,12 @@ export default function LogoPreview() {
   return <div className="logo-workspace preview-content">
       <header className="preview-heading">
         <div><p className="preview-eyebrow">THE IDENTITY COLLECTION</p><h1>Find the right mark.</h1>
-          <p className="preview-description">27 directions. One color system. See what feels like Keysy.</p>
+          <p className="preview-description">{candidates.length} directions. One color system. See what feels like Keysy.</p>
         </div>
-        <span className="preview-count">27 candidates · 0–26</span>
+        <span className="preview-count">{candidates.length} candidates · 0–{candidates.length - 1}</span>
       </header>
       <div className="preview-controls"><PalettePicker value={paletteId} onChange={setPaletteId} label="Logo palette" /></div>
-      <div className="collection-heading"><h2>All directions <span>27</span></h2>
+      <div className="collection-heading"><h2>All directions <span>{candidates.length}</span></h2>
         <p id="palette-status" role="status" aria-live="polite">{palette.number} {palette.name} <span> / </span> Light & dark</p>
       </div>
       <div id="comparisons" className="comparison-grid">

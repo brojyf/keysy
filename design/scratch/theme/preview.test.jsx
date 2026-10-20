@@ -16,15 +16,30 @@ test('both React layouts render every retained palette in both modes with matchi
   for (const layout of ['Supabase Dashboard', 'Mintlify docs']) {
     await user.click(screen.getByRole('button', { name: layout, exact: true }));
     const gallery = container.querySelector('#palette-gallery');
-    assert.equal(gallery.querySelectorAll('.palette-pair').length, 6);
-    assert.equal(gallery.querySelectorAll('.mock-screen').length, 12);
-    assert.equal(container.querySelector('.preview-count').textContent, '6 palettes · 2 layouts');
-    assert.equal(container.querySelector('.preview-description').textContent, 'Six color systems, from the first impression to the smallest detail.');
+    assert.equal(gallery.querySelectorAll('.palette-pair').length, 11);
+    assert.equal(gallery.querySelectorAll('.mock-screen').length, 22);
+    assert.equal(container.querySelector('.preview-count').textContent, '11 palettes · 2 layouts');
+    assert.equal(container.querySelector('.preview-description').textContent, '11 color systems, from the first impression to the smallest detail.');
     for (const palette of palettes) for (const mode of ['light', 'dark']) {
       const preview = gallery.querySelector(`[data-palette="${palette.id}"][data-mode="${mode}"]`);
       assert.ok(preview);
       for (const [role, color] of Object.entries(palette[mode])) assert.equal(preview.style.getPropertyValue(`--${role}`), color);
     }
+  }
+});
+
+test('a new reference palette restores from a shareable URL and expands in either mode', async () => {
+  history.replaceState(null, '', '/?tab=theme&palette=terminal&layout=mintlify&mode=dark');
+  const user = userEvent.setup();
+  const { container } = render(<ThemePreview />);
+  assert.equal(screen.getByRole('button', { name: '7 Terminal', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'terminal');
+  for (const mode of ['Light', 'Dark']) {
+    await user.click(screen.getByRole('button', { name: `Expand 11 Evergreen ${mode}`, exact: true }));
+    const focus = container.querySelector('#focus-preview .mock-screen');
+    assert.equal(focus.dataset.palette, 'evergreen');
+    assert.equal(focus.dataset.mode, mode.toLowerCase());
+    assert.equal(new URLSearchParams(location.search).get('palette'), 'evergreen');
   }
 });
 
@@ -109,7 +124,7 @@ test('screen scaling follows viewport measurements and disconnects observers on 
     observe(target) { this.target = target; }
   };
   const { unmount } = render(<ThemePreview />);
-  assert.equal(observers.length, 13);
+  assert.equal(observers.length, 23);
   act(() => observers[0].callback([{ target: observers[0].target, contentRect: { width: 600 } }]));
   assert.equal(observers[0].target.style.getPropertyValue('--screen-scale'), '0.5');
   unmount();

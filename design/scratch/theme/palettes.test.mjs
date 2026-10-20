@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'bun:test';
 import { palettes } from './palettes.js';
 
@@ -16,11 +17,21 @@ function contrast(first, second) {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-test('six retained palettes use consecutive numbers and complete light and dark roles', () => {
-  assert.equal(palettes.length, 6);
-  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2', '3', '4', '5', '6']);
-  assert.deepEqual(palettes.map(palette => palette.id), ['blue', 'graphite', 'cobalt', 'slate', 'cocoaice', 'inkiris']);
-  assert.equal(new Set(palettes.map(palette => palette.id)).size, 6);
+function cssHex(file, selector, property) {
+  const css = readFileSync(new URL(file, import.meta.url), 'utf8');
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const declarations = css.match(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]+)\\}`))?.[1];
+  const hex = declarations?.match(new RegExp(`(?:^|;)\\s*${property}:[^;#]*(#[a-f0-9]{3,6})\\s*;`))?.[1];
+  assert.ok(hex, `${file}: ${selector} ${property} must have an explicit color`);
+  return hex.length === 4 ? '#' + Array.from(hex.slice(1), channel => channel.repeat(2)).join('') : hex;
+}
+
+test('retained and reference-inspired palettes use consecutive numbers and complete light and dark roles', () => {
+  assert.equal(palettes.length, 11);
+  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']);
+  assert.deepEqual(palettes.map(palette => palette.id), ['blue', 'graphite', 'cobalt', 'slate', 'cocoaice', 'inkiris',
+    'terminal', 'citron', 'ember', 'orchid', 'evergreen']);
+  assert.equal(new Set(palettes.map(palette => palette.id)).size, 11);
   for (const id of ['jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
     assert.ok(!palettes.some(palette => palette.id === id));
   }
@@ -35,18 +46,65 @@ test('six retained palettes use consecutive numbers and complete light and dark 
   }
 });
 
+test('every palette keeps page, panel, selection, and divider colors close to neutral', () => {
+  for (const palette of palettes) for (const mode of ['light', 'dark']) {
+    for (const role of ['bg', 'surface', 'soft', 'line']) {
+      const channels = palette[mode][role].slice(1).match(/../g).map(channel => parseInt(channel, 16));
+      assert.ok(Math.max(...channels) - Math.min(...channels) <= 8, `${palette.name} ${mode} ${role} is too colorful`);
+      if (role === 'line') continue;
+      assert.ok(mode === 'light' ? Math.min(...channels) >= 235 : Math.max(...channels) <= 52,
+        `${palette.name} ${mode} ${role} must stay near white or black`);
+    }
+  }
+});
+
+test('studio instructions, candidate labels, and selection outlines remain visible on their actual surfaces', () => {
+  const canvas = cssHex('../studio.css', ':root', 'background');
+  const card = cssHex('../studio.css', '.preview-controls', 'background');
+  const header = cssHex('../studio.css', '.design-header', 'background');
+  const picker = cssHex('../studio.css', '.palette-option', 'background');
+  const comparisons = cssHex('preview.css', '.comparison-label', 'background');
+  const pairs = [
+    ['../studio.css', '.design-meta', header],
+    ...['.preview-eyebrow', '.preview-description', '.preview-count', '.collection-heading h2 > span',
+      '.preview-footnote', '.design-footer'].map(selector => ['../studio.css', selector, canvas]),
+    ['../studio.css', '.control-heading > span:last-child', card],
+    ['../studio.css', '.palette-option-label > small', picker],
+    ['../logo/preview.css', '.option-heading > span', card],
+    ['../logo/preview.css', '.concept-note', card],
+    ...['.theme-workspace .section-heading .eyebrow', '.theme-workspace .section-heading > p', '.layout-note']
+      .map(selector => ['preview.css', selector, canvas]),
+    ['preview.css', '.palette-pair header span', card],
+    ['preview.css', '.comparison-label', comparisons],
+  ];
+  for (const [file, selector, background] of pairs) {
+    const ratio = contrast(cssHex(file, selector, 'color'), background);
+    assert.ok(ratio >= 4.5, `${selector}: ${ratio.toFixed(3)}:1`);
+  }
+  for (const selector of ['.design-tabs button[aria-selected="true"]', '.segmented button[aria-pressed="true"]']) {
+    assert.ok(contrast(cssHex('../studio.css', selector, 'border-color'), '#ffffff') >= 3, selector);
+  }
+  const focus = cssHex('../studio.css', 'button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible', 'outline');
+  for (const background of [canvas, card, header, picker, comparisons, cssHex('../studio.css', '.segmented', 'background')]) {
+    assert.ok(contrast(focus, background) >= 3, 'keyboard focus must contrast with its adjacent surface');
+  }
+});
+
 for (const palette of palettes) {
   for (const mode of ['light', 'dark']) {
-    test(`${palette.english} ${mode}: all text pairings meet 4.5:1`, () => {
+    test(`${palette.english} ${mode}: text, selected states, and controls meet contrast targets`, () => {
       const colors = palette[mode];
       for (const [foreground, background] of [
-        ['text', 'bg'], ['text', 'surface'], ['muted', 'bg'], ['muted', 'surface'],
-        ['on-button', 'button'], ['accent', 'soft'],
+        ['text', 'bg'], ['text', 'surface'], ['text', 'soft'],
+        ['muted', 'bg'], ['muted', 'surface'], ['muted', 'soft'],
+        ['accent', 'bg'], ['accent', 'surface'], ['accent', 'soft'],
+        ['on-button', 'button'],
       ]) {
         const ratio = contrast(colors[foreground], colors[background]);
-        assert.ok(ratio >= 4.5, `${foreground}/${background}: ${ratio.toFixed(3)}:1`);
+        const minimum = foreground === 'text' ? 7 : 4.5;
+        assert.ok(ratio >= minimum, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected ${minimum}:1`);
       }
-      for (const background of ['bg', 'surface']) {
+      for (const background of ['bg', 'surface', 'soft']) {
         assert.ok(contrast(colors.button, colors[background]) >= 3, `primary/${background}`);
       }
     });
