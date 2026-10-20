@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "bun test ../design/repository-language.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
