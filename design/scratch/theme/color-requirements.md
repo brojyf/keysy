@@ -94,12 +94,13 @@ Therefore, claims such as “white backgrounds fail accessibility” or “all s
 
 The current [palette tests](palettes.test.mjs) enforce the following local rules:
 
-- `bg`, `surface`, `soft`, and `line`: the largest RGB channel minus the smallest is at most `8` on the 0–255 scale.
+- Light-mode `bg`, `surface`, `soft`, and `line`: the largest RGB channel minus the smallest is at most `8` on the 0–255 scale.
+- Dark-mode `bg`, `surface`, `soft`, and `line`: RGB channels are equal (`R = G = B`), so every structural surface is black or neutral gray without a brand-hue tint.
 - Light-mode `bg`, `surface`, and `soft`: every channel is at least `235`.
 - Dark-mode `bg`, `surface`, and `soft`: every channel is at most `52`.
 - `line` is decorative; it must not silently become the only meaningful control or state boundary.
 
-These are near-neutral art-direction constraints, not perceptually uniform color measurements, evidence of comfort, or WCAG criteria. This research does not change them.
+These are local art-direction constraints, not perceptually uniform color measurements, evidence of comfort, or WCAG criteria. The dark-mode rule was tightened from near-neutral to achromatic at the user's request; light modes and accent colors remain unchanged.
 
 ## 5. Relationships between colors and states
 

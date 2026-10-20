@@ -19,6 +19,10 @@ for (const library of libraries) {
         await expect(page.getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-library', library.id);
         await expect(page.locator('.demo-workspace')).toHaveCSS('background-color', rgb(palette[mode].bg));
+        await expect(page.locator('.demo-topbar')).toHaveCSS('background-color', rgb(palette[mode].surface));
+        await expect(page.locator('.demo-topbar')).toHaveCSS('border-bottom-color', rgb(palette[mode].line));
+        await expect(page.locator('.demo-nav-active')).toHaveCSS('background-color', rgb(palette[mode].soft));
+        await expect(page.locator('.demo-table tr[data-selected="true"] td').first()).toHaveCSS('background-color', rgb(palette[mode].soft));
         const primary = page.getByRole('button', { name: '+ Add secret', exact: true });
         await expect(primary).toHaveCSS('background-color', rgb(palette[mode].button));
         await expect(primary).toHaveCSS('color', rgb(palette[mode]['on-button']));
@@ -100,10 +104,10 @@ test('Theme uses an untitled preview and a full-height rail below the unchanged 
   await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'evergreen');
 });
 
-test('Terminal and Evergreen dark layers reach both Theme layouts', async ({ page }) => {
-  for (const id of ['terminal', 'evergreen']) for (const layout of ['supabase', 'mintlify']) {
-    const colors = palettes.find(palette => palette.id === id)!.dark;
-    await page.goto(`/?tab=theme&palette=${id}&layout=${layout}&mode=dark`);
+test('All dark palette layers reach both Theme layouts', async ({ page }) => {
+  for (const palette of palettes) for (const layout of ['supabase', 'mintlify']) {
+    const colors = palette.dark;
+    await page.goto(`/?tab=theme&palette=${palette.id}&layout=${layout}&mode=dark`);
     const preview = page.locator('#focus-preview .mock-screen');
     await expect(preview).toHaveAttribute('data-mode', 'dark');
     await expect(preview).toHaveCSS('background-color', rgb(colors.bg));

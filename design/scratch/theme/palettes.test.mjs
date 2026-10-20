@@ -58,6 +58,15 @@ test('every palette keeps page, panel, selection, and divider colors close to ne
   }
 });
 
+for (const palette of palettes) {
+  test(`${palette.english} dark: all structural surfaces use achromatic black or gray`, () => {
+    for (const role of ['bg', 'surface', 'soft', 'line']) {
+      const [red, green, blue] = palette.dark[role].slice(1).match(/../g);
+      assert.ok(red === green && green === blue, `${role}: ${palette.dark[role]} must have equal RGB channels`);
+    }
+  });
+}
+
 for (const id of ['terminal', 'evergreen']) {
   test(`${id} dark: panels, selected fills, and dividers remain distinguishable from the canvas`, () => {
     const colors = palettes.find(palette => palette.id === id).dark;
