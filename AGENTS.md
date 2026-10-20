@@ -22,7 +22,8 @@
 - Branch from the latest `origin/main`; never commit directly to `main`.
 - Submit all code changes through PRs and keep them mergeable into `main`.
 - Squash-merge PRs after review.
-- Use `<type>(<scope>): <description>` for all commit messages (including squash commits) and PR titles.
+- Use `<type>(<scope>): <description>` for all commit messages (including squash commits) and PR titles, excluding the temporary `WIP: ` prefix.
+- Open PRs as drafts with a `WIP: ` title prefix; remove the prefix and draft status only when ready to merge. Merge only after explicit human confirmation.
 - Never run destructive Git operations unless explicitly requested.
 
 ## CLI tools
