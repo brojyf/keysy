@@ -1,3 +1,6 @@
+/* Adapted from tweakcn's Modern Minimal registry theme under Apache-2.0 (see LICENSE).
+   Changes: extracted cssVars into CSS blocks; runtime Keysy tokens replace semantic colors.
+   Source: https://tweakcn.com/r/themes/modern-minimal.json */
 @theme inline {
   --font-sans: Inter, sans-serif;
   --font-mono: JetBrains Mono, monospace;

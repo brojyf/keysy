@@ -97,6 +97,6 @@
     "source": "https://tweakcn.com/r/themes/modern-minimal.json",
     "sha256": "99d34e03231743aee076add2dc40302194651f04eede2dc3177094bd5981313a",
     "hashScope": "Registry response bytes",
-    "changes": "Extracted cssVars.theme, cssVars.light, and cssVars.dark into @theme inline, :root, and .dark blocks. Keysy colors override semantic roles at runtime."
+    "changes": "Extracted cssVars.theme, cssVars.light, and cssVars.dark into @theme inline, :root, and .dark blocks. Added an Apache-2.0 adaptation notice. Keysy colors override semantic roles at runtime."
   }
 ]
