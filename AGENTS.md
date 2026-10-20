@@ -13,6 +13,10 @@
 - For bugs, write a failing test before fixing. Verify new features with tests as you go.
 - Support correctness claims with tests, logs, or results.
 
+## Tech Stack
+
+- Use Bun and TypeScript 7 for web applications.
+
 ## Git Workflow
 
 - Branch from the latest `origin/main`; never commit directly to `main`.
