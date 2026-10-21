@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
-import { palettes } from '../theme/palettes.js';
+import { palettes } from '../../theme/palettes.js';
 import { blue, blueDark } from '@radix-ui/colors';
 import { libraries, readSelection, frameUrl } from './catalog';
 import { themeVariables } from './theme';

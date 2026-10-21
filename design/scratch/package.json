@@ -9,7 +9,7 @@
     "typecheck": "tsc -p css/tsconfig.json",
     "test:browser": "playwright test -c css/playwright.config.ts",
     "lint": "oxlint",
-    "test": "bun test",
+    "test": "bun test . ../theme",
     "preview": "bun --bun vite preview"
   },
   "dependencies": {

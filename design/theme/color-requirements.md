@@ -155,8 +155,8 @@ These are illustrative pairs, not proposed additions to the palette. Calculation
 Existing palette checks can be run without changing implementation:
 
 ```sh
-cd design/scratch
-bun test theme/palettes.test.mjs
+cd design/theme
+bun test palettes.test.mjs
 ```
 
 These checks cover the pairs and static styles explicitly asserted in that file. They do not prove every runtime state, image background, browser setting, or production component is accessible. See the separate [accessibility record](color-accessibility.md) for the broader local verification commands and reported coverage.

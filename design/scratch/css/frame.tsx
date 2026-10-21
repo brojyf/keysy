@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import type { ComponentType } from 'react';
-import { palettes } from '../theme/palettes.js';
+import { palettes } from '../../theme/palettes.js';
 import { libraries, readSelection, type LibraryId } from './catalog';
 import { themeVariables } from './theme';
 import type { DemoProps } from './Workspace';

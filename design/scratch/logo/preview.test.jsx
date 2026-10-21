@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { test } from 'bun:test';
 import LogoPreview from './LogoPreview.jsx';
 import candidates from './candidates.json';
-import { palettes } from '../theme/palettes.js';
+import { palettes } from '../../theme/palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['20', '13', '31', '36']);
+    ['20', '13', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
@@ -48,7 +47,8 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(screen.queryByRole('heading', { name: 'Curve', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'keysy*', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Keyhole', exact: true }), null);
-  assert.equal(container.querySelector('#logo-10, #logo-21, #generated-42'), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Gate', exact: true }), null);
+  assert.equal(container.querySelector('#logo-10, #logo-21, #generated-42, #logo-31'), null);
   assert.equal(container.querySelector('#reference-52'), null);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
@@ -72,23 +72,19 @@ test('the logo collection shows one flat grid in candidate order with no group h
   const articles = [...collection.children];
   assert.ok(articles.every(element => element.tagName === 'ARTICLE'));
   assert.deepEqual(articles.map(article => article.id),
-    ['logo-20', 'logo-13', 'logo-31', 'logo-36', 'generated-46']);
+    ['logo-20', 'logo-13', 'logo-36', 'generated-46']);
   assert.equal(new Set(articles.map(article => article.id)).size, candidates.length);
   assert.deepEqual(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent),
     [`All directions ${candidates.length}`]);
 });
 
-test('React palette controls recolor every logo panel with the shared theme tokens', async () => {
-  const user = userEvent.setup();
+test('logo panels use the fixed Ink tokens in both modes without a palette selector', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(screen.getByRole('button', { name: '1 Ink' }).getAttribute('aria-pressed'), 'true');
-  for (const palette of palettes) {
-    await user.click(screen.getByRole('button', { name: `${palette.number} ${palette.name}`, exact: true }));
-    assert.ok(screen.getByRole('status').textContent.includes(`${palette.number} ${palette.name}`));
-    assert.equal(container.querySelectorAll('[aria-pressed="true"]').length, 1);
-    for (const panel of container.querySelectorAll('.identity-preview')) {
-      for (const [role, color] of Object.entries(palette[panel.dataset.mode])) assert.equal(panel.style.getPropertyValue(`--${role}`), color);
-    }
+  assert.equal(screen.queryByRole('group', { name: 'Logo palette' }), null);
+  assert.equal(screen.queryByRole('button'), null);
+  const palette = palettes[0];
+  for (const panel of container.querySelectorAll('.identity-preview')) {
+    for (const [role, color] of Object.entries(palette[panel.dataset.mode])) assert.equal(panel.style.getPropertyValue(`--${role}`), color);
   }
 });
 

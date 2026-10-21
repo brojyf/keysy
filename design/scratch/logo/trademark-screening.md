@@ -6,11 +6,10 @@ This is a preliminary visual and public-web screening of the current [candidate 
 
 ## Candidates to review
 
-Display numbers reflect the current five-candidate gallery. Use the stable identity as well as the name if the gallery is renumbered.
+Display numbers reflect the current four-candidate gallery. Use the stable identity as well as the name if the gallery is renumbered.
 
 | Current number | Candidate / stable identity | Comparison | Similarity and material differences | Follow-up |
 | --- | --- | --- | --- | --- |
-| 2 | Gate / `logo-31` | [Clerk](https://clerk.com/) | Both use an open circular enclosure around a central dot. Gate adds a detached rectangular bar on the right; Clerk uses separate curved segments. Clerk provides authentication and user management, making it a relevant security/developer-product comparison. | Prioritize a side-by-side symbol and full-lockup review, then check relevant trademark records. The shared circle-and-dot structure alone does not establish confusion. |
 | 0 | Sealed / `logo-20` | [Doppler](https://www.doppler.com/blog/rebrand-of-doppler) | A six-arm asterisk is cut out of a rounded square. Doppler also uses an asterisk to represent secrets, but its mark has an irregular, fluid outline and detached elements. The container and silhouette differ materially. | Secondary review: compare monochrome silhouettes and relevant secrets-management marks. The strongest identified overlap is the secrets/asterisk concept. |
 
 These similarity assessments are our visual judgments. The linked company pages document the comparison brands and their public identity; they do not express any objection to Keysy or establish rights in either target market.

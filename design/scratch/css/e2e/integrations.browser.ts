@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { libraries } from '../catalog';
-import { palettes } from '../../theme/palettes.js';
+import { palettes } from '../../../theme/palettes.js';
 
 function rgb(hex: string) {
   return `rgb(${hex.slice(1).match(/../g)!.map(channel => parseInt(channel, 16)).join(', ')})`;
@@ -74,7 +74,7 @@ for (const library of libraries) {
   });
 }
 
-test('studio switches isolated libraries, palettes, and modes without leaking global CSS', async ({ page }) => {
+test('studio switches isolated libraries and modes with fixed Ink without leaking global CSS', async ({ page }) => {
   await page.goto('/css/?library=radix-themes');
   const frame = () => page.frameLocator('.css-preview-frame');
   await expect(frame().getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible();
@@ -86,7 +86,7 @@ test('studio switches isolated libraries, palettes, and modes without leaking gl
     await expect(frame().getByRole('button', { name: '+ Add secret', exact: true })).toBeVisible();
     await expect(header).toHaveCSS('background-color', originalBackground);
   }
-  await page.getByRole('button', { name: '01 Ink', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'CSS palette' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Dark', exact: true }).click();
   await expect(frame().locator('html')).toHaveAttribute('data-palette', 'blue');
   await expect(frame().locator('html')).toHaveClass('dark');
@@ -129,36 +129,29 @@ for (const library of ['radix-themes', 'intent']) {
   });
 }
 
-test('Theme uses an untitled preview and a full-height rail below the unchanged navigation', async ({ page }) => {
-  await page.goto('/?tab=theme');
-  const header = await page.locator('.design-header').boundingBox();
-  const rail = await page.locator('.theme-palette-panel').boundingBox();
-  expect(header).not.toBeNull();
-  expect(rail).not.toBeNull();
-  expect(Math.abs(rail!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1);
-  expect(Math.abs(rail!.y + rail!.height - 1000)).toBeLessThanOrEqual(1);
-  await expect(page.locator('.theme-preview-pane > h1, .theme-preview-pane > h2, .theme-workspace > header')).toHaveCount(0);
-  const scroll = page.locator('.theme-palette-scroll');
-  await expect(scroll).toHaveCSS('overflow-y', 'auto');
-  await page.getByRole('button', { name: '1 Ink', exact: true }).click();
-  await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'blue');
-});
+for (const width of [320, 390, 768, 1024, 1440]) {
+  test(`Logo and CSS fit a ${width}px viewport without horizontal scrolling or clipped content`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const tab of ['logo', 'css']) {
+      await page.goto(`/${tab}/`);
+      await expect(page.getByRole('tab', { name: tab === 'logo' ? 'Logo' : 'CSS', exact: true })).toHaveAttribute('aria-selected', 'true');
+      if (tab === 'css') await expect(page.frameLocator('.css-preview-frame').getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible();
+      const overflow = await page.locator('html, .design-header-inner, .theme-preview, .small-logo, .symbol-sizes, .css-preview-toolbar, .css-choice-panel').evaluateAll(elements => elements
+        .filter(element => element.getClientRects().length && element.scrollWidth > element.clientWidth + 1)
+        .map(element => element.className || element.tagName));
+      expect(overflow, `${tab} at ${width}px`).toEqual([]);
+      if (tab === 'css') {
+        const frameOverflow = await page.frameLocator('.css-preview-frame').locator('html, .demo-table-scroll, .demo-row-select').evaluateAll(elements => elements
+          .filter(element => element.scrollWidth > element.clientWidth + 1)
+          .map(element => element.className || element.tagName));
+        expect(frameOverflow, `CSS document at ${width}px`).toEqual([]);
+      }
+    }
+  });
+}
 
-test('All dark palette layers reach both Theme layouts', async ({ page }) => {
-  for (const palette of palettes) for (const layout of ['supabase', 'mintlify']) {
-    const colors = palette.dark;
-    await page.goto(`/?tab=theme&palette=${palette.id}&layout=${layout}&mode=dark`);
-    const preview = page.locator('#focus-preview .mock-screen');
-    await expect(preview).toHaveAttribute('data-mode', 'dark');
-    await expect(preview).toHaveCSS('background-color', rgb(colors.bg));
-    await expect(preview.locator(layout === 'supabase' ? '.secret-detail' : '.mint-search')).toHaveCSS('background-color', rgb(colors.surface));
-    await expect(preview.locator(layout === 'supabase' ? '.selected-row' : '.mint-nav-selected')).toHaveCSS('background-color', rgb(colors.soft));
-    await expect(preview.locator(layout === 'supabase' ? '.studio-topbar' : '.mint-topnav')).toHaveCSS('border-bottom-color', rgb(colors.line));
-  }
-});
-
-test('mobile studio and component previews avoid horizontal page overflow', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('mobile studio and component previews avoid horizontal page and table overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.goto('/css/?library=intent&cssMode=dark');
   await expect(page.getByRole('tab', { name: 'CSS', exact: true })).toBeInViewport();
   const preview = page.frameLocator('.css-preview-frame');
@@ -169,6 +162,7 @@ test('mobile studio and component previews avoid horizontal page overflow', asyn
     await page.goto(`/css/frame.html?library=${library.id}&cssMode=dark`);
     await expect(page.getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), library.name).toBe(true);
+    expect(await page.locator('.demo-table-scroll').evaluate(element => element.scrollWidth <= element.clientWidth + 1), library.name).toBe(true);
     await page.getByRole('button', { name: '+ Add secret', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Add secret' });
     const name = 'EXAMPLE_APPLICATION_PRODUCTION_DATABASE_CONNECTION_URL';
@@ -178,5 +172,6 @@ test('mobile studio and component previews avoid horizontal page overflow', asyn
     await expect(dialog).not.toBeVisible();
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${library.name} after creation`).toBe(true);
+    expect(await page.locator('.demo-table-scroll').evaluate(element => element.scrollWidth <= element.clientWidth + 1), `${library.name} after creation`).toBe(true);
   }
 });

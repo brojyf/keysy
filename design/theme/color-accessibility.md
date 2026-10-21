@@ -1,6 +1,6 @@
 # Color and readability
 
-Checked on October 21, 2026. Applies to the retained Ink palette in both modes, the Dashboard and documentation mocks, and the Design Studio controls.
+Checked on October 21, 2026. Applies to the retained Ink palette in both modes, the Logo and CSS studies, and the Design Studio controls.
 
 ## Requirements and design choices
 
@@ -12,7 +12,7 @@ Checked on October 21, 2026. Applies to the retained Ink palette in both modes, 
 | Keyboard focus | [SC 2.4.7](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html): keyboard focus must remain visible. | Studio controls retain a 2px outline, tested against their adjacent surfaces. Tab keyboard navigation and selected state are covered by component tests. |
 | Neutral surfaces | This is the requested Keysy direction, not an accessibility standard. | Light-mode `bg`, `surface`, `soft`, and `line` have at most 8/255 separation between RGB channels. Dark-mode structural colors are achromatic (`R = G = B`). Light `bg`, `surface`, and `soft` channels stay at least 235/255; their dark counterparts stay at most 52/255. Decorative dividers may be lighter. Accents and primary buttons are exempt from this surface constraint. |
 
-Contrast is calculated from sRGB relative luminance, using the exact ratio without rounding to decide pass/fail. The current mock text does not use opacity or color mixing, so its declared tokens determine the foreground/background pairings. Decorative shadows and swatch edges do not attenuate text.
+Contrast is calculated from sRGB relative luminance, using the exact ratio without rounding to decide pass/fail. Palette tests use the declared opaque HEX tokens. CSS integrations also use derived colors and require browser checks for their rendered states. Decorative shadows and swatch edges do not attenuate text.
 
 ## Measured minima
 
@@ -29,11 +29,11 @@ The expanded tests cover 26 palette pairings, plus studio label, selected-outlin
 
 ```sh
 cd design/scratch
-bun test
+bun run test
 bun run lint
 bun run build
 ```
 
-The component suite renders all 4 layout/palette/mode combinations and checks shared tokens, selection controls, URL restoration, and all logo recoloring. The background constraint prevents a later palette from reintroducing visibly colored surface areas.
+The component suite checks shared tokens, selection controls, URL restoration, and all logo recoloring. Palette tests live in `design/theme/`; studio contrast checks live in `design/scratch/accessibility.test.mjs`. The background constraint prevents visibly colored structural surfaces.
 
-These results verify the covered color pairings, not full WCAG conformance of a production application. The Dashboard and documentation screens are static visual mocks, and color-choice thumbnails scale down their content. Select a choice to inspect it in the larger preview. Production forms, error states, zoom/reflow, and assistive-technology behavior require verification when those interfaces are implemented.
+These results verify the covered color pairings, not full WCAG conformance of a production application. The former Dashboard and documentation Theme mocks have been removed. CSS integrations remain local design experiments; their hover colors and interactions are checked by `bun run test:browser` from `design/scratch/`. Production forms, error states, zoom/reflow, and assistive-technology behavior require verification when those interfaces are implemented.

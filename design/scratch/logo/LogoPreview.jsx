@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import candidates from './candidates.json';
-import { palettes } from '../theme/palettes.js';
-import PalettePicker from '../components/PalettePicker.jsx';
+import { palettes } from '../../theme/palettes.js';
 
 // Source-controlled SVG artwork is kept verbatim, including its outlined typography.
 function Artwork({ entry }) {
@@ -22,8 +20,7 @@ function Artwork({ entry }) {
 }
 
 export default function LogoPreview() {
-  const [paletteId, setPaletteId] = useState('blue');
-  const palette = palettes.find(option => option.id === paletteId);
+  const palette = palettes[0];
 
   return <div className="logo-workspace preview-content">
       <header className="preview-heading">
@@ -32,9 +29,8 @@ export default function LogoPreview() {
         </div>
         <span className="preview-count">{candidates.length} candidates · 0–{candidates.length - 1}</span>
       </header>
-      <div className="preview-controls"><PalettePicker value={paletteId} onChange={setPaletteId} label="Logo palette" /></div>
       <div className="collection-heading"><h2>All directions <span>{candidates.length}</span></h2>
-        <p id="palette-status" role="status" aria-live="polite">{palette.number} {palette.name} <span> / </span> Light & dark</p>
+        <p>{palette.name} <span> / </span> Light & dark</p>
       </div>
       <div id="comparisons" className="comparison-grid">
         {candidates.map((entry, number) => <article key={`${entry.kind}-${entry.id}`} id={`${entry.kind}-${entry.id}`}
@@ -50,6 +46,6 @@ export default function LogoPreview() {
           </div>
         </article>)}
       </div>
-      <p className="preview-footnote">The same artwork in every palette. Original outlines, unchanged.</p>
+      <p className="preview-footnote">The same artwork in light and dark. Original outlines, unchanged.</p>
   </div>;
 }

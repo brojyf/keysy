@@ -1,6 +1,6 @@
 # Keysy palette candidates
 
-Updated: 2026-10-21. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Ink (number 1, internal ID `blue`) was selected as the Keysy color system on October 21, 2026, and is the default in every studio preview. Ink is the only available palette; Mono has been removed. Cocoa / Ice, Terminal, Orchid, Ink / Iris, and Evergreen have been removed. Their reference studies below are historical; retained internal IDs remain stable.
+Updated: 2026-10-21. [Logo selection](../scratch/logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Ink (number 1, internal ID `blue`) was selected as the Keysy color system on October 21, 2026, and is the default in every studio preview. Ink is the only available palette; Mono has been removed. Cocoa / Ice, Terminal, Orchid, Ink / Iris, and Evergreen have been removed. Their reference studies below are historical; retained internal IDs remain stable.
 
 Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 13 Plum, 15 Navy / Rose, 17 Pine / Chalk, and 18 Aubergine / Celadon.
 Earlier review numbers below are historical; they do not describe the current display order.
@@ -36,7 +36,7 @@ Start with 14 Slate, then 13 Plum. These are comparison candidates, not a requir
 
 ## Historical studies: 16–19
 
-[New palettes](index.html) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; all four studies have been removed from previews.
+[Selected palette](README.md) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; all four studies have been removed from previews.
 
 | Number | Color relationship | Credited design source and Keysy interpretation | Pros / cons |
 | --- | --- | --- | --- |
@@ -51,6 +51,6 @@ All sources are publicly credited studio projects, not generated reference image
 
 ## Values and checks
 
-`palettes.js` contains the complete Ink light/dark palette. It has display number 1, stable internal ID `blue`, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
+`palettes.js` contains the complete Ink light/dark palette. It has display number 1, stable internal ID `blue`, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [logo selection](../scratch/logo/index.html) and [CSS comparison](../scratch/css/README.md) import the same values as ES modules, with no runtime CDN dependency. The Theme comparison page has been removed from scratch.
 
-`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 26 text/button pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.
+`bun test palettes.test.mjs` (from `design/theme/`) checks 26 text/button pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces. The studio's small text, selection outlines, and keyboard focus are checked separately by `scratch/accessibility.test.mjs`. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.

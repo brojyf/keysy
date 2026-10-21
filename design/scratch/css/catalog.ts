@@ -1,4 +1,4 @@
-import { palettes } from '../theme/palettes.js';
+import { palettes } from '../../theme/palettes.js';
 
 export const libraries = [
   { id: 'radix-themes', name: 'Radix Themes', kind: 'React component library', stack: '@radix-ui/themes', source: 'https://www.radix-ui.com/themes/docs/overview/getting-started', note: 'Real Theme, Button, TextField, and Badge components with custom palette tokens; the shared table uses native HTML.' },
@@ -26,7 +26,7 @@ export function readSelection(search: string): Selection {
 }
 
 export function frameUrl(selection: Selection, pathname = '/'): string {
-  const root = pathname.replace(/(?:logo|theme|css)\/(?:index\.html)?$/, '').replace(/index\.html$/, '');
+  const root = pathname.replace(/(?:logo|css)\/(?:index\.html)?$/, '').replace(/index\.html$/, '');
   const params = new URLSearchParams({ library: selection.library, cssPalette: selection.palette, cssMode: selection.mode });
   return `${root}css/frame.html?${params}`;
 }

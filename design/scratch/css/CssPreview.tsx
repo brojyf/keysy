@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { palettes } from '../theme/palettes.js';
 import { frameUrl, libraries, readSelection, type Selection } from './catalog';
 import './preview.css';
 
@@ -34,11 +33,7 @@ export default function CssPreview({ active = true }: { active?: boolean }) {
         <div className="css-library-choices" role="group" aria-label="CSS library">
           {libraries.map(option => <button key={option.id} type="button" aria-pressed={selection.library === option.id} onClick={() => select({ library: option.id })}><strong>{option.name}</strong><span>{option.kind}</span></button>)}
         </div>
-        <h2>Color systems <span>{palettes.length}</span></h2>
-        <div className="css-palette-choices" role="group" aria-label="CSS palette">
-          {palettes.map(palette => <button key={palette.id} type="button" aria-pressed={selection.palette === palette.id} onClick={() => select({ palette: palette.id })}><span className="css-color-dot" style={{ background: palette[selection.mode].accent }} /><span>{palette.number.padStart(2, '0')} {palette.name}</span></button>)}
-        </div>
-        <p className="css-choice-hint">Same fictional content. Real integrations. Each preview has an isolated document. Switching a library, palette, or mode resets demo edits.</p>
+        <p className="css-choice-hint">Same fictional content. Real integrations. Each preview has an isolated document. Switching a library or mode resets demo edits.</p>
       </div>
     </aside>
   </div>;

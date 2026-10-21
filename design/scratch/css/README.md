@@ -1,6 +1,6 @@
 # CSS integration comparison
 
-Nine integrations share one fictional key-management screen and the existing nine Keysy light/dark palettes. This is a design experiment, not a production dependency decision.
+Nine integrations share one fictional key-management screen and the selected Ink light/dark palette. This is a design experiment, not a production dependency decision.
 
 ## Run
 
@@ -16,7 +16,7 @@ Open `/css/` or select **CSS** in Design Studio. For example:
 - `/?tab=css&library=shadcn&cssPalette=blue&cssMode=light`
 - `/css/frame.html?library=intent&cssPalette=blue&cssMode=dark` for a standalone integration.
 
-Select an integration and color system in the right rail; switch Light/Dark above the preview. Each iframe loads only its selected integration, keeping global resets, Tailwind utilities, and component styles out of the studio and other integrations. The documents are style-isolated, not a security sandbox; all code is trusted local source. All packages and fonts are bundled locally, with no runtime CDN or product API requests.
+Select an integration in the right rail; switch Light/Dark above the preview. Ink is fixed, with no color-system selector. Each iframe loads only its selected integration, keeping global resets, Tailwind utilities, and component styles out of the studio and other integrations. The documents are style-isolated, not a security sandbox; all code is trusted local source. All packages and fonts are bundled locally, with no runtime CDN or product API requests.
 
 ## What is real
 
@@ -40,8 +40,8 @@ Copied component source retains adjacent MIT license notices for [shadcn](vendor
 
 - `Workspace.tsx` owns identical content, layout, and local interactions. Each adapter supplies actual button, input, and badge implementations. The table shares native markup; daisyUI and Basecoat additionally apply their table classes. The shell is intentionally shared, so this compares component styling and theming rather than nine unrelated dashboard layouts.
 - The Add secret modal is a **shared native HTML dialog**, not nine vendor dialog implementations. Search, row selection, reveal/hide, required-field validation, duplicate-name checks, add, and cancel work locally. Never enter real credentials.
-- Switching a library, palette, or mode reloads the iframe and resets demo edits. Leaving the CSS tab also unloads its iframe; library/palette/mode choices remain mounted and are retained. Nothing is persisted to storage.
-- Palette definitions are imported from `../theme/palettes.js`, not copied. `theme.ts` maps their semantic roles to framework variables. Component-library defaults still determine geometry, borders, state treatment, and behavior. Radix's intermediate steps are an explicit Keysy adaptation, not output from its custom color generator. Success states use green independently of the brand accent.
+- Switching a library or mode reloads the iframe and resets demo edits. Leaving the CSS tab also unloads its iframe; library/mode choices remain mounted and are retained. Nothing is persisted to storage.
+- Palette definitions are imported from [`../../theme/palettes.js`](../../theme/palettes.js), not copied. `theme.ts` maps their semantic roles to framework variables. Component-library defaults still determine geometry, borders, state treatment, and behavior. Radix's intermediate steps are an explicit Keysy adaptation, not output from its custom color generator. Success states use green independently of the brand accent.
 - All nine systems support customization, but Radix Colors/Open Props require locally maintained components; copied-source systems require owning component updates; packaged components retain their APIs and global CSS. This playground does not choose a production winner.
 
 ## Verify
@@ -49,12 +49,12 @@ Copied component source retains adjacent MIT license notices for [shadcn](vendor
 ```sh
 cd design/scratch
 bun run lint
-bun test
+bun run test
 bun run build
 bunx playwright install chromium
 bun run test:browser
 ```
 
-`build` includes a TypeScript 7 check for this workspace. Unit tests cover the catalog, token mappings, URL validation, iframe destinations, switching, tab retention, and inactive-panel behavior. Playwright builds and serves the production output on port 4189, then checks all **9 libraries × 1 palette × 2 modes = 18 combinations**, real computed primary colors, native status colors, local interactions, validation, stylesheet isolation, URL restoration, mobile overflow, and the full-height Theme rail. Runtime errors and external HTTP requests fail integration tests. Browser artifacts go to ignored `test-results/`.
+`build` includes a TypeScript 7 check for this workspace. Unit tests cover the catalog, token mappings, URL validation, iframe destinations, switching, tab retention, and inactive-panel behavior. Playwright builds and serves the production output on port 4189, then checks all **9 libraries × 1 palette × 2 modes = 18 combinations**, real computed primary colors, native status colors, local interactions, validation, stylesheet isolation, URL restoration, and mobile overflow. Runtime errors and external HTTP requests fail integration tests. Browser artifacts go to ignored `test-results/`.
 
 The studio's existing artwork bundle still produces Vite's large-chunk warning; library styles and implementation code are lazy-loaded inside the iframe. Production `web/`, `docs/`, and their dependencies are unchanged.

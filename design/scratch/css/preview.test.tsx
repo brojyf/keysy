@@ -5,24 +5,23 @@ import userEvent from '@testing-library/user-event';
 import CssPreview from './CssPreview';
 import DesignStudio from '../DesignStudio.jsx';
 import { libraries } from './catalog';
-import { palettes } from '../theme/palettes.js';
 
-test('CSS choices expose all nine integrations and shared palettes with one isolated preview', () => {
+test('CSS choices expose all nine integrations with fixed Ink and no palette selector', () => {
   render(<CssPreview />);
   assert.equal(within(screen.getByRole('group', { name: 'CSS library' })).getAllByRole('button').length, libraries.length);
-  assert.equal(within(screen.getByRole('group', { name: 'CSS palette' })).getAllByRole('button').length, palettes.length);
+  assert.equal(screen.queryByRole('group', { name: 'CSS palette' }), null);
+  assert.equal(screen.queryByRole('heading', { name: /Color systems/ }), null);
   const frame = screen.getByTitle('Radix Themes interactive preview');
   assert.equal(frame.getAttribute('src'), '/css/frame.html?library=radix-themes&cssPalette=blue&cssMode=light');
   assert.equal(screen.getByRole('complementary', { name: 'CSS preview choices' }).contains(frame), false);
 });
 
-test('library, palette, and appearance changes update the iframe and preserve unrelated URL values', async () => {
-  history.replaceState(null, '', '/theme/?tab=css&library=shadcn&cssPalette=blue&cssMode=dark&palette=slate&mode=light&review=1#comparison');
+test('library and appearance changes keep Ink and preserve unrelated URL values', async () => {
+  history.replaceState(null, '', '/logo/?tab=css&library=shadcn&cssPalette=blue&cssMode=dark&palette=slate&mode=light&review=1#comparison');
   const user = userEvent.setup();
   render(<CssPreview />);
   assert.ok(screen.getByTitle('shadcn/ui + tweakcn interactive preview'));
   await user.click(screen.getByRole('button', { name: 'Intent UI Copied React components' }));
-  await user.click(screen.getByRole('button', { name: '01 Ink' }));
   await user.click(screen.getByRole('button', { name: 'Light', exact: true }));
   assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=blue&cssMode=light');
   const params = new URLSearchParams(location.search);
@@ -60,7 +59,7 @@ test('the CSS tab restores selections and retains them across other studio tabs'
   assert.equal(screen.getByRole('tab', { name: 'CSS', exact: true }).getAttribute('aria-selected'), 'true');
   assert.equal(document.title, 'Keysy — CSS · Design Studio');
   assert.match(screen.getByTitle('coss ui interactive preview').getAttribute('src')!, /cssPalette=blue&cssMode=dark/);
-  await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
+  await user.click(screen.getByRole('tab', { name: 'Logo', exact: true }));
   assert.equal(document.querySelector('iframe'), null);
   await user.click(screen.getByRole('tab', { name: 'CSS', exact: true }));
   assert.equal(screen.getByRole('button', { name: 'coss ui Copied React components' }).getAttribute('aria-pressed'), 'true');

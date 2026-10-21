@@ -8,7 +8,7 @@ export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
-      input: Object.fromEntries(['index.html', 'logo/index.html', 'theme/index.html', 'css/index.html', 'css/frame.html']
+      input: Object.fromEntries(['index.html', 'logo/index.html', 'css/index.html', 'css/frame.html']
         .map(path => [path, fileURLToPath(new URL(path, import.meta.url))])),
     },
   },
