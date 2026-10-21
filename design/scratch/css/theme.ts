@@ -4,8 +4,8 @@ import type { LibraryId, Mode } from './catalog';
 export type PaletteColors = Record<'bg' | 'surface' | 'text' | 'muted' | 'accent' | 'button' | 'on-button' | 'soft' | 'line', string>;
 
 const hues: Record<string, string> = {
-  blue: 'blue', graphite: 'gray', slate: 'slate', cocoaice: 'brown', inkiris: 'iris',
-  terminal: 'jade', ember: 'bronze', orchid: 'plum', evergreen: 'green',
+  blue: 'blue', graphite: 'gray', slate: 'slate', inkiris: 'iris',
+  ember: 'bronze', orchid: 'plum', evergreen: 'green',
 };
 
 export function themeVariables(colors: PaletteColors, library: LibraryId, mode: Mode, paletteId = 'blue'): Record<string, string> {

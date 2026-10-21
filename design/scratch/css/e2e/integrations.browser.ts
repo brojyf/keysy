@@ -79,7 +79,7 @@ test('studio switches isolated libraries, palettes, and modes without leaking gl
     await expect(frame().getByRole('button', { name: '+ Add secret', exact: true })).toBeVisible();
     await expect(header).toHaveCSS('background-color', originalBackground);
   }
-  await page.getByRole('button', { name: '10 Evergreen', exact: true }).click();
+  await page.getByRole('button', { name: '05 Evergreen', exact: true }).click();
   await page.getByRole('button', { name: 'Dark', exact: true }).click();
   await expect(frame().locator('html')).toHaveAttribute('data-palette', 'evergreen');
   await expect(frame().locator('html')).toHaveClass('dark');
@@ -100,7 +100,7 @@ test('Theme uses an untitled preview and a full-height rail below the unchanged 
   await expect(page.locator('.theme-preview-pane > h1, .theme-preview-pane > h2, .theme-workspace > header')).toHaveCount(0);
   const scroll = page.locator('.theme-palette-scroll');
   expect(await scroll.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
-  await page.getByRole('button', { name: '10 Evergreen', exact: true }).click();
+  await page.getByRole('button', { name: '5 Evergreen', exact: true }).click();
   await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'evergreen');
 });
 

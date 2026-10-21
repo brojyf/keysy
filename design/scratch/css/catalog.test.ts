@@ -20,8 +20,11 @@ test('selection validates URL values without losing palette or appearance', () =
   assert.deepEqual(readSelection('?library=unknown&cssPalette=invalid&cssMode=no'), {
     library: 'radix-themes', palette: palettes[0].id, mode: 'light',
   });
-  assert.equal(frameUrl(readSelection('?library=intent&cssPalette=terminal&cssMode=dark')),
-    '/css/frame.html?library=intent&cssPalette=terminal&cssMode=dark');
+  assert.equal(frameUrl(readSelection('?library=intent&cssPalette=orchid&cssMode=dark')),
+    '/css/frame.html?library=intent&cssPalette=orchid&cssMode=dark');
+  for (const palette of ['cocoaice', 'terminal']) {
+    assert.equal(readSelection(`?cssPalette=${palette}`).palette, palettes[0].id);
+  }
   assert.equal(frameUrl(readSelection(''), '/studies/css/index.html'),
     '/studies/css/frame.html?library=radix-themes&cssPalette=blue&cssMode=light');
 });

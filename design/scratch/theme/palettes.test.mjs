@@ -26,13 +26,12 @@ function cssHex(file, selector, property) {
   return hex.length === 4 ? '#' + Array.from(hex.slice(1), channel => channel.repeat(2)).join('') : hex;
 }
 
-test('retained and reference-inspired palettes keep stable numbers and complete light and dark roles', () => {
-  assert.equal(palettes.length, 7);
-  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2', '5', '6', '7', '9', '10']);
-  assert.deepEqual(palettes.map(palette => palette.id), ['blue', 'graphite', 'cocoaice', 'inkiris',
-    'terminal', 'orchid', 'evergreen']);
-  assert.equal(new Set(palettes.map(palette => palette.id)).size, 7);
-  for (const id of ['slate', 'ember', 'cobalt', 'citron', 'jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
+test('retained and reference-inspired palettes use consecutive numbers and complete light and dark roles', () => {
+  assert.equal(palettes.length, 5);
+  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2', '3', '4', '5']);
+  assert.deepEqual(palettes.map(palette => palette.id), ['blue', 'graphite', 'inkiris', 'orchid', 'evergreen']);
+  assert.equal(new Set(palettes.map(palette => palette.id)).size, 5);
+  for (const id of ['cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
     assert.ok(!palettes.some(palette => palette.id === id));
   }
   const roles = ['bg', 'surface', 'text', 'muted', 'accent', 'button', 'on-button', 'soft', 'line'];
@@ -67,7 +66,7 @@ for (const palette of palettes) {
   });
 }
 
-for (const id of ['terminal', 'evergreen']) {
+for (const id of ['evergreen']) {
   test(`${id} dark: panels, selected fills, and dividers remain distinguishable from the canvas`, () => {
     const colors = palettes.find(palette => palette.id === id).dark;
     assert.ok(luminance(colors.bg) < luminance(colors.surface));
@@ -136,3 +135,15 @@ for (const palette of palettes) {
     });
   }
 }
+
+test('Evergreen buttons retain Terminal greens with a small reduction in saturation', () => {
+  const evergreen = palettes.find(palette => palette.id === 'evergreen');
+  for (const [mode, original] of [['light', '#087443'], ['dark', '#7aceaa']]) {
+    const channels = hex => hex.slice(1).match(/../g).map(channel => parseInt(channel, 16));
+    const before = channels(original);
+    const after = channels(evergreen[mode].button);
+    assert.notEqual(evergreen[mode].button, original);
+    assert.ok(after.every((channel, index) => Math.abs(channel - before[index]) <= 16));
+    assert.ok(Math.max(...after) - Math.min(...after) < Math.max(...before) - Math.min(...before));
+  }
+});

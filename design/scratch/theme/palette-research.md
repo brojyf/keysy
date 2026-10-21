@@ -1,11 +1,11 @@
 # Keysy palette candidates
 
-Updated: 2026-10-20. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). The nine current candidates keep their review numbers (1, 2, and 4–10); Cobalt (3) has been removed. The new studies are available in Design Studio.
+Updated: 2026-10-20. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). The five current candidates are numbered consecutively: 1 Ink, 2 Mono, 3 Ink / Iris, 4 Orchid, and 5 Evergreen. Cocoa / Ice (old 5) and Terminal (old 7) have been removed. Evergreen (old 10) keeps its surfaces, text, and accents, with slightly desaturated Terminal greens reserved for buttons: light `#18734b`, dark `#83c9aa`. Internal IDs remain stable for retained palettes.
 
 Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 13 Plum, 15 Navy / Rose, 17 Pine / Chalk, and 18 Aubergine / Celadon.
-Retained: 1 Ink, 2 Mono, 4 Slate, 5 Cocoa / Ice, and 6 Ink / Iris.
+Earlier review numbers below are historical; they do not describe the current display order.
 
-## Infrastructure reference studies: 7–10
+## Historical infrastructure reference studies: 7–10
 
 These studies translate the official brand references collected for this project into restrained interface colors. HEX values are composed for Keysy, not sampled or presented as the companies' design tokens. Retained palettes 1, 2, and 4–6 keep their identities and numbering; the near-neutral surface rule applies to all nine palettes in both modes.
 
@@ -51,6 +51,6 @@ All sources are publicly credited studio projects, not generated reference image
 
 ## Values and checks
 
-`palettes.js` and `palettes-extra.js` contain 9 complete light/dark palettes. Each has a stable display number, an unchanged internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
+`palettes.js` and `palettes-extra.js` contain 5 complete light/dark palettes. Each has a consecutive display number, a stable internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
 
-`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 234 text/button pairings plus six Terminal/Evergreen layer-separation pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.
+`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 130 text/button pairings plus three Evergreen layer-separation pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.

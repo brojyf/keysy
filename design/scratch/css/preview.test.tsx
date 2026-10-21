@@ -22,11 +22,11 @@ test('library, palette, and appearance changes update the iframe and preserve un
   render(<CssPreview />);
   assert.ok(screen.getByTitle('shadcn/ui + tweakcn interactive preview'));
   await user.click(screen.getByRole('button', { name: 'Intent UI Copied React components' }));
-  await user.click(screen.getByRole('button', { name: '07 Terminal' }));
+  await user.click(screen.getByRole('button', { name: '04 Orchid' }));
   await user.click(screen.getByRole('button', { name: 'Light', exact: true }));
-  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=terminal&cssMode=light');
+  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=orchid&cssMode=light');
   const params = new URLSearchParams(location.search);
-  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'terminal', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
+  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'orchid', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
   assert.equal(location.hash, '#comparison');
 });
 
