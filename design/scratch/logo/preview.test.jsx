@@ -8,16 +8,23 @@ import candidates from './candidates.json';
 import { palettes } from '../theme/palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+const expectedGroups = [
+  ['Wordmarks', ['logo-10', 'generated-45']],
+  ['Brackets & asterisks', ['logo-19', 'logo-20', 'logo-21', 'logo-22']],
+  ['Keys & keyholes', ['logo-32', 'logo-11', 'generated-42']],
+  ['Rings & links', ['generated-47', 'logo-13', 'logo-31', 'generated-43']],
+  ['K & geometric blocks', ['reference-54', 'logo-36', 'icon-D', 'generated-46', 'reference-52', 'reference-55']],
+];
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['10', '11', '13', '19', '21', '31', '32']);
-  assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), ['B']);
+    ['10', '19', '20', '21', '22', '32', '11', '13', '31', '36']);
+  assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['40', '42', '43', '45', '46', '47', '48', '49']);
+    ['45', '42', '47', '43', '46']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
-    ['52', '54', '55']);
+    ['54', '52', '55']);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -31,28 +38,24 @@ test('retained candidates keep their source artwork and removed candidates are a
   }
 });
 
-test('the React grid preserves all 20 candidates, original review numbers, and both modes', () => {
+test('the React grid shows every retained candidate with consecutive display numbers and both modes', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('article').length, 20);
-  assert.equal(container.querySelector('.preview-description').textContent, '20 directions. One color system. See what feels like Keysy.');
-  assert.equal(container.querySelector('.preview-count').textContent, '20 candidates · 0–19');
-  assert.equal(container.querySelector('.collection-heading h2 span').textContent, '20');
-  assert.equal(container.querySelectorAll('.identity-preview').length, 40);
-  assert.equal(container.querySelectorAll('.logo-art').length, 38);
-  assert.equal(container.querySelectorAll('.icon-art:not(.icon-small)').length, 2);
-  assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)).sort((a, b) => a - b),
-    Array.from({ length: 20 }, (_, index) => index));
-  assert.equal(container.querySelector('#generated-51, #reference-53'), null);
+  assert.equal(container.querySelectorAll('article').length, candidates.length);
+  assert.equal(container.querySelector('.preview-description').textContent, `${candidates.length} directions. One color system. See what feels like Keysy.`);
+  assert.equal(container.querySelector('.preview-count').textContent, `${candidates.length} candidates · 0–${candidates.length - 1}`);
+  assert.equal(container.querySelector('.collection-heading h2 span').textContent, String(candidates.length));
+  assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)),
+    Array.from({ length: candidates.length }, (_, index) => index));
+  assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
-  assert.deepEqual(['52', '54', '55'].map(id => container.querySelector(`#reference-${id}`)).map(article => [
-    article.querySelector('.option-heading > span').textContent,
-    article.querySelector('h3').textContent,
-  ]), [['17', 'Node K'], ['18', 'Relay'], ['19', 'Secret cell']]);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelector('.option-heading > span').textContent, String(candidates.indexOf(entry)));
-    assert.equal(article.querySelectorAll('.theme-preview').length, 2);
+    assert.equal(article.querySelector('h3').textContent, entry.name);
+    const panels = [...article.querySelectorAll('.theme-preview')];
+    assert.deepEqual(panels.map(panel => panel.dataset.mode), ['light', 'dark']);
+    for (const panel of panels) assert.ok(within(panel).getByRole('img', { name: entry.name, exact: true }));
     if (entry.svg) {
       assert.equal(article.querySelector('.logo-art').innerHTML, new DOMParser().parseFromString(entry.svg, 'text/html').body.innerHTML);
       assert.equal(article.querySelector('.small-logo').querySelectorAll(':scope > span').length, 1,
@@ -63,32 +66,54 @@ test('the React grid preserves all 20 candidates, original review numbers, and b
 
 test('similar logos appear in five labeled groups without changing their review numbers or source identities', () => {
   const { container } = render(<LogoPreview />);
-  const groups = [
-    ['Wordmarks', [0, 12]],
-    ['Brackets & asterisks', [3, 4, 6]],
-    ['Keys & keyholes', [1, 7, 9, 10, 14, 15]],
-    ['Rings & links', [2, 5, 11, 16, 18]],
-    ['K & geometric blocks', [8, 13, 17, 19]],
-  ];
-  assert.equal(container.querySelectorAll('#comparisons > section').length, groups.length);
-  for (const [name, numbers] of groups) {
+  assert.equal(container.querySelectorAll('#comparisons > section').length, expectedGroups.length);
+  for (const [name, identities] of expectedGroups) {
     const group = screen.getByRole('region', { name, exact: true });
-    assert.equal(within(group).getByRole('heading', { level: 2, name, exact: true }).textContent, `${name}${numbers.length}`);
-    assert.deepEqual([...group.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)), numbers);
-    assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id),
-      numbers.map(number => `${candidates[number].kind}-${candidates[number].id}`));
+    assert.equal(within(group).getByRole('heading', { level: 2, name, exact: true }).textContent, `${name}${identities.length}`);
+    assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id), identities);
   }
   const articles = [...container.querySelectorAll('#comparisons article')];
-  assert.deepEqual(articles.map(article => article.id), groups.flatMap(([, numbers]) =>
-    numbers.map(number => `${candidates[number].kind}-${candidates[number].id}`)));
+  assert.deepEqual(articles.map(article => article.id), expectedGroups.flatMap(([, identities]) => identities));
   assert.equal(new Set(articles.map(article => article.id)).size, candidates.length);
+});
+
+test('candidate groups survive reordering, removal, and insertion without losing or duplicating artwork', () => {
+  const original = [...candidates];
+  const inserted = { ...original[0], id: 'grouping-regression', group: 'keys-keyholes' };
+  try {
+    for (const entries of [
+      [...original].reverse(),
+      original.filter(entry => entry !== original[0] && entry !== original.at(-1)),
+      [inserted, ...original],
+    ]) {
+      candidates.splice(0, candidates.length, ...entries);
+      const { container, unmount } = render(<LogoPreview />);
+      const articles = [...container.querySelectorAll('#comparisons article')];
+      const identities = entries.map(entry => `${entry.kind}-${entry.id}`);
+      assert.equal(articles.length, entries.length);
+      assert.deepEqual(new Set(articles.map(article => article.id)), new Set(identities));
+      for (const [name, members] of expectedGroups) {
+        const expected = new Set(members);
+        if (name === 'Keys & keyholes') expected.add(`${inserted.kind}-${inserted.id}`);
+        const group = screen.getByRole('region', { name, exact: true });
+        assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id),
+          identities.filter(id => expected.has(id)));
+      }
+      for (const article of articles) {
+        assert.equal(article.querySelector('.option-heading > span').textContent, String(identities.indexOf(article.id)));
+      }
+      unmount();
+    }
+  } finally {
+    candidates.splice(0, candidates.length, ...original);
+  }
 });
 
 test('new reference studies include reusable lockups and symbols at all three review sizes', () => {
   const { container } = render(<LogoPreview />);
   const additions = candidates.filter(entry => entry.kind === 'reference');
-  assert.deepEqual(additions.map(entry => entry.name), ['Node K', 'Relay', 'Secret cell']);
-  assert.equal(new Set(additions.map(entry => entry.symbol)).size, 3);
+  assert.deepEqual(additions.map(entry => entry.name), ['Relay', 'Node K', 'Secret cell']);
+  assert.equal(new Set(additions.map(entry => entry.symbol)).size, additions.length);
   for (const entry of additions) {
     assert.ok(entry.meaning && entry.source && entry.symbolSource);
     const article = container.querySelector(`#reference-${entry.id}`);

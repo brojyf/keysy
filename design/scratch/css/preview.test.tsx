@@ -4,11 +4,13 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CssPreview from './CssPreview';
 import DesignStudio from '../DesignStudio.jsx';
+import { libraries } from './catalog';
+import { palettes } from '../theme/palettes.js';
 
 test('CSS choices expose all nine integrations and shared palettes with one isolated preview', () => {
   render(<CssPreview />);
-  assert.equal(within(screen.getByRole('group', { name: 'CSS library' })).getAllByRole('button').length, 9);
-  assert.equal(within(screen.getByRole('group', { name: 'CSS palette' })).getAllByRole('button').length, 7);
+  assert.equal(within(screen.getByRole('group', { name: 'CSS library' })).getAllByRole('button').length, libraries.length);
+  assert.equal(within(screen.getByRole('group', { name: 'CSS palette' })).getAllByRole('button').length, palettes.length);
   const frame = screen.getByTitle('Radix Themes interactive preview');
   assert.equal(frame.getAttribute('src'), '/css/frame.html?library=radix-themes&cssPalette=blue&cssMode=light');
   assert.equal(screen.getByRole('complementary', { name: 'CSS preview choices' }).contains(frame), false);

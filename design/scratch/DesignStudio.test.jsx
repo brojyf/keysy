@@ -3,10 +3,12 @@ import { test } from 'bun:test';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DesignStudio from './DesignStudio.jsx';
+import candidates from './logo/candidates.json';
+import { palettes as themePalettes } from './theme/palettes.js';
 
 test('the studio starts with accessible Logo tabs and one visible panel', () => {
   const { container } = render(<DesignStudio />);
-  assert.equal(container.querySelector('.design-meta').textContent, '20 marks · 7 color systems');
+  assert.equal(container.querySelector('.design-meta').textContent, `${candidates.length} marks · ${themePalettes.length} color systems`);
   const logo = screen.getByRole('tab', { name: 'Logo', exact: true });
   const theme = screen.getByRole('tab', { name: 'Theme', exact: true });
   assert.equal(logo.getAttribute('aria-selected'), 'true');
@@ -83,5 +85,5 @@ test('an explicit tab overrides a legacy path and hidden theme updates do not ch
   assert.equal(new URLSearchParams(location.search).get('palette'), null);
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   const palettes = within(screen.getByRole('tabpanel', { name: 'Logo', exact: true })).getByRole('group', { name: 'Logo palette' });
-  assert.equal(within(palettes).getAllByRole('button').length, 7);
+  assert.equal(within(palettes).getAllByRole('button').length, themePalettes.length);
 });

@@ -14,7 +14,7 @@ Open `/css/` or select **CSS** in Design Studio. For example:
 
 - `/css/?library=coss&cssPalette=evergreen&cssMode=dark`
 - `/?tab=css&library=shadcn&cssPalette=blue&cssMode=light`
-- `/css/frame.html?library=intent&cssPalette=slate&cssMode=dark` for a standalone integration.
+- `/css/frame.html?library=intent&cssPalette=terminal&cssMode=dark` for a standalone integration.
 
 Select an integration and color system in the right rail; switch Light/Dark above the preview. Each iframe loads only its selected integration, keeping global resets, Tailwind utilities, and component styles out of the studio and other integrations. The documents are style-isolated, not a security sandbox; all code is trusted local source. All packages and fonts are bundled locally, with no runtime CDN or product API requests.
 
@@ -55,6 +55,6 @@ bunx playwright install chromium
 bun run test:browser
 ```
 
-`build` includes a TypeScript 7 check for this workspace. Unit tests cover the catalog, token mappings, URL validation, iframe destinations, switching, tab retention, and inactive-panel behavior. Playwright builds and serves the production output on port 4189, then checks all **9 libraries × 9 palettes × 2 modes = 162 combinations**, real computed primary colors, native status colors, local interactions, validation, stylesheet isolation, URL restoration, mobile overflow, and the full-height Theme rail. Runtime errors and external HTTP requests fail integration tests. Browser artifacts go to ignored `test-results/`.
+`build` includes a TypeScript 7 check for this workspace. Unit tests cover the catalog, token mappings, URL validation, iframe destinations, switching, tab retention, and inactive-panel behavior. Playwright builds and serves the production output on port 4189, then checks all **9 libraries × 7 palettes × 2 modes = 126 combinations**, real computed primary colors, native status colors, local interactions, validation, stylesheet isolation, URL restoration, mobile overflow, and the full-height Theme rail. Runtime errors and external HTTP requests fail integration tests. Browser artifacts go to ignored `test-results/`.
 
 The studio's existing artwork bundle still produces Vite's large-chunk warning; library styles and implementation code are lazy-loaded inside the iframe. Production `web/`, `docs/`, and their dependencies are unchanged.

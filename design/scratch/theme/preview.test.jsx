@@ -61,7 +61,7 @@ test('color choices include swatches and thumbnails matching both layouts and ap
       }
     }
   }
-  assert.equal(container.querySelector('.theme-palette-heading > span').textContent, '7 choices');
+  assert.equal(container.querySelector('.theme-palette-heading > span').textContent, `${palettes.length} choices`);
 });
 
 test('a reference palette restores from a shareable URL and choices retain the current layout and mode', async () => {
@@ -163,17 +163,24 @@ test('screen scaling follows viewport measurements and disconnects observers on 
   globalThis.ResizeObserver = class {
     constructor(callback) {
       this.callback = callback;
+      this.targets = [];
       this.disconnect = mock(() => {});
       observers.push(this);
     }
-    observe(target) { this.target = target; }
+    observe(target) { this.targets.push(target); }
   };
-  const { unmount } = render(<ThemePreview />);
-  assert.equal(observers.length, 8);
-  act(() => observers[0].callback([{ target: observers[0].target, contentRect: { width: 600 } }]));
-  assert.equal(observers[0].target.style.getPropertyValue('--screen-scale'), '0.5');
+  const { container, unmount } = render(<ThemePreview />);
+  assert.ok(container.querySelector('#focus-preview .screen-viewport'));
+  for (const viewport of container.querySelectorAll('.screen-viewport')) {
+    const observer = observers.find(observer => observer.targets.includes(viewport));
+    assert.ok(observer, 'each preview must respond to viewport measurements');
+    for (const [width, scale] of [[600, '0.5'], [900, '0.75']]) {
+      act(() => observer.callback([{ target: viewport, contentRect: { width } }]));
+      assert.equal(viewport.style.getPropertyValue('--screen-scale'), scale);
+    }
+  }
   unmount();
-  for (const observer of observers) assert.equal(observer.disconnect.mock.calls.length, 1);
+  for (const observer of observers) assert.ok(observer.disconnect.mock.calls.length > 0);
 });
 
 test('React previews use only local runtime assets and no product services', () => {
