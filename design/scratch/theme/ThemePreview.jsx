@@ -71,7 +71,7 @@ export default function ThemePreview({ active = true }) {
         </p>
       </section>
       <aside className="theme-palette-panel" aria-labelledby="theme-palettes-title">
-        <header className="theme-palette-heading"><h2 id="theme-palettes-title">Color systems</h2><span>{palettes.length} choices</span></header>
+        <header className="theme-palette-heading"><h2 id="theme-palettes-title">Color systems</h2><span>{palettes.length} choice{palettes.length === 1 ? '' : 's'}</span></header>
         <div className="theme-palette-scroll" role="region" aria-label="Color choices" tabIndex={0}>
           <div className="theme-color-choices" role="group" aria-label="Theme palette">
             {palettes.map(option => <div key={option.id} className="theme-color-choice">

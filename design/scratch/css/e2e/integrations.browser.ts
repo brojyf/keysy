@@ -86,11 +86,11 @@ test('studio switches isolated libraries, palettes, and modes without leaking gl
     await expect(frame().getByRole('button', { name: '+ Add secret', exact: true })).toBeVisible();
     await expect(header).toHaveCSS('background-color', originalBackground);
   }
-  await page.getByRole('button', { name: '02 Mono', exact: true }).click();
+  await page.getByRole('button', { name: '01 Ink', exact: true }).click();
   await page.getByRole('button', { name: 'Dark', exact: true }).click();
-  await expect(frame().locator('html')).toHaveAttribute('data-palette', 'graphite');
+  await expect(frame().locator('html')).toHaveAttribute('data-palette', 'blue');
   await expect(frame().locator('html')).toHaveClass('dark');
-  await expect(page).toHaveURL(/cssPalette=graphite&cssMode=dark/);
+  await expect(page).toHaveURL(/cssPalette=blue&cssMode=dark/);
   await page.reload();
   await expect(frame().locator('html')).toHaveAttribute('data-library', 'geist');
   await expect(frame().locator('html')).toHaveClass('dark');
@@ -140,8 +140,8 @@ test('Theme uses an untitled preview and a full-height rail below the unchanged 
   await expect(page.locator('.theme-preview-pane > h1, .theme-preview-pane > h2, .theme-workspace > header')).toHaveCount(0);
   const scroll = page.locator('.theme-palette-scroll');
   await expect(scroll).toHaveCSS('overflow-y', 'auto');
-  await page.getByRole('button', { name: '2 Mono', exact: true }).click();
-  await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'graphite');
+  await page.getByRole('button', { name: '1 Ink', exact: true }).click();
+  await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'blue');
 });
 
 test('All dark palette layers reach both Theme layouts', async ({ page }) => {

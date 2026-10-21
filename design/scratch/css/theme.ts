@@ -4,8 +4,7 @@ import type { LibraryId, Mode } from './catalog';
 export type PaletteColors = Record<'bg' | 'surface' | 'text' | 'muted' | 'accent' | 'button' | 'on-button' | 'soft' | 'line', string>;
 
 const hues: Record<string, string> = {
-  blue: 'blue', graphite: 'gray', slate: 'slate',
-  ember: 'bronze',
+  blue: 'blue',
 };
 
 export function themeVariables(colors: PaletteColors, library: LibraryId, mode: Mode, paletteId = 'blue'): Record<string, string> {

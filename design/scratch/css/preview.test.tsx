@@ -22,21 +22,21 @@ test('library, palette, and appearance changes update the iframe and preserve un
   render(<CssPreview />);
   assert.ok(screen.getByTitle('shadcn/ui + tweakcn interactive preview'));
   await user.click(screen.getByRole('button', { name: 'Intent UI Copied React components' }));
-  await user.click(screen.getByRole('button', { name: '02 Mono' }));
+  await user.click(screen.getByRole('button', { name: '01 Ink' }));
   await user.click(screen.getByRole('button', { name: 'Light', exact: true }));
-  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=graphite&cssMode=light');
+  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=blue&cssMode=light');
   const params = new URLSearchParams(location.search);
-  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'graphite', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
+  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'blue', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
   assert.equal(location.hash, '#comparison');
 });
 
-for (const palette of ['inkiris', 'evergreen']) {
+for (const palette of ['graphite', 'inkiris', 'evergreen']) {
   test(`removed palette ${palette} URLs fall back to Ink without losing library, mode, or unrelated parameters`, () => {
     history.replaceState(null, '', `/css/?library=intent&cssPalette=${palette}&cssMode=dark&review=1#comparison`);
     render(<CssPreview />);
     assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'),
       '/css/frame.html?library=intent&cssPalette=blue&cssMode=dark');
-    assert.equal(screen.queryByRole('button', { name: /Ink \/ Iris|Evergreen/ }), null);
+    assert.equal(screen.queryByRole('button', { name: /Mono|Ink \/ Iris|Evergreen/ }), null);
     const params = new URLSearchParams(location.search);
     assert.equal(params.get('cssPalette'), 'blue');
     assert.equal(params.get('review'), '1');

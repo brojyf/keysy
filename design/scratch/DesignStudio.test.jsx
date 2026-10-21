@@ -24,14 +24,14 @@ test('the studio starts with accessible Logo tabs and one visible panel', () => 
 test('switching tabs retains each preview selection and updates the shareable tab URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<DesignStudio />);
-  await user.click(screen.getByRole('button', { name: '2 Mono', exact: true }));
+  await user.click(screen.getByRole('button', { name: '1 Ink', exact: true }));
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   await user.click(screen.getByRole('button', { name: '1 Ink', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   assert.equal(new URLSearchParams(location.search).get('tab'), 'theme');
   await user.click(screen.getByRole('tab', { name: 'Logo', exact: true }));
-  assert.equal(screen.getByRole('button', { name: '2 Mono', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(new URLSearchParams(location.search).get('tab'), 'logo');
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');

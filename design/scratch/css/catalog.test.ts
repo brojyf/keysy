@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
 import { palettes } from '../theme/palettes.js';
-import { blue, grayDark } from '@radix-ui/colors';
+import { blue, blueDark } from '@radix-ui/colors';
 import { libraries, readSelection, frameUrl } from './catalog';
 import { themeVariables } from './theme';
 
@@ -14,15 +14,15 @@ test('the catalog includes all nine approved integrations and identifies the Gei
 });
 
 test('selection validates URL values without losing palette or appearance', () => {
-  assert.deepEqual(readSelection('?library=coss&cssPalette=graphite&cssMode=dark'), {
-    library: 'coss', palette: 'graphite', mode: 'dark',
+  assert.deepEqual(readSelection('?library=coss&cssPalette=blue&cssMode=dark'), {
+    library: 'coss', palette: 'blue', mode: 'dark',
   });
   assert.deepEqual(readSelection('?library=unknown&cssPalette=invalid&cssMode=no'), {
     library: 'radix-themes', palette: palettes[0].id, mode: 'light',
   });
-  assert.equal(frameUrl(readSelection('?library=intent&cssPalette=graphite&cssMode=dark')),
-    '/css/frame.html?library=intent&cssPalette=graphite&cssMode=dark');
-  for (const palette of ['evergreen', 'inkiris', 'orchid', 'cocoaice', 'terminal']) {
+  assert.equal(frameUrl(readSelection('?library=intent&cssPalette=blue&cssMode=dark')),
+    '/css/frame.html?library=intent&cssPalette=blue&cssMode=dark');
+  for (const palette of ['graphite', 'evergreen', 'inkiris', 'orchid', 'cocoaice', 'terminal']) {
     assert.equal(readSelection(`?cssPalette=${palette}`).palette, palettes[0].id);
   }
   assert.equal(frameUrl(readSelection(''), '/studies/css/index.html'),
@@ -31,9 +31,8 @@ test('selection validates URL values without losing palette or appearance', () =
 
 test('Radix Colors preserves official hue-matched scales while keeping Keysy semantic colors', () => {
   const ink = palettes[0];
-  const graphite = palettes.find(palette => palette.id === 'graphite')!;
   assert.equal(themeVariables(ink.light, 'radix-colors', 'light', ink.id)['--radix-9'], blue.blue9);
-  assert.equal(themeVariables(graphite.dark, 'radix-colors', 'dark', graphite.id)['--radix-11'], grayDark.gray11);
+  assert.equal(themeVariables(ink.dark, 'radix-colors', 'dark', ink.id)['--radix-11'], blueDark.blue11);
 });
 
 test('every library receives complete theme tokens for every existing palette and both modes', () => {

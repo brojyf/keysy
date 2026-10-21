@@ -27,11 +27,11 @@ function cssHex(file, selector, property) {
 }
 
 test('retained and reference-inspired palettes use consecutive numbers and complete light and dark roles', () => {
-  assert.equal(palettes.length, 2);
-  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1', '2']);
-  assert.deepEqual(palettes.map(palette => palette.id), ['blue', 'graphite']);
-  assert.equal(new Set(palettes.map(palette => palette.id)).size, 2);
-  for (const id of ['evergreen', 'inkiris', 'orchid', 'cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
+  assert.equal(palettes.length, 1);
+  assert.deepEqual(Array.from(palettes, palette => palette.number), ['1']);
+  assert.deepEqual(palettes.map(palette => palette.id), ['blue']);
+  assert.equal(new Set(palettes.map(palette => palette.id)).size, 1);
+  for (const id of ['graphite', 'evergreen', 'inkiris', 'orchid', 'cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
     assert.ok(!palettes.some(palette => palette.id === id));
   }
   const roles = ['bg', 'surface', 'text', 'muted', 'accent', 'button', 'on-button', 'soft', 'line'];
