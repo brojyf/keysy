@@ -9,22 +9,22 @@ import { palettes } from '../theme/palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const expectedGroups = [
-  ['Wordmarks', ['logo-10', 'generated-45']],
-  ['Brackets & asterisks', ['logo-19', 'logo-20', 'logo-21', 'logo-22']],
+  ['Wordmarks', ['logo-10']],
+  ['Brackets & asterisks', ['logo-20', 'logo-21', 'logo-22']],
   ['Keys & keyholes', ['logo-32', 'logo-11', 'generated-42']],
   ['Rings & links', ['generated-47', 'logo-13', 'logo-31', 'generated-43']],
-  ['K & geometric blocks', ['reference-54', 'logo-36', 'icon-D', 'generated-46', 'reference-52', 'reference-55']],
+  ['K & geometric blocks', ['logo-36', 'generated-46', 'reference-52', 'reference-55']],
 ];
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['10', '19', '20', '21', '22', '32', '11', '13', '31', '36']);
+    ['10', '20', '21', '22', '32', '11', '13', '31', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
-  assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), ['D']);
+  assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['45', '42', '47', '43', '46']);
+    ['42', '47', '43', '46']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
-    ['54', '52', '55']);
+    ['52', '55']);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -46,7 +46,7 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(container.querySelector('.collection-heading h2 span').textContent, String(candidates.length));
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)),
     Array.from({ length: candidates.length }, (_, index) => index));
-  assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49'), null);
+  assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49, #generated-45, #logo-19, #reference-54, #icon-D'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
   for (const entry of candidates) {
@@ -112,7 +112,7 @@ test('candidate groups survive reordering, removal, and insertion without losing
 test('new reference studies include reusable lockups and symbols at all three review sizes', () => {
   const { container } = render(<LogoPreview />);
   const additions = candidates.filter(entry => entry.kind === 'reference');
-  assert.deepEqual(additions.map(entry => entry.name), ['Relay', 'Node K', 'Secret cell']);
+  assert.deepEqual(additions.map(entry => entry.name), ['Node K', 'Secret cell']);
   assert.equal(new Set(additions.map(entry => entry.symbol)).size, additions.length);
   for (const entry of additions) {
     assert.ok(entry.meaning && entry.source && entry.symbolSource);
