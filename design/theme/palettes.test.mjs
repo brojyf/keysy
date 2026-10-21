@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'bun:test';
 import { palettes } from './palettes.js';
 
@@ -15,6 +16,19 @@ function contrast(first, second) {
   const b = luminance(second);
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
+
+test('implementation references specify the required stack and match the Ink palette without selection rationale', () => {
+  const theme = readFileSync(new URL('./README.md', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/README.md', import.meta.url), 'utf8');
+  for (const specification of [theme, css]) {
+    assert.doesNotMatch(specification, /\b(?:why|pros|cons|trade-offs?|historical|candidates|research)\b/i);
+  }
+  for (const [role, light] of Object.entries(palettes[0].light)) {
+    assert.ok(theme.includes(`\`${role}\` | \`${light}\` | \`${palettes[0].dark[role]}\``),
+      `theme specification must match ${role} in both modes`);
+  }
+  assert.match(css, /shadcn\/ui \+ tweakcn \+ Geist/);
+});
 
 test('Ink is the only palette and defines complete light and dark roles', () => {
   assert.equal(palettes.length, 1);

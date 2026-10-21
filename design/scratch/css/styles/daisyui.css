@@ -1,6 +1,0 @@
-@import "tailwindcss" source(none);
-@source "../adapters/daisyui.tsx";
-@plugin "daisyui" {
-  themes: light --default, dark;
-  logs: false;
-}

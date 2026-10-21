@@ -1,14 +1,13 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   base: './',
   build: {
     rollupOptions: {
-      input: Object.fromEntries(['index.html', 'logo/index.html', 'css/index.html', 'css/frame.html']
+      input: Object.fromEntries(['index.html', 'logo/index.html']
         .map(path => [path, fileURLToPath(new URL(path, import.meta.url))])),
     },
   },

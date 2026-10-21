@@ -1,4 +1,4 @@
-// Ink is the only Keysy palette. See palette-research.md.
+// Ink is the only Keysy palette. See README.md.
 export const palettes = [
   {
     id: 'blue', number: '1', name: 'Ink', english: 'Ink',

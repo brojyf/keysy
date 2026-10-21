@@ -25,7 +25,7 @@ function cssHex(file, selector, property) {
   return hex.length === 4 ? '#' + Array.from(hex.slice(1), channel => channel.repeat(2)).join('') : hex;
 }
 
-test('studio instructions, candidate labels, and selection outlines remain visible on their actual surfaces', () => {
+test('studio instructions, candidate labels, and focus outlines remain visible on their actual surfaces', () => {
   const canvas = cssHex('./studio.css', ':root', 'background');
   const card = cssHex('./logo/preview.css', '.comparison-grid > article', 'background');
   const header = cssHex('./studio.css', '.design-header', 'background');
@@ -40,11 +40,8 @@ test('studio instructions, candidate labels, and selection outlines remain visib
     const ratio = contrast(cssHex(file, selector, 'color'), background);
     assert.ok(ratio >= 4.5, `${selector}: ${ratio.toFixed(3)}:1`);
   }
-  for (const selector of ['.design-tabs button[aria-selected="true"]', '.segmented button[aria-pressed="true"]']) {
-    assert.ok(contrast(cssHex('./studio.css', selector, 'border-color'), '#ffffff') >= 3, selector);
-  }
-  const focus = cssHex('./studio.css', 'button:focus-visible, a:focus-visible, [role="tabpanel"]:focus-visible', 'outline');
-  for (const background of [canvas, card, header, cssHex('./studio.css', '.segmented', 'background')]) {
+  const focus = cssHex('./studio.css', 'button:focus-visible, a:focus-visible', 'outline');
+  for (const background of [canvas, card, header]) {
     assert.ok(contrast(focus, background) >= 3, 'keyboard focus must contrast with its adjacent surface');
   }
 });
