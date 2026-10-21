@@ -65,20 +65,20 @@ test('color choices include swatches and thumbnails matching both layouts and ap
 });
 
 test('a reference palette restores from a shareable URL and choices retain the current layout and mode', async () => {
-  history.replaceState(null, '', '/?tab=theme&palette=orchid&layout=mintlify&mode=dark');
+  history.replaceState(null, '', '/?tab=theme&palette=graphite&layout=mintlify&mode=dark');
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  assert.equal(screen.getByRole('button', { name: '4 Orchid', exact: true }).getAttribute('aria-pressed'), 'true');
-  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'orchid');
+  assert.equal(screen.getByRole('button', { name: '2 Mono', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'graphite');
   for (const mode of ['Light', 'Dark']) {
     await user.click(screen.getByRole('button', { name: mode, exact: true }));
-    await user.click(screen.getByRole('button', { name: '5 Evergreen', exact: true }));
+    await user.click(screen.getByRole('button', { name: '1 Ink', exact: true }));
     const focus = container.querySelector('#focus-preview .mock-screen');
-    assert.equal(focus.dataset.palette, 'evergreen');
+    assert.equal(focus.dataset.palette, 'blue');
     assert.equal(focus.dataset.mode, mode.toLowerCase());
     assert.ok(focus.classList.contains('mintlify'));
     const params = new URLSearchParams(location.search);
-    assert.equal(params.get('palette'), 'evergreen');
+    assert.equal(params.get('palette'), 'blue');
     assert.equal(params.get('mode'), mode.toLowerCase());
     assert.equal(params.get('layout'), 'mintlify');
   }
@@ -87,17 +87,17 @@ test('a reference palette restores from a shareable URL and choices retain the c
 test('palette, mode, and layout controls update the focused preview and shareable URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  await user.click(screen.getByRole('button', { name: '3 Ink / Iris', exact: true }));
+  await user.click(screen.getByRole('button', { name: '2 Mono', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');
-  assert.equal(focus.dataset.palette, 'inkiris');
+  assert.equal(focus.dataset.palette, 'graphite');
   assert.equal(focus.dataset.mode, 'dark');
   assert.ok(focus.classList.contains('mintlify'));
   assert.equal(screen.getByRole('button', { name: 'Dark', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(screen.getByRole('button', { name: 'Mintlify docs', exact: true }).getAttribute('aria-pressed'), 'true');
   const params = new URLSearchParams(location.search);
-  assert.equal(params.get('palette'), 'inkiris');
+  assert.equal(params.get('palette'), 'graphite');
   assert.equal(params.get('layout'), 'mintlify');
   assert.equal(params.get('mode'), 'dark');
 });
@@ -105,11 +105,11 @@ test('palette, mode, and layout controls update the focused preview and shareabl
 test('keyboard selection updates the preview without scrolling away from the color choices', async () => {
   const user = userEvent.setup();
   const { container } = render(<ThemePreview />);
-  const choice = screen.getByRole('button', { name: '3 Ink / Iris', exact: true });
+  const choice = screen.getByRole('button', { name: '2 Mono', exact: true });
   choice.focus();
   await user.keyboard('{Enter}');
-  assert.equal(screen.getByRole('status').textContent, '3 Ink / Iris · Supabase Dashboard / Light');
-  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'inkiris');
+  assert.equal(screen.getByRole('status').textContent, '2 Mono · Supabase Dashboard / Light');
+  assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.palette, 'graphite');
   assert.equal(choice.getAttribute('aria-pressed'), 'true');
   assert.equal(document.activeElement, choice);
   assert.equal(screen.getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'false');
@@ -117,17 +117,17 @@ test('keyboard selection updates the preview without scrolling away from the col
 });
 
 test('valid URLs restore selections without dropping unrelated parameters or hashes', () => {
-  history.replaceState(null, '', '/theme/?layout=mintlify&palette=orchid&mode=dark&review=1#comparison');
+  history.replaceState(null, '', '/theme/?layout=mintlify&palette=blue&mode=dark&review=1#comparison');
   const { container } = render(<ThemePreview />);
   const focus = container.querySelector('#focus-preview .mock-screen');
-  assert.equal(focus.dataset.palette, 'orchid');
+  assert.equal(focus.dataset.palette, 'blue');
   assert.equal(focus.dataset.mode, 'dark');
   assert.ok(focus.classList.contains('mintlify'));
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   assert.equal(location.hash, '#comparison');
 });
 
-for (const id of ['missing', 'cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol', 'plum', 'navyrose']) {
+for (const id of ['evergreen', 'inkiris', 'orchid', 'missing', 'cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'olive', 'ochre', 'pinechalk', 'aubergineceladon', 'oxblood', 'petrol', 'plum', 'navyrose']) {
   test(`invalid URL palette ${id} falls back and removed choices stay absent`, () => {
     history.replaceState(null, '', `/theme/?layout=invalid&palette=${id}&mode=invalid`);
     const { container } = render(<ThemePreview />);

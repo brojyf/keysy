@@ -17,18 +17,32 @@ test('CSS choices expose all nine integrations and shared palettes with one isol
 });
 
 test('library, palette, and appearance changes update the iframe and preserve unrelated URL values', async () => {
-  history.replaceState(null, '', '/theme/?tab=css&library=shadcn&cssPalette=evergreen&cssMode=dark&palette=slate&mode=light&review=1#comparison');
+  history.replaceState(null, '', '/theme/?tab=css&library=shadcn&cssPalette=blue&cssMode=dark&palette=slate&mode=light&review=1#comparison');
   const user = userEvent.setup();
   render(<CssPreview />);
   assert.ok(screen.getByTitle('shadcn/ui + tweakcn interactive preview'));
   await user.click(screen.getByRole('button', { name: 'Intent UI Copied React components' }));
-  await user.click(screen.getByRole('button', { name: '04 Orchid' }));
+  await user.click(screen.getByRole('button', { name: '02 Mono' }));
   await user.click(screen.getByRole('button', { name: 'Light', exact: true }));
-  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=orchid&cssMode=light');
+  assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'), '/css/frame.html?library=intent&cssPalette=graphite&cssMode=light');
   const params = new URLSearchParams(location.search);
-  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'orchid', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
+  for (const [key, value] of Object.entries({ library: 'intent', cssPalette: 'graphite', cssMode: 'light', palette: 'slate', mode: 'light', review: '1', tab: 'css' })) assert.equal(params.get(key), value);
   assert.equal(location.hash, '#comparison');
 });
+
+for (const palette of ['inkiris', 'evergreen']) {
+  test(`removed palette ${palette} URLs fall back to Ink without losing library, mode, or unrelated parameters`, () => {
+    history.replaceState(null, '', `/css/?library=intent&cssPalette=${palette}&cssMode=dark&review=1#comparison`);
+    render(<CssPreview />);
+    assert.equal(screen.getByTitle('Intent UI interactive preview').getAttribute('src'),
+      '/css/frame.html?library=intent&cssPalette=blue&cssMode=dark');
+    assert.equal(screen.queryByRole('button', { name: /Ink \/ Iris|Evergreen/ }), null);
+    const params = new URLSearchParams(location.search);
+    assert.equal(params.get('cssPalette'), 'blue');
+    assert.equal(params.get('review'), '1');
+    assert.equal(location.hash, '#comparison');
+  });
+}
 
 test('inactive CSS previews do not mount an iframe or write URL parameters', async () => {
   const user = userEvent.setup();
@@ -40,15 +54,15 @@ test('inactive CSS previews do not mount an iframe or write URL parameters', asy
 });
 
 test('the CSS tab restores selections and retains them across other studio tabs', async () => {
-  history.replaceState(null, '', '/css/?library=coss&cssPalette=orchid&cssMode=dark');
+  history.replaceState(null, '', '/css/?library=coss&cssPalette=blue&cssMode=dark');
   const user = userEvent.setup();
   render(<DesignStudio />);
   assert.equal(screen.getByRole('tab', { name: 'CSS', exact: true }).getAttribute('aria-selected'), 'true');
   assert.equal(document.title, 'Keysy — CSS · Design Studio');
-  assert.match(screen.getByTitle('coss ui interactive preview').getAttribute('src')!, /cssPalette=orchid&cssMode=dark/);
+  assert.match(screen.getByTitle('coss ui interactive preview').getAttribute('src')!, /cssPalette=blue&cssMode=dark/);
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   assert.equal(document.querySelector('iframe'), null);
   await user.click(screen.getByRole('tab', { name: 'CSS', exact: true }));
   assert.equal(screen.getByRole('button', { name: 'coss ui Copied React components' }).getAttribute('aria-pressed'), 'true');
-  assert.match(screen.getByTitle('coss ui interactive preview').getAttribute('src')!, /cssPalette=orchid&cssMode=dark/);
+  assert.match(screen.getByTitle('coss ui interactive preview').getAttribute('src')!, /cssPalette=blue&cssMode=dark/);
 });

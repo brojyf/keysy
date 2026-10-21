@@ -8,24 +8,17 @@ import candidates from './candidates.json';
 import { palettes } from '../theme/palettes.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-const expectedGroups = [
-  ['Wordmarks', ['logo-10']],
-  ['Brackets & asterisks', ['logo-20', 'logo-21']],
-  ['Keys & keyholes', ['generated-42']],
-  ['Rings & links', ['logo-13', 'logo-31']],
-  ['K & geometric blocks', ['logo-36', 'generated-46']],
-];
-
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['10', '20', '21', '13', '31', '36']);
+    ['20', '13', '31', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['42', '46']);
+    ['46']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
     []);
   for (const entry of candidates) {
+    assert.equal(Object.hasOwn(entry, 'group'), false);
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
       assert.match(artwork, /currentColor/);
@@ -52,6 +45,10 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(screen.queryByRole('heading', { name: 'Vault', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Seal ring', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Node K', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Curve', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'keysy*', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Keyhole', exact: true }), null);
+  assert.equal(container.querySelector('#logo-10, #logo-21, #generated-42'), null);
   assert.equal(container.querySelector('#reference-52'), null);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
@@ -68,66 +65,23 @@ test('the React grid shows every retained candidate with consecutive display num
   }
 });
 
-test('similar logos appear in five labeled groups without changing their review numbers or source identities', () => {
+test('the logo collection shows one flat grid in candidate order with no group headings', () => {
   const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelectorAll('#comparisons > section').length, expectedGroups.length);
-  for (const [name, identities] of expectedGroups) {
-    const group = screen.getByRole('region', { name, exact: true });
-    assert.equal(within(group).getByRole('heading', { level: 2, name, exact: true }).textContent, `${name}${identities.length}`);
-    assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id), identities);
-  }
-  const articles = [...container.querySelectorAll('#comparisons article')];
-  assert.deepEqual(articles.map(article => article.id), expectedGroups.flatMap(([, identities]) => identities));
+  const collection = container.querySelector('#comparisons');
+  assert.ok(collection.classList.contains('comparison-grid'));
+  const articles = [...collection.children];
+  assert.ok(articles.every(element => element.tagName === 'ARTICLE'));
+  assert.deepEqual(articles.map(article => article.id),
+    ['logo-20', 'logo-13', 'logo-31', 'logo-36', 'generated-46']);
   assert.equal(new Set(articles.map(article => article.id)).size, candidates.length);
-});
-
-test('candidate groups survive reordering, removal, and insertion without losing or duplicating artwork', () => {
-  const original = [...candidates];
-  const inserted = { ...original[0], id: 'grouping-regression', group: 'keys-keyholes' };
-  try {
-    for (const entries of [
-      [...original].reverse(),
-      original.filter(entry => entry !== original[0] && entry !== original.at(-1)),
-      [inserted, ...original],
-    ]) {
-      candidates.splice(0, candidates.length, ...entries);
-      const { container, unmount } = render(<LogoPreview />);
-      const articles = [...container.querySelectorAll('#comparisons article')];
-      const identities = entries.map(entry => `${entry.kind}-${entry.id}`);
-      assert.equal(articles.length, entries.length);
-      assert.deepEqual(new Set(articles.map(article => article.id)), new Set(identities));
-      for (const [name, members] of expectedGroups) {
-        const expected = new Set(members);
-        if (name === 'Keys & keyholes') expected.add(`${inserted.kind}-${inserted.id}`);
-        const group = screen.getByRole('region', { name, exact: true });
-        assert.deepEqual([...group.querySelectorAll('article')].map(article => article.id),
-          identities.filter(id => expected.has(id)));
-      }
-      for (const article of articles) {
-        assert.equal(article.querySelector('.option-heading > span').textContent, String(identities.indexOf(article.id)));
-      }
-      unmount();
-    }
-  } finally {
-    candidates.splice(0, candidates.length, ...original);
-  }
-});
-
-test('Keyhole uses the revised K symbol at all three review sizes without restoring Store', () => {
-  const { container } = render(<LogoPreview />);
-  assert.equal(container.querySelector('#logo-32'), null);
-  const entry = candidates.find(candidate => candidate.id === '42');
-  assert.ok(entry.source && entry.symbolSource && entry.symbol);
-  for (const panel of container.querySelectorAll('#generated-42 .identity-preview')) {
-    assert.deepEqual([...panel.querySelectorAll('.symbol-sizes > span')]
-      .map(node => node.style.getPropertyValue('--symbol-size')), ['16px', '24px', '32px']);
-  }
+  assert.deepEqual(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent),
+    [`All directions ${candidates.length}`]);
 });
 
 test('React palette controls recolor every logo panel with the shared theme tokens', async () => {
   const user = userEvent.setup();
   const { container } = render(<LogoPreview />);
-  assert.equal(screen.getByRole('button', { name: '2 Mono' }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '1 Ink' }).getAttribute('aria-pressed'), 'true');
   for (const palette of palettes) {
     await user.click(screen.getByRole('button', { name: `${palette.number} ${palette.name}`, exact: true }));
     assert.ok(screen.getByRole('status').textContent.includes(`${palette.number} ${palette.name}`));

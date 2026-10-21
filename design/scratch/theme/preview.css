@@ -41,7 +41,7 @@
 .mock-screen h1, .mock-screen h2, .mock-screen h3, .mock-screen p { margin: 0; }
 .mock-screen strong { font-weight: 550; }
 .icon { width: 16px; height: 16px; display: inline-block; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
-.keysy-symbol { display: block; width: 27px; height: 27px; background: var(--accent); mask: url('33-symbol.svg') center/contain no-repeat; -webkit-mask: url('33-symbol.svg') center/contain no-repeat; }
+.keysy-symbol { display: block; width: 27px; height: 27px; background: var(--button); mask: url('33-symbol.svg') center/contain no-repeat; -webkit-mask: url('33-symbol.svg') center/contain no-repeat; }
 .ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); color: var(--text); line-height: 1.4; white-space: nowrap; font-size: 11px; }
 .ui-button.primary { border-color: var(--button); background: var(--button); color: var(--on-button); }
 .studio-topbar { height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid var(--line); background: var(--bg); }

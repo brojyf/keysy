@@ -1,11 +1,9 @@
-// Keysy palette proposals. Candidates are numbered consecutively in display order. See palette-research.md.
-import { extraPalettes } from './palettes-extra.js';
-
-const basePalettes = [
+// Ink is the selected Keysy palette; Mono remains for comparison. See palette-research.md.
+export const palettes = [
   {
     id: 'blue', number: '1', name: 'Ink', english: 'Ink',
-    light: {"bg": "#fafafa", "surface": "#ffffff", "text": "#1b1c1e", "muted": "#64666b", "accent": "#315fc4", "button": "#315fc4", "on-button": "#ffffff", "soft": "#f0f1f3", "line": "#e3e4e6"},
-    dark: {"bg": "#121212", "surface": "#1b1b1b", "text": "#ededee", "muted": "#a3a4a8", "accent": "#8daaf0", "button": "#4773cc", "on-button": "#ffffff", "soft": "#2a2a2a", "line": "#2e2e2e"},
+    light: {"bg": "#fafafa", "surface": "#ffffff", "text": "#1b1c1e", "muted": "#64666b", "accent": "#2f5aba", "button": "#2f5aba", "on-button": "#ffffff", "soft": "#f0f1f3", "line": "#e3e4e6"},
+    dark: {"bg": "#121212", "surface": "#1b1b1b", "text": "#ededee", "muted": "#a3a4a8", "accent": "#9bbaff", "button": "#638ce5", "on-button": "#0e1b34", "soft": "#2a2a2a", "line": "#2e2e2e"},
   },
   {
     id: 'graphite', number: '2', name: 'Mono', english: 'Mono',
@@ -13,5 +11,3 @@ const basePalettes = [
     dark: {"bg": "#0a0a0a", "surface": "#171717", "text": "#ededed", "muted": "#a1a1a1", "accent": "#ededed", "button": "#ededed", "on-button": "#0a0a0a", "soft": "#262626", "line": "#2e2e2e"},
   },
 ];
-
-export const palettes = [...basePalettes, ...extraPalettes];

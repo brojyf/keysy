@@ -15,6 +15,7 @@ test('the studio starts with accessible Logo tabs and one visible panel', () => 
   assert.equal(logo.tabIndex, 0);
   assert.equal(theme.tabIndex, -1);
   const panel = screen.getByRole('tabpanel', { name: 'Logo', exact: true });
+  assert.equal(within(panel).getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(panel.id, logo.getAttribute('aria-controls'));
   assert.equal(screen.getAllByRole('tabpanel').length, 1);
   assert.equal(document.title, 'Keysy — Logo · Design Studio');
@@ -23,21 +24,21 @@ test('the studio starts with accessible Logo tabs and one visible panel', () => 
 test('switching tabs retains each preview selection and updates the shareable tab URL', async () => {
   const user = userEvent.setup();
   const { container } = render(<DesignStudio />);
-  await user.click(screen.getByRole('button', { name: '5 Evergreen', exact: true }));
+  await user.click(screen.getByRole('button', { name: '2 Mono', exact: true }));
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
-  await user.click(screen.getByRole('button', { name: '3 Ink / Iris', exact: true }));
+  await user.click(screen.getByRole('button', { name: '1 Ink', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Mintlify docs', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Dark', exact: true }));
   assert.equal(new URLSearchParams(location.search).get('tab'), 'theme');
   await user.click(screen.getByRole('tab', { name: 'Logo', exact: true }));
-  assert.equal(screen.getByRole('button', { name: '5 Evergreen', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '2 Mono', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(new URLSearchParams(location.search).get('tab'), 'logo');
   await user.click(screen.getByRole('tab', { name: 'Theme', exact: true }));
   const focus = container.querySelector('#focus-preview .mock-screen');
-  assert.equal(focus.dataset.palette, 'inkiris');
+  assert.equal(focus.dataset.palette, 'blue');
   assert.equal(focus.dataset.mode, 'dark');
   assert.ok(focus.classList.contains('mintlify'));
-  assert.equal(screen.getByRole('button', { name: '3 Ink / Iris', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(document.title, 'Keysy — Theme · Design Studio');
 });
 
@@ -66,10 +67,10 @@ for (const path of ['/logo/', '/logo/index.html', '/theme/', '/theme/index.html'
 }
 
 test('a shareable theme URL restores both its tab and theme controls', () => {
-  history.replaceState(null, '', '/?tab=theme&layout=mintlify&palette=evergreen&mode=dark&review=1#comparison');
+  history.replaceState(null, '', '/?tab=theme&layout=mintlify&palette=blue&mode=dark&review=1#comparison');
   const { container } = render(<DesignStudio />);
   assert.equal(screen.getByRole('tab', { name: 'Theme', exact: true }).getAttribute('aria-selected'), 'true');
-  assert.equal(screen.getByRole('button', { name: '5 Evergreen', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(screen.getByRole('button', { name: '1 Ink', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(container.querySelector('#focus-preview .mock-screen').dataset.mode, 'dark');
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   assert.equal(location.hash, '#comparison');
@@ -81,7 +82,7 @@ test('an explicit tab overrides a legacy path and hidden theme updates do not ch
   render(<DesignStudio />);
   assert.equal(screen.getByRole('tab', { name: 'Logo', exact: true }).getAttribute('aria-selected'), 'true');
   assert.equal(screen.queryByRole('button', { name: '3 Cobalt', exact: true }), null);
-  await user.click(screen.getByRole('button', { name: '5 Evergreen', exact: true }));
+  await user.click(screen.getByRole('button', { name: '1 Ink', exact: true }));
   assert.equal(new URLSearchParams(location.search).get('palette'), null);
   assert.equal(new URLSearchParams(location.search).get('review'), '1');
   const palettes = within(screen.getByRole('tabpanel', { name: 'Logo', exact: true })).getByRole('group', { name: 'Logo palette' });

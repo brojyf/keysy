@@ -86,11 +86,11 @@ test('studio switches isolated libraries, palettes, and modes without leaking gl
     await expect(frame().getByRole('button', { name: '+ Add secret', exact: true })).toBeVisible();
     await expect(header).toHaveCSS('background-color', originalBackground);
   }
-  await page.getByRole('button', { name: '05 Evergreen', exact: true }).click();
+  await page.getByRole('button', { name: '02 Mono', exact: true }).click();
   await page.getByRole('button', { name: 'Dark', exact: true }).click();
-  await expect(frame().locator('html')).toHaveAttribute('data-palette', 'evergreen');
+  await expect(frame().locator('html')).toHaveAttribute('data-palette', 'graphite');
   await expect(frame().locator('html')).toHaveClass('dark');
-  await expect(page).toHaveURL(/cssPalette=evergreen&cssMode=dark/);
+  await expect(page).toHaveURL(/cssPalette=graphite&cssMode=dark/);
   await page.reload();
   await expect(frame().locator('html')).toHaveAttribute('data-library', 'geist');
   await expect(frame().locator('html')).toHaveClass('dark');
@@ -139,9 +139,9 @@ test('Theme uses an untitled preview and a full-height rail below the unchanged 
   expect(Math.abs(rail!.y + rail!.height - 1000)).toBeLessThanOrEqual(1);
   await expect(page.locator('.theme-preview-pane > h1, .theme-preview-pane > h2, .theme-workspace > header')).toHaveCount(0);
   const scroll = page.locator('.theme-palette-scroll');
-  expect(await scroll.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
-  await page.getByRole('button', { name: '5 Evergreen', exact: true }).click();
-  await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'evergreen');
+  await expect(scroll).toHaveCSS('overflow-y', 'auto');
+  await page.getByRole('button', { name: '2 Mono', exact: true }).click();
+  await expect(page.locator('#focus-preview .mock-screen')).toHaveAttribute('data-palette', 'graphite');
 });
 
 test('All dark palette layers reach both Theme layouts', async ({ page }) => {

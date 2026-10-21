@@ -1,6 +1,6 @@
 # Keysy palette candidates
 
-Updated: 2026-10-20. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). The five current candidates are numbered consecutively: 1 Ink, 2 Mono, 3 Ink / Iris, 4 Orchid, and 5 Evergreen. Cocoa / Ice (old 5) and Terminal (old 7) have been removed. Evergreen (old 10) keeps its surfaces, text, and accents, with slightly desaturated Terminal greens reserved for buttons: light `#18734b`, dark `#83c9aa`. Internal IDs remain stable for retained palettes.
+Updated: 2026-10-21. [Logo selection](../logo/index.html) · [Historical Figma palette board](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=21-2). Ink (number 1, internal ID `blue`) was selected as the Keysy color system on October 21, 2026, and is the default in every studio preview. Mono (number 2) remains available for comparison. Cocoa / Ice, Terminal, Orchid, Ink / Iris, and Evergreen have been removed. Their reference studies below are historical; retained internal IDs remain stable.
 
 Excluded (original numbers): 01 Jade, 03 Sand, 05 Clay, 06 Oxblood, 07 Olive, 08 Petrol, 09 Ochre, 11 Vermilion, 12 Sulfur, 13 Plum, 15 Navy / Rose, 17 Pine / Chalk, and 18 Aubergine / Celadon.
 Earlier review numbers below are historical; they do not describe the current display order.
@@ -16,7 +16,7 @@ These studies translate the official brand references collected for this project
 | 9 Orchid | Pink-purple details in the archived Doppler artwork and its [Fuzzco rebrand](https://www.doppler.com/blog/rebrand-of-doppler). Muted orchid accents sit on neutral charcoal, without gradients or texture. | Softer and warmer than Ink / Iris; still belongs to the familiar purple software family. |
 | 10 Evergreen | [OpenBao's greens and warm neutrals](https://openbao.org/community/policies/brand/), adapted to a subtle gray-green white in light mode and neutral black in dark mode. | Quiet and grounded; less immediate brand impact than Terminal. |
 
-All nine palettes use near-white/light-gray surfaces in light mode and achromatic near-black/dark-gray surfaces in dark mode. Light background, surface, selection, and divider channels differ by at most 8/255; dark channels are equal (`R = G = B`). This follows the [background guidance](color-requirements.md#4-background-requirements-and-recommendations) and the user's black/gray direction, not a WCAG hue requirement. Existing brightness levels are approximately preserved while removing blue, brown, purple, and green surface tints. Terminal and Evergreen retain their stronger layering: background `#131313`, surface `#292929`, selection `#333333`, and dividers `#515151` / `#545454`. Their mint and pale green accents remain reserved for foreground emphasis and primary actions.
+All nine palettes use near-white/light-gray surfaces in light mode and achromatic near-black/dark-gray surfaces in dark mode. Light background, surface, selection, and divider channels differ by at most 8/255; dark channels are equal (`R = G = B`). This follows the [background guidance](color-requirements.md#4-background-requirements-and-recommendations) and the user's black/gray direction, not a WCAG hue requirement. Existing brightness levels were approximately preserved while removing blue, brown, purple, and green surface tints. Terminal used background `#131313`, surface `#292929`, selection `#333333`, and divider `#515151`. Evergreen used darker background `#050505`, surface `#242424`, selection `#2e2e2e`, and divider `#545454`. Green accents remain reserved for foreground emphasis and primary actions.
 
 The simplest final application is one selected light/dark pair. These four additions are comparison candidates, not four new product themes.
 
@@ -34,9 +34,9 @@ These are real, credited studio projects. The studies borrow color relationships
 
 Start with 14 Slate, then 13 Plum. These are comparison candidates, not a requirement to ship every theme.
 
-## New studies: 16–19
+## Historical studies: 16–19
 
-[New palettes](index.html) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; 17 and 18 have been removed from previews.
+[New palettes](index.html) · [Figma light/dark palettes](https://www.figma.com/design/3QD7tbVmZnKZoLEUOD0yRl?node-id=25-2). The research record below is retained; all four studies have been removed from previews.
 
 | Number | Color relationship | Credited design source and Keysy interpretation | Pros / cons |
 | --- | --- | --- | --- |
@@ -45,12 +45,12 @@ Start with 14 Slate, then 13 Plum. These are comparison candidates, not a requir
 | 18 Aubergine / Celadon | Deep aubergine, pale celadon selection and dark-mode accent | [Cohere / Jody Hudson-Powell and Luke Powell's team, Pentagram](https://www.pentagram.com/work/cohere): natural and artificial colors together. Aubergine and celadon are Keysy's interpretation, not its brand standards. | Distinct warm/cool tension; color roles need consistency between modes. |
 | 19 Ink / Iris | Ink-black foundation, saturated iris, pale purple reverse | [Shop / PORTO ROCHA](https://www.portorocha.com/shop), creative directors Felipe Rocha and Leo Porto; design by Nathan Fyock, Rachel Quan, and Luis Alejandro. Borrows purple supported by warm black and gray-white. | Stronger accents; purple is common in software branding. |
 
-Start with 16 × Logo 33; 19 offers a stronger solid accent. These are design judgments, not a user-approved selection.
+These studies are retained as historical research; none remains in the preview.
 
 All sources are publicly credited studio projects, not generated reference images. HEX values were adjusted for UI contrast, not claimed as samples from the original work.
 
 ## Values and checks
 
-`palettes.js` and `palettes-extra.js` contain 5 complete light/dark palettes. Each has a consecutive display number, a stable internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
+`palettes.js` contains 2 complete light/dark palettes. Each has a consecutive display number, a stable internal ID, and nine roles: background, surface, text, muted text, accent, button, button text, selection background, and decorative border. The React [theme preview](index.html) and [logo selection](../logo/index.html) import the same values as ES modules, with no runtime CDN dependency.
 
-`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 130 text/button pairings plus three Evergreen layer-separation pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.
+`bun test theme/palettes.test.mjs` (from `design/scratch/`) checks 52 text/button pairings: primary text against background/surface/selection ≥ 7:1; muted text and accents against those surfaces ≥ 4.5:1; button text ≥ 4.5:1; button fill against adjacent surfaces ≥ 3:1. It also checks neutral surfaces and the studio's small text, selection outlines, and keyboard focus. The [accessibility record](color-accessibility.md) includes measured minima and official requirements. The `line` token remains decorative; selected borders, checkboxes, and state markers use stronger colors.
