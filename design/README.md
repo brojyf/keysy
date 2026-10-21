@@ -5,7 +5,7 @@ Design studies are maintained on `design/theme-and-logo`. These are visual previ
 - [`figma/`](figma/README.md): Figma boards and related design references.
 - [`refs/`](refs/README.md): infrastructure company logos, brand elements, and official research sources.
 - [`scratch/`](scratch/README.md): a unified React + Vite Design Studio running on Bun, with Logo / Theme / CSS tabs and native HMR.
-  - [`logo/`](scratch/logo/): 9 candidates numbered 0–8, recolored by 5 light/dark palettes. The retained [reference study](scratch/logo/reference-studies.md) is numbered 8. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
+  - [`logo/`](scratch/logo/): 8 candidates numbered 0–7, recolored by 5 light/dark palettes. The [reference studies](scratch/logo/reference-studies.md) are archived. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
   - [`theme/`](scratch/theme/): shared palette values, research, and Dashboard/documentation previews. The five palettes are numbered consecutively 1–5; the logo preview imports the same values.
 
   - [`css/`](scratch/css/README.md): nine real component/token integrations with isolated preview documents, shared palettes, interactive fictional secrets, and a clearly labeled Geist specification reference.

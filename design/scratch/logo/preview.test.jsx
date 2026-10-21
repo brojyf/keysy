@@ -13,7 +13,7 @@ const expectedGroups = [
   ['Brackets & asterisks', ['logo-20', 'logo-21']],
   ['Keys & keyholes', ['generated-42']],
   ['Rings & links', ['logo-13', 'logo-31']],
-  ['K & geometric blocks', ['logo-36', 'generated-46', 'reference-52']],
+  ['K & geometric blocks', ['logo-36', 'generated-46']],
 ];
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
@@ -24,7 +24,7 @@ test('retained candidates keep their source artwork and removed candidates are a
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
     ['42', '46']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
-    ['52']);
+    []);
   for (const entry of candidates) {
     for (const artwork of [entry.svg, entry.symbol].filter(Boolean)) {
       assert.match(artwork, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
@@ -51,6 +51,8 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Vault', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Seal ring', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Node K', exact: true }), null);
+  assert.equal(container.querySelector('#reference-52'), null);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelector('.option-heading > span').textContent, String(candidates.indexOf(entry)));
@@ -108,21 +110,6 @@ test('candidate groups survive reordering, removal, and insertion without losing
     }
   } finally {
     candidates.splice(0, candidates.length, ...original);
-  }
-});
-
-test('new reference studies include reusable lockups and symbols at all three review sizes', () => {
-  const { container } = render(<LogoPreview />);
-  const additions = candidates.filter(entry => entry.kind === 'reference');
-  assert.deepEqual(additions.map(entry => entry.name), ['Node K']);
-  assert.equal(new Set(additions.map(entry => entry.symbol)).size, additions.length);
-  for (const entry of additions) {
-    assert.ok(entry.meaning && entry.source && entry.symbolSource);
-    const article = container.querySelector(`#reference-${entry.id}`);
-    for (const panel of article.querySelectorAll('.identity-preview')) {
-      assert.deepEqual([...panel.querySelectorAll('.symbol-sizes > span')]
-        .map(node => node.style.getPropertyValue('--symbol-size')), ['16px', '24px', '32px']);
-    }
   }
 });
 
