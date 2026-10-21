@@ -11,14 +11,14 @@ const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replac
 const expectedGroups = [
   ['Wordmarks', ['logo-10']],
   ['Brackets & asterisks', ['logo-20', 'logo-21']],
-  ['Keys & keyholes', ['logo-32', 'logo-11', 'generated-42']],
+  ['Keys & keyholes', ['logo-11', 'generated-42']],
   ['Rings & links', ['logo-13', 'logo-31', 'generated-43']],
   ['K & geometric blocks', ['logo-36', 'generated-46', 'reference-52', 'reference-55']],
 ];
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['10', '20', '21', '32', '11', '13', '31', '36']);
+    ['10', '20', '21', '11', '13', '31', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
@@ -46,7 +46,7 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(container.querySelector('.collection-heading h2 span').textContent, String(candidates.length));
   assert.deepEqual([...container.querySelectorAll('.option-heading > span')].map(node => Number(node.textContent)),
     Array.from({ length: candidates.length }, (_, index) => index));
-  assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49, #generated-45, #logo-19, #reference-54, #icon-D, #logo-22, #generated-47'), null);
+  assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49, #generated-45, #logo-19, #reference-54, #icon-D, #logo-22, #logo-32, #generated-47'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
   for (const entry of candidates) {
@@ -124,13 +124,12 @@ test('new reference studies include reusable lockups and symbols at all three re
   }
 });
 
-test('Store K restores the storage direction with reusable artwork and small-size symbols', () => {
+test('Keyhole uses the revised K symbol at all three review sizes without restoring Store', () => {
   const { container } = render(<LogoPreview />);
-  const entry = candidates.find(candidate => candidate.id === '32');
-  assert.equal(entry.name, 'Store K');
+  assert.equal(container.querySelector('#logo-32'), null);
+  const entry = candidates.find(candidate => candidate.id === '42');
   assert.ok(entry.source && entry.symbolSource && entry.symbol);
-  const article = container.querySelector('#logo-32');
-  for (const panel of article.querySelectorAll('.identity-preview')) {
+  for (const panel of container.querySelectorAll('#generated-42 .identity-preview')) {
     assert.deepEqual([...panel.querySelectorAll('.symbol-sizes > span')]
       .map(node => node.style.getPropertyValue('--symbol-size')), ['16px', '24px', '32px']);
   }
