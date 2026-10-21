@@ -34,6 +34,7 @@ export function themeVariables(colors: PaletteColors, library: LibraryId, mode: 
     '--color-neutral': colors.text, '--color-neutral-content': colors.bg,
     '--demo-status-text': dark ? '#86efac' : '#166534',
     '--demo-status-bg': dark ? '#142b20' : '#f0fdf4',
+    '--demo-button-hover': `color-mix(in srgb, ${colors.button} 90%, ${colors['on-button'] === '#ffffff' ? '#000000' : '#ffffff'})`,
   };
   for (const [role, color] of Object.entries(colors)) tokens[`--demo-${role}`] = color;
 
@@ -43,7 +44,7 @@ export function themeVariables(colors: PaletteColors, library: LibraryId, mode: 
   for (let step = 1; step <= 12; step++) tokens[`--radix-${step}`] = scale[`${hue}${step}`];
 
   if (library === 'radix-themes') {
-    const accent = [colors.bg, colors.surface, colors.soft, 'color-mix(in srgb, var(--demo-accent) 14%, var(--demo-surface))', colors.soft, colors.line, colors.line, colors.muted, colors.button, 'color-mix(in srgb, var(--demo-button) 90%, var(--demo-text))', colors.accent, colors.text];
+    const accent = [colors.bg, colors.surface, colors.soft, 'color-mix(in srgb, var(--demo-accent) 14%, var(--demo-surface))', colors.soft, colors.line, colors.line, colors.muted, colors.button, tokens['--demo-button-hover'], colors.accent, colors.text];
     const gray = [colors.bg, colors.surface, colors.soft, colors.soft, colors.soft, colors.line, colors.line, colors.muted, colors.muted, colors.muted, colors.muted, colors.text];
     accent.forEach((color, index) => { tokens[`--indigo-${index + 1}`] = color; });
     gray.forEach((color, index) => { tokens[`--gray-${index + 1}`] = color; });

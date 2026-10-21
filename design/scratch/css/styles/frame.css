@@ -49,14 +49,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--demo-accent); o
 .demo-empty { padding: 24px; text-align: center; color: var(--demo-muted); }
 .demo-detail { margin-top: 22px; padding: 20px; border: 1px solid var(--demo-line); border-radius: 8px; background: var(--demo-surface); }
 .demo-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 16px; }
+.demo-detail-heading > div { min-width: 0; }
 .demo-detail-heading .demo-label { margin-bottom: 5px; }
-.demo-detail h2 { margin: 0; font: 12px/1.5 ui-monospace, monospace; }
+.demo-detail h2 { margin: 0; font: 12px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }
 .demo-field-label { display: block; margin: 12px 0 7px; font-size: 11px; font-weight: 500; }
 .demo-value { display: flex; align-items: center; gap: 9px; }
 .demo-value > :first-child { flex: 1; min-width: 0; }
 .demo-value > button { flex-shrink: 0; }
 .demo-hint { margin: 8px 0 0; font-size: 10px; line-height: 1.7; color: var(--demo-muted); }
-.demo-local-status { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; color: var(--demo-muted); font-size: 9px; }
+.demo-local-status { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; color: var(--demo-muted); font-size: 9px; overflow-wrap: anywhere; }
 .demo-status-badge { color: var(--demo-status-text); background: var(--demo-status-bg); border-color: transparent; }
 .demo-dialog { position: fixed; inset: 0; width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 26px; border: 1px solid var(--demo-line); border-radius: 12px; background: var(--demo-surface); color: var(--demo-text); box-shadow: 0 15px 70px #0004; }
 .demo-dialog::backdrop { background: #0007; }

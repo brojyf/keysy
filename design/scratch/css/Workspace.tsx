@@ -98,7 +98,7 @@ export default function Workspace({ controls, tableClassName = '' }: { controls:
         <Input id="new-secret-value" required type="password" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Enter a fictional value" />
         {nameError && <p role="alert" className="demo-error">{nameError}</p>}
         <p className="demo-hint">Preview only. Never enter real credentials.</p>
-        <div className="demo-dialog-actions"><Button secondary onClick={() => dialog.current?.close()}>Cancel</Button><Button type="submit">Save secret</Button></div>
+        <div className="demo-dialog-actions"><Button type="button" secondary onClick={() => dialog.current?.close()}>Cancel</Button><Button type="submit">Save secret</Button></div>
       </form>
     </dialog>
   </div>;

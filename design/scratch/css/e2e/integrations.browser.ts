@@ -56,6 +56,13 @@ for (const library of libraries) {
     await expect(page.getByRole('table', { name: 'Secrets' }).getByRole('row')).toHaveCount(7);
     await expect(page.getByRole('status')).toContainText('TEST_API_KEY added to this preview only.');
     await page.getByRole('button', { name: '+ Add secret', exact: true }).click();
+    await dialog.getByLabel('Name', { exact: true }).fill('CANCELLED_API_KEY');
+    await dialog.getByLabel('Value', { exact: true }).fill('fictional-cancelled-value');
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByRole('table', { name: 'Secrets' }).getByRole('row')).toHaveCount(7);
+    await expect(page.getByRole('status')).toContainText('TEST_API_KEY added to this preview only.');
+    await page.getByRole('button', { name: '+ Add secret', exact: true }).click();
     await dialog.getByLabel('Name', { exact: true }).fill('TEST_API_KEY');
     await dialog.getByLabel('Value', { exact: true }).fill('duplicate');
     await dialog.getByRole('button', { name: 'Save secret', exact: true }).click();
@@ -88,6 +95,39 @@ test('studio switches isolated libraries, palettes, and modes without leaking gl
   await expect(frame().locator('html')).toHaveAttribute('data-library', 'geist');
   await expect(frame().locator('html')).toHaveClass('dark');
 });
+
+for (const library of ['radix-themes', 'intent']) {
+  test(`${library}: primary hover text keeps sufficient contrast in every palette and mode`, async ({ page }) => {
+    for (const palette of palettes) for (const mode of ['light', 'dark'] as const) {
+      await test.step(`${palette.name} / ${mode}`, async () => {
+        await page.goto(`/css/frame.html?library=${library}&cssPalette=${palette.id}&cssMode=${mode}`);
+        const primary = page.getByRole('button', { name: '+ Add secret', exact: true });
+        await expect(primary).toBeVisible();
+        await page.addStyleTag({ content: '* { transition: none !important; }' });
+        await primary.hover();
+        const contrast = await primary.evaluate(button => {
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 1;
+          const context = canvas.getContext('2d')!;
+          function luminance(color: string) {
+            context.fillStyle = color;
+            context.fillRect(0, 0, 1, 1);
+            const channels = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3).map(channel => {
+              const value = channel / 255;
+              return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+            });
+            return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+          }
+          const style = getComputedStyle(button);
+          const background = luminance(style.backgroundColor);
+          const foreground = luminance(style.color);
+          return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05);
+        });
+        expect(contrast).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  });
+}
 
 test('Theme uses an untitled preview and a full-height rail below the unchanged navigation', async ({ page }) => {
   await page.goto('/?tab=theme');
@@ -129,5 +169,14 @@ test('mobile studio and component previews avoid horizontal page overflow', asyn
     await page.goto(`/css/frame.html?library=${library.id}&cssMode=dark`);
     await expect(page.getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), library.name).toBe(true);
+    await page.getByRole('button', { name: '+ Add secret', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add secret' });
+    const name = 'EXAMPLE_APPLICATION_PRODUCTION_DATABASE_CONNECTION_URL';
+    await dialog.getByLabel('Name', { exact: true }).fill(name);
+    await dialog.getByLabel('Value', { exact: true }).fill('fictional-only');
+    await dialog.getByRole('button', { name: 'Save secret', exact: true }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${library.name} after creation`).toBe(true);
   }
 });
