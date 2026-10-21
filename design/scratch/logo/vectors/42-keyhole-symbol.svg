@@ -5,7 +5,7 @@
   </g>
   <rect x="7" y="25" width="12" height="58" rx="6" fill="currentColor"/>
   <g fill="currentColor">
-    <path transform="translate(13 60) rotate(-30)" d="M0-4H34V4H0Z"/>
-    <path transform="translate(13 60) rotate(30)" d="M0-4H34V4H0Z"/>
+    <rect transform="translate(13 60) rotate(-30)" x="0" y="-4" width="34" height="8" rx="4"/>
+    <rect transform="translate(13 60) rotate(30)" x="0" y="-4" width="34" height="8" rx="4"/>
   </g>
 </svg>
