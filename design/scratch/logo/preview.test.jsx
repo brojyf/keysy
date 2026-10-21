@@ -11,18 +11,18 @@ const read = path => readFileSync(new URL(path, import.meta.url), 'utf8').replac
 const expectedGroups = [
   ['Wordmarks', ['logo-10']],
   ['Brackets & asterisks', ['logo-20', 'logo-21']],
-  ['Keys & keyholes', ['logo-11', 'generated-42']],
-  ['Rings & links', ['logo-13', 'logo-31', 'generated-43']],
+  ['Keys & keyholes', ['generated-42']],
+  ['Rings & links', ['logo-13', 'logo-31']],
   ['K & geometric blocks', ['logo-36', 'generated-46', 'reference-52']],
 ];
 
 test('retained candidates keep their source artwork and removed candidates are absent', () => {
   assert.deepEqual(candidates.filter(entry => entry.kind === 'logo').map(entry => entry.id),
-    ['10', '20', '21', '11', '13', '31', '36']);
+    ['10', '20', '21', '13', '31', '36']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['42', '43', '46']);
+    ['42', '46']);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
     ['52']);
   for (const entry of candidates) {
@@ -49,6 +49,8 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(container.querySelector('#logo-08, #logo-07, #logo-18, #logo-12, #logo-15, #logo-30, #generated-40, #generated-48, #generated-51, #reference-53, #study-B, #generated-49, #generated-45, #logo-19, #reference-54, #icon-D, #logo-22, #logo-32, #generated-47, #reference-55'), null);
   assert.equal(screen.queryByRole('heading', { name: 'Cipher / Plain', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Notch K', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Vault', exact: true }), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Seal ring', exact: true }), null);
   for (const entry of candidates) {
     const article = container.querySelector(`#${entry.kind}-${entry.id}`);
     assert.equal(article.querySelector('.option-heading > span').textContent, String(candidates.indexOf(entry)));
