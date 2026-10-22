@@ -76,6 +76,7 @@
     "links": [
       {
         "label": "GitHub",
+        "icon": { "name": "github", "style": "brands" },
         "href": "https://github.com/brojyf/keysy"
       }
     ]

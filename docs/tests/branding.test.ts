@@ -4,6 +4,14 @@ import { readFile } from 'node:fs/promises';
 const docs = new URL('../', import.meta.url);
 const config = await Bun.file(new URL('docs.json', docs)).json();
 
+test('navbar GitHub link provides the brand icon and an accessible label', () => {
+  const github = config.navbar.links.find(
+    (link: { href: string }) => link.href === 'https://github.com/brojyf/keysy',
+  );
+  expect(github?.label).toBe('GitHub');
+  expect(github?.icon).toEqual({ name: 'github', style: 'brands' });
+});
+
 test('root favicon fallback provides standard browser icon sizes', async () => {
   const icon = Buffer.from(await Bun.file(new URL('favicon.ico', docs)).arrayBuffer());
   expect(icon.readUInt16LE(0)).toBe(0);

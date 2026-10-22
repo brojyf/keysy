@@ -26,9 +26,9 @@ blue accent at font weight 600. Code blocks retain their syntax colors.
 
 Footer previous/next page navigation is hidden site-wide.
 
-Below 64 rem, the header shows GitHub, appearance, and search directly, with
-appearance next to search and no overflow menu. The native controls and their
-keyboard order are preserved.
+The header GitHub link displays the brand icon with a screen-reader label.
+Below 64 rem, the header shows search, GitHub, and appearance in that order,
+with no overflow menu. The native controls are preserved.
 
 ## Local preview
 
