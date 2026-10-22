@@ -2,40 +2,40 @@
 
 :root {
   --sidebar-width: 14rem;
-  --ink-surface: #ffffff;
-  --ink-text: #1b1c1e;
-  --ink-muted: #64666b;
-  --ink-accent: #2f5aba;
-  --ink-soft: #f0f1f3;
-  --ink-line: #e3e4e6;
+  --keysy-surface: #ffffff;
+  --keysy-text: #1b1c1e;
+  --keysy-muted: #64666b;
+  --keysy-accent: #2f5aba;
+  --keysy-soft: #f0f1f3;
+  --keysy-line: #e3e4e6;
 }
 
 .dark {
-  --ink-surface: #1b1b1b;
-  --ink-text: #ededee;
-  --ink-muted: #a3a4a8;
-  --ink-accent: #9bbaff;
-  --ink-soft: #2a2a2a;
-  --ink-line: #2e2e2e;
+  --keysy-surface: #1b1b1b;
+  --keysy-text: #ededee;
+  --keysy-muted: #a3a4a8;
+  --keysy-accent: #9bbaff;
+  --keysy-soft: #2a2a2a;
+  --keysy-line: #2e2e2e;
 }
 
 body {
-  color: var(--ink-text);
+  color: var(--keysy-text);
 }
 
 /* Keep Mintlify's layout and semantic callout / syntax colors. */
 .prose {
-  --tw-prose-body: var(--ink-text);
-  --tw-prose-headings: var(--ink-text);
-  --tw-prose-bold: var(--ink-text);
-  --tw-prose-code: var(--ink-text);
-  --tw-prose-links: var(--ink-accent);
-  --tw-prose-counters: var(--ink-muted);
-  --tw-prose-captions: var(--ink-muted);
-  --tw-prose-bullets: var(--ink-muted);
-  --tw-prose-th-borders: var(--ink-line);
-  --tw-prose-td-borders: var(--ink-line);
-  --tw-prose-hr: var(--ink-line);
+  --tw-prose-body: var(--keysy-text);
+  --tw-prose-headings: var(--keysy-text);
+  --tw-prose-bold: var(--keysy-text);
+  --tw-prose-code: var(--keysy-text);
+  --tw-prose-links: var(--keysy-accent);
+  --tw-prose-counters: var(--keysy-muted);
+  --tw-prose-captions: var(--keysy-muted);
+  --tw-prose-bullets: var(--keysy-muted);
+  --tw-prose-th-borders: var(--keysy-line);
+  --tw-prose-td-borders: var(--keysy-line);
+  --tw-prose-hr: var(--keysy-line);
 }
 
 pre,
@@ -49,13 +49,13 @@ samp,
 #search-bar-entry,
 #search-bar-entry-mobile,
 .card {
-  background-color: var(--ink-surface);
-  border-color: var(--ink-line);
+  background-color: var(--keysy-surface);
+  border-color: var(--keysy-line);
 }
 
 #sidebar-content li[data-active] > a {
-  background-color: var(--ink-soft);
-  color: var(--ink-accent);
+  background-color: var(--keysy-soft);
+  color: var(--keysy-accent);
 }
 
 img.nav-logo {

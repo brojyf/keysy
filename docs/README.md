@@ -5,15 +5,17 @@ Mintlify documentation for the Keysy monorepo. Site configuration lives in
 
 ## Branding
 
-The site uses Keysy's Ink palette, Namespace logo, and Geist / Geist Mono fonts,
-finalized in design commit `984a37b55ce09c2382ca2175f6aafa19bc178f7c`.
+The site uses blue accents with neutral backgrounds, the Namespace logo, and
+Geist / Geist Mono fonts. Light mode uses white and light gray backgrounds; dark
+mode uses black and dark gray backgrounds. The color values and logo geometry
+come from design commit `984a37b55ce09c2382ca2175f6aafa19bc178f7c`.
 Mintlify's native configuration supplies the accent colors, page backgrounds,
 interface font, and logo variants. `style.css` supplies the remaining neutral
 colors and code font while preserving Mintlify's layout and semantic colors.
 
 Geist loads through Mintlify's Google Fonts support; Geist Mono loads through
 the Google Fonts stylesheet in `style.css`. System fonts remain as fallbacks.
-The SVGs retain the finalized logo paths with explicit Ink fills so they work
+The SVGs retain the finalized logo paths with explicit blue fills so they work
 as standalone images.
 
 ## Local preview
