@@ -230,7 +230,7 @@
   }
 
   ::view-transition-group(keysy-tab-indicator) {
-    animation-duration: 450ms;
+    animation-duration: 400ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
