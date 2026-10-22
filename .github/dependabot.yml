@@ -3,6 +3,11 @@ updates:
   - package-ecosystem: bun
     directories:
       - '/**'
+    groups:
+      react-runtime:
+        patterns:
+          - react
+          - react-dom
     schedule:
       interval: weekly
     commit-message:
