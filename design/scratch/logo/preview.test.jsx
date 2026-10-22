@@ -13,7 +13,7 @@ test('retained candidates keep their source artwork and removed candidates are a
   assert.deepEqual(candidates.filter(entry => entry.kind === 'study').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'icon').map(entry => entry.id), []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'generated').map(entry => entry.id),
-    ['46']);
+    []);
   assert.deepEqual(candidates.filter(entry => entry.kind === 'reference').map(entry => entry.id),
     []);
   for (const entry of candidates) {
@@ -50,6 +50,8 @@ test('the React grid shows every retained candidate with consecutive display num
   assert.equal(screen.queryByRole('heading', { name: 'Gate', exact: true }), null);
   assert.equal(screen.queryByRole('heading', { name: 'Access', exact: true }), null);
   assert.equal(container.querySelector('#logo-13'), null);
+  assert.equal(screen.queryByRole('heading', { name: 'Terminal', exact: true }), null);
+  assert.equal(container.querySelector('#generated-46'), null);
   assert.equal(container.querySelector('#logo-10, #logo-21, #generated-42, #logo-31'), null);
   assert.equal(container.querySelector('#reference-52'), null);
   for (const entry of candidates) {
@@ -74,7 +76,7 @@ test('the logo collection shows one flat grid in candidate order with no group h
   const articles = [...collection.children];
   assert.ok(articles.every(element => element.tagName === 'ARTICLE'));
   assert.deepEqual(articles.map(article => article.id),
-    ['logo-20', 'logo-36', 'generated-46']);
+    ['logo-20', 'logo-36']);
   assert.equal(new Set(articles.map(article => article.id)).size, candidates.length);
   assert.deepEqual(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent),
     [`All directions ${candidates.length}`]);
@@ -95,27 +97,4 @@ test('the React entry uses local assets and has no runtime network dependency', 
   assert.match(read('../main.jsx'), /createRoot/);
   assert.doesNotMatch(read('LogoPreview.jsx'), /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/);
   assert.doesNotMatch(read('index.html'), /(?:src|href)="https?:\/\//);
-});
-
-test('Terminal removes the trailing cursor and trims its unused canvas', () => {
-  const terminal = candidates.find(entry => entry.name === 'Terminal');
-  const artwork = new DOMParser().parseFromString(terminal.svg, 'image/svg+xml');
-  assert.equal(artwork.documentElement.getAttribute('viewBox'), '0 0 935 246');
-  assert.equal(artwork.querySelector('[transform="translate(958.683837890625,181.384765625)"]'), null);
-});
-
-test('Terminal shows complete lockups at 16, 24, and 32px in both modes without standalone symbols', () => {
-  const { container } = render(<LogoPreview />);
-  const terminal = candidates.find(entry => entry.name === 'Terminal');
-  const expectedArtwork = new DOMParser().parseFromString(terminal.svg, 'text/html').body.innerHTML;
-  for (const panel of container.querySelectorAll('#generated-46 .theme-preview')) {
-    const sizes = [...panel.querySelectorAll('.small-logo')];
-    assert.deepEqual(sizes.map(row => row.querySelector(':scope > span').textContent), ['16px', '24px', '32px']);
-    assert.deepEqual(sizes.map(row => row.style.getPropertyValue('--lockup-size')), ['16px', '24px', '32px']);
-    for (const row of sizes) assert.equal(row.querySelector('div').innerHTML, expectedArtwork);
-    assert.equal(panel.querySelector('.symbol-sizes'), null);
-  }
-  for (const panel of container.querySelectorAll('#logo-20 .theme-preview, #logo-36 .theme-preview')) {
-    assert.deepEqual([...panel.querySelectorAll('.small-logo > span')].map(label => label.textContent), ['28px']);
-  }
 });
