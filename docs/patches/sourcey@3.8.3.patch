@@ -1,0 +1,33 @@
+diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
+index f2827cf6a8d1d693328cdef3da593e88e212e904..a913884c2bae9ca39f6178580ddb7ec4df0b34d7 100644
+--- a/dist/client/sidebar.js
++++ b/dist/client/sidebar.js
+@@ -192,11 +192,27 @@
+       if (e.target === dialog) dialog.close();
+     });
+ 
+-    // Close on nav link or close button click
++    // Preserve the open drawer until cross-document navigation captures it.
++    // Closing here can remove its snapshot before the outgoing slide starts.
+     dialog.addEventListener('click', function (e) {
++      var link = e.target.closest('a[href]');
++      if (dialog.open && 'CSSViewTransitionRule' in window &&
++          window.matchMedia('(width < 64rem) and (prefers-reduced-motion: no-preference)').matches &&
++          shouldSaveForNavigation(e, link) &&
++          (link.pathname !== window.location.pathname || link.search !== window.location.search)) {
++        return;
++      }
+       if (e.target.closest('a') || e.target.closest('[data-close-drawer]')) dialog.close();
+     });
+ 
++    // A cached outgoing document must not restore with its drawer still open.
++    window.addEventListener('pageshow', function (event) {
++      if (event.persisted && dialog.open) {
++        dialog.close();
++        dialog.getAnimations().forEach(function (animation) { animation.finish(); });
++      }
++    });
++
+     // Dropdown: toggle list visibility
+     var toggle = document.getElementById('drawer-group-toggle');
+     var list = document.getElementById('drawer-group-list');

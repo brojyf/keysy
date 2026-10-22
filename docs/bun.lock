@@ -11,6 +11,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "sourcey@3.8.3": "patches/sourcey@3.8.3.patch",
+  },
   "packages": {
     "@acemir/cssom": ["@acemir/cssom@0.9.32", "", {}, "sha512-OijrAUu7rrJhSIoHNg6LMPS5e344nwUHA+1EFYYjrh64D+GmytUsfBQjci45TjT+rd5Spsp8B5xsZDT+TgyXXQ=="],
 

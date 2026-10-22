@@ -166,7 +166,7 @@
     navigation: auto;
   }
 
-  /* Keep the closing dialog rendered so navigation can capture its snapshot. */
+  /* Retain the top layer during native close-button, backdrop and Escape exits. */
   #sourcey #mobile-nav {
     view-transition-name: keysy-mobile-nav;
     transform: translateX(-100%);

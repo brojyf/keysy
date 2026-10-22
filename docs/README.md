@@ -25,7 +25,8 @@ bun audit --audit-level=high
 
 `check` runs TypeScript 7 and Sourcey's route, fragment and output checks.
 `test` builds the static site, then checks branding, all 12 documentation pages,
-public assets, navigation and native controls. `bun run build` writes `dist/`.
+public assets, navigation, native controls and the drawer's runtime click handler.
+`bun run build` writes `dist/`.
 
 ## Migration and branding
 
@@ -38,10 +39,12 @@ and a bottom-aligned footer on short pages. Code blocks keep native syntax color
 
 Sourcey's native search, appearance control and mobile drawer replace the
 Mintlify-specific script. CSS provides a 250 ms drawer exit over the incoming page
-using cross-document View Transitions, without delaying navigation or adding
-JavaScript. Unsupported browsers use normal navigation; reduced motion disables
-the drawer animation. The logo uses a neutral keyboard focus indicator, and search
-and appearance icons have heavier strokes. The SVG favicon follows the browser
+using cross-document View Transitions, without delaying navigation. A Bun patch in
+`patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
+its snapshot and clears it on back-forward cache restoration. Recheck this patch
+when upgrading Sourcey. Unsupported browsers use normal navigation; reduced motion
+disables the drawer animation. The logo uses a neutral keyboard focus indicator,
+and search and appearance icons have heavier strokes. The SVG favicon follows the browser
 color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
 Mintlify template license notice is retained in `LICENSE`.

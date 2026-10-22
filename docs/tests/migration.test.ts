@@ -60,6 +60,19 @@ for (const [route, title] of routes) {
   });
 }
 
+test('the published client includes the patched drawer lifecycle handlers', async () => {
+  const html = await Bun.file(new URL('index.html', output)).text();
+  const scripts = await matches(html, 'script[src]');
+  const client = (await Promise.all(scripts.map(({ src }) => {
+    const path = new URL(src!, 'https://docs.invalid').pathname.slice(1);
+    return Bun.file(new URL(path, output)).text();
+  }))).join('\n');
+  expect(client).toContain('CSSViewTransitionRule');
+  expect(client).toContain('(width < 64rem) and (prefers-reduced-motion: no-preference)');
+  expect(client).toContain('pageshow');
+  expect(client).toContain('getAnimations');
+});
+
 test('PRD placeholder and endpoint callout content survive migration', async () => {
   expect(await Bun.file(new URL('prd.html', output)).text()).toContain('Product requirements have not been documented yet.');
   expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
