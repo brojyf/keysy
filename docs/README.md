@@ -26,6 +26,10 @@ blue accent at font weight 600. Code blocks retain their syntax colors.
 
 Footer previous/next page navigation is hidden site-wide.
 
+Below 64 rem, the header shows GitHub, appearance, and search directly, with
+appearance next to search and no overflow menu. The native controls and their
+keyboard order are preserved.
+
 ## Local preview
 
 Install Node.js 20.17.0 or later and the [Mintlify CLI](https://www.mintlify.com/docs/cli/install):

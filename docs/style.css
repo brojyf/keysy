@@ -77,3 +77,14 @@ img.nav-logo {
 #pagination {
   display: none;
 }
+
+@media (width < 64rem) {
+  #navbar div:has(> nav[aria-label='Main']) {
+    display: flex;
+    flex: 0 0 auto;
+  }
+
+  #navbar button[aria-label='More actions'] {
+    display: none;
+  }
+}
