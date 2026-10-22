@@ -31,7 +31,7 @@
         "groups": [
           {
             "group": "General",
-            "pages": ["index"]
+            "pages": ["index", "prd"]
           }
         ]
       },
