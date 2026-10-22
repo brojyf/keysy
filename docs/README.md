@@ -35,7 +35,9 @@ with no overflow menu. The native controls are preserved.
 The mobile sidebar toggle sits left of the logo in the single header row; the
 breadcrumb row is hidden and the toggle keeps its native Navigation label for
 screen readers. The mobile navigation drawer hides its appearance switch; the
-header keeps the appearance control.
+header keeps the appearance control. `mobile-navigation.js` closes the drawer as
+soon as a page link is chosen and fades the next page's content in, unless the
+reader prefers reduced motion.
 
 ## Local preview
 
