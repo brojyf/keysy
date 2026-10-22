@@ -66,6 +66,10 @@
   width: auto;
 }
 
+#sourcey #mobile-nav:focus {
+  outline: none;
+}
+
 #sourcey #mobile-nav .sourcey-logo:focus {
   outline: none;
 }

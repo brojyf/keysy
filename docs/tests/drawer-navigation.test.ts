@@ -11,6 +11,8 @@ function loadDrawer({ supported = true, mobile = true, reducedMotion = false } =
   const closingAnimation = { finish: mock() };
   const dialog = {
     open: true,
+    autofocus: false,
+    showModal: mock(() => { dialog.open = true; }),
     closest: () => null,
     addEventListener: (name: string, listener: Listener) => {
       if (name === 'click') clicks.push(listener);
@@ -30,7 +32,9 @@ function loadDrawer({ supported = true, mobile = true, reducedMotion = false } =
   const document = {
     getElementById: (id: string) => id === 'mobile-nav' ? dialog : null,
     querySelector: () => null,
-    querySelectorAll: () => [],
+    querySelectorAll: () => [{
+      addEventListener: (_name: string, listener: Listener) => listeners.set('open', listener),
+    }],
   };
   runInNewContext(sidebarScript, { window, document, URL });
   listeners.get('load')!({});
@@ -56,6 +60,15 @@ function loadDrawer({ supported = true, mobile = true, reducedMotion = false } =
 
   return { dialog, click, closingAnimation, dispatch: (name: string, event: Record<string, unknown>) => listeners.get(name)?.(event) };
 }
+
+test('opening the drawer sets initial focus on the dialog instead of the logo', () => {
+  const { dialog, dispatch } = loadDrawer();
+  expect(dialog.autofocus).toBe(true);
+  dialog.open = false;
+  dispatch('open', {});
+  expect(dialog.showModal).toHaveBeenCalledTimes(1);
+  expect(dialog.open).toBe(true);
+});
 
 test.each(['/api/overview', '/auth/overview', '/prd', '/?section=api'])(
   'keeps the outgoing drawer open for the navigation snapshot: %s', (href) => {

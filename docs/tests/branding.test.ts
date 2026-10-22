@@ -31,6 +31,10 @@ test('native theme loads both Geist families and the brand stylesheet', () => {
   expect(stylesheet).not.toContain('mintlify');
 });
 
+test('the drawer container has no initial focus outline', () => {
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav:focus\s*\{\s*outline: none;/);
+});
+
 test('drawer logo removes the automatic blue outline but keeps a neutral keyboard focus indicator', () => {
   expect(stylesheet).toMatch(/#sourcey #mobile-nav \.sourcey-logo:focus\s*\{\s*outline: none;/);
   expect(stylesheet).toMatch(/#sourcey #mobile-nav \.sourcey-logo:focus-visible\s*\{\s*outline: 2px solid var\(--keysy-text\);/);

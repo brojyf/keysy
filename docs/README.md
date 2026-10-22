@@ -43,8 +43,9 @@ using cross-document View Transitions, without delaying navigation. A Bun patch 
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. Recheck this patch
 when upgrading Sourcey. Unsupported browsers use normal navigation; reduced motion
-disables the drawer animation. The logo uses a neutral keyboard focus indicator,
-and search and appearance icons have heavier strokes. The SVG favicon follows the browser
+disables the drawer animation. Opening the drawer focuses the dialog, not the
+logo; Tab navigation still shows the logo's neutral keyboard focus indicator.
+Search and appearance icons have heavier strokes. The SVG favicon follows the browser
 color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
 Mintlify template license notice is retained in `LICENSE`.

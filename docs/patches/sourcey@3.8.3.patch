@@ -1,8 +1,13 @@
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..a913884c2bae9ca39f6178580ddb7ec4df0b34d7 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..1c0b7a97978f94cd9a2e44dfb09673049c1c0c46 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
-@@ -192,11 +192,27 @@
+@@ -180,1 +180,4 @@
++    // Focus the drawer itself on open, not its first link (the logo).
++    dialog.autofocus = true;
++
+     window.matchMedia('(min-width: 1024px)').addEventListener('change', function (event) {
+@@ -192,11 +195,27 @@
        if (e.target === dialog) dialog.close();
      });
  
