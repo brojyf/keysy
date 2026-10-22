@@ -84,6 +84,22 @@ img.nav-logo {
   justify-content: center;
 }
 
+#navbar .navbar-link a[href='https://github.com/brojyf/keysy'] > svg {
+  background-color: rgb(var(--gray-500));
+}
+
+#navbar .navbar-link a[href='https://github.com/brojyf/keysy']:hover > svg {
+  background-color: rgb(var(--gray-600));
+}
+
+.dark #navbar .navbar-link a[href='https://github.com/brojyf/keysy'] > svg {
+  background-color: rgb(var(--gray-400));
+}
+
+.dark #navbar .navbar-link a[href='https://github.com/brojyf/keysy']:hover > svg {
+  background-color: rgb(var(--gray-300));
+}
+
 #navbar .navbar-link a[href='https://github.com/brojyf/keysy'] > span {
   position: absolute;
   width: 1px;
@@ -94,6 +110,27 @@ img.nav-logo {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+#mobile-nav [data-theme-preference-switch] {
+  display: none;
+}
+
+/* Keep the footer at the bottom of the viewport on short pages. */
+#content-container div:has(> #content-area) {
+  min-height: calc(
+    100dvh - var(--mintlify-slot-header-height, calc(4rem + var(--topbar-tabs-height, 0rem))) -
+      var(--banner-height, 0px)
+  );
+}
+
+#content-area {
+  display: flex;
+  flex-direction: column;
+}
+
+#footer {
+  margin-top: auto;
 }
 
 @media (width < 64rem) {
@@ -137,6 +174,7 @@ img.nav-logo {
   }
 
   #content-container div:has(> #content-area) {
+    min-height: 100dvh;
     padding-top: calc(6.5rem + var(--banner-height, 2.5rem));
   }
 }

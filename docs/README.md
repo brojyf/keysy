@@ -25,14 +25,17 @@ code, including repository directory names, uses the blue accent at font weight
 600. Code blocks retain their syntax colors.
 
 Footer previous/next page navigation and the group label above page titles are
-hidden site-wide.
+hidden site-wide. On short pages, the footer stays at the bottom of the
+viewport.
 
-The header GitHub link displays the brand icon with a screen-reader label.
+The header GitHub link displays the brand icon in the same gray as the search
+icon, with a screen-reader label.
 Below 64 rem, the header shows search, GitHub, and appearance in that order,
 with no overflow menu. The native controls are preserved.
 The mobile sidebar toggle sits left of the logo in the single header row; the
 breadcrumb row is hidden and the toggle keeps its native Navigation label for
-screen readers.
+screen readers. The mobile navigation drawer hides its appearance switch; the
+header keeps the appearance control.
 
 ## Local preview
 
