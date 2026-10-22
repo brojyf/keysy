@@ -73,3 +73,7 @@ img.nav-logo {
   height: 2.5rem !important;
   width: auto !important;
 }
+
+#pagination {
+  display: none;
+}

@@ -24,6 +24,8 @@ sidebar items use the primary text color on a neutral gray background. Page
 section labels and inline code, including repository directory names, use the
 blue accent at font weight 600. Code blocks retain their syntax colors.
 
+Footer previous/next page navigation is hidden site-wide.
+
 ## Local preview
 
 Install Node.js 20.17.0 or later and the [Mintlify CLI](https://www.mintlify.com/docs/cli/install):
