@@ -43,11 +43,15 @@ using cross-document View Transitions, without delaying navigation. A Bun patch 
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks
 the active desktop tab with `aria-current="page"`. Desktop tab underlines move
-between pages with a 500 ms ease-out curve. Appearance clicks use a single 200 ms
-page cross-fade so background, text and icons change together, without repeated
-transitions on inherited colors. New clicks interrupt the previous fade; initial
+between pages with a 500 ms standard easing curve, starting and ending at rest.
+Appearance clicks use a single 250 ms ease-in-out page cross-fade so background,
+text and icons change together, without repeated transitions on inherited colors.
+Both snapshots use the same timing and isolated additive blending to preserve
+the intended cross-fade. New clicks interrupt the previous fade; initial
 page load does not animate. Recheck this patch when upgrading Sourcey. Unsupported
 browsers switch directly; reduced motion disables custom motion.
+The underline uses [Material's standard easing](https://m2.material.io/develop/android/theming/motion);
+snapshot blending follows [Chrome's View Transition guidance](https://developer.chrome.com/docs/web-platform/view-transitions/same-document).
 Opening the drawer focuses the dialog, not the logo; Tab navigation still shows
 the logo's neutral keyboard focus indicator.
 Search and appearance icons have heavier strokes. The SVG favicon follows the browser

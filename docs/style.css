@@ -193,13 +193,22 @@
     pointer-events: none;
   }
 
+  html.keysy-theme-transition::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root),
+  html.keysy-theme-transition::view-transition-new(root) {
+    mix-blend-mode: plus-lighter;
+  }
+
   html.keysy-theme-transition::view-transition-old(root) {
     display: block;
-    animation: keysy-theme-fade-out 200ms ease-out both;
+    animation: keysy-theme-fade-out 250ms ease-in-out both;
   }
 
   html.keysy-theme-transition::view-transition-new(root) {
-    animation: keysy-theme-fade-in 200ms ease-out both;
+    animation: keysy-theme-fade-in 250ms ease-in-out both;
   }
 
   @keyframes keysy-theme-fade-out {
@@ -222,7 +231,7 @@
 
   ::view-transition-group(keysy-tab-indicator) {
     animation-duration: 500ms;
-    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   ::view-transition-old(keysy-tab-indicator),
