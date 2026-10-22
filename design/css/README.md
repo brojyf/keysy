@@ -10,5 +10,7 @@
 | Design reference | Vercel Geist |
 | Colors | [Blue accents and neutral backgrounds](../theme/README.md) |
 
-Navigation group labels, page section labels, and inline code use the accent
-color at font weight 600. Code blocks retain their syntax colors.
+Navigation group labels use the primary text color at font weight 700. Selected
+sidebar items use the primary text color on the selected background. Page
+section labels and inline code use the accent color at font weight 600. Code
+blocks retain their syntax colors.
