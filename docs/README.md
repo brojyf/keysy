@@ -1,75 +1,53 @@
 # Keysy documentation
 
-Mintlify documentation for the Keysy monorepo. Site configuration lives in
-`docs.json`; pages are MDX files.
+Standalone [Sourcey](https://sourcey.com/docs) documentation for the Keysy monorepo.
+Configuration lives in `sourcey.config.ts`; existing pages remain MDX files.
 
-## Branding
+## Local development
 
-The site uses blue accents with neutral backgrounds, the Namespace logo, and
-Geist / Geist Mono fonts. Light mode uses white and light gray backgrounds; dark
-mode uses black and dark gray backgrounds. The color values and logo geometry
-come from design commit `b3d0ed3d15ed5fa373e5c6e7c99386f38b4baf42`.
-Mintlify's native configuration supplies the accent colors, page backgrounds,
-interface font, and logo variants. `style.css` supplies the remaining neutral
-colors and code font while preserving Mintlify's layout and semantic colors.
-
-Geist loads through Mintlify's Google Fonts support; Geist Mono loads through
-the Google Fonts stylesheet in `style.css`. System fonts remain as fallbacks.
-The SVGs retain the finalized logo paths with explicit blue fills so they work
-as standalone images. A root `favicon.ico` provides the same symbol at 16, 32,
-and 48 px for browsers that request the conventional fallback URL.
-
-Navigation group labels use the primary text color at font weight 700. Selected
-sidebar items use the primary text color on a neutral gray background. Inline
-code, including repository directory names, uses the blue accent at font weight
-600. Code blocks retain their syntax colors.
-
-Footer previous/next page navigation and the group label above page titles are
-hidden site-wide. On short pages, the footer stays at the bottom of the
-viewport.
-
-The header GitHub link displays the brand icon in the same gray as the search
-icon, with a screen-reader label.
-Below 64 rem, the header shows search, GitHub, and appearance in that order,
-with no overflow menu. The native controls are preserved.
-The mobile sidebar toggle sits left of the logo in the single header row; the
-breadcrumb row is hidden and the toggle keeps its native Navigation label for
-screen readers. The mobile navigation drawer hides its appearance switch; the
-header keeps the appearance control. `mobile-navigation.js` closes the drawer as
-soon as a page or tab link is chosen; the drawer closes at the same 450 ms speed
-it opens, and page content switches without animation. Because Mintlify remounts
-the page on navigation, the drawer slides out in a view transition; browsers
-without view transitions or with reduced motion close it without animation.
-
-## Local preview
-
-Install Node.js 20.17.0 or later and the [Mintlify CLI](https://www.mintlify.com/docs/cli/install):
+Use Bun 1.4.3 and Node.js 22.19 or later (required by Sourcey).
+From this directory:
 
 ```bash
-npm install -g mint
+bun install --frozen-lockfile
+bun run dev
 ```
 
-From this directory, run:
+Open the URL printed by the development server.
+
+## Validation
 
 ```bash
-mint dev
+bun run check
+bun run test
+bun audit --audit-level=high
 ```
 
-Open `http://localhost:3000`.
+`check` runs TypeScript 7 and Sourcey's route, fragment and output checks.
+`test` builds the static site, then checks branding, all 12 documentation pages,
+public assets, navigation and native controls. `bun run build` writes `dist/`.
 
-## Validate changes
+## Migration and branding
 
-```bash
-bun test tests/
-mint validate
-mint broken-links --check-anchors
-```
+PR #29 now uses Sourcey instead of Mintlify, retaining the six navigation tabs,
+page URLs, PRD placeholder, Namespace logo, blue accents, neutral light/dark
+backgrounds, and Geist / Geist Mono fonts. Fonts load from Google Fonts with
+system fallbacks. `style.css` adapts the native theme: neutral selected navigation,
+blue inline code, hidden pagination/page group labels, a single mobile header,
+and a bottom-aligned footer on short pages. Code blocks keep native syntax colors.
+
+Sourcey's native search, appearance control and mobile drawer replace the
+Mintlify-specific selectors and script. The previous custom 450 ms close animation
+is not carried over. The SVG favicon follows the browser color scheme;
+`public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
+under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
+Mintlify template license notice is retained in `LICENSE`.
 
 ## Publishing
 
-To configure Git-connected publishing, select the `brojyf/keysy` repository,
-`main` branch, and `docs/` directory in the Mintlify dashboard. Merge reviewed
-changes through pull requests.
-
-Hosting and custom domains require separate deployment configuration; these
-files alone do not publish the site.
+Publish `dist/` as static assets through Cloudflare Workers using `wrangler`,
+not the Mintlify dashboard. Before publishing, set the confirmed public origin
+in `siteUrl` (and `baseUrl` if mounted below `/`), and configure the host to serve
+extensionless HTML paths and `404.html` with HTTP 404. Until an origin is supplied,
+Sourcey reports a `missing-site-origin` warning. This migration does not configure
+hosting, custom domains or deploy the site.

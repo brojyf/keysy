@@ -1,0 +1,16 @@
+{
+  "name": "@keysy/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sourcey dev",
+    "check": "tsc --noEmit && sourcey check",
+    "build": "sourcey build",
+    "test": "bun run build && bun test tests/"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.3",
+    "sourcey": "3.8.3",
+    "typescript": "7.0.2"
+  }
+}
