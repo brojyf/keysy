@@ -2,11 +2,11 @@ import { expect, test } from 'bun:test';
 
 const stylesheet = await Bun.file(new URL('../style.css', import.meta.url)).text();
 
-test('the selected desktop underline moves for 500ms with zero start and end velocity', () => {
+test('the selected desktop underline moves for 450ms with zero start and end velocity', () => {
   expect(stylesheet).toMatch(/@media \(width >= 64rem\) and \(prefers-reduced-motion: no-preference\)/);
   expect(stylesheet).toMatch(/a\[aria-current='page'\] > div\s*\{\s*view-transition-name: keysy-tab-indicator;/);
   const underline = stylesheet.match(/::view-transition-group\(keysy-tab-indicator\)\s*\{([^}]+)\}/)![1]!;
-  expect(underline).toContain('animation-duration: 500ms');
+  expect(underline).toContain('animation-duration: 450ms');
   const [x1, y1, x2, y2] = underline.match(/cubic-bezier\(([^)]+)\)/)![1]!.split(',').map(Number);
   expect(x1).toBeGreaterThan(0);
   expect(x2).toBeLessThan(1);
@@ -19,8 +19,8 @@ test('appearance fades a single page snapshot instead of repeatedly transitionin
   expect(stylesheet).not.toContain('color 200ms ease-out');
   expect(stylesheet).toMatch(/html\.keysy-theme-transition::view-transition\s*\{\s*pointer-events: none;/);
   expect(stylesheet).toMatch(/html\.keysy-theme-transition \*::after\s*\{[^}]*transition: none !important;[^}]*view-transition-name: none !important;/);
-  expect(stylesheet).toMatch(/html\.keysy-theme-transition::view-transition-old\(root\)\s*\{[^}]*display: block;[^}]*animation: keysy-theme-fade-out 250ms ease-in-out both;/);
-  expect(stylesheet).toMatch(/html\.keysy-theme-transition::view-transition-new\(root\)\s*\{[^}]*animation: keysy-theme-fade-in 250ms ease-in-out both;/);
+  expect(stylesheet).toMatch(/html\.keysy-theme-transition::view-transition-old\(root\)\s*\{[^}]*display: block;[^}]*animation: keysy-theme-fade-out 300ms ease-in-out both;/);
+  expect(stylesheet).toMatch(/html\.keysy-theme-transition::view-transition-new\(root\)\s*\{[^}]*animation: keysy-theme-fade-in 300ms ease-in-out both;/);
   expect(stylesheet).toMatch(/@keyframes keysy-theme-fade-out\s*\{\s*to\s*\{\s*opacity: 0;/);
   expect(stylesheet).toMatch(/@keyframes keysy-theme-fade-in\s*\{\s*from\s*\{\s*opacity: 0;/);
 });

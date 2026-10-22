@@ -204,11 +204,11 @@
 
   html.keysy-theme-transition::view-transition-old(root) {
     display: block;
-    animation: keysy-theme-fade-out 250ms ease-in-out both;
+    animation: keysy-theme-fade-out 300ms ease-in-out both;
   }
 
   html.keysy-theme-transition::view-transition-new(root) {
-    animation: keysy-theme-fade-in 250ms ease-in-out both;
+    animation: keysy-theme-fade-in 300ms ease-in-out both;
   }
 
   @keyframes keysy-theme-fade-out {
@@ -230,7 +230,7 @@
   }
 
   ::view-transition-group(keysy-tab-indicator) {
-    animation-duration: 500ms;
+    animation-duration: 450ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 

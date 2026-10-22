@@ -43,8 +43,8 @@ using cross-document View Transitions, without delaying navigation. A Bun patch 
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks
 the active desktop tab with `aria-current="page"`. Desktop tab underlines move
-between pages with a 500 ms standard easing curve, starting and ending at rest.
-Appearance clicks use a single 250 ms ease-in-out page cross-fade so background,
+between pages with a 450 ms standard easing curve, starting and ending at rest.
+Appearance clicks use a single 300 ms ease-in-out page cross-fade so background,
 text and icons change together, without repeated transitions on inherited colors.
 Both snapshots use the same timing and isolated additive blending to preserve
 the intended cross-fade. New clicks interrupt the previous fade; initial
