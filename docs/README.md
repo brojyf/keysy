@@ -29,6 +29,8 @@ Footer previous/next page navigation is hidden site-wide.
 The header GitHub link displays the brand icon with a screen-reader label.
 Below 64 rem, the header shows search, GitHub, and appearance in that order,
 with no overflow menu. The native controls are preserved.
+The mobile sidebar toggle shows its native Navigation label beside the menu
+icon, with a bordered button treatment separate from the page breadcrumbs.
 
 ## Local preview
 
