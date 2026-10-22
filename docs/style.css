@@ -116,6 +116,12 @@ img.nav-logo {
   display: none;
 }
 
+/* Close the mobile navigation drawer at the same 450 ms speed it opens. */
+#mobile-nav[data-ending-style],
+[data-ending-style]:has(+ div > #mobile-nav) {
+  transition-duration: 450ms;
+}
+
 /* Keep the footer at the bottom of the viewport on short pages. */
 #content-container div:has(> #content-area) {
   min-height: calc(
