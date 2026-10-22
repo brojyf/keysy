@@ -53,8 +53,7 @@ Mintlify template license notice is retained in `LICENSE`.
 ## Publishing
 
 Publish `dist/` as static assets through Cloudflare Workers using `wrangler`,
-not the Mintlify dashboard. Before publishing, set the confirmed public origin
-in `siteUrl` (and `baseUrl` if mounted below `/`), and configure the host to serve
-extensionless HTML paths and `404.html` with HTTP 404. Until an origin is supplied,
-Sourcey reports a `missing-site-origin` warning. This migration does not configure
-hosting, custom domains or deploy the site.
+not the Mintlify dashboard. `siteUrl` is set to `https://docs.keysy.net` for
+canonical links and the sitemap. Before publishing, bind that domain to the host
+and configure extensionless HTML paths and `404.html` with HTTP 404. This migration
+does not configure hosting, DNS or custom domain bindings, or deploy the site.

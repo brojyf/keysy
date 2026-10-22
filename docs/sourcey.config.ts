@@ -2,6 +2,7 @@ import { defineConfig, markdown } from 'sourcey';
 
 export default defineConfig({
   name: 'Keysy',
+  siteUrl: 'https://docs.keysy.net',
   logo: { light: './logo/light.svg', dark: './logo/dark.svg' },
   favicon: './favicon.svg',
   publicDir: './public',

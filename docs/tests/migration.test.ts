@@ -26,6 +26,16 @@ test('navigation preserves the six original sections', () => {
   expect(config.prettyUrls).toBe('strip');
 });
 
+test('the public origin is the confirmed documentation domain', () => {
+  expect(config.siteUrl).toBe('https://docs.keysy.net');
+});
+
+test('the sitemap uses absolute URLs on the documentation domain', async () => {
+  const sitemap = await Bun.file(new URL('sitemap.xml', output)).text();
+  const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  expect(locations).toEqual(routes.map(([route]) => `https://docs.keysy.net/${route === 'index' ? '' : route}`));
+});
+
 test('only documentation pages and the native 404 are published as HTML', async () => {
   const files = await readdir(output, { recursive: true });
   expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
@@ -38,6 +48,11 @@ for (const [route, title] of routes) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     expect(html).toContain(`<h1`);
     expect(html).toContain(`${title}</h1>`);
+    const publicUrl = `https://docs.keysy.net/${route === 'index' ? '' : route}`;
+    const [canonical] = await matches(html, 'link[rel="canonical"]');
+    const [languageLink] = await matches(html, 'link[rel="alternate"][hreflang="en"]');
+    expect(canonical?.href).toBe(publicUrl);
+    expect(languageLink?.href).toBe(publicUrl);
     expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
     expect(await matches(html, '#navbar a[aria-label="GitHub"] svg')).toHaveLength(1);
     expect(await matches(html, '#search-open-mobile')).toHaveLength(1);
@@ -98,7 +113,7 @@ test('public favicon bytes are preserved and native search exports are generated
 test('all local page links, fragments and resource URLs resolve in the static output', async () => {
   for (const [route] of routes) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
-    const pageUrl = new URL(route === 'index' ? '/' : `/${route}`, 'https://docs.invalid');
+    const pageUrl = new URL(route === 'index' ? '/' : `/${route}`, config.siteUrl);
     for (const element of await matches(html, '[href], [src]')) {
       const target = new URL(element.href ?? element.src!, pageUrl);
       if (target.origin !== pageUrl.origin) continue;
