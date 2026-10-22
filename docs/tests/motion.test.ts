@@ -2,11 +2,11 @@ import { expect, test } from 'bun:test';
 
 const stylesheet = await Bun.file(new URL('../style.css', import.meta.url)).text();
 
-test('the selected desktop underline moves for 400ms with zero start and end velocity', () => {
+test('the selected desktop underline moves for 350ms with zero start and end velocity', () => {
   expect(stylesheet).toMatch(/@media \(width >= 64rem\) and \(prefers-reduced-motion: no-preference\)/);
   expect(stylesheet).toMatch(/a\[aria-current='page'\] > div\s*\{\s*view-transition-name: keysy-tab-indicator;/);
   const underline = stylesheet.match(/::view-transition-group\(keysy-tab-indicator\)\s*\{([^}]+)\}/)![1]!;
-  expect(underline).toContain('animation-duration: 400ms');
+  expect(underline).toContain('animation-duration: 350ms');
   const [x1, y1, x2, y2] = underline.match(/cubic-bezier\(([^)]+)\)/)![1]!.split(',').map(Number);
   expect(x1).toBeGreaterThan(0);
   expect(x2).toBeLessThan(1);
