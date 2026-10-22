@@ -54,6 +54,9 @@ for (const [route, title] of routes) {
     expect(canonical?.href).toBe(publicUrl);
     expect(languageLink?.href).toBe(publicUrl);
     expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
+    const [activeTab] = await matches(html, '.sourcey-section-tabs > a[aria-current="page"]');
+    expect(activeTab?.href).toBe(route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/');
+    expect(await matches(html, '.sourcey-section-tabs > a[aria-current="page"] > div')).toHaveLength(1);
     expect(await matches(html, '#navbar a[aria-label="GitHub"] svg')).toHaveLength(1);
     expect(await matches(html, '#search-open-mobile')).toHaveLength(1);
     expect(await matches(html, '#theme-toggle')).toHaveLength(1);
@@ -75,7 +78,7 @@ for (const [route, title] of routes) {
   });
 }
 
-test('the published client includes the patched drawer lifecycle handlers', async () => {
+test('the published client includes the patched drawer lifecycle and appearance handlers', async () => {
   const html = await Bun.file(new URL('index.html', output)).text();
   const scripts = await matches(html, 'script[src]');
   const client = (await Promise.all(scripts.map(({ src }) => {
@@ -86,6 +89,7 @@ test('the published client includes the patched drawer lifecycle handlers', asyn
   expect(client).toContain('(width < 64rem) and (prefers-reduced-motion: no-preference)');
   expect(client).toContain('pageshow');
   expect(client).toContain('getAnimations');
+  expect(client).toContain('keysy-theme-transition');
 });
 
 test('PRD placeholder and endpoint callout content survive migration', async () => {

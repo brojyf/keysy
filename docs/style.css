@@ -165,11 +165,49 @@
   }
 }
 
-@media (width < 64rem) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
+  html.keysy-theme-transition,
+  html.keysy-theme-transition *,
+  html.keysy-theme-transition *::before,
+  html.keysy-theme-transition *::after {
+    transition: background-color 200ms ease-out, color 200ms ease-out,
+      border-color 200ms ease-out, box-shadow 200ms ease-out,
+      fill 200ms ease-out, stroke 200ms ease-out;
+  }
+
   @view-transition {
     navigation: auto;
   }
 
+  /* Switch page content immediately while named navigation elements move. */
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(root) {
+    display: none;
+  }
+}
+
+@media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
+  #sourcey .sourcey-section-tabs > a[aria-current='page'] > div {
+    view-transition-name: keysy-tab-indicator;
+  }
+
+  ::view-transition-group(keysy-tab-indicator) {
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  ::view-transition-old(keysy-tab-indicator),
+  ::view-transition-new(keysy-tab-indicator) {
+    animation: none;
+  }
+}
+
+@media (width < 64rem) and (prefers-reduced-motion: no-preference) {
   /* Retain the top layer during native close-button, backdrop and Escape exits. */
   #sourcey #mobile-nav {
     view-transition-name: keysy-mobile-nav;
@@ -202,16 +240,8 @@
     }
   }
 
-  /* Switch page content immediately; only the outgoing drawer slides away. */
-  ::view-transition-group(root),
-  ::view-transition-group(keysy-mobile-nav),
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-group(keysy-mobile-nav) {
     animation: none;
-  }
-
-  ::view-transition-old(root) {
-    display: none;
   }
 
   ::view-transition-old(keysy-mobile-nav) {

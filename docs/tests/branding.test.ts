@@ -65,8 +65,7 @@ test('mobile page transitions slide only the old drawer snapshot over the new pa
 test('custom drawer motion is restricted to mobile users without reduced motion', () => {
   const motionGate = stylesheet.indexOf('@media (width < 64rem) and (prefers-reduced-motion: no-preference)');
   expect(motionGate).toBeGreaterThan(0);
-  expect(stylesheet.indexOf('@view-transition')).toBeGreaterThan(motionGate);
-  expect(stylesheet.indexOf('view-transition-name:')).toBeGreaterThan(motionGate);
+  expect(stylesheet.indexOf('view-transition-name: keysy-mobile-nav')).toBeGreaterThan(motionGate);
   expect(stylesheet.indexOf('transition: transform')).toBeGreaterThan(motionGate);
   expect(stylesheet).toMatch(/#sourcey #mobile-nav\[open\],\s*#sourcey #mobile-nav\[open\]::backdrop\s*\{\s*animation: none;/);
 });
