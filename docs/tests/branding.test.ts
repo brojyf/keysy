@@ -36,6 +36,10 @@ test('plain search page titles use the UI font without overriding method and pat
   expect(stylesheet).not.toMatch(/#sourcey \.search-result-path\s*\{[^}]*font-family:/);
 });
 
+test('search section headings use bold primary text in both themes', () => {
+  expect(stylesheet).toMatch(/#sourcey #search-dialog \.search-category\s*\{\s*font-weight: 700;\s*color: var\(--keysy-text\);/);
+});
+
 test('the drawer container has no initial focus outline', () => {
   expect(stylesheet).toMatch(/#sourcey #mobile-nav:focus\s*\{\s*outline: none;/);
 });

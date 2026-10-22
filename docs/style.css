@@ -49,6 +49,11 @@
   font-family: var(--font-sans);
 }
 
+#sourcey #search-dialog .search-category {
+  font-weight: 700;
+  color: var(--keysy-text);
+}
+
 #sourcey .nav-group-label {
   color: var(--keysy-text);
   font-weight: 700;
