@@ -1,3 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
+
 :root {
   --sidebar-width: 14rem;
+  --ink-surface: #ffffff;
+  --ink-text: #1b1c1e;
+  --ink-muted: #64666b;
+  --ink-accent: #2f5aba;
+  --ink-soft: #f0f1f3;
+  --ink-line: #e3e4e6;
+}
+
+.dark {
+  --ink-surface: #1b1b1b;
+  --ink-text: #ededee;
+  --ink-muted: #a3a4a8;
+  --ink-accent: #9bbaff;
+  --ink-soft: #2a2a2a;
+  --ink-line: #2e2e2e;
+}
+
+body {
+  color: var(--ink-text);
+}
+
+/* Keep Mintlify's layout and semantic callout / syntax colors. */
+.prose {
+  --tw-prose-body: var(--ink-text);
+  --tw-prose-headings: var(--ink-text);
+  --tw-prose-bold: var(--ink-text);
+  --tw-prose-code: var(--ink-text);
+  --tw-prose-links: var(--ink-accent);
+  --tw-prose-counters: var(--ink-muted);
+  --tw-prose-captions: var(--ink-muted);
+  --tw-prose-bullets: var(--ink-muted);
+  --tw-prose-th-borders: var(--ink-line);
+  --tw-prose-td-borders: var(--ink-line);
+  --tw-prose-hr: var(--ink-line);
+}
+
+pre,
+code,
+kbd,
+samp,
+.font-mono {
+  font-family: 'Geist Mono', ui-monospace, monospace !important;
+}
+
+#search-bar-entry,
+#search-bar-entry-mobile,
+.card {
+  background-color: var(--ink-surface);
+  border-color: var(--ink-line);
+}
+
+#sidebar-content li[data-active] > a {
+  background-color: var(--ink-soft);
+  color: var(--ink-accent);
+}
+
+img.nav-logo {
+  height: 2.5rem !important;
+  width: auto !important;
 }

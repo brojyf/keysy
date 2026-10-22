@@ -3,11 +3,27 @@
   "theme": "mint",
   "name": "Keysy",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#2f5aba",
+    "light": "#9bbaff",
+    "dark": "#2f5aba"
   },
-  "favicon": "/favicon.svg",
+  "background": {
+    "color": {
+      "light": "#fafafa",
+      "dark": "#121212"
+    }
+  },
+  "fonts": {
+    "family": "Geist"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": {
+    "light": "/favicon.svg",
+    "dark": "/favicon-dark.svg"
+  },
   "navigation": {
     "tabs": [
       {
