@@ -29,7 +29,42 @@ test('native theme loads both Geist families and the brand stylesheet', () => {
   expect(config.theme?.fonts).toEqual({ sans: 'Geist', mono: 'Geist Mono' });
   expect(config.theme?.css).toEqual(['./style.css']);
   expect(stylesheet).not.toContain('mintlify');
-  expect(stylesheet).not.toContain('view-transition');
+});
+
+test('drawer logo removes the automatic blue outline but keeps a neutral keyboard focus indicator', () => {
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav \.sourcey-logo:focus\s*\{\s*outline: none;/);
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav \.sourcey-logo:focus-visible\s*\{\s*outline: 2px solid var\(--keysy-text\);/);
+});
+
+test('search and appearance icons have heavier strokes without resizing their SVGs', () => {
+  expect(stylesheet).toMatch(/#sourcey #search-open svg,\s*#sourcey #search-open-mobile svg,\s*#sourcey #theme-toggle svg\s*\{\s*stroke-width: 3;/);
+  expect(stylesheet).toMatch(/#sourcey #theme-toggle svg g\s*\{\s*stroke-width: 2;/);
+});
+
+test('native drawer closing retains its display and top-layer overlay during the slide', () => {
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav\s*\{[^}]*transform: translateX\(-100%\);/);
+  expect(stylesheet).toContain('display 250ms allow-discrete');
+  expect(stylesheet).toContain('overlay 250ms allow-discrete');
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav\[open\]\s*\{\s*transform: translateX\(0\);/);
+  expect(stylesheet).toContain('@starting-style');
+});
+
+test('mobile page transitions slide only the old drawer snapshot over the new page', () => {
+  expect(stylesheet).toMatch(/@view-transition\s*\{\s*navigation: auto;/);
+  expect(stylesheet).toContain('view-transition-name: keysy-mobile-nav');
+  expect(stylesheet).toMatch(/::view-transition-old\(keysy-mobile-nav\)\s*\{\s*animation: keysy-nav-slide-out 250ms/);
+  expect(stylesheet).toMatch(/::view-transition-new\(root\)\s*\{\s*animation: none;/);
+  expect(stylesheet).toMatch(/::view-transition-old\(root\)\s*\{\s*display: none;/);
+  expect(stylesheet).toMatch(/@keyframes keysy-nav-slide-out\s*\{\s*to\s*\{\s*transform: translateX\(-100%\);/);
+});
+
+test('custom drawer motion is restricted to mobile users without reduced motion', () => {
+  const motionGate = stylesheet.indexOf('@media (width < 64rem) and (prefers-reduced-motion: no-preference)');
+  expect(motionGate).toBeGreaterThan(0);
+  expect(stylesheet.indexOf('@view-transition')).toBeGreaterThan(motionGate);
+  expect(stylesheet.indexOf('view-transition-name:')).toBeGreaterThan(motionGate);
+  expect(stylesheet.indexOf('transition: transform')).toBeGreaterThan(motionGate);
+  expect(stylesheet).toMatch(/#sourcey #mobile-nav\[open\],\s*#sourcey #mobile-nav\[open\]::backdrop\s*\{\s*animation: none;/);
 });
 
 test('root favicon fallback provides standard browser icon sizes', async () => {

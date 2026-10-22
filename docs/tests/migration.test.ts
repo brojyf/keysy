@@ -44,12 +44,17 @@ for (const [route, title] of routes) {
     expect(await matches(html, '#theme-toggle')).toHaveLength(1);
     expect(await matches(html, '#navbar [data-drawer-slide]')).toHaveLength(1);
     expect(await matches(html, 'dialog#mobile-nav')).toHaveLength(1);
+    expect(await matches(html, '#mobile-nav .sourcey-logo')).toHaveLength(1);
+    expect(await matches(html, '#search-open svg, #search-open-mobile svg, #theme-toggle svg')).toHaveLength(4);
+    expect(await matches(html, '#theme-toggle svg g')).toHaveLength(1);
     expect(await matches(html, '#content-area > header .h-5')).toHaveLength(1);
     const [pagination] = await matches(html, '#content-area > nav');
     expect(pagination?.['aria-label']).toBe('Previous and next page');
     expect(stylesheet).toContain(`#sourcey #content-area > nav[aria-label='${pagination!['aria-label']}']`);
     expect(await matches(html, '#content-area > div a[href="https://sourcey.com/docs"]')).toHaveLength(1);
     expect(html).not.toContain('mobile-navigation.js');
+    expect(html).toContain('@view-transition');
+    expect(html).toContain('keysy-nav-slide-out');
     const markdown = await Bun.file(new URL(`${route}.md`, output)).text();
     expect(markdown).toContain(title!);
   });

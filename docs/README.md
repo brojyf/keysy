@@ -37,9 +37,12 @@ blue inline code, hidden pagination/page group labels, a single mobile header,
 and a bottom-aligned footer on short pages. Code blocks keep native syntax colors.
 
 Sourcey's native search, appearance control and mobile drawer replace the
-Mintlify-specific selectors and script. The previous custom 450 ms close animation
-is not carried over. The SVG favicon follows the browser color scheme;
-`public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
+Mintlify-specific script. CSS provides a 250 ms drawer exit over the incoming page
+using cross-document View Transitions, without delaying navigation or adding
+JavaScript. Unsupported browsers use normal navigation; reduced motion disables
+the drawer animation. The logo uses a neutral keyboard focus indicator, and search
+and appearance icons have heavier strokes. The SVG favicon follows the browser
+color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
 Mintlify template license notice is retained in `LICENSE`.
 
