@@ -8,7 +8,7 @@ Mintlify documentation for the Keysy monorepo. Site configuration lives in
 The site uses blue accents with neutral backgrounds, the Namespace logo, and
 Geist / Geist Mono fonts. Light mode uses white and light gray backgrounds; dark
 mode uses black and dark gray backgrounds. The color values and logo geometry
-come from design commit `f1b451e79d487f9a3eb38dfb5e44cf08767bfe6d`.
+come from design commit `b3d0ed3d15ed5fa373e5c6e7c99386f38b4baf42`.
 Mintlify's native configuration supplies the accent colors, page backgrounds,
 interface font, and logo variants. `style.css` supplies the remaining neutral
 colors and code font while preserving Mintlify's layout and semantic colors.
@@ -19,9 +19,10 @@ The SVGs retain the finalized logo paths with explicit blue fills so they work
 as standalone images. A root `favicon.ico` provides the same symbol at 16, 32,
 and 48 px for browsers that request the conventional fallback URL.
 
-Navigation group labels, page section labels, and inline code use the blue
-accent at font weight 600, including General and repository directory names.
-Code blocks retain their syntax colors.
+Navigation group labels use the primary text color at font weight 700. Selected
+sidebar items use the primary text color on a neutral gray background. Page
+section labels and inline code, including repository directory names, use the
+blue accent at font weight 600. Code blocks retain their syntax colors.
 
 ## Local preview
 

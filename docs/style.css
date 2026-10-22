@@ -53,12 +53,16 @@ samp,
   border-color: var(--keysy-line);
 }
 
-#sidebar-content li[data-active] > a {
+.sidebar-group li[data-active] > a {
   background-color: var(--keysy-soft);
-  color: var(--keysy-accent);
+  color: var(--keysy-text);
 }
 
-.sidebar-group-header,
+.sidebar-group-header {
+  color: var(--keysy-text);
+  font-weight: 700;
+}
+
 #header .eyebrow,
 .prose :not(pre) > code {
   color: var(--keysy-accent);
