@@ -20,17 +20,19 @@ as standalone images. A root `favicon.ico` provides the same symbol at 16, 32,
 and 48 px for browsers that request the conventional fallback URL.
 
 Navigation group labels use the primary text color at font weight 700. Selected
-sidebar items use the primary text color on a neutral gray background. Page
-section labels and inline code, including repository directory names, use the
-blue accent at font weight 600. Code blocks retain their syntax colors.
+sidebar items use the primary text color on a neutral gray background. Inline
+code, including repository directory names, uses the blue accent at font weight
+600. Code blocks retain their syntax colors.
 
-Footer previous/next page navigation is hidden site-wide.
+Footer previous/next page navigation and the group label above page titles are
+hidden site-wide.
 
 The header GitHub link displays the brand icon with a screen-reader label.
 Below 64 rem, the header shows search, GitHub, and appearance in that order,
 with no overflow menu. The native controls are preserved.
-The mobile sidebar toggle shows its native Navigation label beside the menu
-icon, with a bordered button treatment separate from the page breadcrumbs.
+The mobile sidebar toggle sits left of the logo in the single header row; the
+breadcrumb row is hidden and the toggle keeps its native Navigation label for
+screen readers.
 
 ## Local preview
 
