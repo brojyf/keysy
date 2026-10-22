@@ -3,15 +3,18 @@ import { palettes } from '../../theme/palettes.js';
 
 // Source-controlled SVG artwork is kept verbatim, including its outlined typography.
 function Artwork({ entry }) {
+  const isTerminal = entry.kind === 'generated' && entry.id === '46';
   if (entry.image) return <>
     <span className="icon-art" role="img" aria-label={entry.name} />
     <span className="icon-art icon-small" aria-hidden="true" />
   </>;
   return <>
     <div className="logo-art" role="img" aria-label={entry.name} dangerouslySetInnerHTML={{ __html: entry.svg }} />
-    <div className="small-logo" aria-hidden="true">
-      <div dangerouslySetInnerHTML={{ __html: entry.svg }} /><span>28px</span>
-    </div>
+    {(isTerminal ? [16, 24, 32] : [28]).map(size => <div key={size}
+      className={`small-logo${isTerminal ? ' terminal-size' : ''}`} aria-hidden="true"
+      style={isTerminal ? { '--lockup-size': `${size}px` } : undefined}>
+      <div dangerouslySetInnerHTML={{ __html: entry.svg }} /><span>{size}px</span>
+    </div>)}
     {entry.symbol && <div className="symbol-sizes" aria-hidden="true">
       {[16, 24, 32].map(size => <span key={size} style={{ '--symbol-size': `${size}px` }} dangerouslySetInnerHTML={{ __html: entry.symbol }} />)}
       <small>16 / 24 / 32px</small>

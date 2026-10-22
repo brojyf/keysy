@@ -12,7 +12,7 @@ bun run dev
 
 Open `/`, `/logo/`, or `/logo/index.html` for the same logo study. There are no experiment tabs or CSS comparison frames. CSS selection is documented in [`../css/`](../css/README.md), outside the runnable workbench.
 
-- `logo/`: 4 logo, symbol, and icon candidates are numbered consecutively 0–3 in one flat grid: Sealed, Access, Namespace, and Terminal. Each candidate has light/dark panels using Ink. The [reference studies](logo/reference-studies.md) are archived; their source SVGs remain. Source-controlled SVG artwork is rendered verbatim to preserve its outlines. Bitmap references, SVG exports, and font licenses stay alongside the preview.
+- `logo/`: 3 logo, symbol, and icon candidates are numbered consecutively 0–2 in one flat grid: Sealed, Namespace, and Terminal. Each candidate has light/dark panels using Ink. Terminal omits the trailing underscore cursor and shows complete lockups at 16, 24, and 32px high in both modes. The [reference studies](logo/reference-studies.md) are archived; their source SVGs remain. Source-controlled SVG artwork is rendered verbatim to preserve its outlines. Bitmap references, SVG exports, and font licenses stay alongside the preview.
 - [`../theme/`](../theme/README.md): Ink light/dark colors, usage rules, semantic token mapping, and palette tests.
 - `../figma/`: Figma references and exports, separate from runnable experiments.
 

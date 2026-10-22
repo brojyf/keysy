@@ -9,7 +9,7 @@ Use Ink as the Keysy color system. The [theme specification](theme/README.md) li
 - [`theme/`](theme/README.md): Ink light/dark colors, usage rules, semantic token mapping, and palette tests.
 - [`css/`](css/README.md): the required shadcn/ui (Radix) + tweakcn + Geist stack and official references.
 - [`scratch/`](scratch/README.md): a React + Vite logo workbench running on Bun, with native HMR.
-  - [`logo/`](scratch/logo/): 4 candidates numbered 0–3 in one flat grid, recolored by the shared light/dark palettes. The [reference studies](scratch/logo/reference-studies.md) are archived. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
+  - [`logo/`](scratch/logo/): 3 candidates numbered 0–2 in one flat grid, recolored by the shared light/dark palettes. The [reference studies](scratch/logo/reference-studies.md) are archived. Reusable SVG files are in `logo/vectors/`; original bitmap references remain in `logo/images/`.
 
 Removed rounds, source artwork, and earlier preview pages stay in Git history. Production `web/` and `docs/` remain independent of the scratch app.
 
