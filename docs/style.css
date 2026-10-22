@@ -45,6 +45,10 @@
   font-style: normal;
 }
 
+#sourcey .search-result-main > .search-result-path:only-child {
+  font-family: var(--font-sans);
+}
+
 #sourcey .nav-group-label {
   color: var(--keysy-text);
   font-weight: 700;

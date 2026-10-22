@@ -38,7 +38,8 @@ blue inline code, hidden pagination/page group labels, a single mobile header,
 and a bottom-aligned footer on short pages. Code blocks keep native syntax colors.
 
 Sourcey's native search, appearance control and mobile drawer replace the
-Mintlify-specific script. CSS provides a 250 ms drawer exit over the incoming page
+Mintlify-specific script. Search page titles use the UI font; method and path
+results keep monospace. CSS provides a 250 ms drawer exit over the incoming page
 using cross-document View Transitions, without delaying navigation. A Bun patch in
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks

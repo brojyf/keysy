@@ -31,6 +31,11 @@ test('native theme loads both Geist families and the brand stylesheet', () => {
   expect(stylesheet).not.toContain('mintlify');
 });
 
+test('plain search page titles use the UI font without overriding method and path rows', () => {
+  expect(stylesheet).toMatch(/#sourcey \.search-result-main > \.search-result-path:only-child\s*\{\s*font-family: var\(--font-sans\);/);
+  expect(stylesheet).not.toMatch(/#sourcey \.search-result-path\s*\{[^}]*font-family:/);
+});
+
 test('the drawer container has no initial focus outline', () => {
   expect(stylesheet).toMatch(/#sourcey #mobile-nav:focus\s*\{\s*outline: none;/);
 });
