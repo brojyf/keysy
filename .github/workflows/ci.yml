@@ -133,13 +133,9 @@ jobs:
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test
-      - name: Verify design scratch
-        working-directory: design/scratch
-        run: |
-          bun install --frozen-lockfile
-          bun run lint
-          bun run test
-          bun run build
+      - name: Verify design theme
+        working-directory: design/theme
+        run: bun test
 
   cli:
     name: CLI

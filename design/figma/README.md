@@ -1,6 +1,6 @@
 # Figma references
 
-Use this directory for Figma references and exports. Runnable experiments live separately in [`../scratch/`](../scratch/README.md).
+Use this directory for Figma references and exports.
 
 Existing boards:
 
