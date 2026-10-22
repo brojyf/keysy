@@ -37,31 +37,43 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..1c0b7a97978f94cd9a2e44dfb0967304
      var toggle = document.getElementById('drawer-group-toggle');
      var list = document.getElementById('drawer-group-list');
 diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
-index d20b7092bae815e502ef06b15e5698790496da33..362683d5d4f1e0e817ea518999e60755f108a69b 100644
+index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
 --- a/dist/client/theme-init.js
 +++ b/dist/client/theme-init.js
 @@ -7,6 +7,7 @@
    var initial = script && script.getAttribute('data-default') || 'system';
    var system = window.matchMedia('(prefers-color-scheme: dark)');
    var selected;
-+  var transitionTimeout;
++  var themeTransition;
    try { selected = localStorage.getItem(key); } catch { /* Storage may be disabled by the browser. */ }
    if (selected !== 'light' && selected !== 'dark') selected = null;
    function apply() {
-@@ -34,6 +35,13 @@
+@@ -32,9 +33,23 @@
+   });
+   document.addEventListener('click', function (event) {
      if (!(event.target instanceof Element) || !event.target.closest('#theme-toggle')) return;
-     selected = root.classList.contains('dark') ? 'light' : 'dark';
+-    selected = root.classList.contains('dark') ? 'light' : 'dark';
++    selected = (selected || (root.classList.contains('dark') ? 'dark' : 'light')) === 'dark' ? 'light' : 'dark';
      try { localStorage.setItem(key, selected); } catch { /* Storage may be disabled by the browser. */ }
-+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-+      root.classList.add('keysy-theme-transition');
-+      clearTimeout(transitionTimeout);
-+      transitionTimeout = setTimeout(function () {
-+        root.classList.remove('keysy-theme-transition');
-+      }, 220);
+-    apply();
++    if (themeTransition) themeTransition.skipTransition();
++    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
++      themeTransition = null;
++      root.classList.remove('keysy-theme-transition');
++      apply();
++      return;
 +    }
-     apply();
++    root.classList.add('keysy-theme-transition');
++    var transition = document.startViewTransition(apply);
++    themeTransition = transition;
++    transition.finished.then(function () {
++      if (themeTransition !== transition) return;
++      root.classList.remove('keysy-theme-transition');
++      themeTransition = null;
++    });
    });
    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
+   else apply();
 diff --git a/dist/components/layout/Header.js b/dist/components/layout/Header.js
 index 115a997d400caf94e9f0652a42ea3fecd31f4866..bb8a30f08724dd87ea6b6ebd90a399d1fc8b1527 100644
 --- a/dist/components/layout/Header.js

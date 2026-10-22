@@ -166,13 +166,12 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html.keysy-theme-transition,
   html.keysy-theme-transition *,
   html.keysy-theme-transition *::before,
   html.keysy-theme-transition *::after {
-    transition: background-color 200ms ease-out, color 200ms ease-out,
-      border-color 200ms ease-out, box-shadow 200ms ease-out,
-      fill 200ms ease-out, stroke 200ms ease-out;
+    /* Capture final colors together, without inherited color transitions. */
+    transition: none !important;
+    view-transition-name: none !important;
   }
 
   @view-transition {
@@ -189,6 +188,31 @@
   ::view-transition-old(root) {
     display: none;
   }
+
+  html.keysy-theme-transition::view-transition {
+    pointer-events: none;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root) {
+    display: block;
+    animation: keysy-theme-fade-out 200ms ease-out both;
+  }
+
+  html.keysy-theme-transition::view-transition-new(root) {
+    animation: keysy-theme-fade-in 200ms ease-out both;
+  }
+
+  @keyframes keysy-theme-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes keysy-theme-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 @media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
@@ -197,7 +221,7 @@
   }
 
   ::view-transition-group(keysy-tab-indicator) {
-    animation-duration: 300ms;
+    animation-duration: 500ms;
     animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
   }
 

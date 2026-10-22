@@ -42,11 +42,12 @@ Mintlify-specific script. CSS provides a 250 ms drawer exit over the incoming pa
 using cross-document View Transitions, without delaying navigation. A Bun patch in
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks
-the active desktop tab with `aria-current="page"` and briefly enables color transitions
-on appearance clicks. Desktop tab underlines move between pages with a 300 ms
-ease-out curve; appearance colors transition for 200 ms without delaying the theme
-change or animating initial page load. Recheck this patch when upgrading Sourcey.
-Unsupported browsers use normal navigation; reduced motion disables custom motion.
+the active desktop tab with `aria-current="page"`. Desktop tab underlines move
+between pages with a 500 ms ease-out curve. Appearance clicks use a single 200 ms
+page cross-fade so background, text and icons change together, without repeated
+transitions on inherited colors. New clicks interrupt the previous fade; initial
+page load does not animate. Recheck this patch when upgrading Sourcey. Unsupported
+browsers switch directly; reduced motion disables custom motion.
 Opening the drawer focuses the dialog, not the logo; Tab navigation still shows
 the logo's neutral keyboard focus indicator.
 Search and appearance icons have heavier strokes. The SVG favicon follows the browser

@@ -4,15 +4,14 @@ import { runInNewContext } from 'node:vm';
 const themeScript = await Bun.file(new URL('../node_modules/sourcey/dist/client/theme-init.js', import.meta.url)).text();
 type Listener = (event: Record<string, unknown>) => void;
 
-function loadTheme({ reducedMotion = false, stored = 'light', storageDisabled = false } = {}) {
+function loadTheme({ reducedMotion = false, stored = 'light', storageDisabled = false, supported = true, deferCapture = false } = {}) {
   const classes = new Set<string>();
   const listeners = new Map<string, Listener>();
-  const timers = new Map<number, () => void>();
+  const transitions: { capture: () => void; finish: () => void; skipTransition: ReturnType<typeof mock> }[] = [];
   const attributes = new Map([
     ['data-light-label', 'Switch to light mode'],
     ['data-dark-label', 'Switch to dark mode'],
   ]);
-  let timerId = 0;
   class Element {
     closest(selector: string) { return selector === '#theme-toggle' ? this : null; }
   }
@@ -27,7 +26,7 @@ function loadTheme({ reducedMotion = false, stored = 'light', storageDisabled = 
   };
   const storage = {
     getItem: () => stored,
-    setItem: mock(() => { if (storageDisabled) throw new Error('Storage disabled'); }),
+    setItem: mock((_key: string, _value: string) => { if (storageDisabled) throw new Error('Storage disabled'); }),
   };
   const document = {
     documentElement: root,
@@ -40,6 +39,16 @@ function loadTheme({ reducedMotion = false, stored = 'light', storageDisabled = 
     querySelectorAll: () => [],
     dispatchEvent: mock(),
     addEventListener: (name: string, listener: Listener) => listeners.set(name, listener),
+    ...(supported ? {
+      startViewTransition: mock((update: () => void) => {
+        let finish!: () => void;
+        const finished = new Promise<void>((resolve) => { finish = resolve; });
+        const transition = { capture: update, finish, skipTransition: mock(), finished };
+        transitions.push(transition);
+        if (!deferCapture) update();
+        return transition;
+      }),
+    } : {}),
   };
   runInNewContext(themeScript, {
     document, Element, localStorage: storage,
@@ -51,25 +60,23 @@ function loadTheme({ reducedMotion = false, stored = 'light', storageDisabled = 
       }),
       addEventListener: () => {},
     },
-    setTimeout: (callback: () => void) => { timers.set(++timerId, callback); return timerId; },
-    clearTimeout: (id: number) => timers.delete(id),
   });
   return {
-    classes, root, storage, attributes, timers,
+    classes, root, storage, attributes, transitions,
     click: () => listeners.get('click')!({ target: new Element() }),
-    finish: () => { for (const callback of timers.values()) callback(); timers.clear(); },
+    finish: async () => { for (const transition of transitions) transition.finish(); await Promise.resolve(); },
   };
 }
 
 test('initial theme loads immediately without a color transition', () => {
-  const { classes, timers } = loadTheme({ stored: 'dark' });
+  const { classes, transitions } = loadTheme({ stored: 'dark' });
   expect(classes.has('dark')).toBe(true);
   expect(classes.has('keysy-theme-transition')).toBe(false);
-  expect(timers.size).toBe(0);
+  expect(transitions).toHaveLength(0);
 });
 
-test.each(['light', 'dark'])('appearance toggles from %s immediately while colors transition', (stored) => {
-  const { classes, root, storage, attributes, click, finish } = loadTheme({ stored });
+test.each(['light', 'dark'])('appearance toggles from %s inside one page transition', async (stored) => {
+  const { classes, root, storage, attributes, transitions, click, finish } = loadTheme({ stored });
   click();
   const next = stored === 'light' ? 'dark' : 'light';
   expect(classes.has('keysy-theme-transition')).toBe(true);
@@ -77,28 +84,45 @@ test.each(['light', 'dark'])('appearance toggles from %s immediately while color
   expect(root.style.colorScheme).toBe(next);
   expect(attributes.get('aria-label')).toBe(`Switch to ${stored} mode`);
   expect(storage.setItem).toHaveBeenCalledWith('sourcey-theme', next);
-  finish();
+  expect(transitions).toHaveLength(1);
+  await finish();
   expect(classes.has('keysy-theme-transition')).toBe(false);
   expect(classes.has('dark')).toBe(next === 'dark');
 });
 
-test('rapid appearance clicks keep the latest theme and only one cleanup timer', () => {
-  const { classes, timers, click, finish } = loadTheme();
+test('rapid appearance clicks interrupt the old fade without clearing the new transition', async () => {
+  const { classes, transitions, click, finish } = loadTheme();
   click();
   click();
   expect(classes.has('dark')).toBe(false);
   expect(classes.has('keysy-theme-transition')).toBe(true);
-  expect(timers.size).toBe(1);
-  finish();
+  expect(transitions).toHaveLength(2);
+  expect(transitions[0]!.skipTransition).toHaveBeenCalledTimes(1);
+  transitions[0]!.finish();
+  await Promise.resolve();
+  expect(classes.has('keysy-theme-transition')).toBe(true);
+  await finish();
   expect(classes.has('keysy-theme-transition')).toBe(false);
 });
 
-test('reduced motion switches appearance without starting a transition', () => {
-  const { classes, timers, click } = loadTheme({ reducedMotion: true });
+test.each([{ reducedMotion: true }, { supported: false }])(
+  'appearance switches directly without motion when %j', (options) => {
+    const { classes, transitions, click } = loadTheme(options);
+    click();
+    expect(classes.has('dark')).toBe(true);
+    expect(classes.has('keysy-theme-transition')).toBe(false);
+    expect(transitions).toHaveLength(0);
+  },
+);
+
+test('clicks before the first snapshot still toggle the selected preference correctly', async () => {
+  const { classes, transitions, storage, click, finish } = loadTheme({ deferCapture: true });
   click();
-  expect(classes.has('dark')).toBe(true);
-  expect(classes.has('keysy-theme-transition')).toBe(false);
-  expect(timers.size).toBe(0);
+  click();
+  expect(storage.setItem.mock.calls.map((call) => call[1])).toEqual(['dark', 'light']);
+  for (const transition of transitions) transition.capture();
+  expect(classes.has('dark')).toBe(false);
+  await finish();
 });
 
 test('appearance still transitions when preference storage is unavailable', () => {
