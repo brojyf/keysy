@@ -3,8 +3,8 @@
   "theme": "mint",
   "name": "Keysy",
   "colors": {
-    "primary": "#2f5aba",
-    "light": "#9bbaff",
+    "primary": "#1d4ed8",
+    "light": "#7aa2ff",
     "dark": "#2f5aba"
   },
   "background": {

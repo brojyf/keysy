@@ -4,6 +4,16 @@ import { readFile } from 'node:fs/promises';
 const docs = new URL('../', import.meta.url);
 const config = await Bun.file(new URL('docs.json', docs)).json();
 
+test('root favicon fallback provides standard browser icon sizes', async () => {
+  const icon = Buffer.from(await Bun.file(new URL('favicon.ico', docs)).arrayBuffer());
+  expect(icon.readUInt16LE(0)).toBe(0);
+  expect(icon.readUInt16LE(2)).toBe(1);
+  const sizes = Array.from({ length: icon.readUInt16LE(4) }, (_, index) =>
+    icon.readUInt8(6 + index * 16),
+  );
+  for (const size of [16, 32, 48]) expect(sizes).toContain(size);
+});
+
 function contrast(foreground: string, background: string) {
   function luminance(hex: string) {
     const rgb = hex.slice(1).match(/../g)!.map((channel) => {
