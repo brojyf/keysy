@@ -36,8 +36,10 @@ The mobile sidebar toggle sits left of the logo in the single header row; the
 breadcrumb row is hidden and the toggle keeps its native Navigation label for
 screen readers. The mobile navigation drawer hides its appearance switch; the
 header keeps the appearance control. `mobile-navigation.js` closes the drawer as
-soon as a page link is chosen; the drawer closes at the same 450 ms speed it
-opens, and page content switches without animation.
+soon as a page or tab link is chosen; the drawer closes at the same 450 ms speed
+it opens, and page content switches without animation. Because Mintlify remounts
+the page on navigation, the drawer slides out in a view transition; browsers
+without view transitions or with reduced motion close it without animation.
 
 ## Local preview
 

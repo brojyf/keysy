@@ -122,6 +122,41 @@ img.nav-logo {
   transition-duration: 450ms;
 }
 
+/* Slide the drawer out during navigation, which remounts the page; see
+   mobile-navigation.js. Page content switches without animation. */
+#mobile-nav {
+  view-transition-name: mobile-nav;
+}
+
+[role='presentation']:has(+ div > #mobile-nav) {
+  view-transition-name: mobile-nav-backdrop;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(mobile-nav) {
+  animation: 450ms cubic-bezier(0.32, 0.72, 0, 1) both mobile-nav-slide-out;
+}
+
+::view-transition-old(mobile-nav-backdrop) {
+  animation: 450ms cubic-bezier(0.32, 0.72, 0, 1) both mobile-nav-fade-out;
+}
+
+@keyframes mobile-nav-slide-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes mobile-nav-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 /* Keep the footer at the bottom of the viewport on short pages. */
 #content-container div:has(> #content-area) {
   min-height: calc(
