@@ -1,6 +1,9 @@
-# Keysy theme — Ink
+# Keysy colors
 
-[Palette values](palettes.js)
+Blue accents with white and light gray backgrounds in light mode, and black and
+dark gray backgrounds in dark mode.
+
+[Color values](palettes.js)
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |

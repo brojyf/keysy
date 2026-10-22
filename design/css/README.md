@@ -8,4 +8,4 @@
 | Interface font | Geist Sans |
 | Code font | Geist Mono |
 | Design reference | Vercel Geist |
-| Colors | [Ink](../theme/README.md) |
+| Colors | [Blue accents and neutral backgrounds](../theme/README.md) |

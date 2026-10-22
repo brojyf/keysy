@@ -17,7 +17,7 @@ function contrast(first, second) {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-test('implementation references specify the required stack and match the Ink palette without selection rationale', () => {
+test('implementation references specify the required stack and match the color values without selection rationale', () => {
   const theme = readFileSync(new URL('./README.md', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../css/README.md', import.meta.url), 'utf8');
   for (const specification of [theme, css]) {
@@ -30,7 +30,7 @@ test('implementation references specify the required stack and match the Ink pal
   assert.match(css, /shadcn\/ui \+ tweakcn \+ Geist/);
 });
 
-test('Ink is the only palette and defines complete light and dark roles', () => {
+test('the single palette defines complete light and dark roles', () => {
   assert.equal(palettes.length, 1);
   assert.deepEqual(Array.from(palettes, palette => palette.number), ['1']);
   assert.deepEqual(palettes.map(palette => palette.id), ['blue']);
@@ -53,16 +53,16 @@ test('every palette keeps page, panel, selection, and divider colors close to ne
   for (const palette of palettes) for (const mode of ['light', 'dark']) {
     for (const role of ['bg', 'surface', 'soft', 'line']) {
       const channels = palette[mode][role].slice(1).match(/../g).map(channel => parseInt(channel, 16));
-      assert.ok(Math.max(...channels) - Math.min(...channels) <= 8, `${palette.name} ${mode} ${role} is too colorful`);
+      assert.ok(Math.max(...channels) - Math.min(...channels) <= 8, `${palette.id} ${mode} ${role} is too colorful`);
       if (role === 'line') continue;
       assert.ok(mode === 'light' ? Math.min(...channels) >= 235 : Math.max(...channels) <= 52,
-        `${palette.name} ${mode} ${role} must stay near white or black`);
+        `${palette.id} ${mode} ${role} must stay near white or black`);
     }
   }
 });
 
 for (const palette of palettes) {
-  test(`${palette.english} dark: all structural surfaces use achromatic black or gray`, () => {
+  test(`${palette.id} dark: all structural surfaces use achromatic black or gray`, () => {
     for (const role of ['bg', 'surface', 'soft', 'line']) {
       const [red, green, blue] = palette.dark[role].slice(1).match(/../g);
       assert.ok(red === green && green === blue, `${role}: ${palette.dark[role]} must have equal RGB channels`);
@@ -72,7 +72,7 @@ for (const palette of palettes) {
 
 for (const palette of palettes) {
   for (const mode of ['light', 'dark']) {
-    test(`${palette.english} ${mode}: text, selected states, and controls meet contrast targets`, () => {
+    test(`${palette.id} ${mode}: text, selected states, and controls meet contrast targets`, () => {
       const colors = palette[mode];
       for (const [foreground, background] of [
         ['text', 'bg'], ['text', 'surface'], ['text', 'soft'],
