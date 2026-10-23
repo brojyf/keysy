@@ -92,8 +92,13 @@ test('the published client includes the patched drawer lifecycle and appearance 
   expect(client).toContain('keysy-theme-transition');
 });
 
-test('PRD placeholder and endpoint callout content survive migration', async () => {
-  expect(await Bun.file(new URL('prd.html', output)).text()).toContain('Product requirements have not been documented yet.');
+test('PRD requirements and endpoint callout content are published', async () => {
+  const prd = await Bun.file(new URL('prd.html', output)).text();
+  expect(await matches(prd, '#content-area h2')).toHaveLength(10);
+  expect(prd).toContain('Only Admins can create or modify secrets.');
+  expect(prd).toContain('Secret values are never recorded in audit logs.');
+  expect(prd).toContain('100% of concurrent read/write tests return a complete');
+  expect(prd).not.toContain('Product requirements have not been documented yet.');
   expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
 });
 

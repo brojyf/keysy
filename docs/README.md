@@ -31,7 +31,7 @@ public assets, navigation, native controls and the drawer's runtime click handle
 ## Migration and branding
 
 PR #29 now uses Sourcey instead of Mintlify, retaining the six navigation tabs,
-page URLs, PRD placeholder, Namespace logo, blue accents, neutral light/dark
+page URLs, Namespace logo, blue accents, neutral light/dark
 backgrounds, and Geist / Geist Mono fonts. Fonts load from Google Fonts with
 system fallbacks. `style.css` adapts the native theme: neutral selected navigation,
 blue inline code, hidden pagination/page group labels, a single mobile header,
@@ -60,6 +60,8 @@ Search and appearance icons have heavier strokes. The SVG favicon follows the br
 color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
 Mintlify template license notice is retained in `LICENSE`.
+
+The PRD page contains the requirements imported from Keysy's Notion Plan Tracker.
 
 ## Publishing
 
