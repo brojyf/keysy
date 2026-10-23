@@ -40,6 +40,10 @@ test('search section headings use bold primary text in both themes', () => {
   expect(stylesheet).toMatch(/#sourcey #search-dialog \.search-category\s*\{\s*font-weight: 700;\s*color: var\(--keysy-text\);/);
 });
 
+test('the documentation logo is 48px tall and preserves its aspect ratio', () => {
+  expect(stylesheet).toMatch(/#sourcey \.sourcey-logo img\s*\{\s*height: 3rem;\s*width: auto;/);
+});
+
 test('the drawer container has no initial focus outline', () => {
   expect(stylesheet).toMatch(/#sourcey #mobile-nav:focus\s*\{\s*outline: none;/);
 });
