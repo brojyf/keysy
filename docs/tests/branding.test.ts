@@ -44,6 +44,22 @@ test('the documentation logo is 48px tall and preserves its aspect ratio', () =>
   expect(stylesheet).toMatch(/#sourcey \.sourcey-logo img\s*\{\s*height: 3rem;\s*width: auto;/);
 });
 
+test('both logo variants share an outlined Geist SemiBold wordmark without font requests', async () => {
+  const variants = await Promise.all(['light', 'dark'].map(async (mode) => {
+    const svg = await Bun.file(new URL(`logo/${mode}.svg`, docs)).text();
+    expect(svg).toContain('<desc>Keysy logo with a Geist SemiBold wordmark.</desc>');
+    expect(svg).toContain('width="234" height="85" viewBox="0 0 234 85"');
+    expect(svg).not.toMatch(/<text\b|<image\b|<foreignObject\b|@font-face|font-family=/);
+    const paths = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map((match) => match[1]);
+    expect(paths).toHaveLength(3);
+    expect(paths[0]).toBe('M6.5 23H24.375V31.125H14.625V53.875H37.375V44.125H45.5V62H6.5V23Z');
+    expect(paths[1]).toBe('M21.125 37.625H30.875V27.875H45.5V36H39V47.375H21.125V37.625Z');
+    expect(paths[2]!.length).toBeGreaterThan(100);
+    return paths;
+  }));
+  expect(variants[0]).toEqual(variants[1]);
+});
+
 test('the drawer container has no initial focus outline', () => {
   expect(stylesheet).toMatch(/#sourcey #mobile-nav:focus\s*\{\s*outline: none;/);
 });
