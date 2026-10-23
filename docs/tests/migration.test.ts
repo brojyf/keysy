@@ -7,6 +7,8 @@ const stylesheet = await Bun.file(new URL('../style.css', import.meta.url)).text
 const routes = [
   ['index', 'Introduction'],
   ['prd', 'PRD'],
+  ['tech-stack', 'Tech stack'],
+  ['system-design', 'System design'],
   ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
@@ -21,9 +23,13 @@ async function matches(html: string, selector: string) {
   return attributes;
 }
 
-test('navigation preserves the six original sections', () => {
+test('navigation preserves the six original sections and adds stubs under Overview', async () => {
   expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Web']);
   expect(config.prettyUrls).toBe('strip');
+  const html = await Bun.file(new URL('index.html', output)).text();
+  expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
+    '/', '/prd', '/tech-stack', '/system-design',
+  ]);
 });
 
 test('the public origin is the confirmed documentation domain', () => {

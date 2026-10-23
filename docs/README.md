@@ -24,7 +24,7 @@ bun audit --audit-level=high
 ```
 
 `check` runs TypeScript 7 and Sourcey's route, fragment and output checks.
-`test` builds the static site, then checks branding, all 12 documentation pages,
+`test` builds the static site, then checks branding, all 14 documentation pages,
 public assets, navigation, native controls and the drawer's runtime click handler.
 `bun run build` writes `dist/`.
 
@@ -62,6 +62,7 @@ under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the exis
 Mintlify template license notice is retained in `LICENSE`.
 
 The PRD page contains the requirements imported from Keysy's Notion Plan Tracker.
+Tech stack and System design are placeholder pages under Overview.
 
 ## Publishing
 
