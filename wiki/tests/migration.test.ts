@@ -105,6 +105,7 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Secret values are never recorded in audit logs.');
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
+  expect(prd).toContain('This page is no longer maintained. Notion is the source of truth.');
   expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
 });
 
