@@ -1,6 +1,6 @@
-# Keysy documentation
+# Keysy internal wiki
 
-Mintlify documentation for the Keysy monorepo. Site configuration lives in
+Internal developer documentation for the Keysy monorepo, built with Mintlify. Site configuration lives in
 `docs.json`; pages are MDX files.
 
 ## Local preview
@@ -29,7 +29,7 @@ mint broken-links --check-anchors
 ## Publishing
 
 To configure Git-connected publishing, select the `brojyf/keysy` repository,
-`main` branch, and `docs/` directory in the Mintlify dashboard. Merge reviewed
+`main` branch, and `wiki/` directory in the Mintlify dashboard. Merge reviewed
 changes through pull requests.
 
 Hosting and custom domains require separate deployment configuration; these
