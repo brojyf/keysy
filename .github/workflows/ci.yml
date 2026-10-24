@@ -36,6 +36,7 @@ jobs:
           filters: |
             web:
               - 'web/**'
+              - 'design/**'
               - '.github/**'
             cli:
               - 'cli/**'
@@ -132,6 +133,9 @@ jobs:
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test
+      - name: Verify design theme
+        working-directory: design/theme
+        run: bun test
 
   cli:
     name: CLI
