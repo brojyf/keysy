@@ -14,5 +14,5 @@
 - Write in English, use active voice and second person, and keep sentences concise.
 - Use sentence case for headings, bold for UI elements, and code formatting for paths and commands.
 - Do not invent product requirements or undocumented API endpoints.
-- Run `bun run check`, `bun run test`, and `bun audit --audit-level=high` from `docs/`.
+- Run `bun run check`, `bun run test`, and `bun audit --audit-level=high` from `wiki/`.
 - Do not run browser verification or deploy unless explicitly requested.

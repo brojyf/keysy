@@ -1,4 +1,4 @@
-# Keysy documentation
+# Keysy internal wiki
 
 Standalone [Sourcey](https://sourcey.com/docs) documentation for the Keysy monorepo.
 Configuration lives in `sourcey.config.ts`; existing pages remain MDX files.
