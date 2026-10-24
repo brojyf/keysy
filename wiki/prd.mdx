@@ -16,14 +16,14 @@ As secrets become shared across services, developers struggle to identify which 
 - **Super Admins:** Can revoke Admin access.
 - **Admins:** Manage secrets, policies, and access for users and services.
 - **Users:** Retrieve authorized secrets for local development.
-- **Services:** Retrieve authorized secrets at runtime using their own. identities.
+- **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
 - **Manage Admin access:** Super Admins revoke administrative access when needed.
 - **Manage secrets:** Admins create, read, update, and delete secrets through the web app or CLI, with optional notes and expiration reminders in the web or cli.
 - **Reorganize with AI:** Admins use the AI agent to move secrets, identify and update affected policies and verify permissions.
-- **Track secret versions:** Admins can view a secret’s version history.
+- **Track secret versions:** Admins can view a secret’s version history and which version each service last retrieved.
 - **Review audit logs:** Admins trace changes to secrets, policies, and administrative access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
 - **Access secrets locally:** Users retrieve secrets permitted by their assigned policies for local development.
 - **Access secrets at runtime:** Services retrieve secrets permitted by their assigned policies.
@@ -50,14 +50,16 @@ As secrets become shared across services, developers struggle to identify which 
 - **Policy-based access:** Super Admins can revoke Admin access. Admins manage secrets and policies; users and services retrieve only authorized secrets.
 - **AI-assisted reorganization:** move secrets, identify, and update affected policies, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
-- **Version history:** View previous secret versions and when they changed.
+- **Version history:** View the last N previous secret versions and when they changed, plus the last-retrieved version and time per service. Older versions are permanently deleted.
 - **Audit logs:** Record secret, policy, and administrative access changes without recording secret values.
 
 ## Non-goals
 
-- **Full OpenBao feature parity:** Keysy focuses on secret management rater than reproducing every OpenBao capability.
+- **Full OpenBao feature parity:** Keysy focuses on secret management rather than reproducing every OpenBao capability.
 - **Automatic secret rotation:** Expiration reminders do not automatically rotate or invalidate secrets.
 - **Dynamic credential generation:** Keysy stores existing secrets rather than issuing temporary database or cloud credentials.
+- **Unlimited version history:** Keysy keeps only the last N previous versions; older values cannot be recovered.
+- **End-to-end Encryption:** Keysy can decrypt secrets server-side to serve authorized users, services, and integrations.
 
 ## User flows (v0)
 
@@ -74,7 +76,10 @@ Others: Reorganize a Secret with AI / Update a Secret and View Version History /
 - Notes and expiration reminders are optional.
 - Users and services can retrieve only secrets permitted by their assigned policies.
 - Secret creation and policy changes generate audit records without secret values.
+- Each service’s last-retrieved version and time are kept per secret as a single latest record, separate from audit logs and without secret values.
+- Each secret keeps at most N previous versions. Audit records are retained independently of this limit.
+- Secrets are encrypted at rest, the keys are stored separately from the database, and a database leak alone cannot reveal plaintext.
 
 <Note>
-  This page is no longer maintained. Notion is the source of truth.
+  Notion is the source of truth for this PRD.
 </Note>
