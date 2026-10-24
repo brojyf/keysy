@@ -31,6 +31,11 @@ test('native theme loads both Geist families and the brand stylesheet', () => {
   expect(stylesheet).not.toContain('mintlify');
 });
 
+test('page headers hide redundant descriptions and retain the page title', () => {
+  expect(stylesheet).toMatch(/#sourcey \.page-description\s*\{\s*display: none;\s*\}/);
+  expect(stylesheet).not.toMatch(/(?:h1|> header)\s*\{[^}]*display: none;/);
+});
+
 test('plain search page titles use the UI font without overriding method and path rows', () => {
   expect(stylesheet).toMatch(/#sourcey \.search-result-main > \.search-result-path:only-child\s*\{\s*font-family: var\(--font-sans\);/);
   expect(stylesheet).not.toMatch(/#sourcey \.search-result-path\s*\{[^}]*font-family:/);
