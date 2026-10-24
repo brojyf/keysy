@@ -1,0 +1,76 @@
+---
+title: "PRD"
+description: "Product requirements for Keysy."
+---
+
+## Overview
+
+Keysy is a simple, AI-assisted secret manager for local development and deployed services, with optional notes and expiration reminders.
+
+## Problem
+
+As secrets become shared across services, developers struggle to identify which access policies need updating and verify that permissions remain correct. Existing tools make these routine changes too complex.
+
+## Users
+
+- **Super Admins:** Can revoke Admin access.
+- **Admins:** Manage secrets, policies, and access for users and services.
+- **Users:** Retrieve authorized secrets for local development.
+- **Services:** Retrieve authorized secrets at runtime using their own. identities.
+
+## Use cases
+
+- **Manage Admin access:** Super Admins revoke administrative access when needed.
+- **Manage secrets:** Admins create, read, update, and delete secrets through the web app or CLI, with optional notes and expiration reminders in the web or cli.
+- **Reorganize with AI:** Admins use the AI agent to move secrets, identify and update affected policies and verify permissions.
+- **Track secret versions:** Admins can view a secret’s version history.
+- **Review audit logs:** Admins trace changes to secrets, policies, and administrative access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
+- **Access secrets locally:** Users retrieve secrets permitted by their assigned policies for local development.
+- **Access secrets at runtime:** Services retrieve secrets permitted by their assigned policies.
+- **Save or update secrets from the browser:** Admins use the Keysy browser extension to save newly generated API keys as new secrets or update the values of existing secrets, directly from provider websites.
+- **Use Keysy with coding agents:** A Keysy skill guides coding agents to retrieve or manage secrets through the CLI.
+
+## Goals
+
+- **Simplify secret management:** Make secret management straightforward across the web app, CLI, browser extension, and coding agents.
+- **Reduce manual policy maintenance:** Help Admins reorganize secrets and update affected policies with AI assistance.
+- **Maintain least-privilege access:** Ensure users and services can access only the secrets permitted by their assigned policies.
+
+## Success metrics
+
+- **Setup time:** p50 and p95 time from secret creation to first authorized retrieval.
+- **Atomic updates:** 100% of concurrent read/write tests return a complete secret version, with no partial or mixed-version values.
+- **AI success rate:** Percentage of reorganizations completed with correct permission and no manual fixes.
+- **Access correction:** Pass rate of role and policy permission tests.
+- **API performance:** Secret retrieval p95/p99 latency, reported with QPS and sample size, and validated under sustained load.
+
+## Scope
+
+- **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders
+- **Policy-based access:** Super Admins can revoke Admin access. Admins manage secrets and policies; users and services retrieve only authorized secrets.
+- **AI-assisted reorganization:** move secrets, identify, and update affected policies, and verify permissions.
+- **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
+- **Version history:** View previous secret versions and when they changed.
+- **Audit logs:** Record secret, policy, and administrative access changes without recording secret values.
+
+## Non-goals
+
+- **Full OpenBao feature parity:** Keysy focuses on secret management rater than reproducing every OpenBao capability.
+- **Automatic secret rotation:** Expiration reminders do not automatically rotate or invalidate secrets.
+- **Dynamic credential generation:** Keysy stores existing secrets rather than issuing temporary database or cloud credentials.
+
+## User flows (v0)
+
+1. An Admin creates a secret through the web app or CLI.
+2. The Admin specifies its storage path and value, optionally adding notes and an expiration reminder.
+3. The Admin assigns a policy allowing a user or service to read the secret.
+4. The authorized user or service retrieves the secret.
+
+Others: Reorganize a Secret with AI / Update a Secret and View Version History / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Revoke Admin Access
+
+## Requirements
+
+- Only Admins can create or modify secrets.
+- Notes and expiration reminders are optional.
+- Users and services can retrieve only secrets permitted by their assigned policies.
+- Secret creation and policy changes generate audit records without secret values.

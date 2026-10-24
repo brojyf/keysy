@@ -1,0 +1,83 @@
+diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
+index f2827cf6a8d1d693328cdef3da593e88e212e904..1c0b7a97978f94cd9a2e44dfb09673049c1c0c46 100644
+--- a/dist/client/sidebar.js
++++ b/dist/client/sidebar.js
+@@ -180,1 +180,4 @@
++    // Focus the drawer itself on open, not its first link (the logo).
++    dialog.autofocus = true;
++
+     window.matchMedia('(min-width: 1024px)').addEventListener('change', function (event) {
+@@ -192,11 +195,27 @@
+       if (e.target === dialog) dialog.close();
+     });
+ 
+-    // Close on nav link or close button click
++    // Preserve the open drawer until cross-document navigation captures it.
++    // Closing here can remove its snapshot before the outgoing slide starts.
+     dialog.addEventListener('click', function (e) {
++      var link = e.target.closest('a[href]');
++      if (dialog.open && 'CSSViewTransitionRule' in window &&
++          window.matchMedia('(width < 64rem) and (prefers-reduced-motion: no-preference)').matches &&
++          shouldSaveForNavigation(e, link) &&
++          (link.pathname !== window.location.pathname || link.search !== window.location.search)) {
++        return;
++      }
+       if (e.target.closest('a') || e.target.closest('[data-close-drawer]')) dialog.close();
+     });
+ 
++    // A cached outgoing document must not restore with its drawer still open.
++    window.addEventListener('pageshow', function (event) {
++      if (event.persisted && dialog.open) {
++        dialog.close();
++        dialog.getAnimations().forEach(function (animation) { animation.finish(); });
++      }
++    });
++
+     // Dropdown: toggle list visibility
+     var toggle = document.getElementById('drawer-group-toggle');
+     var list = document.getElementById('drawer-group-list');
+diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
+index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
+--- a/dist/client/theme-init.js
++++ b/dist/client/theme-init.js
+@@ -7,6 +7,7 @@
+   var initial = script && script.getAttribute('data-default') || 'system';
+   var system = window.matchMedia('(prefers-color-scheme: dark)');
+   var selected;
++  var themeTransition;
+   try { selected = localStorage.getItem(key); } catch { /* Storage may be disabled by the browser. */ }
+   if (selected !== 'light' && selected !== 'dark') selected = null;
+   function apply() {
+@@ -32,9 +33,23 @@
+   });
+   document.addEventListener('click', function (event) {
+     if (!(event.target instanceof Element) || !event.target.closest('#theme-toggle')) return;
+-    selected = root.classList.contains('dark') ? 'light' : 'dark';
++    selected = (selected || (root.classList.contains('dark') ? 'dark' : 'light')) === 'dark' ? 'light' : 'dark';
+     try { localStorage.setItem(key, selected); } catch { /* Storage may be disabled by the browser. */ }
+-    apply();
++    if (themeTransition) themeTransition.skipTransition();
++    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
++      themeTransition = null;
++      root.classList.remove('keysy-theme-transition');
++      apply();
++      return;
++    }
++    root.classList.add('keysy-theme-transition');
++    var transition = document.startViewTransition(apply);
++    themeTransition = transition;
++    transition.finished.then(function () {
++      if (themeTransition !== transition) return;
++      root.classList.remove('keysy-theme-transition');
++      themeTransition = null;
++    });
+   });
+   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
+   else apply();
+diff --git a/dist/components/layout/Header.js b/dist/components/layout/Header.js
+index 115a997d400caf94e9f0652a42ea3fecd31f4866..bb8a30f08724dd87ea6b6ebd90a399d1fc8b1527 100644
+--- a/dist/components/layout/Header.js
++++ b/dist/components/layout/Header.js
+@@ -53,1 +53,1 @@
+-                                    return (_jsxs("a", { href: joinHref(base, tab.href), class: `group relative h-full gap-2 flex items-center font-medium cursor-pointer transition-colors ${isActive
++                                    return (_jsxs("a", { href: joinHref(base, tab.href), "aria-current": isActive ? "page" : undefined, class: `group relative h-full gap-2 flex items-center font-medium cursor-pointer transition-colors ${isActive

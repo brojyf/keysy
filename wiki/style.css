@@ -1,3 +1,297 @@
 :root {
-  --sidebar-width: 14rem;
+  --color-background-light: 250 250 250;
+  --color-background-dark: 18 18 18;
+  --color-primary-ink: 29 78 216;
+  --color-gray-50: 250 250 250;
+  --color-gray-100: 240 241 243;
+  --color-gray-200: 227 228 230;
+  --color-gray-300: 209 210 213;
+  --color-gray-400: 163 164 168;
+  --color-gray-500: 100 102 107;
+  --color-gray-600: 82 84 89;
+  --color-gray-700: 65 67 72;
+  --color-gray-800: 42 42 42;
+  --color-gray-900: 27 28 30;
+  --color-gray-950: 18 18 18;
+  --keysy-text: #1b1c1e;
+  --keysy-accent: #1d4ed8;
+  --keysy-soft: #f0f1f3;
+}
+
+.dark {
+  --keysy-text: #ededee;
+  --keysy-accent: #7aa2ff;
+  --keysy-soft: #2a2a2a;
+  --color-gray-200: 237 237 238;
+}
+
+/* Keep native callout and code-block syntax colors. */
+#sourcey .prose {
+  --tw-prose-body: var(--keysy-text);
+  --tw-prose-headings: var(--keysy-text);
+  --tw-prose-bold: var(--keysy-text);
+  --tw-prose-code: var(--keysy-text);
+  --tw-prose-links: var(--keysy-accent);
+}
+
+#sourcey #page::before,
+#sourcey #content-area > nav[aria-label='Previous and next page'],
+#sourcey #content-area > header .h-5 {
+  display: none;
+}
+
+#sourcey .page-description {
+  display: none;
+}
+
+#sourcey .search-result-main > .search-result-path:only-child {
+  font-family: var(--font-sans);
+}
+
+#sourcey #search-dialog .search-category {
+  font-weight: 700;
+  color: var(--keysy-text);
+}
+
+#sourcey .nav-group-label {
+  color: var(--keysy-text);
+  font-weight: 700;
+}
+
+#sourcey .nav-link.active,
+.dark #sourcey .nav-link.active {
+  color: var(--keysy-text);
+  background: var(--keysy-soft);
+}
+
+#sourcey .prose :not(pre) > code {
+  color: var(--keysy-accent);
+  font-weight: 600;
+}
+
+#sourcey .sourcey-logo img {
+  height: 3rem;
+  width: auto;
+}
+
+#sourcey #mobile-nav:focus {
+  outline: none;
+}
+
+#sourcey #mobile-nav .sourcey-logo:focus {
+  outline: none;
+}
+
+#sourcey #mobile-nav .sourcey-logo:focus-visible {
+  outline: 2px solid var(--keysy-text);
+  outline-offset: 4px;
+}
+
+#sourcey #search-open svg,
+#sourcey #search-open-mobile svg,
+#sourcey #theme-toggle svg {
+  stroke-width: 3;
+}
+
+/* The sun uses a 16-unit viewBox; search and moon use 24 units. */
+#sourcey #theme-toggle svg g {
+  stroke-width: 2;
+}
+
+/* Native footer remains visible at the bottom of short pages. */
+#sourcey #content-area {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--header-height) - var(--sourcey-content-gap));
+}
+
+#sourcey #content-area > div:last-child {
+  margin-top: auto;
+}
+
+@media (width < 64rem) {
+  :root {
+    --header-height: 4rem;
+  }
+
+  #sourcey .sourcey-header-navigation {
+    display: none;
+  }
+
+  #sourcey .sourcey-header-top-inner {
+    column-gap: 0;
+    border-bottom: none;
+  }
+
+  #sourcey .sourcey-header-brand {
+    margin-left: 2.75rem;
+  }
+
+  #sourcey .sourcey-header-end {
+    display: flex;
+    align-items: center;
+  }
+
+  #sourcey .sourcey-header-end > div:last-child {
+    display: contents;
+  }
+
+  #sourcey .sourcey-header-actions {
+    display: flex;
+    flex: none;
+    order: 2;
+  }
+
+  #sourcey #search-open-mobile {
+    order: 1;
+  }
+
+  #sourcey #theme-toggle {
+    order: 3;
+  }
+
+  #sourcey .sourcey-header-link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  #sourcey #navbar [data-drawer-slide] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 4rem;
+  }
+
+  #sourcey #navbar [data-drawer-slide] > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  #sourcey #mobile-nav[open],
+  #sourcey #mobile-nav[open]::backdrop {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.keysy-theme-transition *,
+  html.keysy-theme-transition *::before,
+  html.keysy-theme-transition *::after {
+    /* Capture final colors together, without inherited color transitions. */
+    transition: none !important;
+    view-transition-name: none !important;
+  }
+
+  @view-transition {
+    navigation: auto;
+  }
+
+  /* Switch page content immediately while named navigation elements move. */
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(root) {
+    display: none;
+  }
+
+  html.keysy-theme-transition::view-transition {
+    pointer-events: none;
+  }
+
+  html.keysy-theme-transition::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root),
+  html.keysy-theme-transition::view-transition-new(root) {
+    mix-blend-mode: plus-lighter;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root) {
+    display: block;
+    animation: keysy-theme-fade-out 300ms ease-in-out both;
+  }
+
+  html.keysy-theme-transition::view-transition-new(root) {
+    animation: keysy-theme-fade-in 300ms ease-in-out both;
+  }
+
+  @keyframes keysy-theme-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes keysy-theme-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+@media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
+  #sourcey .sourcey-section-tabs > a[aria-current='page'] > div {
+    view-transition-name: keysy-tab-indicator;
+  }
+
+  ::view-transition-group(keysy-tab-indicator) {
+    animation-duration: 360ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(keysy-tab-indicator),
+  ::view-transition-new(keysy-tab-indicator) {
+    animation: none;
+  }
+}
+
+@media (width < 64rem) and (prefers-reduced-motion: no-preference) {
+  /* Retain the top layer during native close-button, backdrop and Escape exits. */
+  #sourcey #mobile-nav {
+    view-transition-name: keysy-mobile-nav;
+    transform: translateX(-100%);
+    transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1),
+      display 250ms allow-discrete, overlay 250ms allow-discrete;
+  }
+
+  #sourcey #mobile-nav[open] {
+    transform: translateX(0);
+  }
+
+  #sourcey #mobile-nav::backdrop {
+    opacity: 0;
+    transition: opacity 250ms ease-out, display 250ms allow-discrete,
+      overlay 250ms allow-discrete;
+  }
+
+  #sourcey #mobile-nav[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    #sourcey #mobile-nav[open] {
+      transform: translateX(-100%);
+    }
+
+    #sourcey #mobile-nav[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  ::view-transition-group(keysy-mobile-nav) {
+    animation: none;
+  }
+
+  ::view-transition-old(keysy-mobile-nav) {
+    animation: keysy-nav-slide-out 250ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  @keyframes keysy-nav-slide-out {
+    to {
+      transform: translateX(-100%);
+    }
+  }
 }
