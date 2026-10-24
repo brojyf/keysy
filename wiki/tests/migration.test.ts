@@ -33,13 +33,13 @@ test('navigation preserves the six original sections and adds stubs under Overvi
 });
 
 test('the public origin is the confirmed documentation domain', () => {
-  expect(config.siteUrl).toBe('https://docs.keysy.net');
+  expect(config.siteUrl).toBe('https://wiki.keysy.net');
 });
 
 test('the sitemap uses absolute URLs on the documentation domain', async () => {
   const sitemap = await Bun.file(new URL('sitemap.xml', output)).text();
   const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-  expect(locations).toEqual(routes.map(([route]) => `https://docs.keysy.net/${route === 'index' ? '' : route}`));
+  expect(locations).toEqual(routes.map(([route]) => `https://wiki.keysy.net/${route === 'index' ? '' : route}`));
 });
 
 test('only documentation pages and the native 404 are published as HTML', async () => {
@@ -54,7 +54,7 @@ for (const [route, title] of routes) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     expect(html).toContain(`<h1`);
     expect(html).toContain(`${title}</h1>`);
-    const publicUrl = `https://docs.keysy.net/${route === 'index' ? '' : route}`;
+    const publicUrl = `https://wiki.keysy.net/${route === 'index' ? '' : route}`;
     const [canonical] = await matches(html, 'link[rel="canonical"]');
     const [languageLink] = await matches(html, 'link[rel="alternate"][hreflang="en"]');
     expect(canonical?.href).toBe(publicUrl);

@@ -67,7 +67,7 @@ Tech stack and System design are placeholder pages under Overview.
 ## Publishing
 
 Publish `dist/` as static assets through Cloudflare Workers using `wrangler`,
-not the Mintlify dashboard. `siteUrl` is set to `https://docs.keysy.net` for
+not the Mintlify dashboard. `siteUrl` is set to `https://wiki.keysy.net` for
 canonical links and the sitemap. Before publishing, bind that domain to the host
 and configure extensionless HTML paths and `404.html` with HTTP 404. This migration
 does not configure hosting, DNS or custom domain bindings, or deploy the site.
