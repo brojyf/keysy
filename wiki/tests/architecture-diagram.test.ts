@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'bun:test';
 import mount from '../components/architecture-diagram.client';
 
-function loadDiagram(initialTheme = 'dark') {
+function loadDiagram(initialTheme = 'dark', initialWidth = 600) {
   let theme = initialTheme;
   const documentListeners = new Map<string, () => void>();
   const frameListeners = new Map<string, () => void>();
@@ -19,7 +19,9 @@ function loadDiagram(initialTheme = 'dark') {
       },
       setAttribute: (name: string, value: string) => viewerAttributes.set(name, value),
     },
-    querySelector: () => ({ viewBox: { baseVal: { width: 980, height: 1308 } } }),
+    querySelector: () => ({ viewBox: { baseVal: src.includes('-vertical.html')
+      ? { width: 980, height: 1308 }
+      : { width: 1790, height: 808 } } }),
     getElementById: (id: string) => id === 'node-outline' ? index : styles.find((style) => style.id === id),
     createElement: () => ({ id: '', textContent: '' }),
     head: { append: (style: { id: string; textContent: string }) => styles.push(style) },
@@ -44,7 +46,7 @@ function loadDiagram(initialTheme = 'dark') {
     get src() { return src; },
     set src(value: string) { src = value; navigations.push(value); },
     contentDocument: null as typeof viewer | null,
-    clientWidth: 600,
+    clientWidth: initialWidth,
     style: { aspectRatio: '', height: '' },
     addEventListener: (name: string, listener: () => void) => frameListeners.set(name, listener),
   };
@@ -56,10 +58,55 @@ function loadDiagram(initialTheme = 'dark') {
     resize: (width: number, nextIndexHeight: number) => {
       frame.clientWidth = width;
       indexHeight = nextIndexHeight;
-      observers.at(-1)!.resize();
+      observers[0]!.resize();
     },
   };
 }
+
+test.each([
+  [799, '/architecture/system-architecture-vertical.html'],
+  [800, '/architecture/system-architecture.html'],
+] as const)('a %ipx container selects the matching architecture layout', (width, pathname) => {
+  const { frame } = loadDiagram('light', width);
+  expect(new URL(frame.src).pathname).toBe(pathname);
+});
+
+test('container resizing reloads only when crossing the layout breakpoint in either direction', () => {
+  const { frame, loaded, resize, navigations } = loadDiagram();
+  loaded();
+  resize(799, 240);
+  expect(navigations).toHaveLength(1);
+  resize(800, 240);
+  expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture.html');
+  expect(navigations).toHaveLength(2);
+  loaded();
+  expect(frame.style.aspectRatio).toBe('1790 / 808');
+  expect(frame.style.height).toBe('602px');
+  resize(1000, 300);
+  expect(navigations).toHaveLength(2);
+  expect(frame.style.height).toBe('752px');
+  resize(799, 400);
+  expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture-vertical.html');
+  expect(navigations).toHaveLength(3);
+  loaded();
+  expect(frame.style.aspectRatio).toBe('980 / 1308');
+  expect(frame.style.height).toBe('1467px');
+});
+
+test('layout switches use the current theme and reapply embedded styles and the index', () => {
+  const { loaded, setTheme, resize, frame, viewerAttributes, styles, observers, index } = loadDiagram();
+  loaded();
+  setTheme('light');
+  resize(900, 300);
+  expect(new URL(frame.src).searchParams.get('theme')).toBe('light');
+  expect(new URL(frame.src).searchParams.get('present')).toBe('1');
+  expect(observers[1]!.disconnect).toHaveBeenCalledTimes(1);
+  setTheme('dark');
+  loaded();
+  expect(viewerAttributes.get('data-theme')).toBe('dark');
+  expect(styles).toHaveLength(1);
+  expect(observers.at(-1)!.observe).toHaveBeenCalledWith(index);
+});
 
 test.each(['light', 'dark'])('the architecture starts in the host %s theme with interaction enabled', (theme) => {
   const { frame, loaded, viewerAttributes } = loadDiagram(theme);
@@ -124,7 +171,7 @@ test('the preview shows the original node index beneath the full diagram without
   loaded();
   expect(viewerVariables.get('--wiki-diagram-height')).toBe('801px');
   expect(frame.style.height).toBe('1041px');
-  expect(observers[0]!.observe).toHaveBeenCalledWith(index);
+  expect(observers.at(-1)!.observe).toHaveBeenCalledWith(index);
   expect(styles[0]!.textContent).toContain('.node-outline:not([hidden])');
   expect(styles[0]!.textContent).toContain('.rail-controls');
 });
@@ -135,7 +182,7 @@ test('the preview grows for a wrapped index and replaces resize observers on rel
   resize(300, 400);
   expect(frame.style.height).toBe('801px');
   loaded();
-  expect(observers[0]!.disconnect).toHaveBeenCalledTimes(1);
-  expect(observers).toHaveLength(2);
+  expect(observers[1]!.disconnect).toHaveBeenCalledTimes(1);
+  expect(observers).toHaveLength(3);
   expect(navigations).toHaveLength(1);
 });

@@ -2,7 +2,24 @@ export default function mount(root: HTMLElement) {
   const document = root.ownerDocument;
   const frame = root.querySelector<HTMLIFrameElement>('iframe')!;
   const theme = () => document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  const horizontalUrl = new URL(frame.src, document.baseURI);
+  let layout: 'horizontal' | 'vertical' | undefined;
   let sizeObserver: ResizeObserver | undefined;
+  let resizeDiagram = () => {};
+
+  function selectLayout() {
+    const nextLayout = frame.clientWidth >= 800 ? 'horizontal' : 'vertical';
+    if (nextLayout === layout) return;
+    layout = nextLayout;
+    sizeObserver?.disconnect();
+    sizeObserver = undefined;
+    resizeDiagram = () => {};
+    const url = new URL(horizontalUrl);
+    if (layout === 'vertical') url.pathname = url.pathname.replace('.html', '-vertical.html');
+    // A URL override prevents Archify's independent saved/system theme taking over.
+    url.searchParams.set('theme', theme());
+    frame.src = url.href;
+  }
 
   function syncTheme() {
     const viewer = frame.contentDocument?.documentElement;
@@ -72,16 +89,18 @@ export default function mount(root: HTMLElement) {
       const frameHeight = `${Math.ceil(diagramHeight + index.getBoundingClientRect().height)}px`;
       if (frame.style.height !== frameHeight) frame.style.height = frameHeight;
     }
+    resizeDiagram = resize;
     sizeObserver = new document.defaultView!.ResizeObserver(resize);
-    sizeObserver.observe(root);
     sizeObserver.observe(index);
     resize();
   });
 
   // These document-owned listeners also survive back-forward cache restoration.
   document.addEventListener('sourcey:themechange', syncTheme);
-  const url = new URL(frame.src, document.baseURI);
-  // A URL override prevents Archify's independent saved/system theme taking over.
-  url.searchParams.set('theme', theme());
-  frame.src = url.href;
+  const layoutObserver = new document.defaultView!.ResizeObserver(() => {
+    selectLayout();
+    resizeDiagram();
+  });
+  layoutObserver.observe(root);
+  selectLayout();
 }

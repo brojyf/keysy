@@ -14,8 +14,8 @@
       "label": "auth",
       "sublabel": "Google sign-in only",
       "pos": [
-        540,
-        60
+        230,
+        140
       ],
       "size": [
         140,
@@ -29,7 +29,7 @@
       "sublabel": "web / cli / sdk / extension",
       "pos": [
         40,
-        240
+        380
       ],
       "size": [
         140,
@@ -42,11 +42,11 @@
       "label": "api",
       "sublabel": "HTTP service",
       "pos": [
-        240,
-        240
+        230,
+        380
       ],
       "size": [
-        180,
+        140,
         60
       ]
     },
@@ -56,8 +56,8 @@
       "label": "LLM Provider",
       "sublabel": "TBD",
       "pos": [
-        265,
-        60
+        480,
+        40
       ],
       "size": [
         130,
@@ -70,8 +70,8 @@
       "label": "Supabase",
       "sublabel": "Postgres + Auth + outbox",
       "pos": [
-        540,
-        240
+        480,
+        380
       ],
       "size": [
         160,
@@ -84,8 +84,8 @@
       "label": "Outbox Relay",
       "sublabel": "CDC / poller",
       "pos": [
-        800,
-        240
+        670,
+        380
       ],
       "size": [
         140,
@@ -98,8 +98,8 @@
       "label": "Redis",
       "sublabel": "read cache",
       "pos": [
-        265,
-        440
+        480,
+        180
       ],
       "size": [
         130,
@@ -112,8 +112,8 @@
       "label": "otel",
       "sublabel": "OTel Collector",
       "pos": [
-        540,
-        440
+        480,
+        660
       ],
       "size": [
         130,
@@ -126,8 +126,8 @@
       "label": "Grafana",
       "sublabel": "traces / metrics / logs",
       "pos": [
-        800,
-        440
+        670,
+        660
       ],
       "size": [
         130,
@@ -140,8 +140,8 @@
       "label": "Kafka",
       "sublabel": "Aiven, keyed + DLQ",
       "pos": [
-        1020,
-        240
+        860,
+        380
       ],
       "size": [
         140,
@@ -154,8 +154,8 @@
       "label": "audit",
       "sublabel": "consumer + read API",
       "pos": [
-        1220,
-        60
+        1050,
+        140
       ],
       "size": [
         140,
@@ -168,8 +168,8 @@
       "label": "PostgreSQL",
       "sublabel": "Aiven, audit",
       "pos": [
-        1460,
-        60
+        1240,
+        140
       ],
       "size": [
         140,
@@ -182,8 +182,8 @@
       "label": "notify",
       "sublabel": "Kafka consumer",
       "pos": [
-        1220,
-        240
+        1050,
+        380
       ],
       "size": [
         140,
@@ -196,8 +196,8 @@
       "label": "Cloudflare Queues",
       "sublabel": "email-high / email-low",
       "pos": [
-        1420,
-        240
+        1240,
+        380
       ],
       "size": [
         140,
@@ -210,8 +210,8 @@
       "label": "email-worker",
       "sublabel": "Cloudflare Worker",
       "pos": [
-        1420,
-        440
+        1430,
+        380
       ],
       "size": [
         140,
@@ -224,8 +224,8 @@
       "label": "email-dlq",
       "sublabel": "failed sends",
       "pos": [
-        1420,
-        640
+        1580,
+        660
       ],
       "size": [
         140,
@@ -239,7 +239,7 @@
       "sublabel": "email API",
       "pos": [
         1620,
-        440
+        180
       ],
       "size": [
         120,

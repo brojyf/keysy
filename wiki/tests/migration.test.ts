@@ -46,7 +46,8 @@ test('the sitemap uses absolute URLs on the documentation domain', async () => {
 test('only documentation pages, the architecture viewer and the native 404 are published as HTML', async () => {
   const files = await readdir(output, { recursive: true });
   expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
-    ...routes.map(([route]) => `${route}.html`), 'architecture/system-architecture.html', '404.html',
+    ...routes.map(([route]) => `${route}.html`),
+    'architecture/system-architecture.html', 'architecture/system-architecture-vertical.html', '404.html',
   ].sort());
 });
 
@@ -59,8 +60,11 @@ test('system design embeds the interactive architecture and preserves its public
   expect(component?.['data-sourcey-module']).toBeDefined();
   expect(await matches(html, '#content-area a[href="/architecture/system-architecture.html"]')).toHaveLength(0);
   expect(await matches(html, '#content-area a[href="/architecture/system-architecture.json"]')).toHaveLength(0);
-  for (const extension of ['html', 'json']) {
-    const path = `architecture/system-architecture.${extension}`;
+  for (const filename of [
+    'system-architecture.html', 'system-architecture.json',
+    'system-architecture-vertical.html', 'system-architecture-vertical.json',
+  ]) {
+    const path = `architecture/${filename}`;
     expect(await Bun.file(new URL(path, output)).arrayBuffer()).toEqual(
       await Bun.file(new URL(`../public/${path}`, import.meta.url)).arrayBuffer(),
     );
@@ -82,7 +86,40 @@ test('the architecture reads left to right and places Resend to the right of ema
   const worker = nodes.get('worker')!;
   const resend = nodes.get('resend')!;
   expect(resend.pos[0]!).toBeGreaterThan(worker.pos[0]! + worker.size[0]!);
+  const cloudflareNodes = ['cfqueue', 'worker', 'emaildlq'].map((id) => nodes.get(id)!);
+  expect(resend.pos[1]! + resend.size[1]!).toBeLessThan(Math.min(...cloudflareNodes.map((node) => node.pos[1]!)));
+});
+
+test('every horizontal connection advances to a later topological layer', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
+  const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
+  for (const edge of source.connections) {
+    const from = nodes.get(edge.from)!;
+    const to = nodes.get(edge.to)!;
+    expect(to.pos[0]!, edge.id).toBeGreaterThan(from.pos[0]! + from.size[0]!);
+  }
+});
+
+test('the restored vertical layout preserves the same architecture content and downward main path', async () => {
+  const horizontal = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
+  const vertical = await Bun.file(new URL('../public/architecture/system-architecture-vertical.json', import.meta.url)).json();
+  const semanticNodes = (source: typeof horizontal) => source.components.map(({ pos, size, ...node }: Record<string, unknown>) => node);
+  const semanticEdges = (source: typeof horizontal) => source.connections.map((edge: Record<string, unknown>) => ({
+    id: edge.id, from: edge.from, to: edge.to, label: edge.label, variant: edge.variant,
+  }));
+  expect(semanticNodes(vertical)).toEqual(semanticNodes(horizontal));
+  expect(semanticEdges(vertical)).toEqual(semanticEdges(horizontal));
+  expect(vertical.boundaries).toEqual(horizontal.boundaries);
+  expect(vertical.cards).toEqual(horizontal.cards);
+  const nodes = new Map<string, { pos: number[]; size: number[] }>(vertical.components.map((node: { id: string }) => [node.id, node]));
+  const worker = nodes.get('worker')!;
+  const resend = nodes.get('resend')!;
+  expect(resend.pos[0]!).toBeGreaterThan(worker.pos[0]! + worker.size[0]!);
   expect(resend.pos[1]).toBe(worker.pos[1]);
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify', 'cfqueue', 'worker', 'emaildlq'];
+  for (let index = 1; index < mainPath.length; index++) {
+    expect(nodes.get(mainPath[index]!)!.pos[1]!).toBeGreaterThan(nodes.get(mainPath[index - 1]!)!.pos[1]!);
+  }
 });
 
 for (const [route, title] of routes) {
