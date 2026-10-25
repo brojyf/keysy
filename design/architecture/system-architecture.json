@@ -11,7 +11,7 @@
     {
       "id": "auth",
       "type": "security",
-      "label": "Auth",
+      "label": "auth",
       "sublabel": "Google sign-in only",
       "pos": [
         230,
@@ -26,7 +26,7 @@
       "id": "clients",
       "type": "external",
       "label": "Clients",
-      "sublabel": "Web / CLI / SDK",
+      "sublabel": "web / cli / sdk / extension",
       "pos": [
         430,
         40
@@ -39,7 +39,7 @@
     {
       "id": "api",
       "type": "backend",
-      "label": "API",
+      "label": "api",
       "sublabel": "HTTP service",
       "pos": [
         410,
@@ -109,8 +109,8 @@
     {
       "id": "otel",
       "type": "backend",
-      "label": "OTel Collector",
-      "sublabel": "OTLP receiver",
+      "label": "otel",
+      "sublabel": "OTel Collector",
       "pos": [
         810,
         320
@@ -151,7 +151,7 @@
     {
       "id": "audit",
       "type": "backend",
-      "label": "Audit Service",
+      "label": "audit",
       "sublabel": "consumer + read API",
       "pos": [
         430,
@@ -179,7 +179,7 @@
     {
       "id": "notify",
       "type": "backend",
-      "label": "Notify Service",
+      "label": "notify",
       "sublabel": "Kafka consumer",
       "pos": [
         230,
@@ -207,8 +207,8 @@
     {
       "id": "worker",
       "type": "cloud",
-      "label": "Email Worker",
-      "sublabel": "serverless function",
+      "label": "email-worker",
+      "sublabel": "Cloudflare Worker",
       "pos": [
         230,
         1020
@@ -403,24 +403,24 @@
       "items": [
         "Outbox row commits in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
-        "Notify commits its offset only after the enqueue succeeds"
+        "notify commits its offset only after the enqueue succeeds"
       ]
     },
     {
       "dot": "rose",
       "title": "Audit",
       "items": [
-        "API authorizes the user, then queries the Audit Service read API",
-        "Only the Audit Service reads or writes the audit database"
+        "api authorizes the user, then queries the audit read API",
+        "Only audit reads or writes the audit database"
       ]
     },
     {
       "dot": "amber",
       "title": "Email delivery",
       "items": [
-        "Notify picks recipient and template; job_id = hash(event_id + template)",
+        "notify picks recipient and template; job_id = hash(event_id + template)",
         "email-high: security alerts and invites; email-low: everything else",
-        "Worker sends with Idempotency-Key = job_id; 429/5xx retried with delay",
+        "email-worker sends with Idempotency-Key = job_id; 429/5xx retried with delay",
         "Bounces and complaints handled by the Resend suppression list"
       ]
     },
@@ -428,8 +428,8 @@
       "dot": "cyan",
       "title": "Observability",
       "items": [
-        "API, Auth, Relay, Audit and Notify export OTLP to the collector; only the API edge is drawn",
-        "Email Worker exports logs and traces to Grafana via Cloudflare OTLP export; final send failures raise an alert",
+        "api, auth, Outbox Relay, audit and notify export OTLP to otel; only the api edge is drawn",
+        "email-worker exports logs and traces to Grafana via Cloudflare OTLP export; final send failures raise an alert",
         "email-dlq keeps failed jobs for 4 days so they can be replayed"
       ]
     }
