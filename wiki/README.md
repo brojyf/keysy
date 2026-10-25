@@ -68,8 +68,7 @@ are copied from `design/architecture/` on the `design/theme-and-logo` branch
 without changing their bytes and published from `public/architecture/`.
 The Sourcey `ArchitectureDiagram` component adapts the same-origin viewer to the
 page width and follows the wiki theme and computed page background without
-reloading. It hides the viewer's duplicate title and both toolbars;
-the full-window link opens a new tab and retains all standalone controls.
+reloading. It hides the viewer's duplicate title and both toolbars.
 The embedded preview shows Archify's existing Node index beneath the diagram,
 retaining its selection and highlight handlers. Its height follows both the
 diagram width and the index's rendered height, including responsive wrapping.
