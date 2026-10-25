@@ -9,6 +9,7 @@ const routes = [
   ['prd', 'PRD'],
   ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
+  ['development-tools', 'Development tools'],
   ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
@@ -23,12 +24,12 @@ async function matches(html: string, selector: string) {
   return attributes;
 }
 
-test('navigation preserves the six original sections and adds stubs under Overview', async () => {
+test('navigation preserves the six original sections and includes development tools under Overview', async () => {
   expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Web']);
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design',
+    '/', '/prd', '/tech-stack', '/system-design', '/development-tools',
   ]);
 });
 
@@ -105,8 +106,21 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Secret values are never recorded in audit logs.');
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
-  expect(prd).toContain('This page is no longer maintained. Notion is the source of truth.');
+  expect(prd).toContain('Notion is the source of truth for this PRD.');
   expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
+});
+
+test('development tools publishes the tool descriptions and relocated references', async () => {
+  const html = await Bun.file(new URL('development-tools.html', output)).text();
+  expect(html).toContain('Archify');
+  expect(html).toContain('Figma Console MCP');
+  const links = (await matches(html, '#content-area a[href]')).map(({ href }) => href);
+  expect(links).toContain('https://github.com/southleft/figma-console-mcp');
+  expect(links).toContain('https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao');
+  expect(links).toContain('https://github.com/multica-ai/andrej-karpathy-skills');
+  const readme = await Bun.file(new URL('../../README.md', import.meta.url)).text();
+  expect(readme).not.toContain('## References');
+  expect(readme).not.toContain('https://github.com/multica-ai/andrej-karpathy-skills');
 });
 
 test('public favicon bytes are preserved and native search exports are generated', async () => {
