@@ -70,6 +70,21 @@ test('system design embeds the interactive architecture and preserves its public
   expect(source.components.length).toBeGreaterThan(0);
 });
 
+test('the architecture reads left to right and places Resend to the right of email-worker', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
+  const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify', 'cfqueue'];
+  for (let index = 1; index < mainPath.length; index++) {
+    const previous = nodes.get(mainPath[index - 1]!)!;
+    const next = nodes.get(mainPath[index]!)!;
+    expect(next.pos[0]!).toBeGreaterThan(previous.pos[0]! + previous.size[0]!);
+  }
+  const worker = nodes.get('worker')!;
+  const resend = nodes.get('resend')!;
+  expect(resend.pos[0]!).toBeGreaterThan(worker.pos[0]! + worker.size[0]!);
+  expect(resend.pos[1]).toBe(worker.pos[1]);
+});
+
 for (const [route, title] of routes) {
   test(`${route} retains its route, title and native accessible controls`, async () => {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();

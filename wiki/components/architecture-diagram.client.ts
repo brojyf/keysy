@@ -40,7 +40,27 @@ export default function mount(root: HTMLElement) {
         overflow: visible; mask-image: none; -webkit-mask-image: none;
       }
       html[data-present="true"] .node-outline-group > ul {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.25rem 0.5rem;
+        display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem 1.5rem;
+      }
+      html[data-present="true"] .node-outline-group > ul::before { display: none; }
+      html[data-present="true"] .node-outline-item {
+        grid-template-columns: 0.625rem minmax(0, 1fr) 0.75rem; align-items: start;
+      }
+      html[data-present="true"] .node-outline-item strong,
+      html[data-present="true"] .node-outline-item small {
+        grid-column: 2; overflow: visible; white-space: normal; overflow-wrap: anywhere; text-overflow: clip;
+      }
+      html[data-present="true"] .node-outline-item strong { grid-row: 1; }
+      html[data-present="true"] .node-outline-item small { grid-row: 2; text-align: left; }
+      html[data-present="true"] .node-outline-item::after { grid-column: 3; grid-row: 1; }
+      @media (max-width: 60rem) {
+        html[data-present="true"] .node-outline-group > ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+      @media (max-width: 44rem) {
+        html[data-present="true"] .node-outline-group > ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 28rem) {
+        html[data-present="true"] .node-outline-group > ul { grid-template-columns: 1fr; }
       }
     `;
       viewer.head.append(style);
