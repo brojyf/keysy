@@ -14,7 +14,7 @@ baseline or create a separate Figma file for each style.
 - Typography: Geist and Geist Mono. SF Pro did not render in the initial MCP screenshots.
 - Baseline fixes completed: product-preview toolbar, environment labels, mobile
   action spacing, and mobile footer links.
-- [Local snapshot](keysy-landing-page.fig) of the Figma file, saved on October 23, 2026.
+- [Local snapshot](keysy-landing-page.fig) of the Figma file, saved on October 24, 2026.
 
 ## Requested style explorations
 
