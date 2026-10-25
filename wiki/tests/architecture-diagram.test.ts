@@ -6,10 +6,14 @@ function loadDiagram(initialTheme = 'dark') {
   const documentListeners = new Map<string, () => void>();
   const frameListeners = new Map<string, () => void>();
   const viewerAttributes = new Map<string, string>();
+  const viewerVariables = new Map<string, string>();
   const styles: { id: string; textContent: string }[] = [];
   const viewer = {
     documentElement: {
-      style: { colorScheme: '' },
+      style: {
+        colorScheme: '',
+        setProperty: (name: string, value: string) => viewerVariables.set(name, value),
+      },
       setAttribute: (name: string, value: string) => viewerAttributes.set(name, value),
     },
     querySelector: () => ({ viewBox: { baseVal: { width: 980, height: 1308 } } }),
@@ -19,6 +23,10 @@ function loadDiagram(initialTheme = 'dark') {
   };
   const document = {
     baseURI: 'https://wiki.keysy.net/system-design',
+    body: {},
+    defaultView: {
+      getComputedStyle: () => ({ backgroundColor: theme === 'dark' ? 'rgb(18, 18, 18)' : 'rgb(250, 250, 250)' }),
+    },
     documentElement: { classList: { contains: () => theme === 'dark' } },
     addEventListener: (name: string, listener: () => void) => documentListeners.set(name, listener),
   };
@@ -33,7 +41,7 @@ function loadDiagram(initialTheme = 'dark') {
   };
   mount({ ownerDocument: document, querySelector: () => frame } as unknown as HTMLElement);
   return {
-    frame, navigations, viewerAttributes, styles,
+    frame, navigations, viewerAttributes, viewerVariables, styles,
     loaded: () => { frame.contentDocument = viewer; frameListeners.get('load')!(); },
     setTheme: (value: string) => { theme = value; documentListeners.get('sourcey:themechange')!(); },
   };
@@ -68,14 +76,22 @@ test('a theme change while the lazy iframe loads is applied on load', () => {
   expect(viewerAttributes.get('data-theme')).toBe('light');
 });
 
-test('the viewer uses its authored aspect ratio and keeps native diagram controls', () => {
+test('the architecture background matches the computed page background in both themes', () => {
+  const { loaded, setTheme, viewerVariables } = loadDiagram();
+  loaded();
+  expect(viewerVariables.get('--bg')).toBe('rgb(18, 18, 18)');
+  setTheme('light');
+  expect(viewerVariables.get('--bg')).toBe('rgb(250, 250, 250)');
+});
+
+test('the viewer uses its authored aspect ratio and hides its embedded toolbar', () => {
   const { frame, loaded, styles } = loadDiagram();
   loaded();
   expect(frame.style.aspectRatio).toBe('980 / 1308');
   expect(styles).toHaveLength(1);
   expect(styles[0]!.textContent).toContain('.toolbar');
   expect(styles[0]!.textContent).toContain('.header');
-  expect(styles[0]!.textContent).not.toContain('.diagram-nav');
+  expect(styles[0]!.textContent).toContain('.diagram-nav');
   expect(styles[0]!.textContent).not.toContain('.node-finder');
   loaded();
   expect(styles).toHaveLength(1);

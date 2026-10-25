@@ -67,8 +67,8 @@ interactive Archify diagram. The viewer and its JSON source snapshot
 are copied from `design/architecture/` on the `design/theme-and-logo` branch
 without changing their bytes and published from `public/architecture/`.
 The Sourcey `ArchitectureDiagram` component adapts the same-origin viewer to the
-page width, follows the wiki theme without reloading, and keeps native diagram
-navigation and search. It hides the viewer's duplicate title and global toolbar;
+page width and follows the wiki theme and computed page background without
+reloading. It hides the viewer's duplicate title and both toolbars;
 the full-window link opens a new tab and retains all standalone controls.
 
 ## Publishing

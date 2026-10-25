@@ -9,6 +9,7 @@ export default function mount(root: HTMLElement) {
     const currentTheme = theme();
     viewer.setAttribute('data-theme', currentTheme);
     viewer.style.colorScheme = currentTheme;
+    viewer.style.setProperty('--bg', document.defaultView!.getComputedStyle(document.body).backgroundColor);
   }
 
   frame.addEventListener('load', () => {
@@ -26,8 +27,11 @@ export default function mount(root: HTMLElement) {
       html[data-present="true"]:not([data-embed="true"]) .container { height: 100dvh; gap: 0; }
       html[data-present="true"] .header,
       html[data-present="true"] .toolbar,
+      html[data-present="true"] .diagram-nav,
       html[data-present="true"] .reader-rail { display: none !important; }
-      html[data-present="true"] .diagram-container { border: 0; border-radius: 0; box-shadow: none; }
+      html[data-present="true"]:not([data-embed="true"]) .diagram-container {
+        padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--bg);
+      }
     `;
     viewer.head.append(style);
   });
