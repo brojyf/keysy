@@ -1,0 +1,2 @@
+# Archify output is generated; keep its bytes intact.
+*.html -whitespace

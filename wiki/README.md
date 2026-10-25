@@ -62,7 +62,10 @@ under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the exis
 Mintlify template license notice is retained in `LICENSE`.
 
 The PRD page contains the requirements imported from Keysy's Notion Plan Tracker.
-Tech stack and System design are placeholder pages under Overview.
+Tech stack is a placeholder page under Overview. System design embeds the
+interactive Archify diagram and links to its JSON source snapshot. Both assets
+are copied from `design/architecture/` on the `design/theme-and-logo` branch
+without changing their bytes and published from `public/architecture/`.
 
 ## Publishing
 

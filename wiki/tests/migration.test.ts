@@ -43,11 +43,27 @@ test('the sitemap uses absolute URLs on the documentation domain', async () => {
   expect(locations).toEqual(routes.map(([route]) => `https://wiki.keysy.net/${route === 'index' ? '' : route}`));
 });
 
-test('only documentation pages and the native 404 are published as HTML', async () => {
+test('only documentation pages, the architecture viewer and the native 404 are published as HTML', async () => {
   const files = await readdir(output, { recursive: true });
   expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
-    ...routes.map(([route]) => `${route}.html`), '404.html',
+    ...routes.map(([route]) => `${route}.html`), 'architecture/system-architecture.html', '404.html',
   ].sort());
+});
+
+test('system design embeds the interactive architecture and preserves its public assets', async () => {
+  const html = await Bun.file(new URL('system-design.html', output)).text();
+  const [viewer] = await matches(html, '#content-area iframe');
+  expect(viewer?.src).toBe('/architecture/system-architecture.html?embed=1');
+  expect(viewer?.title).toBe('Keysy system architecture');
+  for (const extension of ['html', 'json']) {
+    const path = `architecture/system-architecture.${extension}`;
+    expect(await Bun.file(new URL(path, output)).arrayBuffer()).toEqual(
+      await Bun.file(new URL(`../public/${path}`, import.meta.url)).arrayBuffer(),
+    );
+  }
+  const source = await Bun.file(new URL('architecture/system-architecture.json', output)).json();
+  expect(source.meta.title).toBe('Keysy System Architecture');
+  expect(source.components.length).toBeGreaterThan(0);
 });
 
 for (const [route, title] of routes) {
