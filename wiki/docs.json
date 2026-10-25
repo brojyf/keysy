@@ -15,7 +15,7 @@
         "groups": [
           {
             "group": "General",
-            "pages": ["index"]
+            "pages": ["index", "development-tools"]
           }
         ]
       },
