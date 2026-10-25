@@ -1,8 +1,8 @@
-"""Render logo.svg as a high-res PNG: theme blue on white, equal margins.
+"""Render symbol.svg as a high-res PNG: theme blue on white.
 
 Run from keysy/:
     DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib uv run --with cairosvg \
-        python design/logo/convert_logo.py design/logo/logo.svg design/logo/logo-light.png
+        python design/logo/convert_logo.py design/logo/symbol.svg design/logo/symbol-light.png
 """
 
 import sys
@@ -11,26 +11,16 @@ from pathlib import Path
 import cairosvg
 
 LOGO_BLUE = "#2f5aba"  # `button` token, light mode (design/theme/README.md)
-SCALE = 10
-
-# Painted bounds of logo.svg in viewBox units: x 6.5..232.634, y 21.36..80.88.
-MARGIN = 6.5
-X, Y = 6.5 - MARGIN, 21.36 - MARGIN
-WIDTH = 232.634 - 6.5 + 2 * MARGIN
-HEIGHT = 80.88 - 21.36 + 2 * MARGIN
+SIZE_PX = 1024
 
 
 def convert_logo(svg_path: Path, png_path: Path) -> None:
-    svg = (
-        svg_path.read_text()
-        .replace("currentColor", LOGO_BLUE)
-        .replace('width="234" height="85" viewBox="0 0 234 85"',
-                 f'width="{WIDTH}" height="{HEIGHT}" viewBox="{X} {Y} {WIDTH} {HEIGHT}"')
-    )
+    svg = svg_path.read_text().replace("currentColor", LOGO_BLUE)
     cairosvg.svg2png(
         bytestring=svg.encode(),
         write_to=str(png_path),
-        scale=SCALE,
+        output_width=SIZE_PX,
+        output_height=SIZE_PX,
         background_color="#ffffff",
     )
 
