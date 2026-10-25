@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Keysy System Architecture",
+    "output": "design/architecture/system-architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en"
+  },
+  "components": [
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Auth",
+      "sublabel": "thin proxy",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "clients",
+      "type": "external",
+      "label": "Clients",
+      "sublabel": "Web / CLI / SDK",
+      "pos": [
+        40,
+        200
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API",
+      "sublabel": "HTTP service",
+      "pos": [
+        290,
+        200
+      ],
+      "size": [
+        180,
+        60
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "read cache",
+      "pos": [
+        250,
+        360
+      ],
+      "size": [
+        120,
+        60
+      ]
+    },
+    {
+      "id": "otel",
+      "type": "backend",
+      "label": "OTel Collector",
+      "sublabel": "OTLP receiver",
+      "pos": [
+        400,
+        360
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "external",
+      "label": "Grafana",
+      "sublabel": "traces / metrics / logs",
+      "pos": [
+        400,
+        500
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "Aiven",
+      "pos": [
+        600,
+        200
+      ],
+      "size": [
+        120,
+        60
+      ]
+    },
+    {
+      "id": "audit",
+      "type": "backend",
+      "label": "Audit Service",
+      "sublabel": "Kafka consumer",
+      "pos": [
+        840,
+        200
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Email Bridge",
+      "sublabel": "consumer group",
+      "pos": [
+        840,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "supabase",
+      "type": "database",
+      "label": "Supabase",
+      "sublabel": "Postgres + Auth",
+      "pos": [
+        1080,
+        60
+      ],
+      "size": [
+        140,
+        110
+      ]
+    },
+    {
+      "id": "auditdb",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Aiven, audit",
+      "pos": [
+        1080,
+        200
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "cfqueue",
+      "type": "messagebus",
+      "label": "Cloudflare Queue",
+      "sublabel": "email jobs",
+      "pos": [
+        1080,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "cloud",
+      "label": "Email Worker",
+      "sublabel": "serverless function",
+      "pos": [
+        1080,
+        500
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "provider",
+      "type": "external",
+      "label": "Resend",
+      "sublabel": "email API",
+      "pos": [
+        840,
+        500
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cloudflare",
+      "wraps": [
+        "cfqueue",
+        "worker"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "sign-in",
+      "from": "clients",
+      "to": "auth",
+      "label": "sign in",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "auth-proxy",
+      "from": "auth",
+      "to": "supabase",
+      "label": "proxy Supabase Auth",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "client-request",
+      "from": "clients",
+      "to": "api",
+      "label": "HTTPS + JWT",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "supabase",
+      "label": "read on miss / write",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "api-cache",
+      "from": "api",
+      "to": "redis",
+      "label": "read / fill cache",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-telemetry",
+      "from": "api",
+      "to": "otel",
+      "label": "OTLP",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "otel-export",
+      "from": "otel",
+      "to": "grafana",
+      "label": "export",
+      "variant": "dashed"
+    },
+    {
+      "id": "publish-event",
+      "from": "api",
+      "to": "kafka",
+      "label": "publish event",
+      "variant": "emphasis"
+    },
+    {
+      "id": "consume-audit",
+      "from": "kafka",
+      "to": "audit",
+      "label": "consume",
+      "variant": "dashed"
+    },
+    {
+      "id": "consume-email",
+      "from": "kafka",
+      "to": "bridge",
+      "label": "consume",
+      "variant": "dashed"
+    },
+    {
+      "id": "write-audit-log",
+      "from": "audit",
+      "to": "auditdb",
+      "label": "audit log"
+    },
+    {
+      "id": "enqueue-email",
+      "from": "bridge",
+      "to": "cfqueue",
+      "label": "enqueue"
+    },
+    {
+      "id": "trigger-worker",
+      "from": "cfqueue",
+      "to": "worker",
+      "label": "trigger"
+    },
+    {
+      "id": "send-email",
+      "from": "worker",
+      "to": "provider",
+      "label": "send email"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Observability",
+      "items": [
+        "API, Auth, Audit Service and Email Bridge all export OTLP to the collector; only the API edge is drawn"
+      ]
+    }
+  ]
+}
