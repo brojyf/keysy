@@ -8,8 +8,10 @@ The landing page lives in [Keysy — Landing Page](https://www.figma.com/design/
 
 - [Desktop, 1440 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-35999) and
   [Mobile, 390 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-36935) are the
-  current design. A dot pattern sits behind the hero and the call-to-action card. Earlier versions
-  were removed from the file; Figma's version history keeps them.
+  current design. A dot pattern sits behind the hero and the call-to-action card. An Availability
+  section after Security states redundant services, a public status page, and a 99.9% monthly
+  uptime commitment. Earlier versions were removed from the file; Figma's version history keeps
+  them.
 - [Hero story (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-37937) shows key
   frames of the hero web window. The dots and the hero story play in the
   [v4 motion page](v4/README.md).
