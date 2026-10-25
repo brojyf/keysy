@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, mock, test } from 'bun:test';
 import mount from '../components/architecture-diagram.client';
 
 function loadDiagram(initialTheme = 'dark') {
@@ -8,6 +8,9 @@ function loadDiagram(initialTheme = 'dark') {
   const viewerAttributes = new Map<string, string>();
   const viewerVariables = new Map<string, string>();
   const styles: { id: string; textContent: string }[] = [];
+  let indexHeight = 240;
+  const index = { getBoundingClientRect: () => ({ height: indexHeight }) };
+  const observers: { resize: () => void; observe: ReturnType<typeof mock>; disconnect: ReturnType<typeof mock> }[] = [];
   const viewer = {
     documentElement: {
       style: {
@@ -17,7 +20,7 @@ function loadDiagram(initialTheme = 'dark') {
       setAttribute: (name: string, value: string) => viewerAttributes.set(name, value),
     },
     querySelector: () => ({ viewBox: { baseVal: { width: 980, height: 1308 } } }),
-    getElementById: (id: string) => styles.find((style) => style.id === id),
+    getElementById: (id: string) => id === 'node-outline' ? index : styles.find((style) => style.id === id),
     createElement: () => ({ id: '', textContent: '' }),
     head: { append: (style: { id: string; textContent: string }) => styles.push(style) },
   };
@@ -26,6 +29,11 @@ function loadDiagram(initialTheme = 'dark') {
     body: {},
     defaultView: {
       getComputedStyle: () => ({ backgroundColor: theme === 'dark' ? 'rgb(18, 18, 18)' : 'rgb(250, 250, 250)' }),
+      ResizeObserver: class {
+        observe = mock();
+        disconnect = mock();
+        constructor(resize: () => void) { observers.push({ resize, observe: this.observe, disconnect: this.disconnect }); }
+      },
     },
     documentElement: { classList: { contains: () => theme === 'dark' } },
     addEventListener: (name: string, listener: () => void) => documentListeners.set(name, listener),
@@ -36,14 +44,20 @@ function loadDiagram(initialTheme = 'dark') {
     get src() { return src; },
     set src(value: string) { src = value; navigations.push(value); },
     contentDocument: null as typeof viewer | null,
-    style: { aspectRatio: '' },
+    clientWidth: 600,
+    style: { aspectRatio: '', height: '' },
     addEventListener: (name: string, listener: () => void) => frameListeners.set(name, listener),
   };
   mount({ ownerDocument: document, querySelector: () => frame } as unknown as HTMLElement);
   return {
-    frame, navigations, viewerAttributes, viewerVariables, styles,
+    frame, navigations, viewerAttributes, viewerVariables, styles, index, observers,
     loaded: () => { frame.contentDocument = viewer; frameListeners.get('load')!(); },
     setTheme: (value: string) => { theme = value; documentListeners.get('sourcey:themechange')!(); },
+    resize: (width: number, nextIndexHeight: number) => {
+      frame.clientWidth = width;
+      indexHeight = nextIndexHeight;
+      observers.at(-1)!.resize();
+    },
   };
 }
 
@@ -102,5 +116,26 @@ test('the host overrides the original presentation padding without leaving a tra
   const selector = source.match(/(html\[data-present="true"\]:not\(\[data-embed="true"\]\) body) \{/)![1]!;
   const { loaded, styles } = loadDiagram();
   loaded();
-  expect(styles[0]!.textContent).toContain(`${selector} { padding: 0; background: var(--bg); }`);
+  expect(styles[0]!.textContent).toContain(`${selector} { padding: 0; background: var(--bg); height: auto; }`);
+});
+
+test('the preview shows the original node index beneath the full diagram without toolbars', () => {
+  const { loaded, frame, viewerVariables, styles, index, observers } = loadDiagram();
+  loaded();
+  expect(viewerVariables.get('--wiki-diagram-height')).toBe('801px');
+  expect(frame.style.height).toBe('1041px');
+  expect(observers[0]!.observe).toHaveBeenCalledWith(index);
+  expect(styles[0]!.textContent).toContain('.node-outline:not([hidden])');
+  expect(styles[0]!.textContent).toContain('.rail-controls');
+});
+
+test('the preview grows for a wrapped index and replaces resize observers on reload', () => {
+  const { loaded, frame, resize, observers, navigations } = loadDiagram();
+  loaded();
+  resize(300, 400);
+  expect(frame.style.height).toBe('801px');
+  loaded();
+  expect(observers[0]!.disconnect).toHaveBeenCalledTimes(1);
+  expect(observers).toHaveLength(2);
+  expect(navigations).toHaveLength(1);
 });
