@@ -74,30 +74,45 @@ test('system design embeds the interactive architecture and preserves its public
   expect(source.components.length).toBeGreaterThan(0);
 });
 
-test('the architecture reads left to right and places Resend to the right of email-worker', async () => {
+test('the architecture reads left to right, then email delivery runs down beside Resend', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
-  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify', 'cfqueue'];
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify'];
   for (let index = 1; index < mainPath.length; index++) {
     const previous = nodes.get(mainPath[index - 1]!)!;
     const next = nodes.get(mainPath[index]!)!;
     expect(next.pos[0]!).toBeGreaterThan(previous.pos[0]! + previous.size[0]!);
   }
+  const emailPath = ['notify', 'cfqueue', 'worker', 'emaildlq'];
+  for (let index = 1; index < emailPath.length; index++) {
+    const previous = nodes.get(emailPath[index - 1]!)!;
+    const next = nodes.get(emailPath[index]!)!;
+    expect(next.pos[0]).toBe(previous.pos[0]);
+    expect(next.pos[1]!).toBeGreaterThan(previous.pos[1]! + previous.size[1]!);
+  }
   const worker = nodes.get('worker')!;
   const resend = nodes.get('resend')!;
-  expect(resend.pos[0]!).toBeGreaterThan(worker.pos[0]! + worker.size[0]!);
-  const cloudflareNodes = ['cfqueue', 'worker', 'emaildlq'].map((id) => nodes.get(id)!);
-  expect(resend.pos[1]! + resend.size[1]!).toBeLessThan(Math.min(...cloudflareNodes.map((node) => node.pos[1]!)));
+  expect(resend.pos[0]! + resend.size[0]!).toBeLessThan(worker.pos[0]!);
+  expect(resend.pos[1]).toBe(worker.pos[1]);
 });
 
-test('every horizontal connection advances to a later topological layer', async () => {
+test('the horizontal api is a narrow column', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
-  const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
-  for (const edge of source.connections) {
-    const from = nodes.get(edge.from)!;
-    const to = nodes.get(edge.to)!;
-    expect(to.pos[0]!, edge.id).toBeGreaterThan(from.pos[0]! + from.size[0]!);
-  }
+  const api = source.components.find((node: { id: string }) => node.id === 'api');
+  expect(api.size[1]).toBeGreaterThan(api.size[0]);
+});
+
+test('the vertical chart starts near the left edge instead of reserving the old Resend column', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture-vertical.json', import.meta.url)).json();
+  const leftmostNode = Math.min(...source.components.map((node: { pos: number[] }) => node.pos[0]!));
+  expect(leftmostNode).toBeGreaterThanOrEqual(30);
+  expect(leftmostNode).toBeLessThanOrEqual(40);
+});
+
+test('the vertical api matches the standard node width', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture-vertical.json', import.meta.url)).json();
+  const api = source.components.find((node: { id: string }) => node.id === 'api');
+  expect(api.size[0]).toBe(140);
 });
 
 test('the restored vertical layout preserves the same architecture content and downward main path', async () => {

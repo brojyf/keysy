@@ -14,8 +14,8 @@
       "label": "auth",
       "sublabel": "Google sign-in only",
       "pos": [
-        230,
-        140
+        40,
+        470
       ],
       "size": [
         140,
@@ -29,7 +29,7 @@
       "sublabel": "web / cli / sdk / extension",
       "pos": [
         40,
-        380
+        320
       ],
       "size": [
         140,
@@ -42,12 +42,12 @@
       "label": "api",
       "sublabel": "HTTP service",
       "pos": [
-        230,
-        380
+        280,
+        190
       ],
       "size": [
-        140,
-        60
+        120,
+        250
       ]
     },
     {
@@ -56,11 +56,11 @@
       "label": "LLM Provider",
       "sublabel": "TBD",
       "pos": [
-        480,
-        40
+        40,
+        190
       ],
       "size": [
-        130,
+        140,
         60
       ]
     },
@@ -70,8 +70,8 @@
       "label": "Supabase",
       "sublabel": "Postgres + Auth + outbox",
       "pos": [
-        480,
-        380
+        520,
+        320
       ],
       "size": [
         160,
@@ -84,8 +84,8 @@
       "label": "Outbox Relay",
       "sublabel": "CDC / poller",
       "pos": [
-        670,
-        380
+        780,
+        320
       ],
       "size": [
         140,
@@ -98,8 +98,8 @@
       "label": "Redis",
       "sublabel": "read cache",
       "pos": [
-        480,
-        180
+        275,
+        40
       ],
       "size": [
         130,
@@ -112,8 +112,8 @@
       "label": "otel",
       "sublabel": "OTel Collector",
       "pos": [
-        480,
-        660
+        520,
+        190
       ],
       "size": [
         130,
@@ -126,8 +126,8 @@
       "label": "Grafana",
       "sublabel": "traces / metrics / logs",
       "pos": [
-        670,
-        660
+        740,
+        190
       ],
       "size": [
         130,
@@ -140,8 +140,8 @@
       "label": "Kafka",
       "sublabel": "Aiven, keyed + DLQ",
       "pos": [
-        860,
-        380
+        1000,
+        320
       ],
       "size": [
         140,
@@ -154,8 +154,8 @@
       "label": "audit",
       "sublabel": "consumer + read API",
       "pos": [
-        1050,
-        140
+        1000,
+        120
       ],
       "size": [
         140,
@@ -168,8 +168,8 @@
       "label": "PostgreSQL",
       "sublabel": "Aiven, audit",
       "pos": [
-        1240,
-        140
+        1220,
+        120
       ],
       "size": [
         140,
@@ -182,8 +182,8 @@
       "label": "notify",
       "sublabel": "Kafka consumer",
       "pos": [
-        1050,
-        380
+        1220,
+        320
       ],
       "size": [
         140,
@@ -196,8 +196,8 @@
       "label": "Cloudflare Queues",
       "sublabel": "email-high / email-low",
       "pos": [
-        1240,
-        380
+        1220,
+        460
       ],
       "size": [
         140,
@@ -210,8 +210,8 @@
       "label": "email-worker",
       "sublabel": "Cloudflare Worker",
       "pos": [
-        1430,
-        380
+        1220,
+        600
       ],
       "size": [
         140,
@@ -224,8 +224,8 @@
       "label": "email-dlq",
       "sublabel": "failed sends",
       "pos": [
-        1580,
-        660
+        1220,
+        740
       ],
       "size": [
         140,
@@ -238,11 +238,11 @@
       "label": "Resend",
       "sublabel": "email API",
       "pos": [
-        1620,
-        180
+        1000,
+        600
       ],
       "size": [
-        120,
+        140,
         60
       ]
     }
@@ -270,7 +270,9 @@
       "from": "auth",
       "to": "supabase",
       "label": "proxy Supabase Auth",
-      "variant": "security"
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom"
     },
     {
       "id": "client-request",
@@ -291,7 +293,9 @@
       "from": "api",
       "to": "llm",
       "label": "inference",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
     },
     {
       "id": "api-cache",
@@ -330,7 +334,9 @@
       "id": "query-audit",
       "from": "api",
       "to": "audit",
-      "label": "query audit log"
+      "label": "query audit log",
+      "fromSide": "top",
+      "toSide": "left"
     },
     {
       "id": "consume-audit",

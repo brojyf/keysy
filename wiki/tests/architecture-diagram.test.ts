@@ -20,8 +20,8 @@ function loadDiagram(initialTheme = 'dark', initialWidth = 600) {
       setAttribute: (name: string, value: string) => viewerAttributes.set(name, value),
     },
     querySelector: () => ({ viewBox: { baseVal: src.includes('-vertical.html')
-      ? { width: 980, height: 1308 }
-      : { width: 1790, height: 808 } } }),
+      ? { width: 790, height: 1308 }
+      : { width: 1430, height: 888 } } }),
     getElementById: (id: string) => id === 'node-outline' ? index : styles.find((style) => style.id === id),
     createElement: () => ({ id: '', textContent: '' }),
     head: { append: (style: { id: string; textContent: string }) => styles.push(style) },
@@ -80,17 +80,17 @@ test('container resizing reloads only when crossing the layout breakpoint in eit
   expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture.html');
   expect(navigations).toHaveLength(2);
   loaded();
-  expect(frame.style.aspectRatio).toBe('1790 / 808');
-  expect(frame.style.height).toBe('602px');
+  expect(frame.style.aspectRatio).toBe('1430 / 888');
+  expect(frame.style.height).toBe('737px');
   resize(1000, 300);
   expect(navigations).toHaveLength(2);
-  expect(frame.style.height).toBe('752px');
+  expect(frame.style.height).toBe('921px');
   resize(799, 400);
   expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture-vertical.html');
   expect(navigations).toHaveLength(3);
   loaded();
-  expect(frame.style.aspectRatio).toBe('980 / 1308');
-  expect(frame.style.height).toBe('1467px');
+  expect(frame.style.aspectRatio).toBe('790 / 1308');
+  expect(frame.style.height).toBe('1723px');
 });
 
 test('layout switches use the current theme and reapply embedded styles and the index', () => {
@@ -148,7 +148,7 @@ test('the architecture background matches the computed page background in both t
 test('the viewer uses its authored aspect ratio and hides its embedded toolbar', () => {
   const { frame, loaded, styles } = loadDiagram();
   loaded();
-  expect(frame.style.aspectRatio).toBe('980 / 1308');
+  expect(frame.style.aspectRatio).toBe('790 / 1308');
   expect(styles).toHaveLength(1);
   expect(styles[0]!.textContent).toContain('.toolbar');
   expect(styles[0]!.textContent).toContain('.header');
@@ -169,8 +169,8 @@ test('the host overrides the original presentation padding without leaving a tra
 test('the preview shows the original node index beneath the full diagram without toolbars', () => {
   const { loaded, frame, viewerVariables, styles, index, observers } = loadDiagram();
   loaded();
-  expect(viewerVariables.get('--wiki-diagram-height')).toBe('801px');
-  expect(frame.style.height).toBe('1041px');
+  expect(viewerVariables.get('--wiki-diagram-height')).toBe('994px');
+  expect(frame.style.height).toBe('1234px');
   expect(observers.at(-1)!.observe).toHaveBeenCalledWith(index);
   expect(styles[0]!.textContent).toContain('.node-outline:not([hidden])');
   expect(styles[0]!.textContent).toContain('.rail-controls');
@@ -180,7 +180,7 @@ test('the preview grows for a wrapped index and replaces resize observers on rel
   const { loaded, frame, resize, observers, navigations } = loadDiagram();
   loaded();
   resize(300, 400);
-  expect(frame.style.height).toBe('801px');
+  expect(frame.style.height).toBe('897px');
   loaded();
   expect(observers[1]!.disconnect).toHaveBeenCalledTimes(1);
   expect(observers).toHaveLength(3);
