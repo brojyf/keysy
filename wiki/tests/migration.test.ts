@@ -57,6 +57,10 @@ test('system design embeds the interactive architecture and preserves its public
   expect(viewer?.title).toBe('Keysy system architecture');
   const [component] = await matches(html, '#content-area [data-sourcey-module]');
   expect(component?.['data-sourcey-module']).toBeDefined();
+  const [openDiagram] = await matches(html, '#content-area a[href="/architecture/system-architecture.html"]');
+  expect(openDiagram?.target).toBe('_blank');
+  expect(openDiagram?.rel).toContain('noopener');
+  expect(await matches(html, '#content-area a[href="/architecture/system-architecture.json"]')).toHaveLength(0);
   for (const extension of ['html', 'json']) {
     const path = `architecture/system-architecture.${extension}`;
     expect(await Bun.file(new URL(path, output)).arrayBuffer()).toEqual(

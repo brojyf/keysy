@@ -63,13 +63,13 @@ Mintlify template license notice is retained in `LICENSE`.
 
 The PRD page contains the requirements imported from Keysy's Notion Plan Tracker.
 Tech stack is a placeholder page under Overview. System design embeds the
-interactive Archify diagram and links to its JSON source snapshot. Both assets
+interactive Archify diagram. The viewer and its JSON source snapshot
 are copied from `design/architecture/` on the `design/theme-and-logo` branch
 without changing their bytes and published from `public/architecture/`.
 The Sourcey `ArchitectureDiagram` component adapts the same-origin viewer to the
 page width, follows the wiki theme without reloading, and keeps native diagram
 navigation and search. It hides the viewer's duplicate title and global toolbar;
-the full-window link retains all standalone controls.
+the full-window link opens a new tab and retains all standalone controls.
 
 ## Publishing
 

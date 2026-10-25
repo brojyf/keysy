@@ -4,7 +4,11 @@ export default function mount(root: HTMLElement) {
   const theme = () => document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
   function syncTheme() {
-    frame.contentDocument?.documentElement.setAttribute('data-theme', theme());
+    const viewer = frame.contentDocument?.documentElement;
+    if (!viewer) return;
+    const currentTheme = theme();
+    viewer.setAttribute('data-theme', currentTheme);
+    viewer.style.colorScheme = currentTheme;
   }
 
   frame.addEventListener('load', () => {
@@ -18,8 +22,8 @@ export default function mount(root: HTMLElement) {
     const style = viewer.createElement('style');
     style.id = 'wiki-architecture-style';
     style.textContent = `
-      html[data-present="true"] body { padding: 0; background: transparent; }
-      html[data-present="true"] .container { height: 100dvh; gap: 0; }
+      html[data-present="true"]:not([data-embed="true"]) body { padding: 0; background: var(--bg); }
+      html[data-present="true"]:not([data-embed="true"]) .container { height: 100dvh; gap: 0; }
       html[data-present="true"] .header,
       html[data-present="true"] .toolbar,
       html[data-present="true"] .reader-rail { display: none !important; }

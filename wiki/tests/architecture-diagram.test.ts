@@ -8,7 +8,10 @@ function loadDiagram(initialTheme = 'dark') {
   const viewerAttributes = new Map<string, string>();
   const styles: { id: string; textContent: string }[] = [];
   const viewer = {
-    documentElement: { setAttribute: (name: string, value: string) => viewerAttributes.set(name, value) },
+    documentElement: {
+      style: { colorScheme: '' },
+      setAttribute: (name: string, value: string) => viewerAttributes.set(name, value),
+    },
     querySelector: () => ({ viewBox: { baseVal: { width: 980, height: 1308 } } }),
     getElementById: (id: string) => styles.find((style) => style.id === id),
     createElement: () => ({ id: '', textContent: '' }),
@@ -45,6 +48,7 @@ test.each(['light', 'dark'])('the architecture starts in the host %s theme with 
   expect(url.searchParams.get('theme')).toBe(theme);
   loaded();
   expect(viewerAttributes.get('data-theme')).toBe(theme);
+  expect(frame.contentDocument!.documentElement.style.colorScheme).toBe(theme);
 });
 
 test('theme changes update the loaded viewer without reloading or losing its view', () => {
@@ -75,4 +79,12 @@ test('the viewer uses its authored aspect ratio and keeps native diagram control
   expect(styles[0]!.textContent).not.toContain('.node-finder');
   loaded();
   expect(styles).toHaveLength(1);
+});
+
+test('the host overrides the original presentation padding without leaving a transparent gutter', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture.html', import.meta.url)).text();
+  const selector = source.match(/(html\[data-present="true"\]:not\(\[data-embed="true"\]\) body) \{/)![1]!;
+  const { loaded, styles } = loadDiagram();
+  loaded();
+  expect(styles[0]!.textContent).toContain(`${selector} { padding: 0; background: var(--bg); }`);
 });
