@@ -8,5 +8,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["sourcey.config.ts", "tests/**/*.ts"]
+  "include": ["sourcey.config.ts", "components/**/*.ts", "tests/**/*.ts"]
 }

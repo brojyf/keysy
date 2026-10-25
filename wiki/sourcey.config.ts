@@ -1,4 +1,5 @@
 import { defineConfig, markdown } from 'sourcey';
+import { architectureDiagram } from './components/architecture-diagram';
 
 export default defineConfig({
   name: 'Keysy',
@@ -7,6 +8,7 @@ export default defineConfig({
   favicon: './favicon.svg',
   publicDir: './public',
   prettyUrls: 'strip',
+  components: { ArchitectureDiagram: architectureDiagram },
   theme: {
     name: 'default',
     colors: { primary: '#1d4ed8', light: '#7aa2ff', dark: '#2f5aba' },

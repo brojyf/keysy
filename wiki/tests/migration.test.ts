@@ -53,8 +53,10 @@ test('only documentation pages, the architecture viewer and the native 404 are p
 test('system design embeds the interactive architecture and preserves its public assets', async () => {
   const html = await Bun.file(new URL('system-design.html', output)).text();
   const [viewer] = await matches(html, '#content-area iframe');
-  expect(viewer?.src).toBe('/architecture/system-architecture.html?embed=1');
+  expect(viewer?.src).toBe('/architecture/system-architecture.html?present=1');
   expect(viewer?.title).toBe('Keysy system architecture');
+  const [component] = await matches(html, '#content-area [data-sourcey-module]');
+  expect(component?.['data-sourcey-module']).toBeDefined();
   for (const extension of ['html', 'json']) {
     const path = `architecture/system-architecture.${extension}`;
     expect(await Bun.file(new URL(path, output)).arrayBuffer()).toEqual(
