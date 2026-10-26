@@ -79,13 +79,14 @@ export async function playHeroStory(
     query(row, ".path-prefix").textContent = from;
     query(row, "td").title = `${from}${key}`;
   }
-  if (scene.style.opacity === "0")
+  const replay = scene.style.opacity === "0";
+  if (replay)
     await run.play(
       scene,
       { opacity: [0, 1] },
       { duration: 0.4, ease: "easeOut" },
     );
-  await run.wait(500);
+  await run.wait(replay ? 500 : 150);
   composer.classList.add("typing");
   for (const character of prompt) {
     composer.textContent += character;

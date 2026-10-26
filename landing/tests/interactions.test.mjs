@@ -126,7 +126,9 @@ describe("product previews", () => {
       observe() {}
       disconnect() {}
     };
-    await act(() => root.render(React.createElement(ProductWindow)));
+    await act(() =>
+      root.render(React.createElement(ProductWindow, { update: true })),
+    );
     await act(() => observe([{ isIntersecting: false }]));
     expect(
       container
@@ -189,16 +191,24 @@ describe("product previews", () => {
     expect(container.querySelector("button").disabled).toBe(true);
   });
 
-  test("pauses the hero animation and honors changes to reduced motion", async () => {
+  test("autoplays the hero without controls and honors reduced motion", async () => {
     await act(() => root.render(React.createElement(ProductWindow)));
-    expect(container.querySelector("button").textContent).toBe("Pause demo");
-    await act(() => container.querySelector("button").click());
-    expect(container.querySelector("button").textContent).toBe("Play demo");
+    expect(container.querySelector("button")).toBeNull();
+    expect(
+      container
+        .querySelector(".product-stage")
+        .classList.contains("preview-paused"),
+    ).toBe(false);
     await act(() => {
       media.matches = true;
       media.dispatchEvent(new Event("change"));
     });
-    expect(container.querySelector("button").textContent).toBe("Play demo");
+    expect(container.querySelector("button")).toBeNull();
+    expect(
+      container
+        .querySelector(".product-stage")
+        .classList.contains("preview-paused"),
+    ).toBe(true);
     expect(container.querySelector("tbody tr").textContent).toContain(
       "production/shared/STRIPE_SECRET_KEY",
     );

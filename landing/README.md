@@ -43,8 +43,9 @@ bun run preview  # Preview the production build
 - `astro.config.mjs`: official React integration.
 - `tsconfig.json`: Astro strict mode with React JSX and TypeScript 7.
 
-The page is rendered as static HTML. Only the SDK tabs, product demos, dot
-backgrounds, and CTA hydrate when visible. Geist and Geist Mono are served locally.
+The page is rendered as static HTML. The Hero preview hydrates on load so its
+story starts promptly; the SDK tabs, Dashboard, dot backgrounds, and CTA hydrate
+when visible. Geist and Geist Mono are served locally.
 
 Unreleased account, documentation, extension, support, and status destinations
 are marked **Coming soon**. Legal pages contain no operative policy or terms.
@@ -61,8 +62,10 @@ The Dashboard follows
 slide in the panel, paste a masked value, choose the reminder, save, and update the folder version.
 Motion spring parameters and the thinking-orbs indicator come from those demos.
 
-Both product stories can be paused, including their transition and hold times.
-They pause offscreen and while the document is hidden, without losing a manual pause.
+The Hero runs without playback controls and begins typing after a 150 ms initial
+hold; subsequent loops retain the demo's 500 ms hold. The Dashboard control pauses
+both transition and hold times. Both stories pause offscreen and while the document
+is hidden, without losing a manual Dashboard pause.
 Reduced-motion preferences show completed states and a static dot texture and disable CTA rotation;
 the texture also works without WebGL or JavaScript.
 SDK tabs support arrow keys, Home, and End.

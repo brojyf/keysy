@@ -64,7 +64,7 @@ describe("HTML demo stories", () => {
       (row) => row.dataset.secret,
     );
     await playHeroStory(run, root, (state) => states.push(state));
-    expect(run.checkpoints[0].ms).toBe(500);
+    expect(run.checkpoints[0].ms).toBe(150);
     expect(run.checkpoints[0].path).toBe(
       "production/payments/STRIPE_SECRET_KEY",
     );
@@ -96,6 +96,7 @@ describe("HTML demo stories", () => {
     expect(root.querySelector(".preview-scene").style.opacity).toBe("0");
     const replay = immediatePlayback(root);
     await playHeroStory(replay, root, () => {});
+    expect(replay.checkpoints[0].ms).toBe(500);
     expect(replay.checkpoints[0].path).toBe(
       "production/payments/STRIPE_SECRET_KEY",
     );

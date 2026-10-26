@@ -190,19 +190,21 @@ export default function ProductWindow({
           </div>
         )}
       </div>
-      <button
-        type="button"
-        className="demo-control"
-        onClick={toggle}
-        disabled={reduced}
-        aria-label={
-          reduced
-            ? "Animation disabled by reduced motion preference"
-            : undefined
-        }
-      >
-        {playing ? "Pause demo" : "Play demo"}
-      </button>
+      {update && (
+        <button
+          type="button"
+          className="demo-control"
+          onClick={toggle}
+          disabled={reduced}
+          aria-label={
+            reduced
+              ? "Animation disabled by reduced motion preference"
+              : undefined
+          }
+        >
+          {playing ? "Pause demo" : "Play demo"}
+        </button>
+      )}
     </div>
   );
 }
