@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Required alongside Web and CLI so detection failures cannot bypass CI.
+  # Required alongside Dashboard and CLI so detection failures cannot bypass CI.
   changes:
     name: Changes
     runs-on: ubuntu-latest
@@ -23,7 +23,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      web: ${{ steps.filter.outputs.web }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
       cli: ${{ steps.filter.outputs.cli }}
       bun: ${{ steps.filter.outputs.bun }}
     steps:
@@ -34,8 +34,8 @@ jobs:
         id: filter
         with:
           filters: |
-            web:
-              - 'web/**'
+            dashboard:
+              - 'dashboard/**'
               - 'design/**'
               - '.github/**'
             cli:
@@ -106,15 +106,15 @@ jobs:
             (cd "$(dirname "$lockfile")" && bun audit --audit-level=high)
           done < <(git ls-files -z '**/bun.lock')
 
-  web:
-    name: Web
+  dashboard:
+    name: Dashboard
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: needs.changes.outputs.dashboard == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: web
+        working-directory: dashboard
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
