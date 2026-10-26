@@ -179,9 +179,18 @@ for (const [route, title] of routes) {
 test('tech stack names the frontend, backend, data, messaging, email and DevOps choices', async () => {
   const html = await Bun.file(new URL('tech-stack.html', output)).text();
   for (const choice of [
-    'TypeScript', 'React', 'Go', 'Gin', 'Supabase', 'Aiven', 'Kafka', 'PostgreSQL',
+    'TypeScript', 'React', 'Go', 'Gin', 'Supabase', 'Dragonfly', 'Aiven', 'Kafka', 'PostgreSQL',
     'Cloudflare Queues', 'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io',
   ]) expect(html).toContain(choice);
+});
+
+test('both architecture layouts name Dragonfly as the Redis-compatible cache', async () => {
+  for (const filename of ['system-architecture.json', 'system-architecture-vertical.json']) {
+    const source = await Bun.file(new URL(`../public/architecture/${filename}`, import.meta.url)).json();
+    const cache = source.components.find((node: { id: string }) => node.id === 'redis');
+    expect(cache.label).toBe('Dragonfly');
+    expect(cache.sublabel).toBe('Redis-compatible cache');
+  }
 });
 
 test('the introduction lists every top-level repository directory', async () => {

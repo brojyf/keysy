@@ -95,8 +95,8 @@
     {
       "id": "redis",
       "type": "database",
-      "label": "Redis",
-      "sublabel": "read cache",
+      "label": "Dragonfly",
+      "sublabel": "Redis-compatible cache",
       "pos": [
         620,
         180

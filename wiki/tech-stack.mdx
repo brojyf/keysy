@@ -18,6 +18,7 @@ description: "Keysy's technology choices."
 | --- | --- | --- |
 | Primary database | Supabase PostgreSQL | Business data and the transactional outbox |
 | Authentication | Supabase Auth | Google sign-in, proxied by the `auth` service |
+| Cache | Dragonfly | Redis-compatible read cache for the `api` service |
 | Event streaming | Apache Kafka on Aiven | Domain events keyed by aggregate ID, with a dead-letter topic |
 | Audit store | PostgreSQL on Aiven | Audit log, owned by the `audit` service |
 | Job queues | Cloudflare Queues | Prioritized email jobs (`email-high`, `email-low`) |
