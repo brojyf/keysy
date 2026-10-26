@@ -13,7 +13,10 @@ export default function AccessChannels() {
   return (
     <div className="channels">
       {channels.map(([title, description], i) => (
-        <article key={title}>
+        <article
+          key={title}
+          className={i === 3 ? "coding-agent-channel" : undefined}
+        >
           <div className="channel-icon">
             <DesignAsset
               section="36275"
