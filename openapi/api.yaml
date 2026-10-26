@@ -12,6 +12,8 @@ info:
 
     Users authenticate with a Supabase JWT from the Auth API. Services
     authenticate with a service token.
+
+    This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
 tags:
   - name: Orgs
   - name: Members

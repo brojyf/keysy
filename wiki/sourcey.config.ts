@@ -1,4 +1,4 @@
-import { defineConfig, markdown } from 'sourcey';
+import { defineConfig, markdown, openapi } from 'sourcey';
 import { architectureDiagram } from './components/architecture-diagram';
 
 export default defineConfig({
@@ -31,26 +31,12 @@ export default defineConfig({
       {
         tab: 'API',
         slug: 'api',
-        source: markdown({
-          root: './api',
-          slugs: 'file',
-          groups: [
-            { group: 'General', pages: ['overview'] },
-            { group: 'API endpoints', pages: ['endpoints'] },
-          ],
-        }),
+        source: openapi('../openapi/api.yaml'),
       },
       {
         tab: 'Auth',
         slug: 'auth',
-        source: markdown({
-          root: './auth',
-          slugs: 'file',
-          groups: [
-            { group: 'General', pages: ['overview'] },
-            { group: 'API endpoints', pages: ['endpoints'] },
-          ],
-        }),
+        source: openapi('../openapi/auth.yaml'),
       },
       {
         tab: 'Notify',

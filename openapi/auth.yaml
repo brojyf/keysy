@@ -6,6 +6,8 @@ info:
     Google sign-in for Keysy, proxied to Supabase Auth with the PKCE flow.
     The web app, CLI, and browser extension use the same flow with different
     redirect URIs. A user account is created on first sign-in.
+
+    This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
 tags:
   - name: Session
 paths:

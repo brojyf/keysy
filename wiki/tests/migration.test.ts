@@ -11,7 +11,9 @@ const routes = [
   ['system-design', 'System design'],
   ['database-schema', 'Database schema'],
   ['references', 'References'],
-  ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
+  ['api', 'Keysy API'],
+  ['auth', 'Keysy Auth API'],
+  ...['notify', 'cli', 'web'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
   ]),
@@ -154,7 +156,8 @@ for (const [route, title] of routes) {
     expect(languageLink?.href).toBe(publicUrl);
     expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
     const [activeTab] = await matches(html, '.sourcey-section-tabs > a[aria-current="page"]');
-    expect(activeTab?.href).toBe(route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/');
+    const activeTabHref = ['api', 'auth'].includes(route!) ? `/${route}` : route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/';
+    expect(activeTab?.href).toBe(activeTabHref);
     expect(await matches(html, '.sourcey-section-tabs > a[aria-current="page"] > div')).toHaveLength(1);
     expect(await matches(html, '#navbar a[aria-label="GitHub"] svg')).toHaveLength(1);
     expect(await matches(html, '#search-open-mobile')).toHaveLength(1);
@@ -164,11 +167,13 @@ for (const [route, title] of routes) {
     expect(await matches(html, '#mobile-nav .sourcey-logo')).toHaveLength(1);
     expect(await matches(html, '#search-open svg, #search-open-mobile svg, #theme-toggle svg')).toHaveLength(4);
     expect(await matches(html, '#theme-toggle svg g')).toHaveLength(1);
-    expect(await matches(html, '#content-area > header .h-5')).toHaveLength(1);
-    const [pagination] = await matches(html, '#content-area > nav');
-    expect(pagination?.['aria-label']).toBe('Previous and next page');
-    expect(stylesheet).toContain(`#sourcey #content-area > nav[aria-label='${pagination!['aria-label']}']`);
-    expect(await matches(html, '#content-area > div a[href="https://sourcey.com/docs"]')).toHaveLength(1);
+    if (!['api', 'auth'].includes(route!)) {
+      expect(await matches(html, '#content-area > header .h-5')).toHaveLength(1);
+      const [pagination] = await matches(html, '#content-area > nav');
+      expect(pagination?.['aria-label']).toBe('Previous and next page');
+      expect(stylesheet).toContain(`#sourcey #content-area > nav[aria-label='${pagination!['aria-label']}']`);
+      expect(await matches(html, '#content-area > div a[href="https://sourcey.com/docs"]')).toHaveLength(1);
+    }
     expect(html).not.toContain('mobile-navigation.js');
     expect(html).toContain('@view-transition');
     expect(html).toContain('keysy-nav-slide-out');
@@ -226,10 +231,17 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
   expect(prd).toContain('Notion is the source of truth for this PRD.');
-  const apiEndpoints = await Bun.file(new URL('api/endpoints.html', output)).text();
-  expect(apiEndpoints).toContain('is the source of truth for the application API.');
-  expect(apiEndpoints).not.toContain('There are no documented routes, request schemas, or response schemas yet.');
-  expect(await Bun.file(new URL('auth/endpoints.html', output)).text()).toContain('is the source of truth for the authentication API.');
+});
+
+test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
+  const api = await Bun.file(new URL('api.html', output)).text();
+  expect(api).toContain('the source of truth for the application API.');
+  for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
+    expect(api).toContain(operation);
+  }
+  const auth = await Bun.file(new URL('auth.html', output)).text();
+  expect(auth).toContain('the source of truth for the authentication API.');
+  expect(auth).toContain('Exchange the sign-in code for a session');
 });
 
 test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
