@@ -1,0 +1,154 @@
+---
+title: "Database schema"
+description: "Keysy's tables in Supabase PostgreSQL and Aiven PostgreSQL."
+---
+
+Keysy stores business data in Supabase PostgreSQL and audit records in Aiven PostgreSQL.
+The schema follows the [PRD](/prd) and `openapi/api.yaml`.
+
+## Supabase PostgreSQL
+
+`auth.users` belongs to Supabase Auth, and `vault.secrets` belongs to Supabase Vault.
+All other tables live in the `public` schema.
+
+```mermaid
+erDiagram
+  auth_users |o--o{ members : "signs in as"
+  orgs ||--o{ members : has
+  orgs ||--o{ secrets : owns
+  orgs ||--o{ services : owns
+  orgs ||--o{ policies : owns
+  orgs ||--o{ reorganizations : owns
+  secrets ||--|{ secret_versions : has
+  vault_secrets ||--|| secret_versions : encrypts
+  secrets ||--o{ secret_retrievals : "retrieved as"
+  services ||--o{ secret_retrievals : records
+  services ||--o{ service_tokens : authenticates
+  policies ||--o{ policy_members : assigns
+  members ||--o{ policy_members : "assigned to"
+  policies ||--o{ policy_services : assigns
+  services ||--o{ policy_services : "assigned to"
+  members ||--o{ reorganizations : creates
+
+  auth_users {
+    uuid id PK
+    text email
+  }
+  vault_secrets {
+    uuid id PK
+    text secret
+  }
+  orgs {
+    uuid id PK
+    text name
+    int expiration_reminder_days
+    timestamptz created_at
+  }
+  members {
+    uuid id PK
+    uuid org_id FK
+    uuid user_id FK
+    text email
+    text role
+    timestamptz created_at
+  }
+  secrets {
+    uuid id PK
+    uuid org_id FK
+    text path
+    text note
+    timestamptz expires_at
+    int current_version
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  secret_versions {
+    uuid secret_id PK, FK
+    int version PK
+    uuid vault_secret_id FK
+    timestamptz created_at
+  }
+  secret_retrievals {
+    uuid secret_id PK, FK
+    uuid service_id PK, FK
+    int version
+    timestamptz retrieved_at
+  }
+  policies {
+    uuid id PK
+    uuid org_id FK
+    text name
+    text_array paths
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  policy_members {
+    uuid policy_id PK, FK
+    uuid member_id PK, FK
+  }
+  policy_services {
+    uuid policy_id PK, FK
+    uuid service_id PK, FK
+  }
+  services {
+    uuid id PK
+    uuid org_id FK
+    text name
+    timestamptz created_at
+  }
+  service_tokens {
+    uuid id PK
+    uuid service_id FK
+    text token_hash UK
+    timestamptz created_at
+  }
+  reorganizations {
+    uuid id PK
+    uuid org_id FK
+    uuid created_by FK
+    text instruction
+    text status
+    jsonb plan
+    timestamptz created_at
+  }
+  outbox {
+    uuid id PK
+    uuid aggregate_id
+    text event_type
+    jsonb payload
+    timestamptz created_at
+  }
+```
+
+| Table | Purpose |
+| --- | --- |
+| `orgs` | Tenants. `expiration_reminder_days` holds the org's reminder lead time and defaults to 7. |
+| `members` | A user's role in an org: `super_admin`, `admin`, or `user`. Admins add members by email, unique per org; `user_id` stays null until the first Google sign-in. |
+| `secrets` | Secret metadata. `path` is unique per org; `note` and `expires_at` are optional. `current_version` points to the version that reads return. |
+| `secret_versions` | The current version and up to N previous versions. Each row references one `vault.secrets` entry. Removing a version also removes its Vault entry. |
+| `secret_retrievals` | Each service's last-retrieved version and time per secret, kept as a single latest record. |
+| `policies` | Read access to matching secret paths. Each entry in `paths` is an exact path or a prefix ending in `/*`. |
+| `policy_members` | Assigns policies to members. |
+| `policy_services` | Assigns policies to services. |
+| `services` | Service identities. `name` is unique per org. |
+| `service_tokens` | Hashes of service tokens. Revoking a token deletes its row. |
+| `reorganizations` | AI reorganization proposals, `proposed` or `applied`. `plan` stores the moves, policy changes, and access diff returned by the API. |
+| `outbox` | Domain events written in the same transaction as each change. The outbox relay publishes them to Kafka, keyed by `aggregate_id`. |
+
+## Aiven PostgreSQL
+
+The `audit` service consumes Kafka events and owns this database. It records changes only and never stores
+secret values.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. Uses the outbox event ID, so redelivered events are inserted once. |
+| `org_id` | `uuid` | |
+| `actor_id` | `uuid` | The Supabase Auth user ID of the user who made the change. |
+| `action` | `text` | For example, `secret.version_created`. |
+| `target_type` | `text` | `secret`, `policy`, `member`, or `service`. |
+| `target_id` | `uuid` | |
+| `outcome` | `text` | `success`, `denied`, or `failed`. |
+| `occurred_at` | `timestamptz` | |
+
+`audit_logs` has an index on `(org_id, occurred_at desc)` for the audit log API.

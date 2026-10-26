@@ -9,6 +9,7 @@ const routes = [
   ['prd', 'PRD'],
   ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
+  ['database-schema', 'Database schema'],
   ['references', 'References'],
   ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
@@ -29,7 +30,7 @@ test('navigation preserves the six original sections and includes references und
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design', '/references',
+    '/', '/prd', '/tech-stack', '/system-design', '/database-schema', '/references',
   ]);
 });
 
@@ -229,6 +230,14 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(apiEndpoints).toContain('is the source of truth for the application API.');
   expect(apiEndpoints).not.toContain('There are no documented routes, request schemas, or response schemas yet.');
   expect(await Bun.file(new URL('auth/endpoints.html', output)).text()).toContain('is the source of truth for the authentication API.');
+});
+
+test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
+  const html = await Bun.file(new URL('database-schema.html', output)).text();
+  expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
+  for (const table of ['orgs', 'members', 'secrets', 'secret_versions', 'secret_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
+    expect(html).toContain(`<code>${table}</code>`);
+  }
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {
