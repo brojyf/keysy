@@ -53,8 +53,8 @@ Appearance clicks use a single 300 ms ease-in-out page cross-fade so background,
 text and icons change together, without repeated transitions on inherited colors.
 Both snapshots use the same timing and isolated additive blending to preserve
 the intended cross-fade. New clicks interrupt the previous fade; initial
-page load does not animate. Response status underlines use the same 360 ms easing as the
-desktop tabs and continue from their current position on rapid clicks. Example cards have a
+page load does not animate. Response status underlines share the desktop tabs' timing through
+`--keysy-indicator-duration` and `--keysy-indicator-easing` in `style.css`, and continue from their current position on rapid clicks. Example cards have a
 1 rem gap and follow the fields and responses in a single column; wide pages keep them
 beside the content. Operation page headings show the endpoint path, preserving existing URLs.
 Recheck this patch when upgrading Sourcey. Unsupported

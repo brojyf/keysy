@@ -20,6 +20,9 @@
   --keysy-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
     0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
   --keysy-spring-duration: 600ms;
+  /* Desktop tab and response status underlines share this standard easing. */
+  --keysy-indicator-duration: 360ms;
+  --keysy-indicator-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark {
@@ -309,8 +312,8 @@
   }
 
   ::view-transition-group(keysy-tab-indicator) {
-    animation-duration: 360ms;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: var(--keysy-indicator-duration);
+    animation-timing-function: var(--keysy-indicator-easing);
   }
 
   ::view-transition-old(keysy-tab-indicator),

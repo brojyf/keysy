@@ -166,15 +166,19 @@ diff --git a/dist/client/tabs.js b/dist/client/tabs.js
 +      var previous = container.querySelector('.response-tab.active > .keysy-response-indicator');
 +      var from = previous && previous.getBoundingClientRect();
 +      if (previous && previous.getAnimations) previous.getAnimations().forEach(function (motion) { motion.cancel(); });
-@@ -187,0 +191,10 @@
+@@ -187,0 +191,14 @@
 +
 +      var indicator = tab.querySelector('.keysy-response-indicator');
 +      if (indicator && indicator.animate && from &&
 +          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 +        var to = indicator.getBoundingClientRect();
++        var style = window.getComputedStyle(indicator);
 +        if (to.width) indicator.animate(
 +          [{ transform: 'translateX(' + (from.left - to.left) + 'px) scaleX(' + (from.width / to.width) + ')' }, { transform: 'none' }],
-+          { duration: 360, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
++          {
++            duration: parseFloat(style.getPropertyValue('--keysy-indicator-duration')) || 360,
++            easing: style.getPropertyValue('--keysy-indicator-easing').trim() || 'ease-out'
++          }
 +        );
 +      }
 diff --git a/dist/components/openapi/Operation.js b/dist/components/openapi/Operation.js

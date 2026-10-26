@@ -2,8 +2,10 @@ import { expect, mock, test } from 'bun:test';
 import { runInNewContext } from 'node:vm';
 
 const script = await Bun.file(new URL('../node_modules/sourcey/dist/client/tabs.js', import.meta.url)).text();
+// Values the stylesheet's --keysy-indicator-* tokens resolve to.
+const indicatorMotion = { '--keysy-indicator-duration': ' 360ms', '--keysy-indicator-easing': ' cubic-bezier(0.4, 0, 0.2, 1)' };
 
-function loadTabs({ reducedMotion = false, supported = true } = {}) {
+function loadTabs({ reducedMotion = false, supported = true, motionTokens = indicatorMotion } = {}) {
   const clicks: ((event: unknown) => void)[] = [];
   let init = () => {};
   const motions: { cancel: ReturnType<typeof mock> }[] = [];
@@ -52,6 +54,7 @@ function loadTabs({ reducedMotion = false, supported = true } = {}) {
     window: {
       addEventListener: (_name: string, listener: () => void) => { init = listener; },
       matchMedia: () => ({ matches: reducedMotion }),
+      getComputedStyle: () => ({ getPropertyValue: (name: string) => motionTokens[name as keyof typeof motionTokens] }),
       scrollY: 200, scrollTo,
     },
   });
@@ -63,7 +66,7 @@ function loadTabs({ reducedMotion = false, supported = true } = {}) {
   };
 }
 
-test('response status changes move the underline with the top tab timing and update the panel', () => {
+test('response status changes move the underline with the shared indicator timing and update the panel', () => {
   const { tabs, panels, scrollTo, click } = loadTabs();
   click(2);
   expect(tabs[2]!.indicator.animate).toHaveBeenCalledWith(
@@ -84,6 +87,17 @@ test('rapid status changes continue from the moving underline position', () => {
   expect(tabs[1]!.indicator.animate).toHaveBeenCalledWith(
     [{ transform: 'translateX(12px) scaleX(1)' }, { transform: 'none' }],
     { duration: 360, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+  );
+});
+
+test('response status underlines follow the stylesheet indicator tokens', () => {
+  const { tabs, click } = loadTabs({
+    motionTokens: { '--keysy-indicator-duration': '200ms', '--keysy-indicator-easing': 'linear' },
+  });
+  click(1);
+  expect(tabs[1]!.indicator.animate).toHaveBeenCalledWith(
+    [{ transform: 'translateX(-48px) scaleX(1)' }, { transform: 'none' }],
+    { duration: 200, easing: 'linear' },
   );
 });
 

@@ -6,8 +6,11 @@ test('the selected desktop underline moves for 360ms with zero start and end vel
   expect(stylesheet).toMatch(/@media \(width >= 64rem\) and \(prefers-reduced-motion: no-preference\)/);
   expect(stylesheet).toMatch(/a\[aria-current='page'\] > div\s*\{\s*view-transition-name: keysy-tab-indicator;/);
   const underline = stylesheet.match(/::view-transition-group\(keysy-tab-indicator\)\s*\{([^}]+)\}/)![1]!;
-  expect(underline).toContain('animation-duration: 360ms');
-  const [x1, y1, x2, y2] = underline.match(/cubic-bezier\(([^)]+)\)/)![1]!.split(',').map(Number);
+  expect(underline).toContain('animation-duration: var(--keysy-indicator-duration)');
+  expect(underline).toContain('animation-timing-function: var(--keysy-indicator-easing)');
+  expect(stylesheet).toContain('--keysy-indicator-duration: 360ms;');
+  const easing = stylesheet.match(/--keysy-indicator-easing: cubic-bezier\(([^)]+)\);/)![1]!;
+  const [x1, y1, x2, y2] = easing.split(',').map(Number);
   expect(x1).toBeGreaterThan(0);
   expect(x2).toBeLessThan(1);
   expect(y1! / x1!).toBe(0);
