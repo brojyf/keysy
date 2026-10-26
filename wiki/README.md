@@ -30,40 +30,36 @@ public assets, navigation, native controls and the drawer's runtime click handle
 
 ## Migration and branding
 
-PR #29 now uses Sourcey instead of Mintlify, retaining the six navigation tabs,
-page URLs, Namespace logo, blue accents, neutral light/dark
+The wiki uses Sourcey instead of Mintlify, retaining the six navigation tabs,
+Namespace logo, blue accents, neutral light/dark
 backgrounds, and Geist / Geist Mono fonts. Fonts load from Google Fonts with
-system fallbacks. `style.css` adapts the native theme: neutral selected navigation,
+system fallbacks. The API and Auth tabs render their OpenAPI specs at `/api` and
+`/auth` with one page per operation; the Mintlify pages `/api/overview`,
+`/api/endpoints`, `/auth/overview` and `/auth/endpoints` no longer exist.
+`style.css` adapts the native theme: neutral selected navigation,
 blue inline code, hidden pagination/page group labels, a single mobile header,
 and a bottom-aligned footer on short pages. Code blocks keep native syntax colors.
 
 Sourcey's native search, appearance control and mobile drawer replace the
 Mintlify-specific script. Search page titles use the UI font; method and path
 results keep monospace. Search section headings use bold primary text in both
-themes, and search method badges take the sidebar's method colors. CSS provides a 250 ms drawer exit over the incoming page
-using cross-document View Transitions, without delaying navigation. A Bun patch in
-`patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
-its snapshot and clears it on back-forward cache restoration. The patch also marks
-the active desktop tab with `aria-current="page"`. It also hides the default `/` Base URL on
-OpenAPI pages, since the specs define no servers. Search lists each OpenAPI overview by
-its sidebar label, **Introduction**, instead of the spec title. It springs collapsible sidebar groups from
-their current height with `--keysy-spring` from `style.css`; response field disclosures share the
-same spring at 500 ms and turn their chevrons with it. Reduced motion keeps the native toggle. Desktop tab underlines move
-between pages with a 360 ms standard easing curve, starting and ending at rest.
-Appearance clicks use a single 300 ms ease-in-out page cross-fade so background,
-text and icons change together, without repeated transitions on inherited colors.
-Both snapshots use the same timing and isolated additive blending to preserve
-the intended cross-fade. New clicks interrupt the previous fade; initial
-page load does not animate. Response status underlines share the desktop tabs' timing through
-`--keysy-indicator-duration` and `--keysy-indicator-easing` in `style.css`, and continue from their current position on rapid clicks. Example cards have a
-1 rem gap and follow the fields and responses in a single column; wide pages keep them
-beside the content. Operation page headings show the endpoint path, preserving existing URLs.
-Recheck this patch when upgrading Sourcey. Unsupported
-browsers switch directly; reduced motion disables custom motion.
-The underline uses [Material's standard easing](https://m2.material.io/develop/android/theming/motion);
-snapshot blending follows [Chrome's View Transition guidance](https://developer.chrome.com/docs/web-platform/view-transitions/same-document).
-Opening the drawer focuses the dialog, not the logo; Tab navigation still shows
-the logo's neutral keyboard focus indicator.
+themes, and search method badges take the sidebar's method colors.
+
+Motion timing and easing live in `style.css` tokens such as `--keysy-spring` and
+`--keysy-indicator-*`. Reduced motion disables custom motion, and browsers without
+View Transitions switch directly. A Bun patch in `patches/sourcey@3.8.3.patch`
+changes Sourcey's built output to:
+
+- keep the mobile drawer open until cross-document navigation captures it, close it
+  on back-forward cache restoration, and focus the dialog instead of the logo on opening;
+- mark the active desktop tab with `aria-current="page"`;
+- hide the default `/` Base URL on OpenAPI pages, since the specs define no servers;
+- title operation pages with the endpoint path, place examples after the fields and
+  responses, and list each OpenAPI overview in search as **Introduction**;
+- animate sidebar groups, response field disclosures, response status tabs and
+  appearance changes.
+
+Recheck this patch when upgrading Sourcey.
 Search and appearance icons have heavier strokes. The SVG favicon follows the browser
 color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sourcey is licensed
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
@@ -84,8 +80,7 @@ and wraps node descriptions beneath their labels.
 
 ## Publishing
 
-Publish `dist/` as static assets through Cloudflare Workers using `wrangler`,
-not the Mintlify dashboard. `siteUrl` is set to `https://wiki.keysy.net` for
-canonical links and the sitemap. Before publishing, bind that domain to the host
-and configure extensionless HTML paths and `404.html` with HTTP 404. This migration
-does not configure hosting, DNS or custom domain bindings, or deploy the site.
+Deployments are configured in the Cloudflare dashboard. Cloudflare Workers serves
+`dist/` as static assets; `wrangler.jsonc` binds the `wiki.keysy.net` custom domain,
+serves extensionless HTML paths and returns `404.html` with HTTP 404. `siteUrl` is
+set to `https://wiki.keysy.net` for canonical links and the sitemap.
