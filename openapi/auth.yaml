@@ -3,9 +3,8 @@ info:
   title: Keysy Auth API
   version: 0.0.0
   description: |
-    Google sign-in for Keysy, proxied to Supabase Auth with the PKCE flow.
-    The web app, CLI, and browser extension use the same flow with different
-    redirect URIs. A user account is created on first sign-in.
+    The authentication API signs users in to Keysy with Google and manages their sessions for the
+    web app, CLI, and browser extension.
 
     This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
 tags:
@@ -53,6 +52,7 @@ paths:
       operationId: exchangeCode
       security: []
       summary: Exchange the sign-in code for a session
+      description: Creates the user's account on first sign-in.
       requestBody:
         required: true
         content:

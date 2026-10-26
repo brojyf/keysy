@@ -237,13 +237,15 @@ test('PRD requirements and endpoint callout content are published', async () => 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
-  expect(api).toContain('The application API manages orgs, members, secrets, policies, services, AI reorganizations, and audit log queries.');
+  expect(api).toContain("The application API provides Keysy's app features");
+  expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
     expect(api).toContain(operation);
   }
   const auth = await Bun.file(new URL('auth.html', output)).text();
   expect(auth).toContain('the source of truth for the authentication API.');
   expect(auth).toContain('Exchange the sign-in code for a session');
+  expect(auth).toContain('The authentication API signs users in to Keysy with Google');
 });
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {

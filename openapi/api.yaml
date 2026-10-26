@@ -3,15 +3,8 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The application API manages orgs, members, secrets, policies, services, AI reorganizations, and audit log queries.
-
-    Roles are per org: `super_admin`, `admin`, and `user`. Only Admins and
-    Super Admins create or modify secrets, policies, and services. Users and
-    services retrieve only secrets permitted by their assigned policies.
-    Secrets a caller cannot read return `404`.
-
-    Users authenticate with a Supabase JWT from the Auth API. Services
-    authenticate with a service token.
+    The application API provides Keysy's app features: orgs and members, secrets and their versions,
+    access policies, services, AI reorganization, and audit logs.
 
     This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
 tags:
