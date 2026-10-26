@@ -1,37 +1,32 @@
+import { installWindow } from "./dom.mjs";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import SdkShowcase from "../src/components/SdkShowcase";
-import ProductWindow from "../src/components/previews/ProductWindow";
 
 let browser;
 let root;
 let container;
 let media;
 
+const { default: ProductWindow } = await import(
+  "../src/components/previews/ProductWindow"
+);
+const { createPreviewPlayback } = await import(
+  "../src/components/previews/previewPlayback"
+);
+const { default: CallToAction } = await import(
+  "../src/components/CallToAction"
+);
+
 beforeEach(() => {
-  browser = new Window();
-  for (const name of [
-    "window",
-    "document",
-    "HTMLElement",
-    "Node",
-    "Event",
-    "MouseEvent",
-    "KeyboardEvent",
-  ]) {
-    globalThis[name] =
-      name === "window"
-        ? browser
-        : name === "document"
-          ? browser.document
-          : browser[name];
-  }
+  browser = installWindow();
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   media = new browser.EventTarget();
   media.matches = false;
   browser.matchMedia = () => media;
+  browser.HTMLCanvasElement.prototype.getContext = () => null;
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -41,6 +36,7 @@ afterEach(async () => {
   await act(() => root.unmount());
   browser.happyDOM.abort();
   browser.close();
+  delete globalThis.IntersectionObserver;
 });
 
 describe("SDK showcase", () => {
@@ -100,22 +96,97 @@ describe("SDK showcase", () => {
 });
 
 describe("product previews", () => {
-  test("updates the shared folder version and reminder, then resets the illustrative state", async () => {
+  test("freezes an active transition as well as timeline holds", async () => {
+    const run = createPreviewPlayback();
+    const element = document.createElement("div");
+    element.style.opacity = "0";
+    document.body.append(element);
+    const transition = run.animate(
+      element,
+      { opacity: 1 },
+      { duration: 0.25, ease: "linear" },
+    );
+    await Bun.sleep(60);
+    run.setPaused(true);
+    const pausedOpacity = element.style.opacity;
+    await Bun.sleep(90);
+    expect(element.style.opacity).toBe(pausedOpacity);
+    run.setPaused(false);
+    await transition;
+    expect(Number(element.style.opacity)).toBe(1);
+    run.stop();
+  });
+
+  test("keeps a manual pause when the preview leaves and re-enters the viewport", async () => {
+    let observe;
+    globalThis.IntersectionObserver = class {
+      constructor(callback) {
+        observe = callback;
+      }
+      observe() {}
+      disconnect() {}
+    };
+    await act(() => root.render(React.createElement(ProductWindow)));
+    await act(() => observe([{ isIntersecting: false }]));
+    expect(
+      container
+        .querySelector(".product-stage")
+        .classList.contains("preview-paused"),
+    ).toBe(true);
+    await act(() => container.querySelector("button").click());
+    await act(() => observe([{ isIntersecting: true }]));
+    expect(container.querySelector("button").textContent).toBe("Play demo");
+    expect(
+      container
+        .querySelector(".product-stage")
+        .classList.contains("preview-paused"),
+    ).toBe(true);
+    await act(() => container.querySelector("button").click());
+    expect(
+      container
+        .querySelector(".product-stage")
+        .classList.contains("preview-paused"),
+    ).toBe(false);
+  });
+  test("pauses timeline holds and resumes from the same point", async () => {
+    const run = createPreviewPlayback();
+    let completed = false;
+    const finished = run.wait(140).then(() => {
+      completed = true;
+    });
+    await Bun.sleep(30);
+    run.setPaused(true);
+    await Bun.sleep(180);
+    expect(completed).toBe(false);
+    run.setPaused(false);
+    await finished;
+    expect(completed).toBe(true);
+    run.stop();
+  });
+  test("autoplays the update story and pauses without applying a save", async () => {
     await act(() =>
       root.render(React.createElement(ProductWindow, { update: true })),
     );
     const row = () => container.querySelector("tbody tr");
     const version = () => row().querySelectorAll("td")[1].textContent;
     expect(version()).toBe("v5");
+    expect(container.querySelector("button").textContent).toBe("Pause demo");
     await act(() => container.querySelector("button").click());
-    expect(version()).toBe("v6");
-    expect(row().textContent).toContain("in 90 days");
-    expect(container.querySelector('[role="status"]').textContent).toContain(
-      "Folder version v6",
-    );
-    await act(() => container.querySelector("button").click());
+    expect(container.querySelector("button").textContent).toBe("Play demo");
     expect(version()).toBe("v5");
     expect(row().textContent).toContain("in 14 days");
+  });
+
+  test("shows the saved dashboard state without animation under reduced motion", async () => {
+    media.matches = true;
+    await act(() =>
+      root.render(React.createElement(ProductWindow, { update: true })),
+    );
+    const rows = container.querySelectorAll("tbody tr");
+    expect(rows[0].textContent).toContain("v6");
+    expect(rows[0].textContent).toContain("in 90 days");
+    expect(rows[5].textContent).toContain("v6");
+    expect(container.querySelector("button").disabled).toBe(true);
   });
 
   test("pauses the hero animation and honors changes to reduced motion", async () => {
@@ -132,5 +203,47 @@ describe("product previews", () => {
       "production/shared/STRIPE_SECRET_KEY",
     );
     expect(container.textContent).toContain("Permissions verified");
+  });
+});
+
+describe("CTA pointer motion", () => {
+  test("tilts for the mouse, tracks its highlight, and disables rotation for reduced motion", async () => {
+    await act(() => root.render(React.createElement(CallToAction)));
+    const card = container.querySelector(".cta-card");
+    card.getBoundingClientRect = () => ({
+      left: 0,
+      top: 0,
+      width: 1000,
+      height: 500,
+    });
+    card.dispatchEvent(
+      new browser.PointerEvent("pointermove", {
+        pointerType: "mouse",
+        clientX: 1000,
+        clientY: 500,
+      }),
+    );
+    expect(card.style.getPropertyValue("--pointer-x")).toBe("1000px");
+    expect(card.style.getPropertyValue("--pointer-y")).toBe("500px");
+    await Bun.sleep(950);
+    expect(
+      Number(card.style.transform.match(/rotateX\(([-\d.]+)deg\)/)[1]),
+    ).toBeCloseTo(-3, 1);
+    expect(
+      Number(card.style.transform.match(/rotateY\(([-\d.]+)deg\)/)[1]),
+    ).toBeCloseTo(3, 1);
+    await act(() => {
+      media.matches = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(card.style.transform).toBe("none");
+    card.dispatchEvent(
+      new browser.PointerEvent("pointermove", {
+        pointerType: "touch",
+        clientX: 20,
+        clientY: 20,
+      }),
+    );
+    expect(card.style.getPropertyValue("--pointer-x")).toBe("1000px");
   });
 });

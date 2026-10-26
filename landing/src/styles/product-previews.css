@@ -6,6 +6,19 @@
   margin: 72px auto 0;
   text-align: left;
 }
+.preview-scene {
+  position: absolute;
+  inset: 0;
+}
+.path-prefix,
+.secret-key,
+.secret-version,
+.secret-expiry {
+  display: inline-block;
+}
+.path-prefix {
+  color: var(--muted);
+}
 .product-scale {
   position: absolute;
   inset: 0 auto auto 0;
@@ -252,8 +265,38 @@
   font-size: 0.9em;
 }
 .thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 1em;
   color: var(--muted);
+}
+.thinking-text {
+  display: inline-block;
+}
+.composer-text:empty::before {
+  content: "Ask about your secrets";
+  color: var(--muted);
+}
+.composer-text.typing:empty::before {
+  content: none;
+}
+.composer-text.typing::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 1px;
+  background: var(--text);
+  animation: composer-blink 1s steps(1) infinite;
+}
+.preview-paused .composer-text.typing::after {
+  animation-play-state: paused;
+}
+@keyframes composer-blink {
+  50% {
+    opacity: 0;
+  }
 }
 .assistant-input {
   margin-top: auto;
@@ -354,6 +397,57 @@
   font-family: "Geist Mono Variable", monospace;
   font-size: 0.83em;
 }
+.preview-value-input,
+.preview-expiry-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.preview-value {
+  display: inline-block;
+  overflow: hidden;
+}
+.preview-value:empty::before {
+  content: "Paste a new value";
+  color: var(--muted);
+  font-family: "Geist Variable", sans-serif;
+}
+.preview-fields small {
+  color: var(--muted);
+  font:
+    11px "Geist Variable",
+    sans-serif;
+}
+.preview-fields .focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #1d4ed826;
+}
+.preview-expiry-field {
+  position: relative;
+}
+.preview-fields .preview-expiry-menu {
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px -8px #101b3038;
+  transform-origin: top center;
+  font:
+    12px "Geist Variable",
+    sans-serif;
+}
+.preview-expiry-menu > div {
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+.preview-expiry-menu .hover {
+  background: var(--soft);
+}
 .preview-save {
   display: flex;
   align-items: center;
@@ -375,6 +469,30 @@
 }
 .dashboard-stage .product-scale {
   transform: scale(calc(100cqw / 900px));
+}
+.dashboard-stage .product-body {
+  position: relative;
+  overflow: hidden;
+  grid-template-columns: 18.44% 1fr;
+}
+.dashboard-stage .product-panel {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 0 auto;
+  width: 30%;
+  background: var(--bg);
+  box-shadow: -24px 0 48px -24px #101b302e;
+}
+.preview-scrim {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: #101b300f;
+  opacity: 0;
+  pointer-events: none;
+}
+.dashboard-stage .environment {
+  display: none;
 }
 .terminal-tab {
   background: #ffffff0a;

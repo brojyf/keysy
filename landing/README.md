@@ -43,8 +43,8 @@ bun run preview  # Preview the production build
 - `astro.config.mjs`: official React integration.
 - `tsconfig.json`: Astro strict mode with React JSX and TypeScript 7.
 
-The page is rendered as static HTML. Only the SDK tabs, product demos, and dot
-backgrounds hydrate when visible. Geist and Geist Mono are served locally.
+The page is rendered as static HTML. Only the SDK tabs, product demos, dot
+backgrounds, and CTA hydrate when visible. Geist and Geist Mono are served locally.
 
 Unreleased account, documentation, extension, support, and status destinations
 are marked **Coming soon**. Legal pages contain no operative policy or terms.
@@ -52,12 +52,23 @@ Dashboard/SDK links in the footer point to homepage sections; GitHub opens the r
 
 Product windows, commands, SDK package names, and availability diagrams reproduce
 illustrative design content. They do not connect to live APIs or measure service uptime.
-The hero animation can be paused. Reduced-motion preferences show its completed
-state and a static dot texture; the texture also works without WebGL or JavaScript.
+The hero uses **A · Spring flow** from
+[`hero-motion.html`](https://github.com/brojyf/keysy/blob/design/theme-and-logo/design/landing/motion/hero-motion.html):
+human-paced typing, three thinking states, animated path prefixes, staggered results,
+and a fade between loops. The CTA uses the same demo's pointer highlight and 3° tilt.
+The Dashboard follows
+[`update-secret-motion.html`](https://github.com/brojyf/keysy/blob/design/theme-and-logo/design/landing/motion/update-secret-motion.html):
+slide in the panel, paste a masked value, choose the reminder, save, and update the folder version.
+Motion spring parameters and the thinking-orbs indicator come from those demos.
+
+Both product stories can be paused, including their transition and hold times.
+They pause offscreen and while the document is hidden, without losing a manual pause.
+Reduced-motion preferences show completed states and a static dot texture and disable CTA rotation;
+the texture also works without WebGL or JavaScript.
 SDK tabs support arrow keys, Home, and End.
 
 `bun run test` validates generated links, local assets, legal-page metadata,
-SDK selection/keyboard navigation, and demo state. Visual layout and WebGL
+SDK selection/keyboard navigation, story order/replay, playback controls, and CTA pointer behavior. Visual layout and WebGL
 behavior require a separate browser review.
 
 `astro check` currently does not support TypeScript 7.0. The `check` command

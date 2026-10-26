@@ -320,6 +320,9 @@ h1 {
 .cta-section {
   padding-top: 96px;
 }
+.cta-section .section-inner {
+  perspective: 1600px;
+}
 .cta-section .section-inner::before,
 .cta-section .section-inner::after {
   top: -103px;
@@ -334,6 +337,23 @@ h1 {
   display: grid;
   place-items: center;
   text-align: center;
+}
+.cta-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    520px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    #7aa2ff33,
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cta-card:hover .cta-sheen {
+    opacity: 1;
+  }
 }
 .cta-content {
   position: relative;

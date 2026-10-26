@@ -12,6 +12,7 @@ import {
 } from "../components/previews/FeatureCards";
 import Workflow from "../components/Workflow";
 import SdkShowcase from "../components/SdkShowcase";
+import CallToAction from "../components/CallToAction";
 ---
 
 <Page
@@ -128,17 +129,7 @@ import SdkShowcase from "../components/SdkShowcase";
     </section>
     <section class="section cta-section" aria-labelledby="cta-title">
       <div class="section-inner">
-        <div class="cta-card">
-          <DotBackdrop client:visible /><DesignAsset
-            section="36844"
-            name="imgEllipse"
-            className="cta-glow"
-          /><div class="cta-content">
-            <h2 id="cta-title">Less friction.<br />More forward.</h2><p>
-              Start with a simpler approach to secrets.
-            </p><Actions />
-          </div>
-        </div>
+        <CallToAction client:visible />
       </div>
     </section>
   </main>
