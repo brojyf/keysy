@@ -330,3 +330,51 @@
     transition: transform var(--keysy-spring-duration) var(--keysy-spring);
   }
 }
+
+/* Wide operation pages: the endpoint bar joins the left column, so the examples start beside it.
+   Sourcey's container is the operation itself, which its own queries cannot lay out, so
+   #content-area hosts one, and this grid places every area itself. */
+#sourcey #content-area:has(> [data-sourcey-operation]) {
+  container: keysy-operation / inline-size;
+}
+
+@media (width >= 1280px) {
+  @container keysy-operation (width > 55rem) {
+    #sourcey [data-sourcey-operation] {
+      display: grid;
+      grid-template:
+        'header header'
+        'endpoint examples'
+        'intro examples'
+        'details examples' 1fr / minmax(0, 1fr) 28rem;
+      column-gap: 2rem;
+    }
+
+    #sourcey [data-sourcey-operation] > header {
+      grid-area: header;
+    }
+
+    #sourcey [data-sourcey-operation] > .sourcey-endpoint {
+      grid-area: endpoint;
+    }
+
+    #sourcey [data-sourcey-operation] > .operation-layout {
+      display: contents;
+    }
+
+    #sourcey [data-sourcey-operation] .operation-intro {
+      grid-area: intro;
+    }
+
+    #sourcey [data-sourcey-operation] .operation-details {
+      grid-area: details;
+    }
+
+    #sourcey [data-sourcey-operation] .sourcey-operation-examples {
+      grid-area: examples;
+      align-self: start;
+      position: sticky;
+      top: calc(var(--header-height) + 2.5rem);
+    }
+  }
+}

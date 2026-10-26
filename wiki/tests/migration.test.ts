@@ -285,10 +285,20 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
     expect(html).not.toContain('>Base URL<');
     const operation = await Bun.file(new URL(`.${endpointLinks[0]}.html`, output)).text();
     expect(operation).toContain('sourcey-endpoint');
+    // style.css puts the endpoint bar in the left column so the examples start beside it.
+    expect(await matches(operation, '[data-sourcey-operation] > .sourcey-endpoint')).toHaveLength(1);
+    expect(await matches(operation, '[data-sourcey-operation] > .operation-layout > .sourcey-operation-examples')).toHaveLength(1);
     expect(operation).not.toContain('tryit-trigger');
     expect(operation).not.toContain('>JavaScript<');
     expect(operation).not.toContain('>Python<');
   }
+});
+
+test('wide operation pages place the endpoint bar beside the examples', () => {
+  // Sourcey's container is the operation itself, which its own queries cannot lay out, so #content-area hosts one.
+  expect(stylesheet).toMatch(/#sourcey #content-area:has\(> \[data-sourcey-operation\]\) \{\s*container: keysy-operation \/ inline-size;/);
+  expect(stylesheet).toMatch(/@media \(width >= 1280px\) \{\s*@container keysy-operation \(width > 55rem\) \{\s*#sourcey \[data-sourcey-operation\] \{\s*display: grid;\s*grid-template:\s*'header header'\s*'endpoint examples'\s*'intro examples'\s*'details examples' 1fr \/ minmax\(0, 1fr\) 28rem;/);
+  expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
 test('database schema renders the Supabase ERD and the Aiven audit table', async () => {

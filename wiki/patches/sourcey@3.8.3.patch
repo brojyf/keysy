@@ -1,8 +1,8 @@
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde7483a864ed 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..805f4042392dbb18fa164ddc3151657295d2ff26 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
-@@ -170,6 +170,53 @@
+@@ -170,6 +170,43 @@
      });
    }
  
@@ -13,7 +13,6 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde74
 +      var summary = group.querySelector(':scope > summary');
 +      var list = group.querySelector(':scope > ul');
 +      var motion = null;
-+      var frame = 0;
 +      if (!summary || !list || !list.animate) return;
 +      summary.addEventListener('click', function (e) {
 +        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -21,34 +20,25 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde74
 +        var style = window.getComputedStyle(list);
 +        var easing = style.getPropertyValue('--keysy-spring').trim();
 +        var opening = !group.open || 'closing' in group.dataset;
-+        var from = list.getBoundingClientRect().height + 'px';
++        // WebKit reports a closed group's full height, so a closed group starts from zero.
++        var from = group.open ? list.getBoundingClientRect().height + 'px' : '0px';
 +        if (motion) motion.cancel();
-+        if (frame) window.cancelAnimationFrame(frame);
 +        if (opening) delete group.dataset.closing;
 +        else group.dataset.closing = '';
-+        // Hold the current height while a never-opened group renders, then spring next frame;
-+        // Safari skips an animation that starts in the frame that first renders the content.
-+        list.style.height = from;
-+        list.style.overflow = 'hidden';
 +        group.open = true;
-+        frame = window.requestAnimationFrame(function () {
-+          frame = 0;
-+          motion = list.animate(
-+            { height: [from, opening ? list.scrollHeight + 'px' : '0px'], overflow: ['hidden', 'hidden'] },
-+            {
-+              duration: parseFloat(style.getPropertyValue('--keysy-spring-duration')) || 300,
-+              easing: window.CSS && window.CSS.supports('transition-timing-function', easing) ? easing : 'ease-out'
-+            }
-+          );
-+          list.style.height = '';
-+          list.style.overflow = '';
-+          motion.onfinish = function () {
-+            motion = null;
-+            if (opening) return;
-+            group.open = false;
-+            delete group.dataset.closing;
-+          };
-+        });
++        motion = list.animate(
++          { height: [from, opening ? list.scrollHeight + 'px' : '0px'], overflow: ['hidden', 'hidden'] },
++          {
++            duration: parseFloat(style.getPropertyValue('--keysy-spring-duration')) || 300,
++            easing: window.CSS && window.CSS.supports('transition-timing-function', easing) ? easing : 'ease-out'
++          }
++        );
++        motion.onfinish = function () {
++          motion = null;
++          if (opening) return;
++          group.open = false;
++          delete group.dataset.closing;
++        };
 +      });
 +    });
 +  }
@@ -56,7 +46,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde74
    function init() {
      initDesktopSidebarScroll();
  
-@@ -177,6 +224,9 @@
+@@ -177,6 +214,9 @@
      var openBtns = document.querySelectorAll('[data-drawer-slide]');
      if (!dialog) return;
  
@@ -66,7 +56,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde74
      window.matchMedia('(min-width: 1024px)').addEventListener('change', function (event) {
        if (event.matches && dialog.open) dialog.close();
      });
-@@ -192,11 +242,27 @@
+@@ -192,11 +232,27 @@
        if (e.target === dialog) dialog.close();
      });
  
@@ -95,7 +85,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..2eb8718fc72c2d738347bfefe8ddde74
      // Dropdown: toggle list visibility
      var toggle = document.getElementById('drawer-group-toggle');
      var list = document.getElementById('drawer-group-list');
-@@ -225,6 +291,9 @@
+@@ -225,6 +281,9 @@
      });
    }
  
