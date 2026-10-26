@@ -78,16 +78,15 @@ export async function playHeroStory(
     query(row, ".path-prefix").textContent = from;
     query(row, "td").title = `${from}${key}`;
   }
-  await run.wait(150);
   composer.classList.add("typing");
   for (const character of prompt) {
     composer.textContent += character;
     await run.wait(
       character === " "
-        ? 60 + Math.random() * 40
+        ? 40 + Math.random() * 27
         : /[.,]/.test(character)
-          ? 180
-          : 20 + Math.random() * 30,
+          ? 120
+          : 13 + Math.random() * 20,
     );
   }
   composer.classList.remove("typing");

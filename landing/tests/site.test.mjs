@@ -30,6 +30,23 @@ describe("built landing site", () => {
     }
   });
 
+  test("announces coming soon once, in the hero badge", () => {
+    const { document } = pages.get("/");
+    expect(document.querySelector(".hero-badge").textContent).toContain(
+      "Coming soon",
+    );
+    expect(document.body.textContent.match(/Coming soon/g)).toHaveLength(1);
+  });
+
+  test("links the Keysy mark as an SVG favicon on every page", () => {
+    for (const [route, { document }] of pages) {
+      const icon = document.querySelector('link[rel="icon"]');
+      expect(icon?.getAttribute("href"), route).toBe("/favicon.svg");
+      expect(icon.getAttribute("type")).toBe("image/svg+xml");
+    }
+    expect(existsSync(resolve(output, "favicon.svg"))).toBe(true);
+  });
+
   test("renders the coding-agent transcript above its command bar and status", () => {
     const widget = pages.get("/").document.querySelector(".agent-preview");
     expect([...widget.children].map((child) => child.className)).toEqual([
@@ -86,10 +103,10 @@ describe("built landing site", () => {
     }
   });
 
-  test("unreleased destinations are explicitly marked and do not link to invented URLs", () => {
+  test("unreleased destinations are disabled and do not link to invented URLs", () => {
     const { document } = pages.get("/");
     for (const item of document.querySelectorAll('[aria-disabled="true"]')) {
-      expect(item.textContent).toContain("Coming soon");
+      expect(item.textContent).not.toContain("Coming soon");
       expect(item.hasAttribute("href")).toBe(false);
     }
     expect(document.querySelectorAll('a[href^="https:"]')).toHaveLength(1);

@@ -64,7 +64,15 @@ describe("HTML demo stories", () => {
       (row) => row.dataset.secret,
     );
     await playHeroStory(run, root, (state) => states.push(state));
-    expect(run.checkpoints[0].ms).toBe(150);
+    expect(run.checkpoints[0].composer).toBe("M");
+    const typed = run.checkpoints.findIndex(
+      (step) =>
+        step.composer ===
+        "Move the Stripe and Resend keys into production/shared.",
+    );
+    expect(
+      Math.max(...run.checkpoints.slice(0, typed + 1).map((step) => step.ms)),
+    ).toBeLessThanOrEqual(120);
     expect(run.checkpoints[0].path).toBe(
       "production/payments/STRIPE_SECRET_KEY",
     );

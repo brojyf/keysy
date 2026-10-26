@@ -65,7 +65,7 @@ describe("SDK showcase", () => {
       expect(panel.textContent).toContain(`${language} SDK docs`);
       expect(
         panel.querySelector('[aria-disabled="true"]').textContent,
-      ).toContain("Coming soon");
+      ).toBe(`${language} SDK docs ↗`);
       expect(
         container.querySelectorAll('[role="tabpanel"]:not([hidden])'),
       ).toHaveLength(1);

@@ -51,7 +51,7 @@ space from the design's section heights. Below-the-fold images use native lazy
 loading and asynchronous decoding; first-screen images load eagerly.
 
 Unreleased account, documentation, extension, support, and status destinations
-are marked **Coming soon**. Legal pages contain no operative policy or terms.
+are disabled; the hero badge carries the single **Coming soon** notice. Legal pages contain no operative policy or terms.
 Dashboard/SDK links in the footer point to homepage sections; GitHub opens the repository.
 
 Product windows, commands, SDK package names, and availability diagrams reproduce
@@ -65,8 +65,8 @@ The Dashboard follows
 slide in the panel, paste a masked value, choose the reminder, save, and update the folder version.
 Motion spring parameters and the thinking-orbs indicator come from those demos.
 
-The Hero runs once without playback controls, begins typing after a 150 ms initial
-hold, and remains on its completed result. Returning to the Hero does not replay it.
+The Hero runs once without playback controls, begins typing as soon as it hydrates,
+and remains on its completed result. Returning to the Hero does not replay it.
 The Dashboard control pauses
 both transition and hold times. Both stories pause offscreen and while the document
 is hidden, without losing a manual Dashboard pause.

@@ -15,7 +15,6 @@ export function ComingSoon({
       aria-disabled="true"
     >
       {children}
-      <small>Coming soon</small>
     </span>
   );
 }
