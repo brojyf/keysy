@@ -7,7 +7,7 @@ type Listener = (event: Record<string, unknown>) => void;
 type Motion = { onfinish: null | (() => void); cancel: ReturnType<typeof mock> };
 
 // Run Sourcey's patched sidebar script against one collapsible endpoint group.
-function loadGroup({ open = false, reducedMotion = false, linearEasing = true } = {}) {
+function loadGroup({ open = false, reducedMotion = false, linearEasing = true, loaded = true } = {}) {
   let onSummaryClick: Listener = () => {};
   let onLoad = () => {};
   const motions: Motion[] = [];
@@ -41,7 +41,7 @@ function loadGroup({ open = false, reducedMotion = false, linearEasing = true } 
     querySelectorAll: (selector: string) => selector === 'details.sourcey-nav-group' ? [group] : [],
   };
   runInNewContext(sidebarScript, { window, document });
-  onLoad();
+  if (loaded) onLoad();
   function click() {
     const event = { preventDefault: mock() };
     onSummaryClick(event);
@@ -87,6 +87,12 @@ test('browsers without linear() easing fall back to ease-out', () => {
   const { list, click } = loadGroup({ linearEasing: false });
   click();
   expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: 'ease-out' });
+});
+
+test('the first click springs open before the page finishes loading', () => {
+  const { list, click } = loadGroup({ loaded: false });
+  expect(click().preventDefault).toHaveBeenCalledTimes(1);
+  expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: spring });
 });
 
 test('reduced motion keeps the native instant toggle', () => {

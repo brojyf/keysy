@@ -74,8 +74,10 @@
   color: rgb(var(--color-gray-400));
 }
 
-/* sidebar.js keeps a closing group open until its height animation ends. */
-#sourcey .sourcey-nav-group[data-closing] > summary::before {
+/* sidebar.js keeps a closing group open until its height animation ends.
+   Sourcey draws the desktop chevron with ::after inside #nav, and the drawer chevron with ::before. */
+#sourcey .sourcey-nav-group[open][data-closing] > summary::before,
+#sourcey #nav .sourcey-nav-group[open][data-closing] > summary::after {
   transform: rotate(-45deg);
 }
 
@@ -318,7 +320,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  #sourcey .sourcey-nav-group > summary::before {
+  #sourcey .sourcey-nav-group > summary::before,
+  #sourcey #nav .sourcey-nav-group > summary::after {
     transition: transform var(--keysy-spring-duration) var(--keysy-spring);
   }
 }

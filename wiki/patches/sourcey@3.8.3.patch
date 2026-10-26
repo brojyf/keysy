@@ -1,8 +1,8 @@
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..9b40a18b8ff06ba40cc225352a57e355eaa5dc7e 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..4155554c0a00255a46c1b9d7bfae82ae811dca92 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
-@@ -170,13 +170,53 @@
+@@ -170,6 +170,42 @@
      });
    }
  
@@ -44,9 +44,8 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..9b40a18b8ff06ba40cc225352a57e355
 +
    function init() {
      initDesktopSidebarScroll();
-+    initNavGroupMotion();
  
-     var dialog = document.getElementById('mobile-nav');
+@@ -177,6 +213,9 @@
      var openBtns = document.querySelectorAll('[data-drawer-slide]');
      if (!dialog) return;
  
@@ -56,7 +55,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..9b40a18b8ff06ba40cc225352a57e355
      window.matchMedia('(min-width: 1024px)').addEventListener('change', function (event) {
        if (event.matches && dialog.open) dialog.close();
      });
-@@ -192,11 +232,27 @@
+@@ -192,11 +231,27 @@
        if (e.target === dialog) dialog.close();
      });
  
@@ -85,6 +84,16 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..9b40a18b8ff06ba40cc225352a57e355
      // Dropdown: toggle list visibility
      var toggle = document.getElementById('drawer-group-toggle');
      var list = document.getElementById('drawer-group-list');
+@@ -225,6 +280,9 @@
+     });
+   }
+ 
++  // Attach now, not after idle or load, so the first click already springs.
++  initNavGroupMotion();
++
+   if ('requestIdleCallback' in window) {
+     window.requestIdleCallback(init, { timeout: 250 });
+   } else {
 diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
 index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
 --- a/dist/client/theme-init.js
