@@ -245,6 +245,21 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(auth).toContain('Exchange the sign-in code for a session');
 });
 
+test('API and Auth sidebars list every endpoint by path under API endpoints, with cURL samples only', async () => {
+  for (const [route, firstPath] of [['api', '/v1/me'], ['auth', '/v1/auth/google']]) {
+    const html = await Bun.file(new URL(`${route}.html`, output)).text();
+    const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${route === 'api' ? 'API' : 'Auth'}"[^>]*>[\\s\\S]*?</nav>`))![0];
+    const labels = [...sidebar.matchAll(/>([^<>]+)</g)].map((match) => match[1]!.trim()).filter(Boolean);
+    const operationCount = (await matches(html, '.sourcey-endpoint')).length;
+    expect(labels[0]).toBe('API endpoints');
+    expect(labels[2]).toBe(firstPath);
+    expect(labels.filter((label) => label.startsWith('/v1/'))).toHaveLength(operationCount);
+    expect(html).not.toContain('tryit-trigger');
+    expect(html).not.toContain('>JavaScript<');
+    expect(html).not.toContain('>Python<');
+  }
+});
+
 test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
   expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
