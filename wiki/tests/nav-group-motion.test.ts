@@ -41,7 +41,7 @@ test('opening a collapsed endpoint group animates its height from zero', () => {
   expect(group.open).toBe(true);
   expect(list.animate).toHaveBeenCalledWith(
     { height: ['0px', '120px'], overflow: ['hidden', 'hidden'] },
-    { duration: 250, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+    { duration: 200, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
   );
   animation.onfinish!();
   expect(group.open).toBe(true);
@@ -54,7 +54,7 @@ test('closing an endpoint group animates to zero before closing it', () => {
   expect('closing' in group.dataset).toBe(true);
   expect(list.animate).toHaveBeenCalledWith(
     { height: ['120px', '0px'], overflow: ['hidden', 'hidden'] },
-    { duration: 250, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+    { duration: 150, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
   );
   animation.onfinish!();
   expect(group.open).toBe(false);
