@@ -6,6 +6,8 @@ info:
     The application API provides Keysy's app features: orgs and members, secrets and their versions,
     access policies, services, AI reorganization, and audit logs.
 
+    This is the v0 draft, not a stable release.
+
     This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
 tags:
   - name: Orgs

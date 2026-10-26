@@ -253,6 +253,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(stylesheet).toMatch(/#sourcey #content-area > header \.h-5,\s*#sourcey #content-area > article > \.h-5,\s*#sourcey #content-area > article > header h1 \+ span \{\s*display: none;/);
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
+  expect(api).toContain('This is the v0 draft, not a stable release.');
   expect(api).toContain("The application API provides Keysy's app features");
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
@@ -260,6 +261,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   }
   const auth = await Bun.file(new URL('auth.html', output)).text();
   expect(auth).toContain('the source of truth for the authentication API.');
+  expect(auth).toContain('This is the v0 draft, not a stable release.');
   expect(auth).toContain('Exchange the sign-in code for a session');
   expect(auth).toContain('The authentication API signs users in to Keysy with Google');
   // Each operation loads on its own page, so the overview stays small.

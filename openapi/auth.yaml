@@ -6,6 +6,8 @@ info:
     The authentication API signs users in to Keysy with Google and manages their sessions for the
     web app, CLI, and browser extension.
 
+    This is the v0 draft, not a stable release.
+
     This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
 tags:
   - name: Session
