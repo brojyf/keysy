@@ -1285,6 +1285,8 @@ components:
         targetId:
           type: string
           format: uuid
+          nullable: true
+          description: Null when the attempt never created its target, such as a denied or failed create.
         outcome:
           type: string
           enum: [success, denied, failed]

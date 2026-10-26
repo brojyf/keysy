@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@keysy/docs",
+      "name": "@keysy/wiki",
       "devDependencies": {
         "@types/bun": "1.4.3",
         "sourcey": "3.8.3",

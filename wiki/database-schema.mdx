@@ -147,7 +147,7 @@ and failed ones, and never stores secret values.
 | `actor_id` | `uuid` | The Supabase Auth user ID of the user who made the change. |
 | `action` | `text` | For example, `secret.version_created`. |
 | `target_type` | `text` | `secret`, `policy`, `member`, or `service`. |
-| `target_id` | `uuid` | |
+| `target_id` | `uuid` | Null when the attempt never created its target, such as a denied or failed create. |
 | `outcome` | `text` | `success`; `denied` when authorization rejects the change; `failed` when an authorized change does not commit. |
 | `occurred_at` | `timestamptz` | |
 
