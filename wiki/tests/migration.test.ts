@@ -10,6 +10,7 @@ const routes = [
   ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
   ['database-schema', 'Database schema'],
+  ['design', 'Design'],
   ['project-management-plan', 'Project management plan'],
   ['references', 'References'],
   ['api', 'Keysy API'],
@@ -33,7 +34,7 @@ test('navigation preserves the six original sections and includes references und
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design', '/database-schema', '/project-management-plan', '/references',
+    '/', '/prd', '/tech-stack', '/system-design', '/database-schema', '/design', '/project-management-plan', '/references',
   ]);
 });
 
@@ -261,6 +262,7 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
     expect(labels.filter((entry) => entry.startsWith('/v1/'))).toHaveLength(operationCount);
     expect(await matches(sidebar, 'details.sourcey-nav-group')).toHaveLength(groupCount);
     expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);
+    expect(html).not.toContain('>Base URL<');
     expect(html).not.toContain('tryit-trigger');
     expect(html).not.toContain('>JavaScript<');
     expect(html).not.toContain('>Python<');
@@ -273,6 +275,18 @@ test('database schema renders the Supabase ERD and the Aiven audit table', async
   for (const table of ['orgs', 'members', 'secrets', 'secret_versions', 'secret_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
     expect(html).toContain(`<code>${table}</code>`);
   }
+});
+
+test('design points to the design directory for all design assets', async () => {
+  const html = await Bun.file(new URL('design.html', output)).text();
+  expect(html).toContain('<code>design/</code>');
+  for (const asset of ['Figma', 'logo', 'CSS', 'theme']) expect(html).toContain(asset);
+});
+
+test('collapsible endpoint groups animate and use lighter labels than section titles', () => {
+  expect(stylesheet).toContain('#sourcey .sourcey-nav-group > summary .nav-group-label');
+  expect(stylesheet).toContain('#sourcey .sourcey-nav-group::details-content');
+  expect(stylesheet).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*interpolate-size: allow-keywords/);
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {

@@ -44,7 +44,8 @@ themes. CSS provides a 250 ms drawer exit over the incoming page
 using cross-document View Transitions, without delaying navigation. A Bun patch in
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks
-the active desktop tab with `aria-current="page"`. Desktop tab underlines move
+the active desktop tab with `aria-current="page"`. It also hides the default `/` Base URL on
+OpenAPI pages, since the specs define no servers. Desktop tab underlines move
 between pages with a 360 ms standard easing curve, starting and ending at rest.
 Appearance clicks use a single 300 ms ease-in-out page cross-fade so background,
 text and icons change together, without repeated transitions on inherited colors.

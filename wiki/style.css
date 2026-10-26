@@ -58,6 +58,11 @@
   font-weight: 700;
 }
 
+/* Collapsible endpoint groups sit below section titles. */
+#sourcey .sourcey-nav-group > summary .nav-group-label {
+  font-weight: 500;
+}
+
 #sourcey .nav-link.active,
 .dark #sourcey .nav-link.active {
   color: var(--keysy-text);
@@ -293,5 +298,25 @@
     to {
       transform: translateX(-100%);
     }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #sourcey .sourcey-nav-group {
+    interpolate-size: allow-keywords;
+  }
+
+  #sourcey .sourcey-nav-group::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 200ms ease-in-out, content-visibility 200ms ease-in-out allow-discrete;
+  }
+
+  #sourcey .sourcey-nav-group[open]::details-content {
+    block-size: auto;
+  }
+
+  #sourcey .sourcey-nav-group > summary::before {
+    transition: transform 200ms ease-in-out;
   }
 }
