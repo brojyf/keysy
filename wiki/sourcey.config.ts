@@ -38,6 +38,7 @@ export default defineConfig({
     name: 'default',
     colors: { primary: '#1d4ed8', light: '#7aa2ff', dark: '#2f5aba' },
     fonts: { sans: 'Geist', mono: 'Geist Mono' },
+    layout: { sidebar: '16rem' },
     css: ['./style.css'],
   },
   navbar: {
