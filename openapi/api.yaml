@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    Keysy application API.
+    The application API manages orgs, members, secrets, policies, services, AI reorganizations, and audit log queries.
 
     Roles are per org: `super_admin`, `admin`, and `user`. Only Admins and
     Super Admins create or modify secrets, policies, and services. Users and

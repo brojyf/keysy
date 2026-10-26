@@ -3,16 +3,26 @@ import { defineConfig, markdown, openapi } from 'sourcey';
 import { architectureDiagram } from './components/architecture-diagram';
 
 // Lists each operation by its path, in spec order, from the `paths` block's fixed indentation.
+// Specs with several tags get one collapsed group per tag.
 function endpointNavigation(specPath: string) {
   const spec = readFileSync(new URL(specPath, import.meta.url), 'utf8');
-  const operations: { operation: string; label: string }[] = [];
+  const tagGroups = new Map<string, { group: string; collapsed: boolean; pages: { operation: string; label: string }[] }>();
   let path = '';
+  let operation = '';
   for (const line of spec.slice(spec.indexOf('\npaths:'), spec.indexOf('\ncomponents:')).split('\n')) {
     path = line.match(/^  (\/\S+):$/)?.[1] ?? path;
     const method = line.match(/^    (get|put|post|delete|patch):$/)?.[1];
-    if (method) operations.push({ operation: `${method.toUpperCase()} ${path}`, label: path });
+    if (method) operation = `${method.toUpperCase()} ${path}`;
+    const tag = line.match(/^      tags: \[(.+)\]$/)?.[1];
+    if (!tag) continue;
+    if (!tagGroups.has(tag)) tagGroups.set(tag, { group: tag, collapsed: true, pages: [] });
+    tagGroups.get(tag)!.pages.push({ operation, label: path });
   }
-  return [{ group: 'API endpoints', pages: operations }];
+  const groups = [...tagGroups.values()];
+  return [
+    { group: 'General', pages: [{ page: 'introduction', label: 'Introduction' }] },
+    { group: 'API endpoints', pages: groups.length > 1 ? groups : groups.flatMap((group) => group.pages) },
+  ];
 }
 
 export default defineConfig({

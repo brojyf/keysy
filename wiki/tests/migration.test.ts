@@ -237,6 +237,7 @@ test('PRD requirements and endpoint callout content are published', async () => 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
+  expect(api).toContain('The application API manages orgs, members, secrets, policies, services, AI reorganizations, and audit log queries.');
   for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
     expect(api).toContain(operation);
   }
@@ -245,15 +246,19 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(auth).toContain('Exchange the sign-in code for a session');
 });
 
-test('API and Auth sidebars list every endpoint by path under API endpoints, with cURL samples only', async () => {
-  for (const [route, firstPath] of [['api', '/v1/me'], ['auth', '/v1/auth/google']]) {
+test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
+  for (const [route, label, firstEntries, groupCount] of [
+    ['api', 'API', ['Orgs', 'GET', '/v1/me'], 7],
+    ['auth', 'Auth', ['GET', '/v1/auth/google'], 0],
+  ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
-    const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${route === 'api' ? 'API' : 'Auth'}"[^>]*>[\\s\\S]*?</nav>`))![0];
+    const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?</nav>`))![0];
     const labels = [...sidebar.matchAll(/>([^<>]+)</g)].map((match) => match[1]!.trim()).filter(Boolean);
     const operationCount = (await matches(html, '.sourcey-endpoint')).length;
-    expect(labels[0]).toBe('API endpoints');
-    expect(labels[2]).toBe(firstPath);
-    expect(labels.filter((label) => label.startsWith('/v1/'))).toHaveLength(operationCount);
+    expect(labels.slice(0, 3 + firstEntries.length)).toEqual(['General', 'Introduction', 'API endpoints', ...firstEntries]);
+    expect(labels.filter((entry) => entry.startsWith('/v1/'))).toHaveLength(operationCount);
+    expect(await matches(sidebar, 'details.sourcey-nav-group')).toHaveLength(groupCount);
+    expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);
     expect(html).not.toContain('tryit-trigger');
     expect(html).not.toContain('>JavaScript<');
     expect(html).not.toContain('>Python<');
