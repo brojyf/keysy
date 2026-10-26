@@ -294,6 +294,35 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
   }
 });
 
+test('operation page headings show the endpoint path', async () => {
+  for (const [route, path] of [
+    ['api/operations/operation-v1-orgs-post', '/v1/orgs'],
+    ['api/operations/operation-v1-orgs-orgid-settings-patch', '/v1/orgs/{orgId}/settings'],
+    ['auth/operations/operation-v1-auth-google-get', '/v1/auth/google'],
+  ]) {
+    const html = await Bun.file(new URL(`${route}.html`, output)).text();
+    expect(await matches(html, '[data-sourcey-operation] h1')).toHaveLength(1);
+    expect(html).toMatch(new RegExp(`<h1[^>]*>${path}</h1>`));
+  }
+});
+
+test('response examples keep separate cards and one moving underline per status tab', async () => {
+  const html = await Bun.file(new URL('api/operations/operation-v1-orgs-orgid-settings-patch.html', output)).text();
+  expect(await matches(html, '#responses details.schema-expandable')).not.toHaveLength(0);
+  const tabs = await matches(html, '.response-tab');
+  expect(tabs.length).toBeGreaterThan(1);
+  expect(await matches(html, '.response-tab > .keysy-response-indicator[aria-hidden="true"]')).toHaveLength(tabs.length);
+  expect(stylesheet).toMatch(/#sourcey \.sourcey-operation-examples > \.code-group \+ \.code-group\s*\{\s*margin-top: 1rem;/);
+});
+
+test('single-column operation pages read fields and responses before terminal examples', async () => {
+  const html = await Bun.file(new URL('api/operations/operation-v1-orgs-orgid-settings-patch.html', output)).text();
+  const children = (await matches(html, '[data-sourcey-operation] > .operation-layout > *')).map(({ class: name }) => name);
+  expect(children).toContain('operation-details');
+  expect(children).toContain('sourcey-operation-examples');
+  expect(children.indexOf('operation-details')).toBeLessThan(children.indexOf('sourcey-operation-examples'));
+});
+
 test('wide operation pages place the endpoint bar beside the examples', () => {
   // Sourcey's container is the operation itself, which its own queries cannot lay out, so #content-area hosts one.
   expect(stylesheet).toMatch(/#sourcey #content-area:has\(> \[data-sourcey-operation\]\) \{\s*container: keysy-operation \/ inline-size;/);

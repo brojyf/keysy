@@ -46,13 +46,18 @@ using cross-document View Transitions, without delaying navigation. A Bun patch 
 its snapshot and clears it on back-forward cache restoration. The patch also marks
 the active desktop tab with `aria-current="page"`. It also hides the default `/` Base URL on
 OpenAPI pages, since the specs define no servers. It springs collapsible sidebar groups from
-their current height with `--keysy-spring` from `style.css`; reduced motion keeps the native toggle. Desktop tab underlines move
+their current height with `--keysy-spring` from `style.css`; response field disclosures share the
+same spring at 500 ms and turn their chevrons with it. Reduced motion keeps the native toggle. Desktop tab underlines move
 between pages with a 360 ms standard easing curve, starting and ending at rest.
 Appearance clicks use a single 300 ms ease-in-out page cross-fade so background,
 text and icons change together, without repeated transitions on inherited colors.
 Both snapshots use the same timing and isolated additive blending to preserve
 the intended cross-fade. New clicks interrupt the previous fade; initial
-page load does not animate. Recheck this patch when upgrading Sourcey. Unsupported
+page load does not animate. Response status underlines use the same 360 ms easing as the
+desktop tabs and continue from their current position on rapid clicks. Example cards have a
+1 rem gap and follow the fields and responses in a single column; wide pages keep them
+beside the content. Operation page headings show the endpoint path, preserving existing URLs.
+Recheck this patch when upgrading Sourcey. Unsupported
 browsers switch directly; reduced motion disables custom motion.
 The underline uses [Material's standard easing](https://m2.material.io/develop/android/theming/motion);
 snapshot blending follows [Chrome's View Transition guidance](https://developer.chrome.com/docs/web-platform/view-transitions/same-document).
