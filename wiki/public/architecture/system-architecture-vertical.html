@@ -5822,7 +5822,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>Reliability</h3>
         </div>
         <ul>
-          <li>Outbox row commits in the same transaction as business data</li>
+          <li>Successful changes commit their outbox row in the same transaction as business data</li>
           <li>Kafka keyed by aggregate ID; failed events go to a DLQ topic</li>
           <li>notify commits its offset only after the enqueue succeeds</li>
         </ul>
@@ -5836,6 +5836,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>api authorizes the user, then queries the audit read API</li>
           <li>Only audit reads or writes the audit database</li>
+          <li>Denied or failed change attempts commit their outbox row in a separate transaction</li>
         </ul>
       </div>
 
@@ -5846,7 +5847,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>notify picks recipient and template; job_id = hash(event_id + template)</li>
-          <li>email-high: security alerts and invites; email-low: everything else</li>
+          <li>email-high: security alerts and member-added notices; email-low: everything else</li>
           <li>email-worker sends with Idempotency-Key = job_id; 429/5xx retried with delay</li>
           <li>Bounces and complaints handled by the Resend suppression list</li>
         </ul>

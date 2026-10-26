@@ -401,7 +401,7 @@
       "dot": "emerald",
       "title": "Reliability",
       "items": [
-        "Outbox row commits in the same transaction as business data",
+        "Successful changes commit their outbox row in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
         "notify commits its offset only after the enqueue succeeds"
       ]
@@ -411,7 +411,8 @@
       "title": "Audit",
       "items": [
         "api authorizes the user, then queries the audit read API",
-        "Only audit reads or writes the audit database"
+        "Only audit reads or writes the audit database",
+        "Denied or failed change attempts commit their outbox row in a separate transaction"
       ]
     },
     {
@@ -419,7 +420,7 @@
       "title": "Email delivery",
       "items": [
         "notify picks recipient and template; job_id = hash(event_id + template)",
-        "email-high: security alerts and invites; email-low: everything else",
+        "email-high: security alerts and member-added notices; email-low: everything else",
         "email-worker sends with Idempotency-Key = job_id; 429/5xx retried with delay",
         "Bounces and complaints handled by the Resend suppression list"
       ]
