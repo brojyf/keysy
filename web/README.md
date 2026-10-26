@@ -9,7 +9,7 @@ Minimal Astro + React + TypeScript scaffold for the Keysy landing page.
 
 ## Development
 
-Run from `landing/`:
+Run from `web/`:
 
 ```sh
 bun install --frozen-lockfile
