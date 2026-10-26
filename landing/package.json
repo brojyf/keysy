@@ -9,12 +9,15 @@
   "scripts": {
     "dev": "astro dev",
     "check": "astro sync && tsc --noEmit",
+    "test": "astro build && bun test",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.1",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "astro": "^7.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
@@ -22,6 +25,7 @@
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "happy-dom": "^21.0.4",
     "typescript": "7.0.2"
   }
 }

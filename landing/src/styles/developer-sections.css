@@ -1,0 +1,204 @@
+.code-error {
+  color: #f7b0af;
+}
+.split-section {
+  display: grid;
+  grid-template-columns: minmax(0, 496fr) minmax(0, 640fr);
+  gap: 64px;
+  align-items: start;
+}
+.split-section h2 {
+  font-size: 44px;
+  line-height: 48px;
+}
+.workflow-section .section-heading {
+  margin-bottom: 28px;
+}
+.workflow-steps {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.workflow-steps li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+}
+.workflow-steps li > span {
+  padding: 5px 8px;
+  font:
+    12px "Geist Mono Variable",
+    monospace;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.workflow-steps h3 {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.workflow-steps p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 19px;
+}
+.workflow-terminal {
+  position: relative;
+  margin-top: 33px;
+  border: 1px solid #293449;
+  background: #101b30;
+  border-radius: 16px;
+  color: #d8e1f0;
+  box-shadow: 0 20px 50px -20px #101b3070;
+}
+.workflow-glow {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: calc(50% - 380px);
+  pointer-events: none;
+}
+.workflow-terminal pre {
+  overflow-x: auto;
+  padding: 22px 24px;
+  font-size: 13px;
+  line-height: 26px;
+}
+.code-keyword {
+  color: var(--accent);
+}
+.code-string {
+  color: #b45309;
+}
+.code-comment {
+  color: var(--muted);
+}
+.workflow-terminal .code-keyword {
+  color: #c4b5fd;
+}
+.workflow-terminal .code-string {
+  color: #7dd3a8;
+}
+.workflow-terminal .code-comment,
+.hero-terminal .code-comment {
+  color: #aab8d0;
+}
+.sdk-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.sdk-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.sdk-tabs button {
+  display: grid;
+  place-items: center;
+  height: 72px;
+  background: var(--bg);
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.sdk-tabs button:last-child {
+  border-right: 0;
+}
+.sdk-tabs button[aria-selected="true"] {
+  background: var(--surface);
+  border-bottom-color: transparent;
+}
+.sdk-tabs button[aria-selected="false"] img {
+  opacity: 0.5;
+}
+.sdk-tabs button:hover img {
+  opacity: 1;
+}
+.sdk-card pre {
+  height: 300px;
+  overflow: auto;
+  padding: 28px;
+  font-size: 13px;
+  line-height: 24px;
+}
+.sdk-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 20px 28px;
+  gap: 12px;
+}
+.sdk-footer > span:first-child {
+  font:
+    11px "Geist Mono Variable",
+    monospace;
+  color: var(--muted);
+}
+.sdk-footer .unavailable {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+@media (max-width: 1000px) {
+  .split-section {
+    gap: 32px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+}
+@media (max-width: 700px) {
+  .split-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+  .split-section h2 {
+    font-size: 36px;
+    line-height: 40px;
+  }
+  .workflow-section .section-heading {
+    margin-bottom: 28px;
+  }
+  .workflow-steps li {
+    padding-inline: 0;
+  }
+  .workflow-steps p {
+    font-size: 12px;
+  }
+  .workflow-terminal {
+    margin-top: 0;
+    max-width: 100%;
+  }
+  .workflow-terminal pre {
+    font-size: 10px;
+    line-height: 23px;
+    padding: 18px 16px;
+  }
+  .sdk-section .section-heading {
+    margin-bottom: 0;
+  }
+  .sdk-card pre {
+    padding: 24px 18px;
+    font-size: 11px;
+    line-height: 24px;
+    height: 322px;
+  }
+  .sdk-tabs button {
+    height: 64px;
+  }
+  .sdk-footer {
+    padding: 0 14px 20px 18px;
+  }
+  .sdk-footer .unavailable {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+  .sdk-footer > span:first-child {
+    font-size: 9px;
+  }
+}

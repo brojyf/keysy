@@ -1,0 +1,280 @@
+{
+  "36620": {
+    "imgGlowBlue": {
+      "file": "1481a.svg",
+      "width": 1180.0,
+      "height": 720.0
+    }
+  },
+  "36838": {
+    "imgIconGo": {
+      "file": "ad935.svg",
+      "width": 32.0,
+      "height": 32.0
+    },
+    "imgIconTypescript": {
+      "file": "9a66b.svg",
+      "width": 26.0,
+      "height": 26.0
+    },
+    "imgIconPython": {
+      "file": "5b9a3.svg",
+      "width": 26.0,
+      "height": 26.0
+    },
+    "imgIconRust": {
+      "file": "d2926.svg",
+      "width": 26.0,
+      "height": 26.0
+    },
+    "imgIconOpenjdk": {
+      "file": "9cd73.svg",
+      "width": 26.0,
+      "height": 26.0
+    },
+    "imgIconDotnet": {
+      "file": "ae05a.svg",
+      "width": 26.0,
+      "height": 26.0
+    }
+  },
+  "36545": {
+    "imgGlow": {
+      "file": "57dc9.svg",
+      "width": 380.0,
+      "height": 260.0
+    },
+    "imgIconLock": {
+      "file": "893c9.svg",
+      "width": 14.0,
+      "height": 14.0
+    },
+    "imgIconLock1": {
+      "file": "462f0.svg",
+      "width": 11.0,
+      "height": 11.0
+    },
+    "imgIconLock2": {
+      "file": "55ece.svg",
+      "width": 9.0,
+      "height": 9.0
+    },
+    "imgIconLock3": {
+      "file": "0a383.svg",
+      "width": 10.0,
+      "height": 10.0
+    }
+  },
+  "36008": {
+    "imgDotPattern": {
+      "file": "e6216.png",
+      "width": 25,
+      "height": 25
+    },
+    "imgGlowBlue": {
+      "file": "d9a3e.svg",
+      "width": 1300.0,
+      "height": 760.0
+    },
+    "imgGlowSky": {
+      "file": "17eb5.svg",
+      "width": 740.0,
+      "height": 580.0
+    },
+    "imgGlowPeriwinkle": {
+      "file": "4cc8b.svg",
+      "width": 700.0,
+      "height": 560.0
+    },
+    "imgEllipse": {
+      "file": "94828.svg",
+      "width": 18.0,
+      "height": 18.0
+    },
+    "imgEllipse1": {
+      "file": "0e59c.svg",
+      "width": 9.0,
+      "height": 9.0
+    },
+    "imgIconLock": {
+      "file": "6af73.svg",
+      "width": 10.8,
+      "height": 10.8
+    },
+    "imgIcon": {
+      "file": "e3484.svg",
+      "width": 13.5,
+      "height": 13.5
+    },
+    "imgIcon1": {
+      "file": "7692f.svg",
+      "width": 13.5,
+      "height": 13.5
+    },
+    "imgIcon2": {
+      "file": "8d212.svg",
+      "width": 13.5,
+      "height": 13.5
+    },
+    "imgIcon3": {
+      "file": "bc93c.svg",
+      "width": 13.5,
+      "height": 13.5
+    },
+    "imgIcon4": {
+      "file": "09176.svg",
+      "width": 13.5,
+      "height": 13.5
+    },
+    "imgIconSearch": {
+      "file": "5f62a.svg",
+      "width": 12.6,
+      "height": 12.6
+    },
+    "imgIconSparkle": {
+      "file": "f25d8.svg",
+      "width": 11.3143,
+      "height": 11.3143
+    },
+    "imgIcon5": {
+      "file": "e45fd.svg",
+      "width": 9.9,
+      "height": 9.9
+    },
+    "imgIcon6": {
+      "file": "9c0a3.svg",
+      "width": 9.9,
+      "height": 9.9
+    },
+    "imgIcon7": {
+      "file": "ef693.svg",
+      "width": 9.9,
+      "height": 9.9
+    },
+    "imgEllipse2": {
+      "file": "564ff.svg",
+      "width": 5.67,
+      "height": 5.67
+    },
+    "imgEllipse3": {
+      "file": "48d62.svg",
+      "width": 5.67,
+      "height": 5.67
+    },
+    "imgEllipse4": {
+      "file": "33a07.svg",
+      "width": 5.67,
+      "height": 5.67
+    }
+  },
+  "36776": {
+    "imgEllipse": {
+      "file": "418c9.svg",
+      "width": 760.0,
+      "height": 560.0
+    },
+    "imgEllipse1": {
+      "file": "e2e1e.svg",
+      "width": 10.0,
+      "height": 10.0
+    },
+    "imgEllipse2": {
+      "file": "fac71.svg",
+      "width": 10.0,
+      "height": 10.0
+    },
+    "imgEllipse3": {
+      "file": "0ea8c.svg",
+      "width": 10.0,
+      "height": 10.0
+    }
+  },
+  "36000": {
+    "imgKeysyLogo": {
+      "file": "46b7d.svg",
+      "width": 84.24,
+      "height": 30.6
+    }
+  },
+  "36844": {
+    "imgDotPattern": {
+      "file": "e6216.png",
+      "width": 25,
+      "height": 25
+    },
+    "imgEllipse": {
+      "file": "72c52.svg",
+      "width": 800.0,
+      "height": 500.0
+    }
+  },
+  "36275": {
+    "imgIcon": {
+      "file": "08447.svg",
+      "width": 20.0,
+      "height": 20.0
+    },
+    "imgIcon1": {
+      "file": "4dea7.svg",
+      "width": 20.0,
+      "height": 20.0
+    },
+    "imgIcon2": {
+      "file": "4d02e.svg",
+      "width": 20.0,
+      "height": 20.0
+    },
+    "imgKeysyMark": {
+      "file": "a3a5b.svg",
+      "width": 16.0,
+      "height": 16.0
+    },
+    "imgIcon3": {
+      "file": "b8600.svg",
+      "width": 20.0,
+      "height": 20.0
+    }
+  },
+  "platform": {
+    "64:36379": {
+      "file": "64-36379.svg",
+      "width": 12,
+      "height": 12
+    },
+    "64:36400": {
+      "file": "64-36400.svg",
+      "width": 11,
+      "height": 11
+    },
+    "64:36410": {
+      "file": "64-36410.svg",
+      "width": 14,
+      "height": 14
+    },
+    "64:36428": {
+      "file": "64-36428.svg",
+      "width": 14,
+      "height": 14
+    },
+    "64:36432": {
+      "file": "64-36432.svg",
+      "width": 14,
+      "height": 14
+    },
+    "64:36436": {
+      "file": "64-36436.svg",
+      "width": 14,
+      "height": 14
+    },
+    "64:36440": {
+      "file": "64-36440.svg",
+      "width": 14,
+      "height": 14
+    },
+    "64:36444": {
+      "file": "64-36444.svg",
+      "width": 14,
+      "height": 14
+    }
+  }
+}

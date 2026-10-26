@@ -160,8 +160,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Typecheck
         run: bun run check
-      - name: Build
-        run: bun run build
+      - name: Build and test
+        run: bun run test
 
   cli:
     name: CLI
