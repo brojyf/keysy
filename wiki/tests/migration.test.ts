@@ -207,7 +207,8 @@ test('development tools publishes the tool descriptions and relocated references
   expect(html).toContain('Figma Console MCP');
   const links = (await matches(html, '#content-area a[href]')).map(({ href }) => href);
   expect(links).toContain('https://github.com/southleft/figma-console-mcp');
-  expect(links).toContain('https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao');
+  expect(links).not.toContain('https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao');
+  expect(html).not.toContain('Landing Page');
   expect(links).toContain('https://github.com/multica-ai/andrej-karpathy-skills');
   const readme = await Bun.file(new URL('../../README.md', import.meta.url)).text();
   expect(readme).not.toContain('## References');
