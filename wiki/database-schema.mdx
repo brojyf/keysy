@@ -133,12 +133,12 @@ erDiagram
 | `services` | Service identities. `name` is unique per org. |
 | `service_tokens` | Hashes of service tokens. Revoking a token deletes its row. |
 | `reorganizations` | AI reorganization proposals, `proposed` or `applied`. `plan` stores the moves, policy changes, and access diff returned by the API. |
-| `outbox` | Domain events written in the same transaction as each change. The outbox relay publishes them to Kafka, keyed by `aggregate_id`. |
+| `outbox` | Domain events. A successful change writes its event in the same transaction; a denied or failed change attempt writes its event in a separate transaction. The outbox relay publishes them to Kafka, keyed by `aggregate_id`. |
 
 ## Aiven PostgreSQL
 
-The `audit` service consumes Kafka events and owns this database. It records changes only and never stores
-secret values.
+The `audit` service consumes Kafka events and owns this database. It records change attempts, including denied
+and failed ones, and never stores secret values.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -148,7 +148,7 @@ secret values.
 | `action` | `text` | For example, `secret.version_created`. |
 | `target_type` | `text` | `secret`, `policy`, `member`, or `service`. |
 | `target_id` | `uuid` | |
-| `outcome` | `text` | `success`, `denied`, or `failed`. |
+| `outcome` | `text` | `success`; `denied` when authorization rejects the change; `failed` when an authorized change does not commit. |
 | `occurred_at` | `timestamptz` | |
 
 `audit_logs` has an index on `(org_id, occurred_at desc)` for the audit log API.

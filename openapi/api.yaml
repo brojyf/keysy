@@ -795,8 +795,9 @@ paths:
       operationId: listAuditLogs
       summary: List audit logs
       description: |
-        Admin or Super Admin. Records changes only; secret value retrievals
-        are not audited. Records never contain secret values.
+        Admin or Super Admin. Records change attempts, including denied and
+        failed ones; secret value retrievals are not audited. Records never
+        contain secret values.
       parameters:
         - name: targetType
           in: query
@@ -1285,6 +1286,7 @@ components:
         outcome:
           type: string
           enum: [success, denied, failed]
+          description: '`denied` when authorization rejects the change; `failed` when an authorized change does not commit.'
         occurredAt:
           type: string
           format: date-time
