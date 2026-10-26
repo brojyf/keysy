@@ -77,13 +77,13 @@ test('system design embeds the interactive architecture and preserves its public
 test('the architecture reads left to right, then email delivery turns back beneath it', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
-  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka'];
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify'];
   for (let index = 1; index < mainPath.length; index++) {
     const previous = nodes.get(mainPath[index - 1]!)!;
     const next = nodes.get(mainPath[index]!)!;
     expect(next.pos[0]!).toBeGreaterThan(previous.pos[0]! + previous.size[0]!);
   }
-  for (const [upper, lower] of [['kafka', 'notify'], ['notify', 'cfqueue'], ['worker', 'emaildlq']]) {
+  for (const [upper, lower] of [['notify', 'cfqueue'], ['worker', 'emaildlq']]) {
     expect(nodes.get(lower!)!.pos[0]).toBe(nodes.get(upper!)!.pos[0]);
     expect(nodes.get(lower!)!.pos[1]!).toBeGreaterThan(nodes.get(upper!)!.pos[1]! + nodes.get(upper!)!.size[1]!);
   }
@@ -91,6 +91,13 @@ test('the architecture reads left to right, then email delivery turns back benea
     expect(nodes.get(left!)!.pos[0]! + nodes.get(left!)!.size[0]!).toBeLessThan(nodes.get(right!)!.pos[0]!);
     expect(nodes.get(left!)!.pos[1]).toBe(nodes.get(right!)!.pos[1]);
   }
+});
+
+test('the horizontal chart stays within five compact rows', async () => {
+  const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
+  const rows = new Set(source.components.map((node: { pos: number[] }) => node.pos[1]));
+  expect(rows.size).toBeLessThanOrEqual(5);
+  expect(Math.max(...source.components.map((node: { pos: number[]; size: number[] }) => node.pos[1]! + node.size[1]!))).toBeLessThanOrEqual(520);
 });
 
 test('the horizontal api keeps the default node size', async () => {

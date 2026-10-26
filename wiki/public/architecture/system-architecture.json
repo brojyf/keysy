@@ -15,7 +15,7 @@
       "sublabel": "Google sign-in only",
       "pos": [
         290,
-        430
+        360
       ],
       "size": [
         140,
@@ -29,7 +29,7 @@
       "sublabel": "web / cli / sdk / extension",
       "pos": [
         40,
-        300
+        240
       ],
       "size": [
         140,
@@ -43,7 +43,7 @@
       "sublabel": "HTTP service",
       "pos": [
         290,
-        300
+        240
       ],
       "size": [
         140,
@@ -71,7 +71,7 @@
       "sublabel": "Postgres + Auth + outbox",
       "pos": [
         545,
-        300
+        240
       ],
       "size": [
         160,
@@ -85,7 +85,7 @@
       "sublabel": "CDC / poller",
       "pos": [
         800,
-        300
+        240
       ],
       "size": [
         140,
@@ -99,7 +99,7 @@
       "sublabel": "read cache",
       "pos": [
         40,
-        170
+        140
       ],
       "size": [
         130,
@@ -141,7 +141,7 @@
       "sublabel": "Aiven, keyed + DLQ",
       "pos": [
         1010,
-        300
+        240
       ],
       "size": [
         140,
@@ -155,7 +155,7 @@
       "sublabel": "consumer + read API",
       "pos": [
         1010,
-        170
+        140
       ],
       "size": [
         140,
@@ -182,8 +182,8 @@
       "label": "notify",
       "sublabel": "Kafka consumer",
       "pos": [
-        1010,
-        430
+        1220,
+        240
       ],
       "size": [
         140,
@@ -196,8 +196,8 @@
       "label": "Cloudflare Queues",
       "sublabel": "email-high / email-low",
       "pos": [
-        1010,
-        560
+        1220,
+        360
       ],
       "size": [
         140,
@@ -210,8 +210,8 @@
       "label": "email-worker",
       "sublabel": "Cloudflare Worker",
       "pos": [
-        800,
-        560
+        1010,
+        360
       ],
       "size": [
         140,
@@ -224,8 +224,8 @@
       "label": "email-dlq",
       "sublabel": "failed sends",
       "pos": [
-        800,
-        690
+        1010,
+        460
       ],
       "size": [
         140,
@@ -238,8 +238,8 @@
       "label": "Resend",
       "sublabel": "email API",
       "pos": [
-        545,
-        560
+        800,
+        360
       ],
       "size": [
         140,
@@ -366,9 +366,7 @@
       "from": "kafka",
       "to": "notify",
       "label": "consume",
-      "variant": "dashed",
-      "fromSide": "bottom",
-      "toSide": "top"
+      "variant": "dashed"
     },
     {
       "id": "enqueue-email",
