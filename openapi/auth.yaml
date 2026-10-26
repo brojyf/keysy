@@ -2,4 +2,164 @@ openapi: 3.0.3
 info:
   title: Keysy Auth API
   version: 0.0.0
-paths: {}
+  description: |
+    The authentication API signs users in to Keysy with Google and manages their sessions for the
+    web app, CLI, and browser extension.
+
+    This is the v0 draft, not a stable release.
+
+    This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
+tags:
+  - name: Session
+paths:
+  /v0/auth/google:
+    get:
+      tags: [Session]
+      operationId: startGoogleSignIn
+      security: []
+      summary: Start Google sign-in
+      description: Redirects to Google. After sign-in, the browser returns to `redirect_uri` with a `code` query parameter.
+      parameters:
+        - name: redirect_uri
+          in: query
+          required: true
+          description: Must be on the allowlist, such as the web app, a CLI `localhost` callback, or the extension.
+          schema:
+            type: string
+            format: uri
+        - name: code_challenge
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: code_challenge_method
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [S256]
+      responses:
+        '302':
+          description: Redirect to Google.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v0/auth/token:
+    post:
+      tags: [Session]
+      operationId: exchangeCode
+      security: []
+      summary: Exchange the sign-in code for a session
+      description: Creates the user's account on first sign-in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, codeVerifier]
+              properties:
+                code:
+                  type: string
+                codeVerifier:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v0/auth/refresh:
+    post:
+      tags: [Session]
+      operationId: refreshSession
+      security: []
+      summary: Refresh the session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Session'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v0/auth/logout:
+    post:
+      tags: [Session]
+      operationId: logout
+      summary: Sign out and revoke the refresh token
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Signed out.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Session:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+          description: Supabase JWT for the Keysy API.
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [bearer]
+        expiresIn:
+          type: integer
+          description: Access token lifetime in seconds.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+  responses:
+    Session:
+      description: Session tokens.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            enum: [no-store]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Session'
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing, invalid, or expired token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

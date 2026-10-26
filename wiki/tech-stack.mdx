@@ -1,0 +1,36 @@
+---
+title: "Tech stack"
+description: "Keysy's technology choices."
+---
+
+## Application
+
+| Layer | Technology | Role |
+| --- | --- | --- |
+| Frontend | TypeScript 7 on Bun | Language, runtime and toolchain for web applications |
+| Web app | React with Vite | Single-page application in `dashboard/` |
+| Landing page | Astro with React | Static marketing site in `web/` |
+| Backend services | Go with Gin | HTTP services and event consumers |
+| Database access | GORM | ORM for PostgreSQL access from Go services |
+
+## Data and messaging
+
+| Concern | Technology | Role |
+| --- | --- | --- |
+| Primary database | Supabase PostgreSQL | Business data and the transactional outbox |
+| Authentication | Supabase Auth | Google sign-in, proxied by the `auth` service |
+| Cache | Dragonfly | Redis-compatible read cache for the `api` service |
+| Event streaming | Apache Kafka on Aiven | Domain events keyed by aggregate ID, with a dead-letter topic |
+| Audit store | PostgreSQL on Aiven | Audit log, owned by the `audit` service |
+| Job queues | Cloudflare Queues | Prioritized email jobs (`email-high`, `email-low`) |
+| Serverless compute | Cloudflare Workers | `email-worker` |
+| Transactional email | Resend | Email delivery with idempotency keys |
+
+## Platform and operations
+
+| Concern | Technology | Role |
+| --- | --- | --- |
+| Observability | OpenTelemetry and Grafana | Traces, metrics and logs through the OpenTelemetry Collector |
+| Load testing | Grafana k6 | Virtual-user load tests against the services |
+| CI/CD | GitHub Actions | Build, test and deployment workflows |
+| Hosting | Fly.io | Deployment of backend services |

@@ -10,14 +10,24 @@ and infrastructure files live in a single Git repository.
 
 | Directory | Purpose |
 | --- | --- |
-| `dashboard/` | React and TypeScript web app, built with Vite. |
-| `cli/` | Go CLI, built with Cobra. |
 | `api/` | Reserved for the application API service. |
 | `auth/` | Reserved for the authentication service. |
 | `notify/` | Reserved for the notification service. |
+| `audit/` | Reserved for the audit service. |
+| `email-worker/` | Reserved for the Cloudflare Worker that sends email through Resend. |
+| `status/` | Reserved for health checks that report whether the services are up. |
+| `cli/` | Go CLI, built with Cobra. |
+| `dashboard/` | React and TypeScript web app, built with Vite. |
+| `bot/` | Reserved for the Discord bot. |
+| `extension/` | Reserved for the Chrome extension in `chrome/`. |
+| `web/` | Landing page, built with Astro, React, and TypeScript. |
+| `sdk/` | Reserved for Go and TypeScript SDKs. |
+| `skills/` | Reserved for skills. |
 | `openapi/` | Shared OpenAPI definitions for the API and authentication services. |
+| `design/` | Design assets: Figma files, the logo, CSS, and the theme. |
 | `docs/` | Reserved for user-facing documentation. |
 | `wiki/` | Internal developer documentation and site configuration. |
 | `deploy/` | Deployment configuration. |
 | `otel/` | OpenTelemetry Collector Docker image definition. |
 | `supabase/` | Reserved for Supabase configuration. |
+| `.github/` | GitHub Actions workflows, CI scripts, and dependency updates. |

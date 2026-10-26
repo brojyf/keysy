@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#15803D"/>
-  <path d="M9 7v18m14-18L9 21m6-6 8 10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>@media (prefers-color-scheme: dark) { path { fill: #638ce5; } }</style>
+<path d="M6.5 6.5H24.375V14.625H14.625V37.375H37.375V27.625H45.5V45.5H6.5V6.5Z" fill="#2f5aba"/>
+<path d="M21.125 21.125H30.875V11.375H45.5V19.5H39V30.875H21.125V21.125Z" fill="#2f5aba"/>
 </svg>

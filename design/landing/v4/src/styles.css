@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Light theme tokens from design/theme/README.md */
+@theme {
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-text: #1b1c1e;
+  --color-muted: #64666b;
+  --color-accent: #1d4ed8;
+  --color-button: #2f5aba;
+  --color-on-button: #ffffff;
+  --color-soft: #f0f1f3;
+  --color-line: #e3e4e6;
+
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -13,6 +13,8 @@
 ## Tech Stack
 
 - Use Bun and TypeScript 7 for web applications.
+- Use Go and Gin for backend services.
+- Use GORM for database access in backend services.
 
 ## Git Workflow
 

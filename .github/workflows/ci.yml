@@ -26,6 +26,7 @@ jobs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
       cli: ${{ steps.filter.outputs.cli }}
       web: ${{ steps.filter.outputs.web }}
+      wiki: ${{ steps.filter.outputs.wiki }}
       bun: ${{ steps.filter.outputs.bun }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,12 +38,17 @@ jobs:
           filters: |
             dashboard:
               - 'dashboard/**'
+              - 'design/**'
               - '.github/**'
             cli:
               - 'cli/**'
               - '.github/**'
             web:
               - 'web/**'
+              - '.github/**'
+            wiki:
+              - 'wiki/**'
+              - 'openapi/**'
               - '.github/**'
             bun:
               - '**/package.json'
@@ -136,6 +142,9 @@ jobs:
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test
+      - name: Verify design theme
+        working-directory: design/theme
+        run: bun test
 
   web:
     name: Web
@@ -159,6 +168,32 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Typecheck
+        run: bun run check
+      - name: Build and test
+        run: bun run test
+
+  wiki:
+    name: Wiki
+    needs: changes
+    if: needs.changes.outputs.wiki == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: wiki
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck and check pages
         run: bun run check
       - name: Build and test
         run: bun run test

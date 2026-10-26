@@ -1,3 +1,481 @@
 :root {
-  --sidebar-width: 14rem;
+  --color-background-light: 250 250 250;
+  --color-background-dark: 18 18 18;
+  --color-primary-ink: 29 78 216;
+  --color-gray-50: 250 250 250;
+  --color-gray-100: 240 241 243;
+  --color-gray-200: 227 228 230;
+  --color-gray-300: 209 210 213;
+  --color-gray-400: 163 164 168;
+  --color-gray-500: 100 102 107;
+  --color-gray-600: 82 84 89;
+  --color-gray-700: 65 67 72;
+  --color-gray-800: 42 42 42;
+  --color-gray-900: 27 28 30;
+  --color-gray-950: 18 18 18;
+  --keysy-text: #1b1c1e;
+  --keysy-accent: #1d4ed8;
+  --keysy-soft: #f0f1f3;
+  /* Critically damped spring (damping 1.0, response 0.4 s), sampled until it settles. */
+  --keysy-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
+    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
+  --keysy-spring-duration: 600ms;
+  /* Desktop tab and response status underlines share this standard easing. */
+  --keysy-indicator-duration: 360ms;
+  --keysy-indicator-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --keysy-text: #ededee;
+  --keysy-accent: #7aa2ff;
+  --keysy-soft: #2a2a2a;
+  --color-gray-200: 237 237 238;
+}
+
+/* Keep native callout and code-block syntax colors. */
+#sourcey .prose {
+  --tw-prose-body: var(--keysy-text);
+  --tw-prose-headings: var(--keysy-text);
+  --tw-prose-bold: var(--keysy-text);
+  --tw-prose-code: var(--keysy-text);
+  --tw-prose-links: var(--keysy-accent);
+}
+
+#sourcey #page::before,
+#sourcey #content-area > nav[aria-label='Previous and next page'],
+#sourcey #content-area > header .h-5,
+#sourcey #content-area > article > .h-5,
+#sourcey #content-area > article > header h1 + span {
+  display: none;
+}
+
+#sourcey .page-description {
+  display: none;
+}
+
+/* The OpenAPI files keep their security contract; the wiki hides the Authentication sections. */
+#sourcey #authentication {
+  display: none;
+}
+
+#sourcey .search-result-main > .search-result-path:only-child {
+  font-family: var(--font-sans);
+}
+
+#sourcey #search-dialog .search-category {
+  font-weight: 700;
+  color: var(--keysy-text);
+}
+
+/* Search method badges take the sidebar's method colors. */
+#sourcey .search-result-method.method-get {
+  background: var(--color-green-100);
+  color: var(--color-green-800);
+}
+
+#sourcey .search-result-method.method-post {
+  background: var(--color-blue-100);
+  color: var(--color-blue-800);
+}
+
+#sourcey .search-result-method.method-put {
+  background: var(--color-amber-100);
+  color: var(--color-amber-900);
+}
+
+#sourcey .search-result-method.method-delete {
+  background: var(--color-red-100);
+  color: var(--color-red-800);
+}
+
+#sourcey .search-result-method.method-patch {
+  background: var(--color-orange-100);
+  color: var(--color-orange-900);
+}
+
+.dark #sourcey .search-result-method.method-get {
+  background: color-mix(in oklab, var(--color-green-400) 20%, transparent);
+  color: var(--color-green-300);
+}
+
+.dark #sourcey .search-result-method.method-post {
+  background: color-mix(in oklab, var(--color-blue-400) 20%, transparent);
+  color: var(--color-blue-300);
+}
+
+.dark #sourcey .search-result-method.method-put {
+  background: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
+  color: var(--color-yellow-300);
+}
+
+.dark #sourcey .search-result-method.method-delete {
+  background: color-mix(in oklab, var(--color-red-400) 20%, transparent);
+  color: var(--color-red-300);
+}
+
+.dark #sourcey .search-result-method.method-patch {
+  background: color-mix(in oklab, var(--color-orange-400) 20%, transparent);
+  color: var(--color-orange-300);
+}
+
+#sourcey .nav-group-label {
+  color: var(--keysy-text);
+  font-weight: 700;
+}
+
+/* Collapsible endpoint groups read as links, below section titles. */
+#sourcey .sourcey-nav-group > summary .nav-group-label {
+  color: rgb(var(--color-gray-700));
+  font-weight: 400;
+}
+
+.dark #sourcey .sourcey-nav-group > summary .nav-group-label {
+  color: rgb(var(--color-gray-400));
+}
+
+/* sidebar.js keeps a closing group open until its height animation ends.
+   Sourcey draws the desktop chevron with ::after inside #nav, and the drawer chevron with ::before. */
+#sourcey .sourcey-nav-group[open][data-closing] > summary::before,
+#sourcey #nav .sourcey-nav-group[open][data-closing] > summary::after {
+  transform: rotate(-45deg);
+}
+
+#sourcey #responses {
+  --keysy-spring-duration: 500ms;
+}
+
+#sourcey #responses details[data-closing] > summary > .schema-expandable-icon {
+  transform: rotate(0deg);
+}
+
+/* Keep the disclosure's padding and border inside its animated height. */
+#sourcey #responses details.schema-expandable {
+  box-sizing: border-box;
+}
+
+#sourcey .sourcey-operation-examples > .code-group + .code-group {
+  margin-top: 1rem;
+}
+
+#sourcey [data-sourcey-operation] h1 {
+  overflow-wrap: anywhere;
+}
+
+/* Each selected status owns its underline; tabs.js moves it from the previous position. */
+#sourcey .response-tab.active::after {
+  content: none;
+}
+
+#sourcey .keysy-response-indicator {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: -0.375rem;
+  left: 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: currentColor;
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+#sourcey .response-tab.active > .keysy-response-indicator {
+  display: block;
+}
+
+#sourcey .nav-link.active,
+.dark #sourcey .nav-link.active {
+  color: var(--keysy-text);
+  background: var(--keysy-soft);
+}
+
+#sourcey .prose :not(pre) > code {
+  color: var(--keysy-accent);
+  font-weight: 600;
+}
+
+#sourcey .sourcey-logo img {
+  height: 3rem;
+  width: auto;
+}
+
+#sourcey #mobile-nav:focus {
+  outline: none;
+}
+
+#sourcey #mobile-nav .sourcey-logo:focus {
+  outline: none;
+}
+
+#sourcey #mobile-nav .sourcey-logo:focus-visible {
+  outline: 2px solid var(--keysy-text);
+  outline-offset: 4px;
+}
+
+#sourcey #search-open svg,
+#sourcey #search-open-mobile svg,
+#sourcey #theme-toggle svg {
+  stroke-width: 3;
+}
+
+/* The sun uses a 16-unit viewBox; search and moon use 24 units. */
+#sourcey #theme-toggle svg g {
+  stroke-width: 2;
+}
+
+/* Native footer remains visible at the bottom of short pages. */
+#sourcey #content-area {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--header-height) - var(--sourcey-content-gap));
+}
+
+#sourcey #content-area > div:last-child {
+  margin-top: auto;
+}
+
+@media (width < 64rem) {
+  :root {
+    --header-height: 4rem;
+  }
+
+  #sourcey .sourcey-header-navigation {
+    display: none;
+  }
+
+  #sourcey .sourcey-header-top-inner {
+    column-gap: 0;
+    border-bottom: none;
+  }
+
+  #sourcey .sourcey-header-brand {
+    margin-left: 2.75rem;
+  }
+
+  #sourcey .sourcey-header-end {
+    display: flex;
+    align-items: center;
+  }
+
+  #sourcey .sourcey-header-end > div:last-child {
+    display: contents;
+  }
+
+  #sourcey .sourcey-header-actions {
+    display: flex;
+    flex: none;
+    order: 2;
+  }
+
+  #sourcey #search-open-mobile {
+    order: 1;
+  }
+
+  #sourcey #theme-toggle {
+    order: 3;
+  }
+
+  #sourcey .sourcey-header-link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  #sourcey #navbar [data-drawer-slide] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 4rem;
+  }
+
+  #sourcey #navbar [data-drawer-slide] > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  #sourcey #mobile-nav[open],
+  #sourcey #mobile-nav[open]::backdrop {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.keysy-theme-transition *,
+  html.keysy-theme-transition *::before,
+  html.keysy-theme-transition *::after {
+    /* Capture final colors together, without inherited color transitions. */
+    transition: none !important;
+    view-transition-name: none !important;
+  }
+
+  @view-transition {
+    navigation: auto;
+  }
+
+  /* Switch page content immediately while named navigation elements move. */
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(root) {
+    display: none;
+  }
+
+  html.keysy-theme-transition::view-transition {
+    pointer-events: none;
+  }
+
+  html.keysy-theme-transition::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root),
+  html.keysy-theme-transition::view-transition-new(root) {
+    mix-blend-mode: plus-lighter;
+  }
+
+  html.keysy-theme-transition::view-transition-old(root) {
+    display: block;
+    animation: keysy-theme-fade-out 300ms ease-in-out both;
+  }
+
+  html.keysy-theme-transition::view-transition-new(root) {
+    animation: keysy-theme-fade-in 300ms ease-in-out both;
+  }
+
+  @keyframes keysy-theme-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes keysy-theme-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+@media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
+  #sourcey .sourcey-section-tabs > a[aria-current='page'] > div {
+    view-transition-name: keysy-tab-indicator;
+  }
+
+  ::view-transition-group(keysy-tab-indicator) {
+    animation-duration: var(--keysy-indicator-duration);
+    animation-timing-function: var(--keysy-indicator-easing);
+  }
+
+  ::view-transition-old(keysy-tab-indicator),
+  ::view-transition-new(keysy-tab-indicator) {
+    animation: none;
+  }
+}
+
+@media (width < 64rem) and (prefers-reduced-motion: no-preference) {
+  /* Retain the top layer during native close-button, backdrop and Escape exits. */
+  #sourcey #mobile-nav {
+    view-transition-name: keysy-mobile-nav;
+    transform: translateX(-100%);
+    transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1),
+      display 250ms allow-discrete, overlay 250ms allow-discrete;
+  }
+
+  #sourcey #mobile-nav[open] {
+    transform: translateX(0);
+  }
+
+  #sourcey #mobile-nav::backdrop {
+    opacity: 0;
+    transition: opacity 250ms ease-out, display 250ms allow-discrete,
+      overlay 250ms allow-discrete;
+  }
+
+  #sourcey #mobile-nav[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    #sourcey #mobile-nav[open] {
+      transform: translateX(-100%);
+    }
+
+    #sourcey #mobile-nav[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  ::view-transition-group(keysy-mobile-nav) {
+    animation: none;
+  }
+
+  ::view-transition-old(keysy-mobile-nav) {
+    animation: keysy-nav-slide-out 250ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  @keyframes keysy-nav-slide-out {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #sourcey #responses .schema-expandable-icon {
+    transition: transform var(--keysy-spring-duration) var(--keysy-spring);
+  }
+
+  #sourcey .sourcey-nav-group > summary::before,
+  #sourcey #nav .sourcey-nav-group > summary::after {
+    transition: transform var(--keysy-spring-duration) var(--keysy-spring);
+  }
+}
+
+/* Wide operation pages: the endpoint bar joins the left column, so the examples start beside it.
+   Sourcey's container is the operation itself, which its own queries cannot lay out, so
+   #content-area hosts one, and this grid places every area itself. */
+#sourcey #content-area:has(> [data-sourcey-operation]) {
+  container: keysy-operation / inline-size;
+}
+
+@media (width >= 1280px) {
+  @container keysy-operation (width > 55rem) {
+    #sourcey [data-sourcey-operation] {
+      display: grid;
+      grid-template:
+        'header header'
+        'endpoint examples'
+        'intro examples'
+        'details examples' 1fr / minmax(0, 1fr) 28rem;
+      column-gap: 2rem;
+    }
+
+    #sourcey [data-sourcey-operation] > header {
+      grid-area: header;
+    }
+
+    #sourcey [data-sourcey-operation] > .sourcey-endpoint {
+      grid-area: endpoint;
+    }
+
+    #sourcey [data-sourcey-operation] > .operation-layout {
+      display: contents;
+    }
+
+    #sourcey [data-sourcey-operation] .operation-intro {
+      grid-area: intro;
+    }
+
+    #sourcey [data-sourcey-operation] .operation-details {
+      grid-area: details;
+    }
+
+    #sourcey [data-sourcey-operation] .sourcey-operation-examples {
+      grid-area: examples;
+      align-self: start;
+      position: sticky;
+      top: calc(var(--header-height) + 2.5rem);
+    }
+  }
 }
