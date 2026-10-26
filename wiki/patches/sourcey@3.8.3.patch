@@ -196,3 +196,44 @@ diff --git a/dist/components/openapi/Responses.js b/dist/components/openapi/Resp
 @@ -60 +60 @@
 -    return (_jsxs("div", { class: "response-tabs code-group not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "response-tab-list flex gap-1 overflow-x-auto text-xs leading-6", role: "tablist", children: groups.map((g, i) => (_jsx("button", { type: "button", role: "tab", "aria-selected": i === 0 ? "true" : "false", class: `response-tab group relative my-1 mb-1.5 flex items-center gap-1.5 whitespace-nowrap font-medium outline-0${i === 0 ? " active" : ""}`, "data-response-index": String(i), children: _jsx("div", { class: "z-10 flex items-center gap-1.5 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: g.statusCode }) }, g.statusCode))) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [groups.map((g, i) => g.variants.length > 1 ? (_jsx("div", { "data-response-dropdown": String(i), class: i === 0 ? undefined : "hidden", children: _jsx(VariantDropdown, { variants: g.variants }) }, g.statusCode)) : null), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: groups.map((g, i) => (_jsx("div", { class: `response-panel${i === 0 ? " active" : ""}`, role: "tabpanel", "data-response-panel": String(i), children: g.variants.length > 1 ? (g.variants.map((v, j) => (_jsx("div", { class: `code-lang-panel${j === 0 ? " active" : ""}`, "data-lang-panel": String(j), children: _jsx(VariantBody, { variant: v }) }, j)))) : (_jsx(VariantBody, { variant: g.variants[0] })) }, g.statusCode))) })] }));
 +    return (_jsxs("div", { class: "response-tabs code-group not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "response-tab-list flex gap-1 overflow-x-auto text-xs leading-6", role: "tablist", children: groups.map((g, i) => (_jsx("button", { type: "button", role: "tab", "aria-selected": i === 0 ? "true" : "false", class: `response-tab group relative my-1 mb-1.5 flex items-center gap-1.5 whitespace-nowrap font-medium outline-0${i === 0 ? " active" : ""}`, "data-response-index": String(i), children: [_jsx("div", { class: "z-10 flex items-center gap-1.5 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: g.statusCode }), _jsx("span", { class: "keysy-response-indicator", "aria-hidden": "true" })] }, g.statusCode))) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [groups.map((g, i) => g.variants.length > 1 ? (_jsx("div", { "data-response-dropdown": String(i), class: i === 0 ? undefined : "hidden", children: _jsx(VariantDropdown, { variants: g.variants }) }, g.statusCode)) : null), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: groups.map((g, i) => (_jsx("div", { class: `response-panel${i === 0 ? " active" : ""}`, role: "tabpanel", "data-response-panel": String(i), children: g.variants.length > 1 ? (g.variants.map((v, j) => (_jsx("div", { class: `code-lang-panel${j === 0 ? " active" : ""}`, "data-lang-panel": String(j), children: _jsx(VariantBody, { variant: v }) }, j)))) : (_jsx(VariantBody, { variant: g.variants[0] })) }, g.statusCode))) })] }));
+diff --git a/dist/core/search-indexer.js b/dist/core/search-indexer.js
+index 5506de988cd7a7c61299a36f357961f4a4905f39..6bbcfed66003c5a15cbd090be68d3fc5bd3c260f 100644
+--- a/dist/core/search-indexer.js
++++ b/dist/core/search-indexer.js
+@@ -1,4 +1,4 @@
+-import { readingOrder } from "./navigation.js";
++import { readingOrder, isNavGroup } from "./navigation.js";
+ import { toPublicPath } from "../site-url.js";
+ import { tabIndexOutputPath } from "../config.js";
+ import { operationAnchor, definitionAnchor } from "./reference-identity.js";
+@@ -26,11 +26,13 @@ export function buildSearchIndex(specs, pages, navigation, assetBase = "/", feat
+         const tabBase = toPublicPath(tabIndexOutputPath(tabSlug, prettyUrls), base, prettyUrls);
+         // The reference's own page, titled as it is: an MCP server's by its tab.
+         const mcp = spec.operations.some((op) => op.mcpExtras?.connection);
++        const url = targets?.get(tabSlug)?.overview.href ?? tabBase;
+         add(tabSlug, {
+-            title: mcp ? tabLabel : spec.info.title,
++            // Keysy: the overview reads as the sidebar names it.
++            title: mcp ? tabLabel : navLabel(tab?.groups ?? [], url) ?? spec.info.title,
+             content: (spec.info.summary ?? spec.info.description ?? "").slice(0, 200),
+             searchText: [spec.info.title, spec.info.summary, spec.info.description].filter(Boolean).join(" "),
+-            url: targets?.get(tabSlug)?.overview.href ?? tabBase,
++            url,
+             tab: tabLabel,
+             category: "Pages",
+         });
+@@ -171,6 +173,14 @@ function markOpenings(entries, owners, featured, navigation) {
+         }
+     }
+ }
++function navLabel(groups, href) {
++    for (const group of groups)
++        for (const item of group.items) {
++            const label = isNavGroup(item) ? navLabel([item], href) : item.href === href ? item.label : undefined;
++            if (label)
++                return label;
++        }
++}
+ /**
+  * Strip HTML tags from a string to get plain text.
+  */

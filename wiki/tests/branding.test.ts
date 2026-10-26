@@ -41,6 +41,20 @@ test('plain search page titles use the UI font without overriding method and pat
   expect(stylesheet).not.toMatch(/#sourcey \.search-result-path\s*\{[^}]*font-family:/);
 });
 
+test('search method badges use the sidebar method colors in both themes', async () => {
+  const sidebar = await readFile(new URL('node_modules/sourcey/dist/components/layout/Sidebar.js', docs), 'utf8');
+  for (const method of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']) {
+    const classes = sidebar.match(new RegExp(`${method}: "([^"]+)"`))![1]!;
+    const [, lightBackground] = classes.match(/(?:^| )bg-(\S+)/)!;
+    const [, darkBackground] = classes.match(/dark:bg-(\S+)\/20/)!;
+    const [, lightText] = classes.match(/(?:^| )text-(\S+)/)!;
+    const [, darkText] = classes.match(/dark:text-(\S+)/)!;
+    const selector = `#sourcey .search-result-method.method-${method.toLowerCase()}`;
+    expect(stylesheet).toContain(`${selector} {\n  background: var(--color-${lightBackground});\n  color: var(--color-${lightText});\n}`);
+    expect(stylesheet).toContain(`.dark ${selector} {\n  background: color-mix(in oklab, var(--color-${darkBackground}) 20%, transparent);\n  color: var(--color-${darkText});\n}`);
+  }
+});
+
 test('search section headings use bold primary text in both themes', () => {
   expect(stylesheet).toMatch(/#sourcey #search-dialog \.search-category\s*\{\s*font-weight: 700;\s*color: var\(--keysy-text\);/);
 });

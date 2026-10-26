@@ -67,6 +67,57 @@
   color: var(--keysy-text);
 }
 
+/* Search method badges take the sidebar's method colors. */
+#sourcey .search-result-method.method-get {
+  background: var(--color-green-100);
+  color: var(--color-green-800);
+}
+
+#sourcey .search-result-method.method-post {
+  background: var(--color-blue-100);
+  color: var(--color-blue-800);
+}
+
+#sourcey .search-result-method.method-put {
+  background: var(--color-amber-100);
+  color: var(--color-amber-900);
+}
+
+#sourcey .search-result-method.method-delete {
+  background: var(--color-red-100);
+  color: var(--color-red-800);
+}
+
+#sourcey .search-result-method.method-patch {
+  background: var(--color-orange-100);
+  color: var(--color-orange-900);
+}
+
+.dark #sourcey .search-result-method.method-get {
+  background: color-mix(in oklab, var(--color-green-400) 20%, transparent);
+  color: var(--color-green-300);
+}
+
+.dark #sourcey .search-result-method.method-post {
+  background: color-mix(in oklab, var(--color-blue-400) 20%, transparent);
+  color: var(--color-blue-300);
+}
+
+.dark #sourcey .search-result-method.method-put {
+  background: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
+  color: var(--color-yellow-300);
+}
+
+.dark #sourcey .search-result-method.method-delete {
+  background: color-mix(in oklab, var(--color-red-400) 20%, transparent);
+  color: var(--color-red-300);
+}
+
+.dark #sourcey .search-result-method.method-patch {
+  background: color-mix(in oklab, var(--color-orange-400) 20%, transparent);
+  color: var(--color-orange-300);
+}
+
 #sourcey .nav-group-label {
   color: var(--keysy-text);
   font-weight: 700;

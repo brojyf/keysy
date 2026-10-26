@@ -393,6 +393,18 @@ test('public favicon bytes are preserved and native search exports are generated
   }
 });
 
+test('search lists each OpenAPI overview by its sidebar label', async () => {
+  const html = await Bun.file(new URL('api.html', output)).text();
+  const [metadata] = await matches(html, 'meta[name="sourcey-search-indexes"]');
+  const [path] = JSON.parse(metadata!.content!.replaceAll('&quot;', '"')) as string[];
+  const contextUrl = new URL(`.${path}`, output);
+  const context = await Bun.file(contextUrl).json();
+  const { rows } = await Bun.file(new URL(context.index, contextUrl)).json() as { rows: { title: string; url: string }[] };
+  for (const url of ['/api', '/auth']) {
+    expect(rows.filter((row) => row.url === url).map((row) => row.title)).toEqual(['Introduction']);
+  }
+});
+
 test('all local page links, fragments and resource URLs resolve in the static output', async () => {
   for (const [route] of routes) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();

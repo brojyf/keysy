@@ -40,12 +40,13 @@ and a bottom-aligned footer on short pages. Code blocks keep native syntax color
 Sourcey's native search, appearance control and mobile drawer replace the
 Mintlify-specific script. Search page titles use the UI font; method and path
 results keep monospace. Search section headings use bold primary text in both
-themes. CSS provides a 250 ms drawer exit over the incoming page
+themes, and search method badges take the sidebar's method colors. CSS provides a 250 ms drawer exit over the incoming page
 using cross-document View Transitions, without delaying navigation. A Bun patch in
 `patches/sourcey@3.8.3.patch` keeps the native drawer open until navigation captures
 its snapshot and clears it on back-forward cache restoration. The patch also marks
 the active desktop tab with `aria-current="page"`. It also hides the default `/` Base URL on
-OpenAPI pages, since the specs define no servers. It springs collapsible sidebar groups from
+OpenAPI pages, since the specs define no servers. Search lists each OpenAPI overview by
+its sidebar label, **Introduction**, instead of the spec title. It springs collapsible sidebar groups from
 their current height with `--keysy-spring` from `style.css`; response field disclosures share the
 same spring at 500 ms and turn their chevrons with it. Reduced motion keeps the native toggle. Desktop tab underlines move
 between pages with a 360 ms standard easing curve, starting and ending at rest.
