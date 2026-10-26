@@ -42,18 +42,32 @@ test('the public origin is the confirmed documentation domain', () => {
   expect(config.siteUrl).toBe('https://wiki.keysy.net');
 });
 
+// API and Auth publish one page per operation and model beside their overviews.
+const referencePage = /^(api|auth)\/(operations|models)\//;
+
+async function operationCount(spec: 'api' | 'auth') {
+  const yaml = await Bun.file(new URL(`../../openapi/${spec}.yaml`, import.meta.url)).text();
+  return (yaml.match(/^    (get|put|post|delete|patch):$/gm) ?? []).length;
+}
+
 test('the sitemap uses absolute URLs on the documentation domain', async () => {
   const sitemap = await Bun.file(new URL('sitemap.xml', output)).text();
-  const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-  expect(locations).toEqual(routes.map(([route]) => `https://wiki.keysy.net/${route === 'index' ? '' : route}`));
+  const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!.replace('https://wiki.keysy.net/', ''));
+  expect(locations.filter((location) => !referencePage.test(location))).toEqual(routes.map(([route]) => route === 'index' ? '' : route!));
+  for (const spec of ['api', 'auth'] as const) {
+    expect(locations.filter((location) => location.startsWith(`${spec}/operations/`))).toHaveLength(await operationCount(spec));
+  }
 });
 
 test('only documentation pages, the architecture viewer and the native 404 are published as HTML', async () => {
-  const files = await readdir(output, { recursive: true });
-  expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
+  const files = (await readdir(output, { recursive: true })).filter((file) => file.endsWith('.html'));
+  expect(files.filter((file) => !referencePage.test(file)).sort()).toEqual([
     ...routes.map(([route]) => `${route}.html`),
     'architecture/system-architecture.html', 'architecture/system-architecture-vertical.html', '404.html',
   ].sort());
+  for (const spec of ['api', 'auth'] as const) {
+    expect(files.filter((file) => file.startsWith(`${spec}/operations/`))).toHaveLength(await operationCount(spec));
+  }
 });
 
 test('system design embeds the interactive architecture and preserves its public assets', async () => {
@@ -248,6 +262,10 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(auth).toContain('the source of truth for the authentication API.');
   expect(auth).toContain('Exchange the sign-in code for a session');
   expect(auth).toContain('The authentication API signs users in to Keysy with Google');
+  // Each operation loads on its own page, so the overview stays small.
+  for (const html of [api, auth]) expect(html.length).toBeLessThan(150_000);
+  // The OpenAPI files keep their security contract; the wiki hides the Authentication sections.
+  expect(stylesheet).toMatch(/#sourcey #authentication \{\s*display: none;/);
 });
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
@@ -258,15 +276,18 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?</nav>`))![0];
     const labels = [...sidebar.matchAll(/>([^<>]+)</g)].map((match) => match[1]!.trim()).filter(Boolean);
-    const operationCount = (await matches(html, '.sourcey-endpoint')).length;
+    const endpointLinks = (await matches(sidebar, 'a[href]')).map(({ href }) => href!).filter((href) => href.startsWith(`/${route}/operations/`));
     expect(labels.slice(0, 3 + firstEntries.length)).toEqual(['General', 'Introduction', 'API endpoints', ...firstEntries]);
-    expect(labels.filter((entry) => entry.startsWith('/v1/'))).toHaveLength(operationCount);
+    expect(labels.filter((entry) => entry.startsWith('/v1/'))).toHaveLength(await operationCount(route));
+    expect(endpointLinks).toHaveLength(await operationCount(route));
     expect(await matches(sidebar, 'details.sourcey-nav-group')).toHaveLength(groupCount);
     expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);
     expect(html).not.toContain('>Base URL<');
-    expect(html).not.toContain('tryit-trigger');
-    expect(html).not.toContain('>JavaScript<');
-    expect(html).not.toContain('>Python<');
+    const operation = await Bun.file(new URL(`.${endpointLinks[0]}.html`, output)).text();
+    expect(operation).toContain('sourcey-endpoint');
+    expect(operation).not.toContain('tryit-trigger');
+    expect(operation).not.toContain('>JavaScript<');
+    expect(operation).not.toContain('>Python<');
   }
 });
 

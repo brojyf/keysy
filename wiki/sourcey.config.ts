@@ -58,6 +58,7 @@ export default defineConfig({
         slug: 'api',
         source: openapi('../openapi/api.yaml'),
         navigation: endpointNavigation('../openapi/api.yaml'),
+        reference: { split: 'operations' },
         tryIt: false,
       },
       {
@@ -65,6 +66,7 @@ export default defineConfig({
         slug: 'auth',
         source: openapi('../openapi/auth.yaml'),
         navigation: endpointNavigation('../openapi/auth.yaml'),
+        reference: { split: 'operations' },
         tryIt: false,
       },
       {

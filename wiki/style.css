@@ -50,6 +50,11 @@
   display: none;
 }
 
+/* The OpenAPI files keep their security contract; the wiki hides the Authentication sections. */
+#sourcey #authentication {
+  display: none;
+}
+
 #sourcey .search-result-main > .search-result-path:only-child {
   font-family: var(--font-sans);
 }
