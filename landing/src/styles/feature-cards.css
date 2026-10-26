@@ -226,62 +226,75 @@
   font-size: 12px;
 }
 .access-graph {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 300px;
+  position: relative;
+  width: 392px;
+  height: 320px;
+  flex-shrink: 0;
   font-family: "Geist Mono Variable", monospace;
 }
 .access-graph span {
+  position: absolute;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: white;
+  gap: 7px;
+  height: 32px;
+  padding: 7px 12px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 9px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px -6px #101b3014;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
 }
 .graph-users {
-  display: flex;
-  gap: 20px;
+  display: contents;
 }
-.graph-wires {
-  height: 55px;
-  width: 190px;
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 12px 12px;
-  position: relative;
-}
-.graph-wires::after,
-.graph-wire {
-  content: "";
-  width: 1px;
-  height: 34px;
-  background: #99b4f1;
-}
-.graph-wires::after {
+.graph-connections {
   position: absolute;
-  left: 50%;
-  top: 0;
-  height: 55px;
+  inset: 0;
 }
-.graph-wires > span {
-  position: absolute;
-  left: -18px;
-  top: 15px;
-  border: 0;
+.graph-person {
+  top: 52px;
+}
+.graph-person.alice {
+  left: 38px;
+}
+.graph-person.api {
+  left: 163px;
+}
+.graph-person.worker {
+  left: 270px;
   color: var(--muted);
-  padding: 3px;
-  font-size: 9px;
+}
+.access-graph .graph-denied {
+  left: 268px;
+  top: 106px;
+  width: 66px;
+  height: 21px;
+  gap: 4px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 13px;
 }
 .access-graph .graph-policy {
+  left: 112px;
+  top: 146px;
   background: var(--button);
   color: white;
-  margin-top: 12px;
 }
-.graph-wire {
-  height: 32px;
+.graph-secret {
+  left: 116px;
+  top: 232px;
+}
+@media (max-width: 380px) {
+  .access-graph {
+    transform: scale(0.8);
+  }
 }
 .version-list,
 .service-versions,

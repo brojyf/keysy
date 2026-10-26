@@ -30,6 +30,9 @@
   overflow: hidden;
   box-shadow: 0 2.77em 5.54em -1.66em #1d4ed829;
 }
+.hero .product-window {
+  border-top-color: var(--line);
+}
 .window-chrome {
   display: flex;
   align-items: center;

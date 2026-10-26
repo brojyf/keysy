@@ -70,9 +70,14 @@ export function PlatformCards() {
         description="Users and services retrieve only what their policies allow."
       >
         <div className="access-graph">
+          <DesignAsset
+            section="platform"
+            name="64:36418"
+            className="graph-connections"
+          />
           <div className="graph-users">
             {["alice", "api", "worker"].map((name, i) => (
-              <span key={name}>
+              <span key={name} className={`graph-person ${name}`}>
                 <DesignAsset
                   section="platform"
                   name={["64:36428", "64:36432", "64:36436"][i]}
@@ -81,15 +86,15 @@ export function PlatformCards() {
               </span>
             ))}
           </div>
-          <div className="graph-wires">
-            <span>denied</span>
-          </div>
+          <span className="graph-denied">
+            <DesignAsset section="platform" name="64:36424" />
+            denied
+          </span>
           <span className="graph-policy">
             <DesignAsset section="platform" name="64:36440" />
             policy · api-read
           </span>
-          <div className="graph-wire" />
-          <span>
+          <span className="graph-secret">
             <DesignAsset section="platform" name="64:36444" />
             production/api/*
           </span>
