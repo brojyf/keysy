@@ -37,6 +37,7 @@ export default function ProductWindow({
     scope,
     update ? playUpdateStory : heroStory,
     update ? renderUpdateFinal : heroFinal,
+    update,
   );
   const rows = update
     ? [secretRows[0], ...secretRows.slice(2, 6), secretRows[1], secretRows[6]]
@@ -68,12 +69,21 @@ export default function ProductWindow({
             <div className="window-chrome">
               <div className="window-dots">
                 {[0, 1, 2].map((i) => (
-                  <DesignAsset key={i} section="36008" name="imgEllipse1" />
+                  <DesignAsset
+                    key={i}
+                    section="36008"
+                    loading={update ? "lazy" : "eager"}
+                    name="imgEllipse1"
+                  />
                 ))}
               </div>
               <span>
-                <DesignAsset section="36008" name="imgIconLock" /> keysy / acme
-                / production
+                <DesignAsset
+                  section="36008"
+                  loading={update ? "lazy" : "eager"}
+                  name="imgIconLock"
+                />{" "}
+                keysy / acme / production
               </span>
             </div>
             <div className="product-body">
@@ -83,6 +93,7 @@ export default function ProductWindow({
                   <div key={item} className={i === 0 ? "selected" : ""}>
                     <DesignAsset
                       section="36008"
+                      loading={update ? "lazy" : "eager"}
                       name={i ? `imgIcon${i}` : "imgIcon"}
                     />
                     {item}
@@ -103,7 +114,11 @@ export default function ProductWindow({
                   </div>
                 </div>
                 <div className="product-search">
-                  <DesignAsset section="36008" name="imgIconSearch" />
+                  <DesignAsset
+                    section="36008"
+                    loading={update ? "lazy" : "eager"}
+                    name="imgIconSearch"
+                  />
                   Search secrets<kbd>⌘K</kbd>
                 </div>
                 <table>
@@ -165,7 +180,12 @@ export default function ProductWindow({
             <div className="terminal-bar">
               <span className="terminal-lights">
                 {["imgEllipse2", "imgEllipse3", "imgEllipse4"].map((name) => (
-                  <DesignAsset key={name} section="36008" name={name} />
+                  <DesignAsset
+                    key={name}
+                    section="36008"
+                    loading={update ? "lazy" : "eager"}
+                    name={name}
+                  />
                 ))}
               </span>
               ~/acme/api — zsh

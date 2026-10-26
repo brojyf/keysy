@@ -4,10 +4,12 @@ export function DesignAsset({
   section,
   name,
   className = "",
+  loading = "lazy",
 }: {
   section: keyof typeof assets;
   name: string;
   className?: string;
+  loading?: "lazy" | "eager";
 }) {
   const asset = (
     assets[section] as Record<
@@ -22,6 +24,8 @@ export function DesignAsset({
       width={asset.width}
       height={asset.height}
       alt=""
+      loading={loading}
+      decoding="async"
       aria-hidden="true"
     />
   );

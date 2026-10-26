@@ -5,6 +5,7 @@ export function usePreviewPlayback(
   scope: RefObject<HTMLDivElement | null>,
   story: (run: PreviewPlayback, root: HTMLElement) => Promise<void>,
   renderFinal: (root: HTMLElement) => void,
+  loop: boolean,
 ) {
   const [playing, setPlaying] = useState(true);
   const [active, setActive] = useState(false);
@@ -17,6 +18,7 @@ export function usePreviewPlayback(
     let run: PreviewPlayback | undefined;
     let userPlaying = true;
     let visible = true;
+    let completed = false;
     const syncPlayback = () => {
       const enabled =
         userPlaying && !preference.matches && visible && !document.hidden;
@@ -26,9 +28,15 @@ export function usePreviewPlayback(
     const start = () => {
       run?.stop();
       setReduced(preference.matches);
+      if (completed && !loop) {
+        renderFinal(root);
+        syncPlayback();
+        return;
+      }
       userPlaying = !preference.matches;
       setPlaying(userPlaying);
       if (preference.matches) {
+        if (!loop) completed = true;
         renderFinal(root);
         syncPlayback();
         return;
@@ -38,7 +46,19 @@ export function usePreviewPlayback(
       syncPlayback();
       void (async () => {
         try {
-          while (!current.stopped) await story(current, root);
+          while (!current.stopped) {
+            await story(current, root);
+            current.guard();
+            if (!loop) {
+              completed = true;
+              userPlaying = false;
+              current.stop();
+              renderFinal(root);
+              setPlaying(false);
+              syncPlayback();
+              break;
+            }
+          }
         } catch (error) {
           if (!current.stopped) throw error;
         }
@@ -68,7 +88,7 @@ export function usePreviewPlayback(
       document.removeEventListener("visibilitychange", syncPlayback);
       toggleRef.current = () => {};
     };
-  }, [scope, story, renderFinal]);
+  }, [scope, story, renderFinal, loop]);
 
   return { playing, active, reduced, toggle: () => toggleRef.current() };
 }

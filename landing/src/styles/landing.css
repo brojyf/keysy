@@ -131,6 +131,59 @@ kbd,
   border-top: 1px solid var(--line);
   padding: 120px var(--gutter);
 }
+main > .section:not(.hero) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto var(--deferred-height, 600px);
+  overflow-clip-margin: 8px;
+}
+.access-section {
+  --deferred-height: 424px;
+}
+#platform {
+  --deferred-height: 1080px;
+}
+#security,
+#availability {
+  --deferred-height: 573px;
+}
+#dashboard {
+  --deferred-height: 812px;
+}
+#workflow {
+  --deferred-height: 501px;
+}
+#sdks {
+  --deferred-height: 427px;
+}
+.cta-section {
+  --deferred-height: 476px;
+}
+@media (max-width: 700px) {
+  .access-section {
+    --deferred-height: 474px;
+  }
+  #platform {
+    --deferred-height: 2016px;
+  }
+  #security {
+    --deferred-height: 1335px;
+  }
+  #availability {
+    --deferred-height: 1331px;
+  }
+  #dashboard {
+    --deferred-height: 455px;
+  }
+  #workflow {
+    --deferred-height: 859px;
+  }
+  #sdks {
+    --deferred-height: 667px;
+  }
+  .cta-section {
+    --deferred-height: 489px;
+  }
+}
 .section::before {
   content: "";
   position: absolute;
@@ -337,23 +390,6 @@ h1 {
   display: grid;
   place-items: center;
   text-align: center;
-}
-.cta-sheen {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    520px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-    #7aa2ff33,
-    transparent 65%
-  );
-  opacity: 0;
-  transition: opacity 300ms ease-out;
-}
-@media (hover: hover) and (pointer: fine) {
-  .cta-card:hover .cta-sheen {
-    opacity: 1;
-  }
 }
 .cta-content {
   position: relative;

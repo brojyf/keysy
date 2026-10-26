@@ -12,7 +12,7 @@ export default function HeroAssistant({
   return (
     <>
       <strong>
-        <DesignAsset section="36008" name="imgIconSparkle" />
+        <DesignAsset loading="eager" section="36008" name="imgIconSparkle" />
         AI assistant
       </strong>
       <div className="assistant-thread" aria-hidden="true">
@@ -39,7 +39,11 @@ export default function HeroAssistant({
               "Permissions verified",
             ].map((text, i) => (
               <p key={text}>
-                <DesignAsset section="36008" name={`imgIcon${i + 5}`} />
+                <DesignAsset
+                  loading="eager"
+                  section="36008"
+                  name={`imgIcon${i + 5}`}
+                />
                 {text}
               </p>
             ))}

@@ -1,7 +1,7 @@
 import { installWindow } from "./dom.mjs";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
-import React, { act } from "react";
+import React, { act, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import SdkShowcase from "../src/components/SdkShowcase";
 
@@ -18,6 +18,9 @@ const { createPreviewPlayback } = await import(
 );
 const { default: CallToAction } = await import(
   "../src/components/CallToAction"
+);
+const { usePreviewPlayback } = await import(
+  "../src/components/previews/usePreviewPlayback"
 );
 
 beforeEach(() => {
@@ -96,6 +99,50 @@ describe("SDK showcase", () => {
 });
 
 describe("product previews", () => {
+  test("does not restart a single-play story after completion or visibility changes", async () => {
+    let complete;
+    let entered;
+    let runs = 0;
+    const story = () => {
+      runs++;
+      return new Promise((resolve) => {
+        complete = resolve;
+      });
+    };
+    const renderFinal = (element) => {
+      element.dataset.complete = "true";
+    };
+    globalThis.IntersectionObserver = class {
+      constructor(callback) {
+        entered = callback;
+      }
+      observe() {}
+      disconnect() {}
+    };
+    function SinglePlayPreview() {
+      const scope = useRef(null);
+      usePreviewPlayback(scope, story, renderFinal, false);
+      return React.createElement("div", { ref: scope });
+    }
+    await act(() => root.render(React.createElement(SinglePlayPreview)));
+    await act(async () => {
+      complete();
+      await Promise.resolve();
+    });
+    expect(runs).toBe(1);
+    await act(() => entered([{ isIntersecting: false }]));
+    await act(() => entered([{ isIntersecting: true }]));
+    await act(() => {
+      media.matches = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    await act(() => {
+      media.matches = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(runs).toBe(1);
+    expect(container.firstChild.dataset.complete).toBe("true");
+  });
   test("freezes an active transition as well as timeline holds", async () => {
     const run = createPreviewPlayback();
     const element = document.createElement("div");
@@ -217,7 +264,7 @@ describe("product previews", () => {
 });
 
 describe("CTA pointer motion", () => {
-  test("tilts for the mouse, tracks its highlight, and disables rotation for reduced motion", async () => {
+  test("tilts for the mouse without a hover glow and disables rotation for reduced motion", async () => {
     await act(() => root.render(React.createElement(CallToAction)));
     const card = container.querySelector(".cta-card");
     card.getBoundingClientRect = () => ({
@@ -233,8 +280,7 @@ describe("CTA pointer motion", () => {
         clientY: 500,
       }),
     );
-    expect(card.style.getPropertyValue("--pointer-x")).toBe("1000px");
-    expect(card.style.getPropertyValue("--pointer-y")).toBe("500px");
+    expect(card.querySelector(".cta-sheen")).toBeNull();
     await Bun.sleep(950);
     expect(
       Number(card.style.transform.match(/rotateX\(([-\d.]+)deg\)/)[1]),
@@ -254,6 +300,6 @@ describe("CTA pointer motion", () => {
         clientY: 20,
       }),
     );
-    expect(card.style.getPropertyValue("--pointer-x")).toBe("1000px");
+    expect(card.style.transform).toBe("none");
   });
 });

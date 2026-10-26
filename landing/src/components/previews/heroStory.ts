@@ -67,7 +67,6 @@ export async function playHeroStory(
 ) {
   resetHero(root);
   setOrb(null);
-  const scene = query(root, ".preview-scene");
   const bubble = query(root, ".assistant-prompt");
   const reply = query(root, ".assistant-reply");
   const composer = query(root, ".composer-text");
@@ -79,14 +78,7 @@ export async function playHeroStory(
     query(row, ".path-prefix").textContent = from;
     query(row, "td").title = `${from}${key}`;
   }
-  const replay = scene.style.opacity === "0";
-  if (replay)
-    await run.play(
-      scene,
-      { opacity: [0, 1] },
-      { duration: 0.4, ease: "easeOut" },
-    );
-  await run.wait(replay ? 500 : 150);
+  await run.wait(150);
   composer.classList.add("typing");
   for (const character of prompt) {
     composer.textContent += character;
@@ -157,6 +149,4 @@ export async function playHeroStory(
   );
   await run.wait(520);
   await run.play(link, { opacity: [0, 1], y: [4, 0] }, spring(0.3));
-  await run.wait(2800);
-  await run.play(scene, { opacity: 0 }, { duration: 0.35, ease: "easeIn" });
 }

@@ -54,12 +54,29 @@ export default function AccessChannels() {
               </div>
             ) : (
               <div className="agent-preview">
-                <code>❯</code>
-                <small>▸▸ keysy skill on · policy agent-dev</small>
-                <code>● Skill(keysy)</code>
-                <span>⎿ Successfully loaded skill</span>
-                <code>● Bash(keysy ls production/api)</code>
-                <span>⎿ 3 secrets · values hidden</span>
+                <div className="agent-transcript">
+                  <p>
+                    <span className="agent-call-dot">● </span>
+                    <b>Skill</b>(keysy)
+                  </p>
+                  <p className="agent-result">
+                    {"  ⎿  Successfully loaded skill"}
+                  </p>
+                  <p>
+                    <span className="agent-call-dot">● </span>
+                    <b>Bash</b>(keysy ls production/api)
+                  </p>
+                  <p className="agent-result">
+                    {"  ⎿  3 secrets · values hidden"}
+                  </p>
+                </div>
+                <div className="agent-command">
+                  ❯<i />
+                </div>
+                <p className="agent-status">
+                  <b>▸▸ keysy skill on</b>
+                  <span> · policy agent-dev</span>
+                </p>
               </div>
             )}
           </div>

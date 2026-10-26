@@ -34,7 +34,7 @@ export function Header() {
     <header className="site-header">
       <div className="header-inner">
         <a href="/" aria-label="Keysy home">
-          <DesignAsset section="36000" name="imgKeysyLogo" />
+          <DesignAsset section="36000" name="imgKeysyLogo" loading="eager" />
         </a>
         <ComingSoon className="sign-in">Sign in</ComingSoon>
       </div>

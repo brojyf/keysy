@@ -93,14 +93,7 @@ describe("HTML demo stories", () => {
       [...root.querySelectorAll("tbody tr")].map((row) => row.dataset.secret),
     ).toEqual(order);
     expect(root.querySelector(".assistant-reply").hidden).toBe(false);
-    expect(root.querySelector(".preview-scene").style.opacity).toBe("0");
-    const replay = immediatePlayback(root);
-    await playHeroStory(replay, root, () => {});
-    expect(replay.checkpoints[0].ms).toBe(500);
-    expect(replay.checkpoints[0].path).toBe(
-      "production/payments/STRIPE_SECRET_KEY",
-    );
-    expect(replay.checkpoints[0].replyHidden).toBe(true);
+    expect(root.querySelector(".preview-scene").style.opacity).not.toBe("0");
   });
 
   test("pastes an already masked value, selects the reminder, saves, and resets on replay", async () => {

@@ -14,6 +14,39 @@ const pages = new Map(
 );
 
 describe("built landing site", () => {
+  test("loads first-screen images eagerly and defers later image decoding and requests", () => {
+    const { document } = pages.get("/");
+    for (const image of document.querySelectorAll(
+      ".site-header img, .hero img",
+    ))
+      expect(image.loading).toBe("eager");
+    for (const image of document.querySelectorAll(
+      "main > section:not(.hero) img, footer img",
+    )) {
+      expect(image.loading).toBe("lazy");
+      expect(image.decoding).toBe("async");
+      expect(Number(image.getAttribute("width"))).toBeGreaterThan(0);
+      expect(Number(image.getAttribute("height"))).toBeGreaterThan(0);
+    }
+  });
+
+  test("renders the coding-agent transcript above its command bar and status", () => {
+    const widget = pages.get("/").document.querySelector(".agent-preview");
+    expect([...widget.children].map((child) => child.className)).toEqual([
+      "agent-transcript",
+      "agent-command",
+      "agent-status",
+    ]);
+    expect(widget.querySelector(".agent-transcript").textContent).toContain(
+      "Skill(keysy)",
+    );
+    expect(widget.querySelector(".agent-transcript").textContent).toContain(
+      "Bash(keysy ls production/api)",
+    );
+    expect(widget.querySelector(".agent-status").textContent).toBe(
+      "▸▸ keysy skill on · policy agent-dev",
+    );
+  });
   test("renders the complete landing page and useful semantic navigation", () => {
     const { document } = pages.get("/");
     expect(document.querySelectorAll("h1")).toHaveLength(1);

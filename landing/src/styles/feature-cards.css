@@ -29,6 +29,7 @@
   min-height: 84px;
 }
 .channel-preview {
+  container-type: inline-size;
   margin-top: 16px;
   height: 128px;
   overflow: hidden;
@@ -103,19 +104,57 @@
   box-shadow: 0 4px 12px #101b3014;
 }
 .agent-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  position: relative;
+  width: 243px;
+  height: 132px;
+  font:
+    400 10px/15px "Geist Mono Variable",
+    monospace;
+  transform: scale(min(1, calc(100cqw / 243px)));
+  transform-origin: top left;
+  white-space: nowrap;
 }
-.agent-preview small {
+.agent-transcript {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+.agent-preview b {
+  font-weight: 500;
+}
+.agent-call-dot,
+.agent-status b {
   color: var(--accent);
-  font-size: 7px;
 }
-.agent-preview span {
+.agent-result {
+  white-space: pre;
   color: var(--muted);
-  font-family: "Geist Mono Variable", monospace;
-  padding-left: 10px;
-  font-size: 7px;
+}
+.agent-command {
+  position: absolute;
+  left: 0;
+  top: 66px;
+  width: 243px;
+  height: 27px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-block: 1px solid var(--line);
+  line-height: 16px;
+}
+.agent-command i {
+  width: 6px;
+  height: 13px;
+  background: var(--accent);
+  opacity: 0.6;
+}
+.agent-status {
+  position: absolute;
+  left: 8px;
+  top: 96px;
+  line-height: 16px;
+}
+.agent-status span {
+  color: var(--muted);
 }
 .platform-grid {
   display: grid;
@@ -592,14 +631,6 @@
   .extension-preview > span {
     padding: 4px;
     font-size: 6px;
-  }
-  .agent-preview {
-    gap: 4px;
-    font-size: 6px;
-  }
-  .agent-preview small,
-  .agent-preview span {
-    font-size: 5px;
   }
   .platform-grid {
     grid-template-columns: minmax(0, 1fr);

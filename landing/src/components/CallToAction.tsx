@@ -28,8 +28,6 @@ export default function CallToAction() {
       const box = node.getBoundingClientRect();
       const x = event.clientX - box.left;
       const y = event.clientY - box.top;
-      node.style.setProperty("--pointer-x", `${x}px`);
-      node.style.setProperty("--pointer-y", `${y}px`);
       if (preference.matches) return;
       rotation = animate(
         node,
@@ -54,7 +52,6 @@ export default function CallToAction() {
     <div ref={card} className="cta-card">
       <DotBackdrop />
       <DesignAsset section="36844" name="imgEllipse" className="cta-glow" />
-      <div className="cta-sheen" />
       <div className="cta-content">
         <h2 id="cta-title">
           Less friction.
