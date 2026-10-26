@@ -1,0 +1,444 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Keysy System Architecture",
+    "output": "wiki/public/architecture/system-architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en"
+  },
+  "components": [
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "auth",
+      "sublabel": "Google sign-in only",
+      "pos": [
+        290,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "clients",
+      "type": "external",
+      "label": "Clients",
+      "sublabel": "web / cli / sdk / extension",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "api",
+      "sublabel": "HTTP service",
+      "pos": [
+        290,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "llm",
+      "type": "external",
+      "label": "LLM Provider",
+      "sublabel": "TBD",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "supabase",
+      "type": "database",
+      "label": "Supabase",
+      "sublabel": "Postgres + Auth + outbox",
+      "pos": [
+        545,
+        240
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "relay",
+      "type": "backend",
+      "label": "Outbox Relay",
+      "sublabel": "CDC / poller",
+      "pos": [
+        800,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Dragonfly",
+      "sublabel": "Redis-compatible cache",
+      "pos": [
+        40,
+        140
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "otel",
+      "type": "backend",
+      "label": "otel",
+      "sublabel": "OTel Collector",
+      "pos": [
+        555,
+        40
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "external",
+      "label": "Grafana",
+      "sublabel": "traces / metrics / logs",
+      "pos": [
+        800,
+        40
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "Aiven, keyed + DLQ",
+      "pos": [
+        1010,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "audit",
+      "type": "backend",
+      "label": "audit",
+      "sublabel": "consumer + read API",
+      "pos": [
+        1010,
+        140
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "auditdb",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Aiven, audit",
+      "pos": [
+        1010,
+        40
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "notify",
+      "type": "backend",
+      "label": "notify",
+      "sublabel": "Kafka consumer",
+      "pos": [
+        1220,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "cfqueue",
+      "type": "messagebus",
+      "label": "Cloudflare Queues",
+      "sublabel": "email-high / email-low",
+      "pos": [
+        1220,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "cloud",
+      "label": "email-worker",
+      "sublabel": "Cloudflare Worker",
+      "pos": [
+        1010,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "emaildlq",
+      "type": "messagebus",
+      "label": "email-dlq",
+      "sublabel": "failed sends",
+      "pos": [
+        1010,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "resend",
+      "type": "external",
+      "label": "Resend",
+      "sublabel": "email API",
+      "pos": [
+        800,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cloudflare",
+      "wraps": [
+        "cfqueue",
+        "worker",
+        "emaildlq"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "sign-in",
+      "from": "clients",
+      "to": "auth",
+      "label": "sign in",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "auth-proxy",
+      "from": "auth",
+      "to": "supabase",
+      "label": "proxy Supabase Auth",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "client-request",
+      "from": "clients",
+      "to": "api",
+      "label": "HTTPS + JWT",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-write",
+      "from": "api",
+      "to": "supabase",
+      "label": "write + outbox",
+      "variant": "emphasis"
+    },
+    {
+      "id": "llm-call",
+      "from": "api",
+      "to": "llm",
+      "label": "inference",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "api-cache",
+      "from": "api",
+      "to": "redis",
+      "label": "read / fill cache",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "api-telemetry",
+      "from": "api",
+      "to": "otel",
+      "label": "OTLP",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "otel-export",
+      "from": "otel",
+      "to": "grafana",
+      "label": "export",
+      "variant": "dashed"
+    },
+    {
+      "id": "read-outbox",
+      "from": "supabase",
+      "to": "relay",
+      "label": "read outbox"
+    },
+    {
+      "id": "publish-event",
+      "from": "relay",
+      "to": "kafka",
+      "label": "publish",
+      "variant": "emphasis"
+    },
+    {
+      "id": "query-audit",
+      "from": "api",
+      "to": "audit",
+      "label": "query audit log",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "consume-audit",
+      "from": "kafka",
+      "to": "audit",
+      "label": "consume",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "write-audit-log",
+      "from": "audit",
+      "to": "auditdb",
+      "label": "insert",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "consume-notify",
+      "from": "kafka",
+      "to": "notify",
+      "label": "consume",
+      "variant": "dashed"
+    },
+    {
+      "id": "enqueue-email",
+      "from": "notify",
+      "to": "cfqueue",
+      "label": "enqueue job",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "trigger-worker",
+      "from": "cfqueue",
+      "to": "worker",
+      "label": "trigger",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "send-email",
+      "from": "worker",
+      "to": "resend",
+      "label": "send",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "dead-letter",
+      "from": "worker",
+      "to": "emaildlq",
+      "label": "retries exhausted",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Reliability",
+      "items": [
+        "Successful changes commit their outbox row in the same transaction as business data",
+        "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
+        "notify commits its offset only after the enqueue succeeds"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Audit",
+      "items": [
+        "api authorizes the user, then queries the audit read API",
+        "Only audit reads or writes the audit database",
+        "Denied or failed change attempts commit their outbox row in a separate transaction"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Email delivery",
+      "items": [
+        "notify picks recipient and template; job_id = hash(event_id + template)",
+        "email-high: security alerts and member-added notices; email-low: everything else",
+        "email-worker sends with Idempotency-Key = job_id; 429/5xx retried with delay",
+        "Bounces and complaints handled by the Resend suppression list"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Observability",
+      "items": [
+        "api, auth, Outbox Relay, audit and notify export OTLP to otel; only the api edge is drawn",
+        "email-worker exports logs and traces to Grafana via Cloudflare OTLP export; final send failures raise an alert",
+        "email-dlq keeps failed jobs for 4 days so they can be replayed"
+      ]
+    }
+  ]
+}

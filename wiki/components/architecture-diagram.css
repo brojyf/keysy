@@ -1,0 +1,8 @@
+#sourcey iframe.architecture-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 24rem;
+  aspect-ratio: 3 / 4;
+  border: 0;
+}
