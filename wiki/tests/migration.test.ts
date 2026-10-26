@@ -180,7 +180,7 @@ test('tech stack names the frontend, backend, data, messaging, email and DevOps 
   const html = await Bun.file(new URL('tech-stack.html', output)).text();
   for (const choice of [
     'TypeScript', 'React', 'Go', 'Gin', 'Supabase', 'Dragonfly', 'Aiven', 'Kafka', 'PostgreSQL',
-    'Cloudflare Queues', 'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io',
+    'Cloudflare Queues', 'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io', 'Grafana k6',
   ]) expect(html).toContain(choice);
 });
 
