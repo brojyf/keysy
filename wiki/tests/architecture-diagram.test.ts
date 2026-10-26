@@ -186,3 +186,13 @@ test('the preview grows for a wrapped index and replaces resize observers on rel
   expect(observers).toHaveLength(3);
   expect(navigations).toHaveLength(1);
 });
+
+test('clicking a node in either layout opens no semantic passport popup', async () => {
+  for (const filename of ['system-architecture.html', 'system-architecture-vertical.html']) {
+    const source = await Bun.file(new URL(`../public/architecture/${filename}`, import.meta.url)).text();
+    expect(source).toContain('id="focus-chip"');
+  }
+  const { loaded, styles } = loadDiagram();
+  loaded();
+  expect(styles[0]!.textContent).toContain('html[data-present="true"] #focus-chip { display: none !important; }');
+});

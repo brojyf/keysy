@@ -48,6 +48,7 @@ export default function mount(root: HTMLElement) {
       html[data-present="true"] .toolbar,
       html[data-present="true"] .diagram-nav,
       html[data-present="true"] .rail-controls { display: none !important; }
+      html[data-present="true"] #focus-chip { display: none !important; }
       html[data-present="true"]:not([data-embed="true"]) .diagram-container {
         height: var(--wiki-diagram-height); padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--bg);
       }
