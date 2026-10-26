@@ -235,6 +235,7 @@ test('references lists tool and guideline links without project-specific design 
     'https://github.com/tt-a1i/archify',
     'https://github.com/southleft/figma-console-mcp',
     'https://github.com/multica-ai/andrej-karpathy-skills',
+    'https://github.com/cloudflare/security-audit-skill',
   ]));
   expect(links).not.toContain('https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao');
   expect(await Bun.file(new URL('development-tools.html', output)).exists()).toBe(false);
