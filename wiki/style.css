@@ -60,9 +60,19 @@
   font-weight: 700;
 }
 
-/* Collapsible endpoint groups sit below section titles. */
+/* Collapsible endpoint groups read as links, below section titles. */
 #sourcey .sourcey-nav-group > summary .nav-group-label {
-  font-weight: 500;
+  color: rgb(var(--color-gray-700));
+  font-weight: 400;
+}
+
+.dark #sourcey .sourcey-nav-group > summary .nav-group-label {
+  color: rgb(var(--color-gray-400));
+}
+
+/* sidebar.js keeps a closing group open until its height animation ends. */
+#sourcey .sourcey-nav-group[data-closing] > summary::before {
+  transform: rotate(-45deg);
 }
 
 #sourcey .nav-link.active,
@@ -304,20 +314,6 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  #sourcey .sourcey-nav-group {
-    interpolate-size: allow-keywords;
-  }
-
-  #sourcey .sourcey-nav-group::details-content {
-    block-size: 0;
-    overflow: clip;
-    transition: block-size 200ms ease-in-out, content-visibility 200ms ease-in-out allow-discrete;
-  }
-
-  #sourcey .sourcey-nav-group[open]::details-content {
-    block-size: auto;
-  }
-
   #sourcey .sourcey-nav-group > summary::before {
     transition: transform 200ms ease-in-out;
   }

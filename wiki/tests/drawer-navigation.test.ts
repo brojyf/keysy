@@ -32,9 +32,9 @@ function loadDrawer({ supported = true, mobile = true, reducedMotion = false } =
   const document = {
     getElementById: (id: string) => id === 'mobile-nav' ? dialog : null,
     querySelector: () => null,
-    querySelectorAll: () => [{
+    querySelectorAll: (selector: string) => selector === '[data-drawer-slide]' ? [{
       addEventListener: (_name: string, listener: Listener) => listeners.set('open', listener),
-    }],
+    }] : [],
   };
   runInNewContext(sidebarScript, { window, document, URL });
   listeners.get('load')!({});

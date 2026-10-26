@@ -284,10 +284,11 @@ test('design points to the design directory for all design assets', async () => 
   for (const asset of ['Figma', 'logo', 'CSS', 'theme']) expect(html).toContain(asset);
 });
 
-test('collapsible endpoint groups animate and use lighter labels than section titles', () => {
-  expect(stylesheet).toContain('#sourcey .sourcey-nav-group > summary .nav-group-label');
-  expect(stylesheet).toContain('#sourcey .sourcey-nav-group::details-content');
-  expect(stylesheet).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*interpolate-size: allow-keywords/);
+test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', () => {
+  expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-700\)\);\s*font-weight: 400;/);
+  expect(stylesheet).toMatch(/\.dark #sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-400\)\);/);
+  expect(stylesheet).toContain('#sourcey .sourcey-nav-group[data-closing] > summary::before');
+  expect(stylesheet).not.toContain('::details-content');
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {
