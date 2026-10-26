@@ -64,6 +64,49 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /v1/orgs/{orgId}/settings:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      tags: [Orgs]
+      operationId: getOrgSettings
+      summary: Get org settings
+      description: Admin or Super Admin.
+      responses:
+        '200':
+          description: Org settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [Orgs]
+      operationId: updateOrgSettings
+      summary: Update org settings
+      description: Admin or Super Admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgSettings'
+      responses:
+        '200':
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /v1/orgs/{orgId}/members:
     parameters:
@@ -756,7 +799,9 @@ paths:
       tags: [Audit logs]
       operationId: listAuditLogs
       summary: List audit logs
-      description: Admin or Super Admin. Records never contain secret values.
+      description: |
+        Admin or Super Admin. Records changes only; secret value retrievals
+        are not audited. Records never contain secret values.
       parameters:
         - name: targetType
           in: query
@@ -894,6 +939,14 @@ components:
         createdAt:
           type: string
           format: date-time
+    OrgSettings:
+      type: object
+      required: [expirationReminderDays]
+      properties:
+        expirationReminderDays:
+          type: integer
+          minimum: 1
+          description: Days before a secret's `expiresAt` when Admins receive a reminder.
     Member:
       type: object
       required: [id, email, role, userId, createdAt]
@@ -945,7 +998,9 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: Expiration reminder date. Keysy does not rotate or invalidate the secret.
+          description: |
+            Expiration date. Admins are reminded `expirationReminderDays`
+            before it. Keysy does not rotate or invalidate the secret.
         currentVersion:
           type: integer
           minimum: 1
