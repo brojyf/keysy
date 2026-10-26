@@ -11,7 +11,9 @@ function loadGroup({ open = false, reducedMotion = false, linearEasing = true, l
   let onSummaryClick: Listener = () => {};
   let onLoad = () => {};
   const motions: Motion[] = [];
+  const frames: (() => void)[] = [];
   const list = {
+    style: { height: '', overflow: '' },
     scrollHeight: 120,
     renderedHeight: open ? 120 : 0,
     getBoundingClientRect: () => ({ height: list.renderedHeight }),
@@ -34,6 +36,8 @@ function loadGroup({ open = false, reducedMotion = false, linearEasing = true, l
       getPropertyValue: (name: string) => ({ '--keysy-spring': ` ${spring}`, '--keysy-spring-duration': ' 600ms' })[name] ?? '',
     }),
     CSS: { supports: (_property: string, value: string) => linearEasing || !value.startsWith('linear(') },
+    requestAnimationFrame: (callback: () => void) => frames.push(callback),
+    cancelAnimationFrame: (id: number) => { frames[id - 1] = () => {}; },
   };
   const document = {
     getElementById: () => null,
@@ -42,12 +46,20 @@ function loadGroup({ open = false, reducedMotion = false, linearEasing = true, l
   };
   runInNewContext(sidebarScript, { window, document });
   if (loaded) onLoad();
-  function click() {
+  function press() {
     const event = { preventDefault: mock() };
     onSummaryClick(event);
     return event;
   }
-  return { group, list, motions, click };
+  function nextFrame() {
+    frames.splice(0).forEach((frame) => frame());
+  }
+  function click() {
+    const event = press();
+    nextFrame();
+    return event;
+  }
+  return { group, list, motions, press, nextFrame, click };
 }
 
 const keyframes = (from: string, to: string) => ({ height: [from, to], overflow: ['hidden', 'hidden'] });
@@ -59,6 +71,17 @@ test('opening a collapsed endpoint group springs its height from zero', () => {
   expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: spring });
   motions[0]!.onfinish!();
   expect(group.open).toBe(true);
+});
+
+test('a first open holds the current height for one frame before springing', () => {
+  const { group, list, press, nextFrame } = loadGroup();
+  press();
+  expect(group.open).toBe(true);
+  expect(list.style).toEqual({ height: '0px', overflow: 'hidden' });
+  expect(list.animate).not.toHaveBeenCalled();
+  nextFrame();
+  expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: spring });
+  expect(list.style).toEqual({ height: '', overflow: '' });
 });
 
 test('closing an endpoint group springs to zero before closing it', () => {

@@ -295,6 +295,11 @@ test('collapsible endpoint group labels look like links, and their chevrons turn
   expect(stylesheet).toContain('--keysy-spring-duration: 600ms;');
 });
 
+test('the project plan screenshot loads lazily', async () => {
+  const html = await Bun.file(new URL('project-management-plan.html', output)).text();
+  expect(html).toMatch(/<img [^>]*src="\/project-management\/plan-tracker\.png"[^>]*loading="lazy"|<img [^>]*loading="lazy"[^>]*src="\/project-management\/plan-tracker\.png"/);
+});
+
 test('references lists tool and guideline links without project-specific design links', async () => {
   const html = await Bun.file(new URL('references.html', output)).text();
   const links = (await matches(html, '#content-area a[href]')).map(({ href }) => href);
