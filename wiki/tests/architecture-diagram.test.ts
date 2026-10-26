@@ -81,10 +81,10 @@ test('container resizing reloads only when crossing the layout breakpoint in eit
   expect(navigations).toHaveLength(2);
   loaded();
   expect(frame.style.aspectRatio).toBe('1220 / 838');
-  expect(frame.style.height).toBe('790px');
+  expect(frame.style.height).toBe('680px');
   resize(1000, 300);
   expect(navigations).toHaveLength(2);
-  expect(frame.style.height).toBe('987px');
+  expect(frame.style.height).toBe('850px');
   resize(799, 400);
   expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture-vertical.html');
   expect(navigations).toHaveLength(3);

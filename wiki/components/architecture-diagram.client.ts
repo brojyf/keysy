@@ -84,7 +84,9 @@ export default function mount(root: HTMLElement) {
     }
     const index = viewer.getElementById('node-outline')!;
     function resize() {
-      const diagramHeight = Math.ceil(frame.clientWidth * height / width);
+      // The horizontal chart renders below full width so it does not dominate the page.
+      const scale = layout === 'horizontal' ? 0.8 : 1;
+      const diagramHeight = Math.ceil(frame.clientWidth * height / width * scale);
       viewer!.documentElement.style.setProperty('--wiki-diagram-height', `${diagramHeight}px`);
       const frameHeight = `${Math.ceil(diagramHeight + index.getBoundingClientRect().height)}px`;
       if (frame.style.height !== frameHeight) frame.style.height = frameHeight;
