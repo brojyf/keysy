@@ -12,7 +12,7 @@ info:
 tags:
   - name: Session
 paths:
-  /v1/auth/google:
+  /v0/auth/google:
     get:
       tags: [Session]
       operationId: startGoogleSignIn
@@ -48,7 +48,7 @@ paths:
                 format: uri
         '400':
           $ref: '#/components/responses/BadRequest'
-  /v1/auth/token:
+  /v0/auth/token:
     post:
       tags: [Session]
       operationId: exchangeCode
@@ -72,7 +72,7 @@ paths:
           $ref: '#/components/responses/Session'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /v1/auth/refresh:
+  /v0/auth/refresh:
     post:
       tags: [Session]
       operationId: refreshSession
@@ -93,7 +93,7 @@ paths:
           $ref: '#/components/responses/Session'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /v1/auth/logout:
+  /v0/auth/logout:
     post:
       tags: [Session]
       operationId: logout

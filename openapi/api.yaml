@@ -20,7 +20,7 @@ tags:
 security:
   - bearerAuth: []
 paths:
-  /v1/me:
+  /v0/me:
     get:
       tags: [Orgs]
       operationId: getMe
@@ -34,7 +34,7 @@ paths:
                 $ref: '#/components/schemas/Me'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /v1/orgs:
+  /v0/orgs:
     post:
       tags: [Orgs]
       operationId: createOrg
@@ -61,7 +61,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /v1/orgs/{orgId}/settings:
+  /v0/orgs/{orgId}/settings:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -105,7 +105,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
-  /v1/orgs/{orgId}/members:
+  /v0/orgs/{orgId}/members:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -160,7 +160,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
-  /v1/orgs/{orgId}/members/{memberId}:
+  /v0/orgs/{orgId}/members/{memberId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/MemberId'
@@ -212,7 +212,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /v1/orgs/{orgId}/secrets:
+  /v0/orgs/{orgId}/secrets:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -268,7 +268,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
-  /v1/orgs/{orgId}/secrets/{secretId}:
+  /v0/orgs/{orgId}/secrets/{secretId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/SecretId'
@@ -329,7 +329,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/secrets/{secretId}/versions:
+  /v0/orgs/{orgId}/secrets/{secretId}/versions:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/SecretId'
@@ -389,7 +389,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/secrets/{secretId}/retrievals:
+  /v0/orgs/{orgId}/secrets/{secretId}/retrievals:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/SecretId'
@@ -417,7 +417,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/secrets/{secretId}/value:
+  /v0/orgs/{orgId}/secrets/{secretId}/value:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/SecretId'
@@ -440,7 +440,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/secret-values:
+  /v0/orgs/{orgId}/secret-values:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -479,7 +479,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /v1/orgs/{orgId}/policies:
+  /v0/orgs/{orgId}/policies:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -525,7 +525,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /v1/orgs/{orgId}/policies/{policyId}:
+  /v0/orgs/{orgId}/policies/{policyId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/PolicyId'
@@ -570,7 +570,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /v1/orgs/{orgId}/services:
+  /v0/orgs/{orgId}/services:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
@@ -622,7 +622,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
-  /v1/orgs/{orgId}/services/{serviceId}:
+  /v0/orgs/{orgId}/services/{serviceId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/ServiceId'
@@ -640,7 +640,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/services/{serviceId}/tokens:
+  /v0/orgs/{orgId}/services/{serviceId}/tokens:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/ServiceId'
@@ -695,7 +695,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /v1/orgs/{orgId}/services/{serviceId}/tokens/{tokenId}:
+  /v0/orgs/{orgId}/services/{serviceId}/tokens/{tokenId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/ServiceId'
@@ -720,7 +720,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /v1/orgs/{orgId}/reorganizations:
+  /v0/orgs/{orgId}/reorganizations:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     post:
@@ -755,7 +755,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /v1/orgs/{orgId}/reorganizations/{reorganizationId}/apply:
+  /v0/orgs/{orgId}/reorganizations/{reorganizationId}/apply:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - name: reorganizationId
@@ -789,7 +789,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
-  /v1/orgs/{orgId}/audit-logs:
+  /v0/orgs/{orgId}/audit-logs:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
