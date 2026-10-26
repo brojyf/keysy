@@ -16,6 +16,10 @@
   --keysy-text: #1b1c1e;
   --keysy-accent: #1d4ed8;
   --keysy-soft: #f0f1f3;
+  /* Critically damped spring (damping 1.0, response 0.4 s), sampled until it settles. */
+  --keysy-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
+    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
+  --keysy-spring-duration: 600ms;
 }
 
 .dark {
@@ -315,10 +319,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   #sourcey .sourcey-nav-group > summary::before {
-    transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  #sourcey .sourcey-nav-group[data-closing] > summary::before {
-    transition-duration: 150ms;
+    transition: transform var(--keysy-spring-duration) var(--keysy-spring);
   }
 }

@@ -2,14 +2,25 @@ import { expect, mock, test } from 'bun:test';
 import { runInNewContext } from 'node:vm';
 
 const sidebarScript = await Bun.file(new URL('../node_modules/sourcey/dist/client/sidebar.js', import.meta.url)).text();
+const spring = 'linear(0, 0.06, 0.186, 1)';
 type Listener = (event: Record<string, unknown>) => void;
+type Motion = { onfinish: null | (() => void); cancel: ReturnType<typeof mock> };
 
 // Run Sourcey's patched sidebar script against one collapsible endpoint group.
-function loadGroup({ open = false, reducedMotion = false } = {}) {
+function loadGroup({ open = false, reducedMotion = false, linearEasing = true } = {}) {
   let onSummaryClick: Listener = () => {};
   let onLoad = () => {};
-  const animation: { onfinish: null | (() => void) } = { onfinish: null };
-  const list = { scrollHeight: 120, animate: mock(() => animation) };
+  const motions: Motion[] = [];
+  const list = {
+    scrollHeight: 120,
+    renderedHeight: open ? 120 : 0,
+    getBoundingClientRect: () => ({ height: list.renderedHeight }),
+    animate: mock(() => {
+      const motion: Motion = { onfinish: null, cancel: mock() };
+      motions.push(motion);
+      return motion;
+    }),
+  };
   const summary = { addEventListener: (_name: string, listener: Listener) => { onSummaryClick = listener; } };
   const group = {
     open,
@@ -19,6 +30,10 @@ function loadGroup({ open = false, reducedMotion = false } = {}) {
   const window = {
     addEventListener: (name: string, listener: () => void) => { if (name === 'load') onLoad = listener; },
     matchMedia: (query: string) => ({ matches: query.includes('reduce') && reducedMotion }),
+    getComputedStyle: () => ({
+      getPropertyValue: (name: string) => ({ '--keysy-spring': ` ${spring}`, '--keysy-spring-duration': ' 600ms' })[name] ?? '',
+    }),
+    CSS: { supports: (_property: string, value: string) => linearEasing || !value.startsWith('linear(') },
   };
   const document = {
     getElementById: () => null,
@@ -32,33 +47,46 @@ function loadGroup({ open = false, reducedMotion = false } = {}) {
     onSummaryClick(event);
     return event;
   }
-  return { group, list, animation, click };
+  return { group, list, motions, click };
 }
 
-test('opening a collapsed endpoint group animates its height from zero', () => {
-  const { group, list, animation, click } = loadGroup();
+const keyframes = (from: string, to: string) => ({ height: [from, to], overflow: ['hidden', 'hidden'] });
+
+test('opening a collapsed endpoint group springs its height from zero', () => {
+  const { group, list, motions, click } = loadGroup();
   expect(click().preventDefault).toHaveBeenCalledTimes(1);
   expect(group.open).toBe(true);
-  expect(list.animate).toHaveBeenCalledWith(
-    { height: ['0px', '120px'], overflow: ['hidden', 'hidden'] },
-    { duration: 200, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-  );
-  animation.onfinish!();
+  expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: spring });
+  motions[0]!.onfinish!();
   expect(group.open).toBe(true);
 });
 
-test('closing an endpoint group animates to zero before closing it', () => {
-  const { group, list, animation, click } = loadGroup({ open: true });
+test('closing an endpoint group springs to zero before closing it', () => {
+  const { group, list, motions, click } = loadGroup({ open: true });
   click();
   expect(group.open).toBe(true);
   expect('closing' in group.dataset).toBe(true);
-  expect(list.animate).toHaveBeenCalledWith(
-    { height: ['120px', '0px'], overflow: ['hidden', 'hidden'] },
-    { duration: 150, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-  );
-  animation.onfinish!();
+  expect(list.animate).toHaveBeenCalledWith(keyframes('120px', '0px'), { duration: 600, easing: spring });
+  motions[0]!.onfinish!();
   expect(group.open).toBe(false);
   expect('closing' in group.dataset).toBe(false);
+});
+
+test('reversing mid-close springs open from the current height', () => {
+  const { group, list, motions, click } = loadGroup({ open: true });
+  click();
+  list.renderedHeight = 50;
+  click();
+  expect(motions[0]!.cancel).toHaveBeenCalledTimes(1);
+  expect(list.animate).toHaveBeenLastCalledWith(keyframes('50px', '120px'), { duration: 600, easing: spring });
+  expect(group.open).toBe(true);
+  expect('closing' in group.dataset).toBe(false);
+});
+
+test('browsers without linear() easing fall back to ease-out', () => {
+  const { list, click } = loadGroup({ linearEasing: false });
+  click();
+  expect(list.animate).toHaveBeenCalledWith(keyframes('0px', '120px'), { duration: 600, easing: 'ease-out' });
 });
 
 test('reduced motion keeps the native instant toggle', () => {

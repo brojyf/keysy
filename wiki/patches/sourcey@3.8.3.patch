@@ -1,28 +1,39 @@
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..10020b127d7177e0f66a3ae563e1392fb9b448c5 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..9b40a18b8ff06ba40cc225352a57e355eaa5dc7e 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
-@@ -170,13 +170,42 @@
+@@ -170,13 +170,53 @@
      });
    }
  
-+  // Animate collapsible nav groups; reduced motion keeps the native toggle.
++  // Spring collapsible nav groups from their current height with style.css's
++  // --keysy-spring; reversing mid-motion stays smooth. Reduced motion keeps the native toggle.
 +  function initNavGroupMotion() {
 +    document.querySelectorAll('details.sourcey-nav-group').forEach(function (group) {
 +      var summary = group.querySelector(':scope > summary');
 +      var list = group.querySelector(':scope > ul');
++      var motion = null;
 +      if (!summary || !list || !list.animate) return;
 +      summary.addEventListener('click', function (e) {
 +        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 +        e.preventDefault();
-+        var opening = !group.open;
-+        if (opening) group.open = true;
++        var style = window.getComputedStyle(list);
++        var easing = style.getPropertyValue('--keysy-spring').trim();
++        var opening = !group.open || 'closing' in group.dataset;
++        var from = list.getBoundingClientRect().height + 'px';
++        if (motion) motion.cancel();
++        group.open = true;
++        if (opening) delete group.dataset.closing;
 +        else group.dataset.closing = '';
-+        var height = list.scrollHeight + 'px';
-+        list.animate(
-+          { height: opening ? ['0px', height] : [height, '0px'], overflow: ['hidden', 'hidden'] },
-+          { duration: opening ? 200 : 150, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' }
-+        ).onfinish = function () {
++        motion = list.animate(
++          { height: [from, opening ? list.scrollHeight + 'px' : '0px'], overflow: ['hidden', 'hidden'] },
++          {
++            duration: parseFloat(style.getPropertyValue('--keysy-spring-duration')) || 300,
++            easing: window.CSS && window.CSS.supports('transition-timing-function', easing) ? easing : 'ease-out'
++          }
++        );
++        motion.onfinish = function () {
++          motion = null;
 +          if (opening) return;
 +          group.open = false;
 +          delete group.dataset.closing;
@@ -45,7 +56,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..10020b127d7177e0f66a3ae563e1392f
      window.matchMedia('(min-width: 1024px)').addEventListener('change', function (event) {
        if (event.matches && dialog.open) dialog.close();
      });
-@@ -192,11 +221,27 @@
+@@ -192,11 +232,27 @@
        if (e.target === dialog) dialog.close();
      });
  
