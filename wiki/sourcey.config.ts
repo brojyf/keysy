@@ -25,7 +25,7 @@ export default defineConfig({
         slug: '',
         source: markdown({
           slugs: 'file',
-          groups: [{ group: 'General', pages: ['index', 'prd', 'system-design', 'references'] }],
+          groups: [{ group: 'General', pages: ['index', 'prd', 'tech-stack', 'system-design', 'references'] }],
         }),
       },
       {
