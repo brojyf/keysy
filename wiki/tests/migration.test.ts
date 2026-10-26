@@ -175,6 +175,16 @@ for (const [route, title] of routes) {
   });
 }
 
+test('the introduction lists every top-level repository directory', async () => {
+  const html = await Bun.file(new URL('index.html', output)).text();
+  const table = html.match(/<table[\s\S]*?<\/table>/)![0];
+  const listed = [...table.matchAll(/<tr><td><code>([^<]+)<\/code><\/td>/g)].map((match) => match[1]!);
+  const tracked = Bun.spawnSync(['git', 'ls-tree', '-d', '--name-only', 'HEAD'], { cwd: new URL('../..', import.meta.url).pathname });
+  const directories = tracked.stdout.toString().trim().split('\n');
+  expect(directories.length).toBeGreaterThan(0);
+  expect(listed.sort()).toEqual(directories.map((directory) => `${directory}/`).sort());
+});
+
 test('the published client includes the patched drawer lifecycle and appearance handlers', async () => {
   const html = await Bun.file(new URL('index.html', output)).text();
   const scripts = await matches(html, 'script[src]');
