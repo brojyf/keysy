@@ -209,14 +209,35 @@ export function SecurityCards() {
         description="The assistant and coding agents work with paths and policies. Values never enter the conversation."
       >
         <div className="chat-preview">
-          <p>What can I browse?</p>
+          <p>Move the Stripe key to production/payments.</p>
           <div className="mini-window">
-            I can work with these fields only:
-            <code>path · environment · version · note</code>
-            <span>
-              <DesignAsset section="36545" name="imgIconLock3" />
-              Secret values stay out of AI.
-            </span>
+            <small>Sent to AI</small>
+            <dl>
+              <div>
+                <dt>paths</dt>
+                <dd>
+                  <code>production/api/DATABASE_URL</code>
+                  <code>production/shared/STRIPE_SECRET_KEY</code>
+                  <small>+ 5 more</small>
+                </dd>
+              </div>
+              <div>
+                <dt>policies</dt>
+                <dd>
+                  <code>api-read → production/api/*</code>
+                  <code>payments-api → production/shared/*</code>
+                </dd>
+              </div>
+              <div>
+                <dt>values</dt>
+                <dd>
+                  <span>
+                    <DesignAsset section="36545" name="imgIconLock3" />
+                    Never sent
+                  </span>
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
       </Card>

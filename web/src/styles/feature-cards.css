@@ -48,19 +48,69 @@
     9.5px "Geist Mono Variable",
     monospace;
 }
-.tiny-secrets {
-  height: 124px;
-  padding: 10px;
+/* Figma draws this window 243px wide; --u scales its measurements to the card. */
+.web-app-preview {
+  --u: calc(100cqw / 243);
+  display: grid;
+  grid-template: calc(24 * var(--u)) 1fr / calc(56 * var(--u)) 1fr;
+  height: calc(152 * var(--u));
+  margin-top: calc(4 * var(--u));
+  border-radius: calc(10 * var(--u));
+  overflow: hidden;
+  box-shadow: none;
 }
-.tiny-secrets code {
+.web-app-chrome {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: calc(4 * var(--u));
+  padding: calc(9 * var(--u)) calc(10 * var(--u));
+  border-bottom: 1px solid var(--line);
+}
+.web-app-chrome i,
+.web-app-nav i {
   display: block;
-  margin-top: 7px;
-  font-size: 7px;
+  background: var(--line);
+  border-radius: calc(3 * var(--u));
+}
+.web-app-chrome i {
+  width: calc(6 * var(--u));
+  height: calc(6 * var(--u));
+}
+.web-app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+  padding: calc(11 * var(--u)) calc(10 * var(--u));
+  background: var(--bg);
+}
+.web-app-nav i {
+  width: calc(30 * var(--u));
+  height: calc(5 * var(--u));
+}
+.web-app-nav i:first-child {
+  width: calc(38 * var(--u));
+  background: var(--text);
+}
+.web-app-paths {
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+  min-width: 0;
+  padding: calc(3 * var(--u)) calc(4 * var(--u));
+}
+.web-app-paths code {
+  padding: 0 calc(8 * var(--u));
+  border-radius: calc(5 * var(--u));
+  color: var(--muted);
+  font-size: calc(8.5 * var(--u));
+  line-height: calc(20 * var(--u));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 5px;
+}
+.web-app-paths .selected {
+  background: #e8eefc;
+  color: var(--accent);
 }
 .tiny-terminal {
   padding: 12px;
@@ -493,20 +543,50 @@
   margin-bottom: 12px;
 }
 .chat-preview .mini-window {
-  padding: 12px;
-  line-height: 1.6;
+  padding: 10px 12px;
+}
+.chat-preview .mini-window > small {
+  font:
+    500 9px "Geist Variable",
+    sans-serif;
+}
+.chat-preview dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.chat-preview dl > div:last-child {
+  align-items: center;
+}
+.chat-preview dd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  margin: 0;
+}
+.chat-preview dd small {
+  font:
+    9px "Geist Variable",
+    sans-serif;
 }
 .chat-preview code {
-  display: block;
-  padding: 6px;
-  background: var(--soft);
-  font-size: 8px;
-  margin: 8px 0;
+  font-size: 9px;
+  color: var(--text);
+  white-space: nowrap;
 }
 .chat-preview span {
   display: flex;
   gap: 5px;
   align-items: center;
+  padding: 3px 9px 3px 7px;
+  background: #e8eefc;
+  border-radius: 999px;
+  font-weight: 500;
   color: var(--accent);
   font-size: 9px;
 }
@@ -607,18 +687,8 @@
     height: 78px;
     margin-top: 12px;
   }
-  .tiny-secrets {
-    height: 90px;
-    padding: 6px;
-  }
-  .tiny-secrets small,
   .tiny-terminal small {
     font-size: 6px;
-  }
-  .tiny-secrets code {
-    margin-top: 5px;
-    padding-bottom: 3px;
-    font-size: 5px;
   }
   .tiny-terminal {
     padding: 6px;

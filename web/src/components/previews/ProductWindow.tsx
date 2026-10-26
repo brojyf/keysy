@@ -33,7 +33,7 @@ export default function ProductWindow({
     setOrbState(null);
     renderHeroFinal(root);
   }, []);
-  const { playing, active, reduced, toggle } = usePreviewPlayback(
+  const { active } = usePreviewPlayback(
     scope,
     update ? playUpdateStory : heroStory,
     update ? renderUpdateFinal : heroFinal,
@@ -210,21 +210,6 @@ export default function ProductWindow({
           </div>
         )}
       </div>
-      {update && (
-        <button
-          type="button"
-          className="demo-control"
-          onClick={toggle}
-          disabled={reduced}
-          aria-label={
-            reduced
-              ? "Animation disabled by reduced motion preference"
-              : undefined
-          }
-        >
-          {playing ? "Pause demo" : "Play demo"}
-        </button>
-      )}
     </div>
   );
 }

@@ -38,7 +38,6 @@ async function press(run: PreviewPlayback, element: HTMLElement) {
 // The panel, paste, expiry picker, and save sequence follow update-secret-motion.html.
 export async function playUpdateStory(run: PreviewPlayback, root: HTMLElement) {
   resetDashboard(root);
-  const scene = query(root, ".preview-scene");
   const panel = query(root, ".product-panel");
   const scrim = query(root, ".preview-scrim");
   const target = query(root, '[data-secret="STRIPE_SECRET_KEY"]');
@@ -46,12 +45,6 @@ export async function playUpdateStory(run: PreviewPlayback, root: HTMLElement) {
   const valueInput = query(root, ".preview-value-input");
   const expiryInput = query(root, ".preview-expiry-input");
   const menu = query(root, ".preview-expiry-menu");
-  if (scene.style.opacity === "0")
-    await run.play(
-      scene,
-      { opacity: [0, 1] },
-      { duration: 0.4, ease: "easeOut" },
-    );
   await run.wait(700);
   await press(run, target);
   target.classList.add("highlighted");
@@ -102,5 +95,4 @@ export async function playUpdateStory(run: PreviewPlayback, root: HTMLElement) {
   applyUpdate(root);
   await run.play(cells, { opacity: [0, 1], y: [6, 0] }, spring(0.3));
   await run.wait(2600);
-  await run.play(scene, { opacity: 0 }, { duration: 0.35, ease: "easeIn" });
 }

@@ -27,16 +27,33 @@ export default function AccessChannels() {
           <p>{description}</p>
           <div className="channel-preview" aria-hidden="true">
             {i === 0 ? (
-              <div className="mini-window tiny-secrets">
-                <small>Workspace</small>
-                {[
-                  "api/DATABASE_URL",
-                  "api/REDIS_URL",
-                  "shared/STRIPE_SECRET_KEY",
-                  "ci/DEPLOY_TOKEN",
-                ].map((path) => (
-                  <code key={path}>production/{path}</code>
-                ))}
+              <div className="mini-window web-app-preview">
+                <div className="web-app-chrome">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div className="web-app-nav">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div className="web-app-paths">
+                  {[
+                    "api/DATABASE_URL",
+                    "api/REDIS_URL",
+                    "shared/STRIPE_SECRET_KEY",
+                    "ci/DEPLOY_TOKEN",
+                  ].map((path) => (
+                    <code
+                      key={path}
+                      className={path.startsWith("shared/") ? "selected" : ""}
+                    >
+                      production/{path}
+                    </code>
+                  ))}
+                </div>
               </div>
             ) : i === 1 ? (
               <div className="mini-window tiny-terminal">

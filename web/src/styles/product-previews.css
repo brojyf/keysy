@@ -38,13 +38,9 @@
 .product-window {
   background: var(--surface);
   border: 0.07em solid var(--line);
-  border-top-color: #7aa2ff;
   border-radius: 1.4em;
   overflow: hidden;
   box-shadow: 0 2.77em 5.54em -1.66em #1d4ed829;
-}
-.hero .product-window {
-  border-top-color: var(--line);
 }
 .window-chrome {
   display: flex;
@@ -363,19 +359,6 @@
 .hero-terminal em {
   color: #7dd3a8;
   font-style: normal;
-}
-.demo-control {
-  position: absolute;
-  bottom: -36px;
-  right: 0;
-  border: 0;
-  background: transparent;
-  padding: 8px;
-  color: var(--muted);
-  font-size: 11px;
-}
-.demo-control:hover {
-  color: var(--accent);
 }
 .preview-fields {
   display: flex;

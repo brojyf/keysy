@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { createPreviewPlayback, type PreviewPlayback } from "./previewPlayback";
 
 export function usePreviewPlayback(
@@ -7,34 +7,29 @@ export function usePreviewPlayback(
   renderFinal: (root: HTMLElement) => void,
   loop: boolean,
 ) {
-  const [playing, setPlaying] = useState(true);
   const [active, setActive] = useState(false);
-  const [reduced, setReduced] = useState(false);
-  const toggleRef = useRef(() => {});
 
   useEffect(() => {
     const root = scope.current!;
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     let run: PreviewPlayback | undefined;
-    let userPlaying = true;
+    let playing = true;
     let visible = true;
     let completed = false;
     const syncPlayback = () => {
       const enabled =
-        userPlaying && !preference.matches && visible && !document.hidden;
+        playing && !preference.matches && visible && !document.hidden;
       setActive(enabled);
       run?.setPaused(!enabled);
     };
     const start = () => {
       run?.stop();
-      setReduced(preference.matches);
       if (completed && !loop) {
         renderFinal(root);
         syncPlayback();
         return;
       }
-      userPlaying = !preference.matches;
-      setPlaying(userPlaying);
+      playing = !preference.matches;
       if (preference.matches) {
         if (!loop) completed = true;
         renderFinal(root);
@@ -51,10 +46,9 @@ export function usePreviewPlayback(
             current.guard();
             if (!loop) {
               completed = true;
-              userPlaying = false;
+              playing = false;
               current.stop();
               renderFinal(root);
-              setPlaying(false);
               syncPlayback();
               break;
             }
@@ -63,12 +57,6 @@ export function usePreviewPlayback(
           if (!current.stopped) throw error;
         }
       })();
-    };
-    toggleRef.current = () => {
-      if (preference.matches) return;
-      userPlaying = !userPlaying;
-      setPlaying(userPlaying);
-      syncPlayback();
     };
     const observer =
       typeof IntersectionObserver === "undefined"
@@ -86,9 +74,8 @@ export function usePreviewPlayback(
       observer?.disconnect();
       preference.removeEventListener("change", start);
       document.removeEventListener("visibilitychange", syncPlayback);
-      toggleRef.current = () => {};
     };
   }, [scope, story, renderFinal, loop]);
 
-  return { playing, active, reduced, toggle: () => toggleRef.current() };
+  return { active };
 }

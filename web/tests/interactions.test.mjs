@@ -164,7 +164,7 @@ describe("product previews", () => {
     run.stop();
   });
 
-  test("keeps a manual pause when the preview leaves and re-enters the viewport", async () => {
+  test("pauses the dashboard while it is off-screen and resumes when it returns", async () => {
     let observe;
     globalThis.IntersectionObserver = class {
       constructor(callback) {
@@ -182,15 +182,7 @@ describe("product previews", () => {
         .querySelector(".product-stage")
         .classList.contains("preview-paused"),
     ).toBe(true);
-    await act(() => container.querySelector("button").click());
     await act(() => observe([{ isIntersecting: true }]));
-    expect(container.querySelector("button").textContent).toBe("Play demo");
-    expect(
-      container
-        .querySelector(".product-stage")
-        .classList.contains("preview-paused"),
-    ).toBe(true);
-    await act(() => container.querySelector("button").click());
     expect(
       container
         .querySelector(".product-stage")
@@ -212,18 +204,32 @@ describe("product previews", () => {
     expect(completed).toBe(true);
     run.stop();
   });
-  test("autoplays the update story and pauses without applying a save", async () => {
+  test("autoplays the update story without demo controls", async () => {
     await act(() =>
       root.render(React.createElement(ProductWindow, { update: true })),
     );
-    const row = () => container.querySelector("tbody tr");
-    const version = () => row().querySelectorAll("td")[1].textContent;
-    expect(version()).toBe("v5");
-    expect(container.querySelector("button").textContent).toBe("Pause demo");
-    await act(() => container.querySelector("button").click());
-    expect(container.querySelector("button").textContent).toBe("Play demo");
-    expect(version()).toBe("v5");
-    expect(row().textContent).toContain("in 14 days");
+    const row = container.querySelector("tbody tr");
+    expect(row.querySelectorAll("td")[1].textContent).toBe("v5");
+    expect(row.textContent).toContain("in 14 days");
+    expect(container.querySelector("button")).toBeNull();
+  });
+
+  test("loops the update story without fading the dashboard in or out", async () => {
+    const played = [];
+    const run = {
+      play: async (element, keyframes) => played.push([element, keyframes]),
+      animate: (element, keyframes) => played.push([element, keyframes]),
+      wait: async () => {},
+    };
+    const { playUpdateStory } = await import(
+      "../src/components/previews/updateSecretStory.ts"
+    );
+    await act(() =>
+      root.render(React.createElement(ProductWindow, { update: true })),
+    );
+    await playUpdateStory(run, container.querySelector(".product-stage"));
+    const scene = container.querySelector(".preview-scene");
+    expect(played.filter(([element]) => element === scene)).toHaveLength(0);
   });
 
   test("shows the saved dashboard state without animation under reduced motion", async () => {
@@ -235,7 +241,7 @@ describe("product previews", () => {
     expect(rows[0].textContent).toContain("v6");
     expect(rows[0].textContent).toContain("in 90 days");
     expect(rows[5].textContent).toContain("v6");
-    expect(container.querySelector("button").disabled).toBe(true);
+    expect(container.querySelector("button")).toBeNull();
   });
 
   test("autoplays the hero without controls and honors reduced motion", async () => {

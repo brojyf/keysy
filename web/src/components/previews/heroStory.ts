@@ -96,7 +96,7 @@ export async function playHeroStory(
   await run.play(
     bubble,
     { opacity: [0, 1], y: [18, 0], scale: [0.94, 1] },
-    spring(0.45),
+    spring(0.35),
   );
   thinking.hidden = false;
   phrase.textContent = thoughts[0][0];
@@ -135,11 +135,11 @@ export async function playHeroStory(
     check.style.opacity = "0";
   });
   reply.hidden = false;
-  run.animate(text, { opacity: [0, 1], y: [8, 0] }, spring(0.45));
+  run.animate(text, { opacity: [0, 1], y: [8, 0] }, spring(0.35));
   run.animate(
     results,
     { opacity: [0, 1], y: [10, 0], scale: [0.97, 1] },
-    { ...spring(0.45), delay: 0.06 },
+    { ...spring(0.35), delay: 0.06 },
   );
   run.animate(
     checks,

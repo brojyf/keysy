@@ -133,6 +133,10 @@ const toRgb = (color: string): [number, number, number] => {
   return [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16) / 255) as [number, number, number];
 };
 
+// Keysy: upstream grows the intro by 1.25 × reach per second, so it races across a large hero.
+// A fixed rate keeps the speed of the ReactBits demo (about 1000 × 500 px, reach ≈ 560 px).
+const INTRO_SPEED = 700;
+
 const smootherstep = (t: number) => {
   const x = Math.min(1, Math.max(0, t));
   return x * x * x * (x * (x * 6 - 15) + 10);
@@ -463,7 +467,7 @@ const DotGrid = ({
       const s = settingsRef.current;
       const radius = Math.max(1, s.proximity);
       const introAge = introStart === null ? Infinity : introStart < 0 ? 0 : (now - introStart) / 1000;
-      const introFront = introAge * grid.reach * 1.25;
+      const introFront = introAge * INTRO_SPEED;
       const introBand = grid.cell * 4;
       for (let i = 0; i < grid.count; i++) {
         const index = i * 2;
@@ -519,7 +523,8 @@ const DotGrid = ({
     const settled = (now: number) => {
       if (shocks.length) return false;
       if (introStart !== null) {
-        if (introStart < 0 || (now - introStart) / 1000 < 1.6) return false;
+        if (introStart < 0 || (now - introStart) / 1000 < (grid.reach + grid.cell * 4) / INTRO_SPEED + 0.8)
+          return false;
         introStart = null;
       }
       if (Math.abs(pointer.vx) + Math.abs(pointer.vy) > 1) return false;
