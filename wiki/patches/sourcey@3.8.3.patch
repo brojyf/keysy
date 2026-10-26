@@ -21,7 +21,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..10020b127d7177e0f66a3ae563e1392f
 +        var height = list.scrollHeight + 'px';
 +        list.animate(
 +          { height: opening ? ['0px', height] : [height, '0px'], overflow: ['hidden', 'hidden'] },
-+          { duration: 200, easing: 'ease-in-out' }
++          { duration: 250, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' }
 +        ).onfinish = function () {
 +          if (opening) return;
 +          group.open = false;

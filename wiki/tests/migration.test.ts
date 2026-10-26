@@ -289,6 +289,7 @@ test('collapsible endpoint group labels look like links, and their chevrons turn
   expect(stylesheet).toMatch(/\.dark #sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-400\)\);/);
   expect(stylesheet).toContain('#sourcey .sourcey-nav-group[data-closing] > summary::before');
   expect(stylesheet).not.toContain('::details-content');
+  expect(stylesheet).toContain('transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);\n  }\n}');
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {
