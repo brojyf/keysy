@@ -7,7 +7,6 @@ const stylesheet = await Bun.file(new URL('../style.css', import.meta.url)).text
 const routes = [
   ['index', 'Introduction'],
   ['prd', 'PRD'],
-  ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
   ['references', 'References'],
   ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
@@ -29,7 +28,7 @@ test('navigation preserves the six original sections and includes references und
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design', '/references',
+    '/', '/prd', '/system-design', '/references',
   ]);
 });
 
