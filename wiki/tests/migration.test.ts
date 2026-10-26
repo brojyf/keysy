@@ -9,7 +9,7 @@ const routes = [
   ['prd', 'PRD'],
   ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
-  ['development-tools', 'Development tools'],
+  ['references', 'References'],
   ...['api', 'auth', 'notify', 'cli', 'web'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
@@ -24,12 +24,12 @@ async function matches(html: string, selector: string) {
   return attributes;
 }
 
-test('navigation preserves the six original sections and includes development tools under Overview', async () => {
+test('navigation preserves the six original sections and includes references under Overview', async () => {
   expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Web']);
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design', '/development-tools',
+    '/', '/prd', '/tech-stack', '/system-design', '/references',
   ]);
 });
 
@@ -201,15 +201,16 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
 });
 
-test('development tools publishes the tool descriptions and relocated references', async () => {
-  const html = await Bun.file(new URL('development-tools.html', output)).text();
-  expect(html).toContain('Archify');
-  expect(html).toContain('Figma Console MCP');
+test('references lists tool and guideline links without project-specific design links', async () => {
+  const html = await Bun.file(new URL('references.html', output)).text();
   const links = (await matches(html, '#content-area a[href]')).map(({ href }) => href);
-  expect(links).toContain('https://github.com/southleft/figma-console-mcp');
+  expect(links).toEqual(expect.arrayContaining([
+    'https://github.com/tt-a1i/archify',
+    'https://github.com/southleft/figma-console-mcp',
+    'https://github.com/multica-ai/andrej-karpathy-skills',
+  ]));
   expect(links).not.toContain('https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao');
-  expect(html).not.toContain('Landing Page');
-  expect(links).toContain('https://github.com/multica-ai/andrej-karpathy-skills');
+  expect(await Bun.file(new URL('development-tools.html', output)).exists()).toBe(false);
   const readme = await Bun.file(new URL('../../README.md', import.meta.url)).text();
   expect(readme).not.toContain('## References');
   expect(readme).not.toContain('https://github.com/multica-ai/andrej-karpathy-skills');
