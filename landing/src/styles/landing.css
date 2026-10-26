@@ -128,7 +128,6 @@ kbd,
 }
 .section {
   position: relative;
-  border-top: 1px solid var(--line);
   padding: 120px var(--gutter);
 }
 main > .section:not(.hero) {
@@ -184,35 +183,12 @@ main > .section:not(.hero) {
     --deferred-height: 489px;
   }
 }
-.section::before {
-  content: "";
-  position: absolute;
-  inset: -1px var(--gutter) 0;
-  border-inline: 1px solid var(--line);
-  pointer-events: none;
-}
 .section-inner {
   position: relative;
   min-width: 0;
   width: 100%;
   max-width: 1200px;
   margin-inline: auto;
-}
-.section-inner::before,
-.section-inner::after {
-  content: "";
-  position: absolute;
-  top: -127px;
-  left: -6px;
-  width: 13px;
-  height: 13px;
-  background:
-    linear-gradient(var(--muted), var(--muted)) center / 13px 1px no-repeat,
-    linear-gradient(var(--muted), var(--muted)) center / 1px 13px no-repeat;
-}
-.section-inner::after {
-  left: auto;
-  right: -6px;
 }
 .section-heading {
   margin-bottom: 56px;
@@ -246,13 +222,8 @@ h2 {
   margin-inline: auto;
 }
 .hero {
-  border-top: 0;
   padding-top: 112px;
   overflow: hidden;
-}
-.hero .section-inner::before,
-.hero .section-inner::after {
-  display: none;
 }
 .hero .section-inner {
   text-align: center;
@@ -361,10 +332,6 @@ h1 {
 .access-section {
   padding-block: 72px 120px;
 }
-.access-section .section-inner::before,
-.access-section .section-inner::after {
-  top: -79px;
-}
 .access-section h2 {
   font-size: 32px;
   line-height: 40px;
@@ -375,10 +342,6 @@ h1 {
 }
 .cta-section .section-inner {
   perspective: 1600px;
-}
-.cta-section .section-inner::before,
-.cta-section .section-inner::after {
-  top: -103px;
 }
 .cta-card {
   position: relative;
@@ -412,11 +375,7 @@ h1 {
   pointer-events: none;
 }
 .site-footer {
-  padding-block: 56px 40px;
-}
-.site-footer .section-inner::before,
-.site-footer .section-inner::after {
-  top: -63px;
+  padding-block: 56px 80px;
 }
 .footer-row {
   display: flex;
@@ -464,10 +423,6 @@ h1 {
 .legal-page .section-inner {
   max-width: 760px;
 }
-.legal-page .section-inner::before,
-.legal-page .section-inner::after {
-  display: none;
-}
 .legal-page h1 {
   font-size: 52px;
   line-height: 1.1;
@@ -503,10 +458,6 @@ h1 {
 @media (max-width: 700px) {
   .section {
     padding-block: 72px;
-  }
-  .section-inner::before,
-  .section-inner::after {
-    top: -79px;
   }
   .hero {
     padding-top: 64px;
@@ -569,10 +520,6 @@ h1 {
   .access-section {
     padding-block: 64px;
   }
-  .access-section .section-inner::before,
-  .access-section .section-inner::after {
-    top: -71px;
-  }
   .access-section .section-heading {
     margin-bottom: 32px;
   }
@@ -585,10 +532,6 @@ h1 {
   }
   .cta-section {
     padding-top: 56px;
-  }
-  .cta-section .section-inner::before,
-  .cta-section .section-inner::after {
-    top: -63px;
   }
   .cta-card {
     min-height: 488px;
@@ -608,11 +551,7 @@ h1 {
     margin-inline: auto;
   }
   .site-footer {
-    padding-block: 48px 32px;
-  }
-  .site-footer .section-inner::before,
-  .site-footer .section-inner::after {
-    top: -55px;
+    padding-block: 48px;
   }
   .footer-row {
     gap: 36px;
