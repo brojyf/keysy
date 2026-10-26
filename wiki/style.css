@@ -36,7 +36,9 @@
 
 #sourcey #page::before,
 #sourcey #content-area > nav[aria-label='Previous and next page'],
-#sourcey #content-area > header .h-5 {
+#sourcey #content-area > header .h-5,
+#sourcey #content-area > article > .h-5,
+#sourcey #content-area > article > header h1 + span {
   display: none;
 }
 
