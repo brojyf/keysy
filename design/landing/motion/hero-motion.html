@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keysy Hero Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Light theme tokens from design/theme */
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #1b1c1e;
+    --muted: #64666b;
+    --accent: #1d4ed8;
+    --button: #2f5aba;
+    --soft: #f0f1f3;
+    --line: #e3e4e6;
+    --moved: #f4f7fe;
+    --term-bg: #101b30;
+    --term-muted: #aab8d0;
+    --term-prompt: #7aa2ff;
+    --term-ok: #7ee2b8;
+    --term-err: #ff8a80;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Geist", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; }
+
+  /* Variant picker (preview tooling, not part of the hero) */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+    background: rgba(250, 250, 250, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--line);
+  }
+  .variants { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 10px; background: var(--soft); }
+  .variants button {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .variants button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(16, 27, 48, 0.1); }
+  .replay { padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; cursor: pointer; }
+  .variants button:active, .replay:active { transform: scale(0.97); transition: transform 100ms ease-out; }
+  .caption { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 88px 16px 120px;
+    text-align: center;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 60% 45% at 50% 40%, #000 0%, transparent 100%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .hero > * { position: relative; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font: 500 13px "Geist Mono", monospace;
+  }
+  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  h1 {
+    margin: 28px 0 0;
+    font-size: 84px;
+    font-weight: 600;
+    line-height: 88px;
+    letter-spacing: -0.045em;
+  }
+  h1 .line { display: block; }
+  h1 .grad {
+    background: linear-gradient(90deg, #1d4fd9 0%, #2e59ba 55%, #708ff5 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub {
+    max-width: 660px;
+    margin: 24px auto 0;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 30px;
+  }
+  .actions { display: flex; justify-content: center; gap: 12px; margin-top: 36px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 50px;
+    padding: 0 30px;
+    border-radius: 999px;
+    font: 500 16px "Geist", sans-serif;
+    text-decoration: none;
+  }
+  .btn.primary { background: var(--button); color: #fff; }
+  .btn.secondary { padding: 0 24px; background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+
+  /* Stage: fixed composition (web + terminal), shown at 90% and scaled down to fit */
+  .stage-wrap { max-width: 996px; margin: 72px auto 0; text-align: left; }
+  .stage { position: relative; width: 1107px; height: 677px; transform-origin: top left; }
+  .camera { position: absolute; inset: 0; perspective: 2000px; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(40px); pointer-events: none; }
+  .beam {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1000px;
+    padding: 1px;
+    border-radius: 21px;
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.85), #e3e4e6 35%, #e3e4e6 70%, rgba(122, 162, 255, 0.9));
+    box-shadow: 0 40px 80px -24px rgba(29, 78, 216, 0.16), 0 2px 6px rgba(16, 27, 48, 0.06);
+  }
+  .window { border-radius: 20px; background: var(--surface); overflow: hidden; }
+  .chrome {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .chrome .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .address {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--soft);
+    color: var(--muted);
+    font: 400 12px "Geist Mono", monospace;
+  }
+  .body { display: grid; grid-template-columns: 184px 1fr 272px; }
+  svg.i { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .sidebar { padding: 20px 14px; background: var(--bg); border-right: 1px solid var(--line); }
+  .sidebar h4 { margin: 0 0 12px; font-size: 12px; font-weight: 700; }
+  .nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 4px; border-radius: 8px; color: var(--muted); font-size: 13px; }
+  .nav.active { background: var(--soft); color: var(--text); font-weight: 500; }
+
+  .main { padding: 26px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .main-head { display: flex; justify-content: space-between; align-items: center; }
+  .main-head h3 { margin: 0; font-size: 22px; font-weight: 600; }
+  .main-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .head-actions { display: flex; gap: 8px; align-items: center; }
+  .env { display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--soft); font-size: 12px; font-weight: 500; }
+  .env span { padding: 5px 10px; border-radius: 6px; color: var(--muted); }
+  .env span.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(16, 27, 48, 0.08); }
+  .new { padding: 7px 12px; border-radius: 8px; background: var(--button); color: #fff; font-size: 12px; font-weight: 500; }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .search .grow { flex: 1; }
+  .kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); font: 500 11px "Geist Mono", monospace; }
+  .table { position: relative; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 76px 88px;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 16px;
+    background: var(--surface);
+  }
+  .tr + .tr { border-top: 1px solid var(--line); }
+  .tr.th { padding: 9px 16px; background: var(--bg); color: var(--muted); font: 500 11px "Geist Mono", monospace; letter-spacing: 0.06em; }
+  .tr.moved { background: var(--moved); }
+  .tr.lifting { z-index: 2; border-radius: 8px; }
+  .path { font: 400 13px "Geist Mono", monospace; white-space: nowrap; }
+  .path .pre { display: inline-block; color: var(--muted); }
+  .path .key { display: inline-block; }
+  .ver { font: 400 13px "Geist Mono", monospace; color: var(--muted); }
+  .badge { justify-self: start; padding: 3px 8px; border-radius: 999px; background: #e8eefc; color: var(--accent); font-size: 11px; font-weight: 500; }
+  .dash { color: var(--muted); }
+  .foot { color: var(--muted); font-size: 12px; }
+
+  .ai { display: flex; flex-direction: column; gap: 14px; padding: 18px 16px 16px; background: var(--bg); border-left: 1px solid var(--line); }
+  .ai-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .spark {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #1d4fd9, #7aa3ff);
+    color: #fff;
+  }
+  .spark svg.i { width: 12px; height: 12px; }
+  .thread { display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .bubble { align-self: flex-end; max-width: 220px; padding: 9px 12px; border-radius: 12px; background: var(--soft); font-size: 12px; line-height: 1.5; transform-origin: bottom right; }
+  .thinking { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .thinking canvas { width: 20px; height: 20px; flex: none; }
+  .phrase { display: inline-block; }
+  .reply { display: flex; flex-direction: column; gap: 10px; font-size: 12px; line-height: 1.5; }
+  .result { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); transform-origin: top left; }
+  .check { display: flex; align-items: center; gap: 8px; }
+  .check svg { width: 11px; height: 11px; fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .check svg path { stroke-dasharray: 14; stroke-dashoffset: 0; }
+  .link { align-self: flex-start; color: var(--accent); font-weight: 500; }
+  .composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 12px;
+  }
+  .composer .input { flex: 1; min-height: 16px; color: var(--text); }
+  .composer .input:empty::before { content: "Ask about your secrets"; color: var(--muted); }
+  .composer .send { display: grid; place-items: center; width: 24px; height: 22px; border-radius: 6px; background: var(--button); color: #fff; }
+  .composer .send svg.i { width: 12px; height: 12px; }
+  .caret { display: inline-block; width: 1px; height: 13px; margin-left: 1px; vertical-align: -2px; background: var(--text); animation: blink 1s steps(1) infinite; }
+
+  /* Terminal: a real 80×24 terminal (cell 0.6em × 1.19em, measured from SF Mono), scaled down */
+  .terminal {
+    position: absolute;
+    left: 611px;
+    top: 417px;
+    width: calc(80ch + 12px);
+    font: 400 8.4px/10px "Geist Mono", monospace;
+    border-radius: 9px;
+    background: var(--term-bg);
+    color: var(--term-muted);
+    overflow: hidden;
+    box-shadow: 0 30px 60px -10px rgba(16, 27, 48, 0.28);
+  }
+  .term-bar {
+    position: relative;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    height: 22px;
+    padding: 0 11px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .term-bar i { width: 6px; height: 6px; border-radius: 50%; }
+  .term-bar .t { position: absolute; left: 0; right: 0; text-align: center; }
+  .term-body { height: calc(24 * 10px + 8px); padding: 4px 6px; white-space: pre; }
+  .term-body .p { color: var(--term-prompt); }
+  .term-body .w { color: #fff; }
+  .term-body .g { color: var(--term-ok); }
+  .term-body .r { color: var(--term-err); }
+  .tcursor { display: inline-block; width: 1ch; height: 1.1em; vertical-align: -0.2em; background: #fff; }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Call to action: the card tilts toward the pointer */
+  .cta { padding: 96px 16px 120px; perspective: 1600px; }
+  .cta-card {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 104px 24px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 32px;
+    background: linear-gradient(180deg, #eef3ff, #ffffff);
+    text-align: center;
+  }
+  .cta-card > * { position: relative; }
+  .cta-card .grid, .cta-card .fade, .cta-card .cta-glow, .cta-card .sheen { position: absolute; pointer-events: none; }
+  .cta-card .grid {
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(29, 78, 216, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(29, 78, 216, 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .cta-card .fade { inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.2) 60%, rgba(255, 255, 255, 0) 100%); }
+  .cta-card .sheen {
+    inset: 0;
+    background: radial-gradient(520px circle at var(--x, 50%) var(--y, 50%), rgba(122, 162, 255, 0.2), transparent 65%);
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+  }
+  .cta-card:hover .sheen { opacity: 1; }
+  .cta-card .cta-glow { left: calc(50% - 280px); top: 330px; width: 560px; height: 260px; border-radius: 50%; background: rgba(29, 78, 216, 0.2); filter: blur(60px); }
+  .cta h2 { margin: 0; font-size: 64px; font-weight: 600; line-height: 68px; letter-spacing: -0.045em; }
+  .cta p { margin: 20px 0 0; color: var(--muted); font-size: 18px; }
+
+  @media (max-width: 720px) {
+    h1 { font-size: 48px; line-height: 52px; }
+    .sub { font-size: 17px; line-height: 26px; }
+    .actions { flex-direction: column; align-items: stretch; }
+    .cta h2 { font-size: 40px; line-height: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .caret { animation: none; }
+  }
+</style>
+</head>
+<body>
+<header class="toolbar">
+  <div class="variants" role="tablist" id="variants">
+    <button role="tab" data-variant="flow">A · Spring flow</button>
+    <button role="tab" data-variant="reorder">B · Reorder</button>
+    <button role="tab" data-variant="depth">C · Depth reveal</button>
+  </div>
+  <button class="replay" id="replay">Replay</button>
+  <p class="caption" id="caption"></p>
+</header>
+<main id="mount"></main>
+
+<section class="cta">
+  <div class="cta-card" id="ctaCard">
+    <div class="grid"></div>
+    <div class="fade"></div>
+    <div class="cta-glow"></div>
+    <div class="sheen"></div>
+    <h2>Less friction.<br>More forward.</h2>
+    <p>Start with a simpler approach to secrets.</p>
+    <div class="actions">
+      <a class="btn primary" href="#">Create a workspace</a>
+      <a class="btn secondary" href="#">Read the docs</a>
+    </div>
+  </div>
+</section>
+
+<template id="heroTemplate">
+<section class="hero">
+  <span class="eyebrow">AI-assisted secret management</span>
+  <h1><span class="line">Your secrets.</span><span class="line"><span class="grad">Simply managed.</span></span></h1>
+  <p class="sub">A calmer way to manage secrets for local development and deployed services. AI keeps access policies right as things move.</p>
+  <div class="actions">
+    <a class="btn primary" href="#">Create a workspace</a>
+    <a class="btn secondary" href="#">Read the docs</a>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="stage">
+      <div class="camera">
+        <div class="glow" style="left:150px;top:-60px;width:900px;height:360px;background:rgba(122,162,255,.22)"></div>
+        <div class="glow" style="left:890px;top:360px;width:420px;height:260px;background:rgba(56,189,248,.14)"></div>
+
+        <div class="beam">
+          <div class="window">
+            <div class="chrome">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="address"><svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>keysy / acme / production</span>
+            </div>
+            <div class="body">
+              <aside class="sidebar">
+                <h4>Workspace</h4>
+                <div class="nav active"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Secrets</div>
+                <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/></svg>Access policies</div>
+                <div class="nav"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Version history</div>
+                <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>Audit logs</div>
+                <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>AI assistant</div>
+              </aside>
+
+              <div class="main">
+                <div class="main-head">
+                  <div><h3>Secrets</h3><p>Everything in its right place.</p></div>
+                  <div class="head-actions">
+                    <div class="env"><span class="on">Production</span><span>Development</span></div>
+                    <span class="new">+ New secret</span>
+                  </div>
+                </div>
+                <div class="search">
+                  <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+                  <span class="grow">Search secrets</span><span class="kbd">⌘K</span>
+                </div>
+                <div class="table">
+                  <div class="tr th"><span>PATH</span><span>CHANGED IN</span><span>EXPIRES</span></div>
+                </div>
+                <div class="foot">7 secrets · Values hidden by default</div>
+              </div>
+
+              <aside class="ai">
+                <div class="ai-head"><span class="spark"><svg class="i" viewBox="0 0 24 24"><path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z"/></svg></span>AI assistant</div>
+                <div class="thread"></div>
+                <div class="composer">
+                  <span class="input"></span>
+                  <span class="send"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+
+        <div class="terminal" aria-label="Terminal">
+          <div class="term-bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="t">~/acme/api — zsh</span></div>
+          <div class="term-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</template>
+
+<script type="module">
+  import { animate, stagger } from 'https://cdn.jsdelivr.net/npm/motion@12.23.12/+esm';
+
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STAGE_W = 1107, STAGE_H = 677, STAGE_SCALE = 0.9;
+
+  // ---------- Springs (Apple model: bounce 0 = damping ratio 1, visualDuration ≈ response) ----------
+  const FADE = {duration: 0.2, ease: 'easeOut'};
+  const EXIT = {duration: 0.15, ease: 'easeIn'};
+  const spring = (visualDuration, bounce = 0) => ({type: 'spring', visualDuration, bounce, opacity: FADE, filter: FADE});
+  const SNAPPY = spring(0.3);    // small UI pieces
+  const SMOOTH = spring(0.45);   // cards, bubbles
+  const SURFACE = spring(0.8);   // windows
+  const reveal = (visualDuration, fade) => ({...spring(visualDuration), opacity: {duration: fade, ease: 'easeOut'}, filter: {duration: fade + 0.1, ease: 'easeOut'}});
+  const NO_SHADOW = '0 0px 0px -8px rgba(16, 27, 48, 0)';
+  const LIFT_SHADOW = '0 12px 28px -8px rgba(16, 27, 48, 0.22)';
+
+  // ---------- Content ----------
+  const SECRETS = [
+    {pre: 'production/api/', key: 'DATABASE_URL', ver: 'v8'},
+    {pre: 'production/api/', key: 'REDIS_URL', ver: 'v6'},
+    {pre: 'production/api/', key: 'SENTRY_DSN', ver: 'v7'},
+    {pre: 'production/shared/', from: 'production/payments/', key: 'STRIPE_SECRET_KEY', ver: 'v5', exp: 'in 14 days'},
+    {pre: 'production/payments/', key: 'WEBHOOK_SECRET', ver: 'v3', exp: 'in 30 days'},
+    {pre: 'production/shared/', from: 'production/email/', key: 'RESEND_API_KEY', ver: 'v5'},
+    {pre: 'production/ci/', key: 'DEPLOY_TOKEN', ver: 'v2'},
+  ];
+  const FINAL_ORDER = [3, 5, 0, 1, 2, 4, 6];
+  const SHARED_LAST_ORDER = [0, 1, 2, 4, 6, 3, 5];
+  const PROMPT = 'Move the Stripe and Resend keys into production/shared.';
+  const PHRASES = [['Finding affected policies…', 'searching'], ['Moving 3 secrets…', 'working'], ['Verifying permissions…', 'solving']];
+  const RESULTS = ['2 secrets moved', '2 policies updated', 'Permissions verified'];
+  const pad = (s, n) => s + ' '.repeat(Math.max(1, n - s.length));
+  const TERM_LINES = [
+    [['$ ', 'p'], ['keysy login', 'w']],
+    [['✓ ', 'g'], ['Signed in as '], ['alice', 'w'], [' · workspace acme']],
+    [],
+    [['$ ', 'p'], ['keysy ls ', 'w'], ['production/api']],
+    [[pad('PATH', 34) + pad('CHANGED', 10) + 'EXPIRES']],
+    [[pad('production/api/DATABASE_URL', 34) + pad('v8', 10) + '—', 'w']],
+    [[pad('production/api/REDIS_URL', 34) + pad('v6', 10) + '—', 'w']],
+    [[pad('production/api/SENTRY_DSN', 34) + pad('v7', 10) + '—', 'w']],
+    [],
+    [['$ ', 'p'], ['keysy get ', 'w'], ['production/api/DATABASE_URL']],
+    [['✓ ', 'g'], ['authorized by policy '], ['api-read', 'w']],
+    [['postgres://app:'], ['••••••••', 'p'], ['@db.internal:5432']],
+    [],
+    [['$ ', 'p'], ['keysy get ', 'w'], ['production/shared/STRIPE_SECRET_KEY']],
+    [['✗ ', 'r'], ['denied by policy '], ['api-read', 'w']],
+    [],
+    [['$ ', 'p'], ['', 'tcursor']],
+  ];
+
+  // ---------- Run control: switching variants aborts the running timeline ----------
+  let runId = 0;
+  class Aborted extends Error {}
+  function createRun() {
+    const id = ++runId;
+    const guard = () => { if (id !== runId) throw new Aborted(); };
+    return {
+      guard,
+      wait: async ms => { await new Promise(r => setTimeout(r, ms)); guard(); },
+      play: async (target, keyframes, options) => { await animate(target, keyframes, options); guard(); },
+    };
+  }
+  const whenVisible = () => document.hidden ? new Promise(r => document.addEventListener('visibilitychange', r, {once: true})) : null;
+
+  // ---------- DOM helpers ----------
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+  const hidden = node => { node.style.opacity = '0'; return node; };
+  function checkIcon() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 12 12');
+    const path = document.createElementNS(ns, 'path'); path.setAttribute('d', 'M2 6.5 4.8 9 10 3');
+    svg.append(path); return svg;
+  }
+
+  // ---------- Thinking orb (thinking-orbs engine, MIT © Jakub Antalik) ----------
+  let orbEngine = null;
+  try { orbEngine = await import('https://cdn.jsdelivr.net/npm/thinking-orbs@0.3.2/dist/engine.es.js'); } catch { orbEngine = null; }
+  const liveOrbs = new Set();
+  function mountOrb(canvas, state) {
+    if (!orbEngine) { canvas.remove(); return {set() {}, stop() {}}; }
+    const {resolvePreset, MODE_FRAMES, paintFrame} = orbEngine;
+    const SIZE = 20, dpr = Math.min(2, devicePixelRatio || 1), tint = {r: 29, g: 78, b: 216};
+    canvas.width = SIZE * dpr; canvas.height = SIZE * dpr;
+    const ctx = canvas.getContext('2d');
+    let preset = resolvePreset(state, SIZE), raf = 0;
+    const loop = now => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      paintFrame(ctx, MODE_FRAMES[preset.mode](SIZE, now / 1000 * preset.speed, preset.opts), false, tint);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const orb = {set(next) { preset = resolvePreset(next, SIZE); }, stop() { cancelAnimationFrame(raf); liveOrbs.delete(orb); }};
+    liveOrbs.add(orb);
+    return orb;
+  }
+
+  // ---------- Scene ----------
+  const mount = document.getElementById('mount');
+  const template = document.getElementById('heroTemplate');
+  let currentScene = null;
+
+  function fitStage() {
+    if (!currentScene) return;
+    const scale = Math.min(STAGE_SCALE, currentScene.stageWrap.clientWidth / STAGE_W);
+    currentScene.stage.style.transform = `scale(${scale})`;
+    currentScene.stageWrap.style.height = `${STAGE_H * scale}px`;
+  }
+  addEventListener('resize', fitStage);
+
+  function mountScene(order) {
+    [...liveOrbs].forEach(o => o.stop());
+    mount.replaceChildren(template.content.cloneNode(true));
+    const q = sel => mount.querySelector(sel);
+    const scene = {
+      root: q('.hero'), stageWrap: q('.stage-wrap'), stage: q('.stage'),
+      beam: q('.beam'), table: q('.table'), thread: q('.thread'), composer: q('.composer .input'),
+      term: q('.term-body'),
+    };
+    scene.rows = order.map(i => {
+      const secret = SECRETS[i];
+      const row = el('div', 'tr'), path = el('span', 'path');
+      const pre = el('span', 'pre', secret.from ?? secret.pre), key = el('span', 'key', secret.key);
+      path.append(pre, key);
+      row.append(path, el('span', 'ver', secret.ver), secret.exp ? el('span', 'badge', secret.exp) : el('span', 'dash', '—'));
+      scene.table.append(row);
+      return {row, pre, key, secret};
+    });
+    scene.movedRows = scene.rows.filter(r => r.secret.from);
+    currentScene = scene;
+    fitStage();
+    scene.term.replaceChildren(...TERM_LINES.map(termLine));
+    return scene;
+  }
+
+  // ---------- Terminal (static) ----------
+  function termLine(segs) {
+    const line = el('div');
+    if (!segs.length) line.textContent = ' ';
+    for (const [text, cls] of segs) line.append(el('span', cls, text));
+    return line;
+  }
+
+  // ---------- AI thread ----------
+  function replyBlock() {
+    const reply = el('div', 'reply');
+    reply.append(el('div', null, 'Done. I moved 2 secrets and updated the policies that use them.'));
+    const result = el('div', 'result');
+    for (const text of RESULTS) { const c = el('div', 'check'); c.append(checkIcon(), text); result.append(c); }
+    reply.append(result, el('div', 'link', 'View changes →'));
+    return reply;
+  }
+  // Human typing rhythm: uneven keystrokes, longer pauses at spaces and punctuation
+  async function typeInto(run, node, text) {
+    const caret = el('span', 'caret');
+    node.replaceChildren(caret);
+    for (const ch of text) {
+      caret.before(ch);
+      await run.wait(ch === ' ' ? 60 + Math.random() * 40 : /[.,]/.test(ch) ? 180 : 20 + Math.random() * 30);
+    }
+    caret.remove();
+  }
+
+  // ---------- Row moves ----------
+  const FLASH = '#dfe7fb';
+  // The old prefix slides out, the new one slides in, and the key glides to its new x (FLIP)
+  async function swapPrefix(run, r) {
+    await run.play(r.pre, {opacity: 0, x: -6, filter: 'blur(2px)'}, EXIT);
+    const before = r.key.offsetLeft;
+    r.pre.textContent = r.secret.pre;
+    const dx = before - r.key.offsetLeft;
+    r.row.classList.add('moved');
+    animate(r.row, {backgroundColor: [FLASH, '#f4f7fe']}, {duration: 0.9, ease: 'easeOut'});
+    animate(r.key, {x: [dx, 0]}, SMOOTH);
+    await run.play(r.pre, {opacity: [0, 1], x: [6, 0], filter: ['blur(2px)', 'blur(0px)']}, SMOOTH);
+  }
+  // A: rows stay in place, only the paths change
+  async function slidePrefixes(run, scene) {
+    await Promise.all(scene.movedRows.map(async (r, i) => { await run.wait(i * 90); await swapPrefix(run, r); }));
+  }
+  // B: the moved rows lift, travel up to their new place, then settle (FLIP with springs)
+  async function reorderRows(run, scene) {
+    const lifted = scene.movedRows.map(r => r.row);
+    lifted.forEach(row => row.classList.add('lifting'));
+    await run.play(lifted, {scale: [1, 1.02], boxShadow: [NO_SHADOW, LIFT_SHADOW]}, SNAPPY);
+    const first = new Map(scene.rows.map(r => [r, r.row.offsetTop]));
+    const anchor = scene.rows.find(r => r.secret.key === 'DATABASE_URL').row;
+    scene.movedRows.forEach(r => anchor.before(r.row));
+    scene.rows.forEach(r => {
+      const dy = first.get(r) - r.row.offsetTop;
+      if (dy) animate(r.row, {y: [dy, 0]}, r.secret.from ? spring(0.6) : spring(0.5));
+    });
+    await run.wait(160);
+    await Promise.all(scene.movedRows.map(async (r, i) => { await run.wait(i * 70); await swapPrefix(run, r); }));
+    await run.play(lifted, {scale: 1, boxShadow: NO_SHADOW}, SMOOTH);
+    lifted.forEach(row => row.classList.remove('lifting'));
+  }
+
+  // ---------- Entrance (C) ----------
+  const ENTRANCE_PARTS = ['.eyebrow', 'h1 .line', '.sub', '.btn', '.beam'];
+  async function depthEntrance(run, scene) {
+    const q = sel => scene.root.querySelectorAll(sel);
+    const blurIn = {opacity: [0, 1], filter: ['blur(8px)', 'blur(0px)']};
+    animate(q('.eyebrow'), {...blurIn, y: [12, 0]}, reveal(0.6, 0.4));
+    animate(q('h1 .line'), {...blurIn, y: [28, 0]}, {...reveal(0.7, 0.5), delay: stagger(0.09, {startDelay: 0.08})});
+    animate(q('.sub'), {...blurIn, y: [16, 0]}, {...reveal(0.7, 0.5), delay: 0.28});
+    animate(q('.btn'), {opacity: [0, 1], y: [12, 0], scale: [0.96, 1]}, {...SMOOTH, delay: stagger(0.06, {startDelay: 0.4})});
+    await run.play(scene.beam, {opacity: [0, 1], y: [80, 0], scale: [0.92, 1], rotateX: [14, 0]}, {...SURFACE, opacity: {duration: 0.5, ease: 'easeOut'}, delay: 0.5});
+  }
+
+  // ---------- Story (shared by every variant) ----------
+  async function playStory(run, scene, moveRows) {
+    await run.wait(500);
+
+    await typeInto(run, scene.composer, PROMPT);
+    await run.wait(200);
+    scene.composer.textContent = '';
+    const msg = hidden(el('div', 'bubble', PROMPT));
+    scene.thread.append(msg);
+    await run.play(msg, {opacity: [0, 1], y: [18, 0], scale: [0.94, 1]}, SMOOTH);
+
+    const thinking = hidden(el('div', 'thinking'));
+    const canvas = el('canvas'); canvas.setAttribute('aria-hidden', 'true');
+    const phrase = el('span', 'phrase', PHRASES[0][0]);
+    thinking.append(canvas, phrase);
+    scene.thread.append(thinking);
+    const orb = mountOrb(canvas, PHRASES[0][1]);
+    await run.play(thinking, {opacity: [0, 1], y: [6, 0]}, SNAPPY);
+    for (let i = 0; i < PHRASES.length; i++) {
+      if (i > 0) {
+        await run.play(phrase, {opacity: 0, y: -6, filter: 'blur(2px)'}, EXIT);
+        phrase.textContent = PHRASES[i][0];
+        orb.set(PHRASES[i][1]);
+        await run.play(phrase, {opacity: [0, 1], y: [6, 0], filter: ['blur(2px)', 'blur(0px)']}, SNAPPY);
+      }
+      if (i === 1) {
+        await Promise.all([moveRows(run, scene), run.wait(900)]);
+      } else {
+        await run.wait(900);
+      }
+    }
+    await run.play(thinking, {opacity: 0, scale: 0.98}, EXIT);
+    orb.stop();
+    thinking.remove();
+
+    const reply = replyBlock();
+    const [text, result, link] = [...reply.children].map(hidden);
+    const checks = [...result.children].map(hidden);
+    scene.thread.append(reply);
+    animate(text, {opacity: [0, 1], y: [8, 0]}, SMOOTH);
+    animate(result, {opacity: [0, 1], y: [10, 0], scale: [0.97, 1]}, {...SMOOTH, delay: 0.06});
+    animate(checks, {opacity: [0, 1], x: [-4, 0]}, {...SNAPPY, delay: stagger(0.07, {startDelay: 0.16})});
+    animate(result.querySelectorAll('path'), {strokeDashoffset: [14, 0]}, {duration: 0.3, ease: [0.23, 1, 0.32, 1], delay: stagger(0.07, {startDelay: 0.22})});
+    await run.wait(520);
+    await run.play(link, {opacity: [0, 1], y: [4, 0]}, SNAPPY);
+
+    await run.wait(2800);
+  }
+
+  function renderFinal(scene) {
+    for (const r of scene.movedRows) { r.pre.textContent = r.secret.pre; r.row.classList.add('moved'); }
+    scene.thread.replaceChildren(el('div', 'bubble', PROMPT), replyBlock());
+  }
+
+  // ---------- Variants ----------
+  const VARIANTS = {
+    flow: {
+      caption: 'Critically damped springs (bounce 0, 0.3–0.45s) on every element. Old paths slide out, new paths slide in, and the key glides to its new position.',
+      order: FINAL_ORDER, moveRows: slidePrefixes,
+    },
+    reorder: {
+      caption: 'The two moved secrets start at the bottom, lift, and travel to the top while the other rows make room (FLIP with springs).',
+      order: SHARED_LAST_ORDER, moveRows: reorderRows,
+    },
+    depth: {
+      caption: 'Apple-style entrance: text sharpens from blur, and the window rises from depth. Then the same story plays.',
+      order: FINAL_ORDER, moveRows: slidePrefixes, entrance: depthEntrance, fadeWholeHero: true,
+    },
+  };
+
+  const caption = document.getElementById('caption');
+  const tabs = [...document.querySelectorAll('#variants button')];
+  let current = VARIANTS[location.hash.slice(1)] ? location.hash.slice(1) : 'flow';
+
+  async function start(key) {
+    current = key;
+    history.replaceState(null, '', `#${key}`);
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.variant === key)));
+    const variant = VARIANTS[key];
+    caption.textContent = variant.caption;
+    const run = createRun();
+
+    if (reducedMotion) { renderFinal(mountScene(FINAL_ORDER)); return; }
+
+    try {
+      for (let first = true; ; first = false) {
+        await whenVisible();
+        run.guard();
+        const scene = mountScene(variant.order);
+        const fadeTarget = variant.fadeWholeHero ? scene.root : scene.stage;
+        if (variant.entrance) {
+          ENTRANCE_PARTS.forEach(sel => scene.root.querySelectorAll(sel).forEach(hidden));
+          await variant.entrance(run, scene);
+        } else if (!first) {
+          await run.play(fadeTarget, {opacity: [0, 1]}, {duration: 0.4, ease: 'easeOut'});
+        }
+        await playStory(run, scene, variant.moveRows);
+        await run.play(fadeTarget, {opacity: 0}, {duration: 0.35, ease: 'easeIn'});
+      }
+    } catch (e) {
+      if (!(e instanceof Aborted)) throw e;
+    }
+  }
+
+  // ---------- CTA tilt: up to 3° toward the pointer on a spring, with a soft highlight under it ----------
+  const ctaCard = document.getElementById('ctaCard');
+  const TILT_MAX = 3;
+  ctaCard.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const box = ctaCard.getBoundingClientRect();
+    const x = e.clientX - box.left, y = e.clientY - box.top;
+    ctaCard.style.setProperty('--x', `${x}px`);
+    ctaCard.style.setProperty('--y', `${y}px`);
+    if (reducedMotion) return;
+    const nx = x / box.width * 2 - 1, ny = y / box.height * 2 - 1;
+    animate(ctaCard, {rotateX: -ny * TILT_MAX, rotateY: nx * TILT_MAX}, spring(0.5));
+  });
+  ctaCard.addEventListener('pointerleave', () => {
+    if (!reducedMotion) animate(ctaCard, {rotateX: 0, rotateY: 0}, spring(0.6));
+  });
+
+  tabs.forEach(t => t.addEventListener('click', () => start(t.dataset.variant)));
+  document.getElementById('replay').addEventListener('click', () => start(current));
+  start(current);
+</script>
+</body>
+</html>
