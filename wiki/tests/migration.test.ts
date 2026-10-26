@@ -225,7 +225,10 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
   expect(prd).toContain('Notion is the source of truth for this PRD.');
-  expect(await Bun.file(new URL('api/endpoints.html', output)).text()).toContain('There are no documented routes, request schemas, or response schemas yet.');
+  const apiEndpoints = await Bun.file(new URL('api/endpoints.html', output)).text();
+  expect(apiEndpoints).toContain('is the source of truth for the application API.');
+  expect(apiEndpoints).not.toContain('There are no documented routes, request schemas, or response schemas yet.');
+  expect(await Bun.file(new URL('auth/endpoints.html', output)).text()).toContain('is the source of truth for the authentication API.');
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {
