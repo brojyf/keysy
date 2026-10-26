@@ -21,7 +21,7 @@ function loadDiagram(initialTheme = 'dark', initialWidth = 600) {
     },
     querySelector: () => ({ viewBox: { baseVal: src.includes('-vertical.html')
       ? { width: 790, height: 1308 }
-      : { width: 1430, height: 888 } } }),
+      : { width: 1220, height: 838 } } }),
     getElementById: (id: string) => id === 'node-outline' ? index : styles.find((style) => style.id === id),
     createElement: () => ({ id: '', textContent: '' }),
     head: { append: (style: { id: string; textContent: string }) => styles.push(style) },
@@ -80,11 +80,11 @@ test('container resizing reloads only when crossing the layout breakpoint in eit
   expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture.html');
   expect(navigations).toHaveLength(2);
   loaded();
-  expect(frame.style.aspectRatio).toBe('1430 / 888');
-  expect(frame.style.height).toBe('737px');
+  expect(frame.style.aspectRatio).toBe('1220 / 838');
+  expect(frame.style.height).toBe('790px');
   resize(1000, 300);
   expect(navigations).toHaveLength(2);
-  expect(frame.style.height).toBe('921px');
+  expect(frame.style.height).toBe('987px');
   resize(799, 400);
   expect(new URL(frame.src).pathname).toBe('/architecture/system-architecture-vertical.html');
   expect(navigations).toHaveLength(3);

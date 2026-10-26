@@ -74,32 +74,29 @@ test('system design embeds the interactive architecture and preserves its public
   expect(source.components.length).toBeGreaterThan(0);
 });
 
-test('the architecture reads left to right, then email delivery runs down beside Resend', async () => {
+test('the architecture reads left to right, then email delivery turns back beneath it', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
-  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify'];
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka'];
   for (let index = 1; index < mainPath.length; index++) {
     const previous = nodes.get(mainPath[index - 1]!)!;
     const next = nodes.get(mainPath[index]!)!;
     expect(next.pos[0]!).toBeGreaterThan(previous.pos[0]! + previous.size[0]!);
   }
-  const emailPath = ['notify', 'cfqueue', 'worker', 'emaildlq'];
-  for (let index = 1; index < emailPath.length; index++) {
-    const previous = nodes.get(emailPath[index - 1]!)!;
-    const next = nodes.get(emailPath[index]!)!;
-    expect(next.pos[0]).toBe(previous.pos[0]);
-    expect(next.pos[1]!).toBeGreaterThan(previous.pos[1]! + previous.size[1]!);
+  for (const [upper, lower] of [['kafka', 'notify'], ['notify', 'cfqueue'], ['worker', 'emaildlq']]) {
+    expect(nodes.get(lower!)!.pos[0]).toBe(nodes.get(upper!)!.pos[0]);
+    expect(nodes.get(lower!)!.pos[1]!).toBeGreaterThan(nodes.get(upper!)!.pos[1]! + nodes.get(upper!)!.size[1]!);
   }
-  const worker = nodes.get('worker')!;
-  const resend = nodes.get('resend')!;
-  expect(resend.pos[0]! + resend.size[0]!).toBeLessThan(worker.pos[0]!);
-  expect(resend.pos[1]).toBe(worker.pos[1]);
+  for (const [right, left] of [['cfqueue', 'worker'], ['worker', 'resend']]) {
+    expect(nodes.get(left!)!.pos[0]! + nodes.get(left!)!.size[0]!).toBeLessThan(nodes.get(right!)!.pos[0]!);
+    expect(nodes.get(left!)!.pos[1]).toBe(nodes.get(right!)!.pos[1]);
+  }
 });
 
-test('the horizontal api is a narrow column', async () => {
+test('the horizontal api keeps the default node size', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const api = source.components.find((node: { id: string }) => node.id === 'api');
-  expect(api.size[1]).toBeGreaterThan(api.size[0]);
+  expect(api.size).toEqual([140, 60]);
 });
 
 test('the vertical chart starts near the left edge instead of reserving the old Resend column', async () => {

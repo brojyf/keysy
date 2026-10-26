@@ -14,8 +14,8 @@
       "label": "auth",
       "sublabel": "Google sign-in only",
       "pos": [
-        40,
-        470
+        290,
+        430
       ],
       "size": [
         140,
@@ -29,7 +29,7 @@
       "sublabel": "web / cli / sdk / extension",
       "pos": [
         40,
-        320
+        300
       ],
       "size": [
         140,
@@ -42,12 +42,12 @@
       "label": "api",
       "sublabel": "HTTP service",
       "pos": [
-        280,
-        190
+        290,
+        300
       ],
       "size": [
-        120,
-        250
+        140,
+        60
       ]
     },
     {
@@ -57,10 +57,10 @@
       "sublabel": "TBD",
       "pos": [
         40,
-        190
+        40
       ],
       "size": [
-        140,
+        130,
         60
       ]
     },
@@ -70,8 +70,8 @@
       "label": "Supabase",
       "sublabel": "Postgres + Auth + outbox",
       "pos": [
-        520,
-        320
+        545,
+        300
       ],
       "size": [
         160,
@@ -84,8 +84,8 @@
       "label": "Outbox Relay",
       "sublabel": "CDC / poller",
       "pos": [
-        780,
-        320
+        800,
+        300
       ],
       "size": [
         140,
@@ -98,8 +98,8 @@
       "label": "Redis",
       "sublabel": "read cache",
       "pos": [
-        275,
-        40
+        40,
+        170
       ],
       "size": [
         130,
@@ -112,8 +112,8 @@
       "label": "otel",
       "sublabel": "OTel Collector",
       "pos": [
-        520,
-        190
+        555,
+        40
       ],
       "size": [
         130,
@@ -126,8 +126,8 @@
       "label": "Grafana",
       "sublabel": "traces / metrics / logs",
       "pos": [
-        740,
-        190
+        800,
+        40
       ],
       "size": [
         130,
@@ -140,8 +140,8 @@
       "label": "Kafka",
       "sublabel": "Aiven, keyed + DLQ",
       "pos": [
-        1000,
-        320
+        1010,
+        300
       ],
       "size": [
         140,
@@ -154,8 +154,8 @@
       "label": "audit",
       "sublabel": "consumer + read API",
       "pos": [
-        1000,
-        120
+        1010,
+        170
       ],
       "size": [
         140,
@@ -168,8 +168,8 @@
       "label": "PostgreSQL",
       "sublabel": "Aiven, audit",
       "pos": [
-        1220,
-        120
+        1010,
+        40
       ],
       "size": [
         140,
@@ -182,8 +182,8 @@
       "label": "notify",
       "sublabel": "Kafka consumer",
       "pos": [
-        1220,
-        320
+        1010,
+        430
       ],
       "size": [
         140,
@@ -196,8 +196,8 @@
       "label": "Cloudflare Queues",
       "sublabel": "email-high / email-low",
       "pos": [
-        1220,
-        460
+        1010,
+        560
       ],
       "size": [
         140,
@@ -210,8 +210,8 @@
       "label": "email-worker",
       "sublabel": "Cloudflare Worker",
       "pos": [
-        1220,
-        600
+        800,
+        560
       ],
       "size": [
         140,
@@ -224,8 +224,8 @@
       "label": "email-dlq",
       "sublabel": "failed sends",
       "pos": [
-        1220,
-        740
+        800,
+        690
       ],
       "size": [
         140,
@@ -238,8 +238,8 @@
       "label": "Resend",
       "sublabel": "email API",
       "pos": [
-        1000,
-        600
+        545,
+        560
       ],
       "size": [
         140,
@@ -263,7 +263,9 @@
       "id": "sign-in",
       "from": "clients",
       "to": "auth",
-      "label": "sign in"
+      "label": "sign in",
+      "fromSide": "bottom",
+      "toSide": "left"
     },
     {
       "id": "auth-proxy",
@@ -294,21 +296,25 @@
       "to": "llm",
       "label": "inference",
       "variant": "dashed",
-      "fromSide": "left",
+      "fromSide": "top",
       "toSide": "right"
     },
     {
       "id": "api-cache",
       "from": "api",
       "to": "redis",
-      "label": "read / fill cache"
+      "label": "read / fill cache",
+      "fromSide": "top",
+      "toSide": "right"
     },
     {
       "id": "api-telemetry",
       "from": "api",
       "to": "otel",
       "label": "OTLP",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "left"
     },
     {
       "id": "otel-export",
@@ -343,45 +349,59 @@
       "from": "kafka",
       "to": "audit",
       "label": "consume",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
     },
     {
       "id": "write-audit-log",
       "from": "audit",
       "to": "auditdb",
-      "label": "insert"
+      "label": "insert",
+      "fromSide": "top",
+      "toSide": "bottom"
     },
     {
       "id": "consume-notify",
       "from": "kafka",
       "to": "notify",
       "label": "consume",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "enqueue-email",
       "from": "notify",
       "to": "cfqueue",
-      "label": "enqueue job"
+      "label": "enqueue job",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "trigger-worker",
       "from": "cfqueue",
       "to": "worker",
-      "label": "trigger"
+      "label": "trigger",
+      "fromSide": "left",
+      "toSide": "right"
     },
     {
       "id": "send-email",
       "from": "worker",
       "to": "resend",
-      "label": "send"
+      "label": "send",
+      "fromSide": "left",
+      "toSide": "right"
     },
     {
       "id": "dead-letter",
       "from": "worker",
       "to": "emaildlq",
       "label": "retries exhausted",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
     }
   ],
   "cards": [
