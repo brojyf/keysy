@@ -10,6 +10,7 @@ const routes = [
   ['tech-stack', 'Tech stack'],
   ['system-design', 'System design'],
   ['database-schema', 'Database schema'],
+  ['project-management-plan', 'Project management plan'],
   ['references', 'References'],
   ['api', 'Keysy API'],
   ['auth', 'Keysy Auth API'],
@@ -32,7 +33,7 @@ test('navigation preserves the six original sections and includes references und
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
-    '/', '/prd', '/tech-stack', '/system-design', '/database-schema', '/references',
+    '/', '/prd', '/tech-stack', '/system-design', '/database-schema', '/project-management-plan', '/references',
   ]);
 });
 

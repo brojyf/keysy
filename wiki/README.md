@@ -24,7 +24,7 @@ bun audit --audit-level=high
 ```
 
 `check` runs TypeScript 7 and Sourcey's route, fragment and output checks.
-`test` builds the static site, then checks branding, all 15 documentation pages,
+`test` builds the static site, then checks branding, all documentation pages,
 public assets, navigation, native controls and the drawer's runtime click handler.
 `bun run build` writes `dist/`.
 
