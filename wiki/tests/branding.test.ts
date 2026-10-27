@@ -67,7 +67,8 @@ test('both logo variants share an outlined Geist SemiBold wordmark without font 
   const variants = await Promise.all(['light', 'dark'].map(async (mode) => {
     const svg = await Bun.file(new URL(`logo/${mode}.svg`, docs)).text();
     expect(svg).toContain('<desc>Keysy logo with a Geist SemiBold wordmark.</desc>');
-    expect(svg).toContain('width="234" height="85" viewBox="0 0 234 85"');
+    // Same mark as design/logo/logo.svg: the wordmark is tracked −4%, so it runs wider than 234.
+    expect(svg).toContain('width="241.14" height="85" viewBox="0 0 241.14 85"');
     expect(svg).not.toMatch(/<text\b|<image\b|<foreignObject\b|@font-face|font-family=/);
     const paths = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map((match) => match[1]);
     expect(paths).toHaveLength(3);
