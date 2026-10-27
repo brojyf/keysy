@@ -1,0 +1,172 @@
+---
+title: "Landing page copy"
+description: "Official landing page references and proposed English copy for Keysy."
+---
+
+## Recommended direction
+
+**Keysy means key + easy.** Make that promise the center of the page: managing keys
+and secrets should feel straightforward. Explain AI through the work it helps you
+do, rather than making AI the product's identity.
+
+**Recommended headline:**
+
+> Keys made easy.
+
+**Supporting copy:**
+
+> Manage API keys and secrets in one place, from local development to production.
+> Control who can access them, and use AI to help keep them organized.
+
+Use **Secret management for developers** above the headline to make the category
+clear. The headline carries the brand; the supporting copy explains the product.
+
+This is a copy proposal for review, not a release announcement. Feature language
+below follows the [PRD](/prd); requirements do not establish current availability.
+Use the prelaunch wording until the corresponding product flows are released.
+
+## Official references
+
+Reviewed on **October 26, 2026**. Quotes preserve the wording with line breaks
+normalized. These observations are editorial judgments, not conversion-test
+results. Homepages can change or show different variants.
+
+| Reference | Observed headline | What to learn | Application to Keysy |
+| --- | --- | --- | --- |
+| [Supabase](https://supabase.com/) | “Build in a weekend Scale to millions” | Two short clauses connect an immediate benefit with a future outcome. The paragraph underneath names the actual building blocks. | Lead with ease; explain secrets, access, and development workflows directly below. Do not borrow its speed or scale promises. |
+| [Cloudflare](https://www.cloudflare.com/) | “Everything we learned from powering 20% of the Internet—yours by default” | Turns an established operating record into a benefit for the customer. Its supporting copy explains the work the platform handles. | Describe what becomes easier for the developer. Use product behavior as evidence; Keysy has no equivalent scale claim established here. |
+| [Cloudflare Developer Platform](https://www.cloudflare.com/developer-platform/) | “Developers who know use Cloudflare” | Addresses a specific audience, then explains the platform's capabilities. The confidence depends on an established reputation. | Name developers explicitly. Prefer a clear explanation over a prestige claim. |
+| [Resend](https://resend.com/) | “Email for developers” | Names the product category and audience immediately. The next sentence explains the practical benefit. | Use a plain category label so “keys” cannot be mistaken for a hardware or keyboard product. |
+| [Clerk](https://clerk.com/) | “Everything you need for authentication” | Gives a broad category promise, then makes it concrete through product components and examples. | Show a small set of useful workflows. Avoid claiming completeness beyond Keysy's defined scope. |
+| [Doppler](https://www.doppler.com/) | “One platform. Every secret. Human or AI.” | A direct category peer names both the managed object and the identities that use it. | Explain access for developers and services. Keep Keysy's emphasis on ease, with AI as assistance. |
+
+For calls to action, Supabase uses **Start your project** and **Request a demo**;
+Resend uses **Get started** and **Documentation**. The useful pattern is a clear
+next action with an optional way to learn more. Those labels describe working
+destinations; they are not a reason to add an unreleased signup or demo flow.
+
+## Headline options
+
+| Option | Pros | Cons | Recommendation |
+| --- | --- | --- | --- |
+| **Keys made easy.** | Short, memorable, and directly expresses key + easy. | “Keys” alone does not explain the full secrets category. | Preferred with the category label and supporting copy above. |
+| **Secret management, made easy.** | Immediately explains the product and the promise. | More generic and less closely tied to the name. | The simplest alternative if instant category clarity matters most. |
+| **Your secrets. Simply managed.** | Calm, concise, and consistent with the existing landing draft. | Communicates simplicity without making the name's meaning as explicit. | Keep if continuity with the existing design matters more. |
+
+Choose **Keys made easy.** because it gives the name a meaning visitors can
+remember. Use concrete examples below it to show what “easy” means: save a key,
+assign access, retrieve it where needed, and reorganize it with assistance.
+
+## Hero and calls to action
+
+### Prelaunch
+
+| Element | Proposed copy |
+| --- | --- |
+| Category and status | Secret management for developers · Coming soon |
+| Headline | Keys made easy. |
+| Supporting copy | We're building a simpler way to manage API keys and secrets, from local development to production. Keep them organized and control who can access them. |
+| Primary action | See how it works |
+| Closing headline | A simpler way to manage your keys. |
+| Closing copy | Explore how Keysy brings secrets, access policies, and AI assistance together. |
+
+**See how it works** should lead to the existing workflow section,
+`#workflow`, in the [v4 landing draft](https://github.com/brojyf/keysy/pull/49).
+Keep that destination only if the section remains present. Label product previews
+as illustrative. A **Coming soon** label communicates status; it does not need to
+be a disabled signup button. This proposal does not require a waitlist.
+
+### When the product flows are released
+
+Use the recommended headline and supporting copy at the top of this document.
+Use **Get started** for a working onboarding flow and **Read the docs** for
+available public product documentation. Repeat the same primary action at the
+bottom of the page. The internal wiki is not the public documentation destination.
+
+Closing copy:
+
+> Make room for building.
+>
+> Manage your secrets in one place. Give your team and services the access they need.
+
+Do not add **free**, a setup-time estimate, or **no credit card required** until
+the actual offer and onboarding experience support those statements.
+
+## Product language
+
+These are proposed descriptions of the intended product. Show a feature as
+available only when its implementation and access path have been verified.
+
+### Core features
+
+| Heading | Supporting copy | Product basis |
+| --- | --- | --- |
+| Keep your secrets organized. | Manage secrets in one place, with paths and optional notes that help you find what you need. | Secret management and optional notes in the PRD. |
+| Reorganize with AI assistance. | Move secrets, update affected policies, and verify permissions with AI assistance. | AI-assisted reorganization in the PRD; avoid promising that AI always gets permissions right. |
+| Give each service the access it needs. | Set policies so users and services can retrieve only the secrets they are allowed to read. | Policy-based access in the PRD. |
+| Set a reminder. Keep track. | Add an expiration reminder so you know when a secret needs attention. | Optional expiration reminders; they do not rotate or invalidate credentials. |
+| Know what changed. | Review changes to secrets, policies, and admin access, including who made them and when. | Audit logs for changes; secret values are excluded. |
+
+### Ways to use Keysy
+
+Section heading: **Manage secrets where you work.**
+
+| Channel | Supporting copy |
+| --- | --- |
+| Web app | Manage secrets, access policies, and audit logs in one workspace. |
+| CLI | Create, update, and retrieve secrets from your terminal, within your assigned permissions. |
+| Browser extension | Save new API keys or update existing secrets directly from provider websites. |
+| Coding agents | Use the Keysy skill to work with secrets through the CLI. |
+
+Creation and updates require Admin access. Avoid suggesting that every user or
+agent can modify secrets, or that coding agents have their own unrestricted access.
+
+### Security language
+
+Heading: **Control access to your secrets.**
+
+> Secrets are encrypted at rest, with encryption keys stored separately from the
+> database. Users and services can retrieve only what their policies allow.
+
+This describes PRD requirements. Confirm the implementation before publishing it
+as a statement about the running service. Keysy can decrypt secrets server-side;
+do not describe it as end-to-end encrypted or claim that the server cannot read them.
+
+### Search metadata
+
+| State | Title | Description |
+| --- | --- | --- |
+| Prelaunch | Keysy — Keys made easy. | Keysy is building simpler secret management for developers, with AI assistance and policy-based access. Coming soon. |
+| Released flows | Keysy — Keys made easy. | Manage API keys and secrets from local development to production, with policy-based access, AI assistance, expiration reminders, and audit logs. |
+
+## Voice and wording
+
+- **Make ease concrete.** Explain the task that becomes simpler. Prefer “Save API
+  keys from provider websites” over “A frictionless developer experience.”
+- **Use keys for the brand and secrets for the product category.** Introduce API
+  keys early; use secrets when including passwords, tokens, and other credentials.
+- **Write to the developer.** Prefer short sentences with actions such as save,
+  organize, retrieve, grant, and review. Use sentence case.
+- **Keep AI specific.** Name the assistance: moving secrets, updating affected
+  policies, and checking permissions. Avoid “AI keeps everything right.”
+- **Keep simplicity compatible with control.** Explain permissions and Admin-only
+  actions without suggesting that ease means unrestricted access.
+- **Use evidence instead of superlatives.** Avoid “the best,” “unbreakable,”
+  “enterprise-grade,” and unsupported customer, performance, or uptime claims.
+
+## Claims that need resolution
+
+The PRD is the scope reference; the [landing draft](https://github.com/brojyf/keysy/pull/49)
+is a design reference, not proof that a capability is released.
+
+| Topic | Editorial treatment |
+| --- | --- |
+| Version history | At review time, the merged PRD describes secret versions, while [PR #53](https://github.com/brojyf/keysy/pull/53) proposes folder versions and rollback. Resolve the scope before publishing detailed version or rollback copy. |
+| Service retrievals | Describe the version a service **last retrieved**. A retrieval record does not establish what the service is currently running. |
+| Availability | The landing draft includes redundancy and a 99.9% uptime commitment. Publish operational or SLA claims only with verified deployment evidence and defined terms. Avoid “Always available.” |
+| SDKs and integrations | The design includes illustrative SDK examples. Name supported languages and show installation commands only when the packages and examples are real and verified. |
+| AI data handling | The design says secret values stay out of AI conversations. Verify the complete assistant and coding-agent paths before making an absolute promise. |
+| Rotation and retention | Reminders are not automatic rotation; retained history is bounded. Neither automatic rotation nor unlimited history is in the PRD scope. |
+
+Keep the page focused on the key + easy promise. A short, specific explanation
+and a working next step are enough; additional slogans should not compete with it.
