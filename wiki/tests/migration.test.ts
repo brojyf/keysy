@@ -247,6 +247,9 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
   expect(prd).toContain('Notion is the source of truth for this PRD.');
+  expect(prd).toContain('Secrets are not versioned individually.');
+  expect(prd).toContain('Rolling back a folder creates a new version');
+  expect(prd).not.toContain('secret’s version history');
 });
 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
