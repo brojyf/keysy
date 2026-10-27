@@ -15,14 +15,18 @@ All other tables live in the `public` schema.
 erDiagram
   auth_users |o--o{ members : "signs in as"
   orgs ||--o{ members : has
+  orgs ||--o{ folders : owns
   orgs ||--o{ secrets : owns
   orgs ||--o{ services : owns
   orgs ||--o{ policies : owns
   orgs ||--o{ reorganizations : owns
-  secrets ||--|{ secret_versions : has
-  vault_secrets ||--|| secret_versions : encrypts
-  secrets ||--o{ secret_retrievals : "retrieved as"
-  services ||--o{ secret_retrievals : records
+  folders ||--o{ secrets : contains
+  vault_secrets ||--o| secrets : encrypts
+  folders ||--|{ folder_versions : has
+  folder_versions ||--|{ folder_version_changes : records
+  vault_secrets ||--o{ folder_version_changes : encrypts
+  folders ||--o{ folder_retrievals : "retrieved as"
+  services ||--o{ folder_retrievals : records
   services ||--o{ service_tokens : authenticates
   policies ||--o{ policy_members : assigns
   members ||--o{ policy_members : "assigned to"
@@ -52,24 +56,46 @@ erDiagram
     text role
     timestamptz created_at
   }
-  secrets {
+  folders {
     uuid id PK
     uuid org_id FK
     text path
+    int current_version
+    timestamptz created_at
+  }
+  secrets {
+    uuid id PK
+    uuid org_id FK
+    uuid folder_id FK
+    text path
     text note
     timestamptz expires_at
-    int current_version
+    uuid vault_secret_id FK
     timestamptz created_at
     timestamptz updated_at
   }
-  secret_versions {
-    uuid secret_id PK, FK
+  folder_versions {
+    uuid folder_id PK, FK
     int version PK
-    uuid vault_secret_id FK
+    uuid actor_id
+    int rollback_of
     timestamptz created_at
   }
-  secret_retrievals {
-    uuid secret_id PK, FK
+  folder_version_changes {
+    uuid folder_id PK, FK
+    int version PK, FK
+    uuid secret_id PK
+    text before_name
+    text before_note
+    timestamptz before_expires_at
+    uuid before_vault_secret_id FK
+    text after_name
+    text after_note
+    timestamptz after_expires_at
+    uuid after_vault_secret_id FK
+  }
+  folder_retrievals {
+    uuid folder_id PK, FK
     uuid service_id PK, FK
     int version
     timestamptz retrieved_at
@@ -124,9 +150,11 @@ erDiagram
 | --- | --- |
 | `orgs` | Tenants. `expiration_reminder_days` holds the org's reminder lead time and defaults to 7. |
 | `members` | A user's role in an org: `super_admin`, `admin`, or `user`. Admins add members by email, unique per org; `user_id` stays null until the first Google sign-in. |
-| `secrets` | Secret metadata. `path` is unique per org; `note` and `expires_at` are optional. `current_version` points to the version that reads return. |
-| `secret_versions` | The current version and up to N previous versions. Each row references one `vault.secrets` entry. Removing a version also removes its Vault entry. |
-| `secret_retrievals` | Each service's last-retrieved version and time per secret, kept as a single latest record. |
+| `folders` | A secret path without its last segment, unique per org. Created with its first secret and kept after its last one is gone, so its history stays available. `current_version` is the version that reads return. |
+| `secrets` | The current state of each secret. `path` is unique per org; `note` and `expires_at` are optional. `vault_secret_id` references the current value. |
+| `folder_versions` | The current version and up to N previous versions of each folder. One change creates at most one version per affected folder. `rollback_of` is the version a rollback restores. |
+| `folder_version_changes` | What each version changed: a secret's name, note, expiration, and Vault entry before and after. Null `before_*` columns mean the secret was created or moved in; null `after_*` columns mean it was deleted or moved out. A rollback undoes the later changes in reverse order. A Vault entry is removed once neither `secrets` nor a kept change references it. |
+| `folder_retrievals` | Each service's last-retrieved version and time per folder, kept as a single latest record. |
 | `policies` | Read access to matching secret paths. Each entry in `paths` is an exact path or a prefix ending in `/*`. |
 | `policy_members` | Assigns policies to members. |
 | `policy_services` | Assigns policies to services. |
@@ -145,8 +173,8 @@ and failed ones, and never stores secret values.
 | `id` | `uuid` | Primary key. Uses the outbox event ID, so redelivered events are inserted once. |
 | `org_id` | `uuid` | |
 | `actor_id` | `uuid` | The Supabase Auth user ID of the user who made the change. |
-| `action` | `text` | For example, `secret.version_created`. |
-| `target_type` | `text` | `secret`, `policy`, `member`, or `service`. |
+| `action` | `text` | For example, `folder.version_created`. |
+| `target_type` | `text` | `secret`, `folder`, `policy`, `member`, or `service`. |
 | `target_id` | `uuid` | Null when the attempt never created its target, such as a denied or failed create. |
 | `outcome` | `text` | `success`; `denied` when authorization rejects the change; `failed` when an authorized change does not commit. |
 | `occurred_at` | `timestamptz` | |

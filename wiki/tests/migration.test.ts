@@ -275,7 +275,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 7],
+    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 8],
     ['auth', 'Auth', ['GET', '/v0/auth/google'], 0],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
@@ -338,9 +338,17 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
 test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
   expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
-  for (const table of ['orgs', 'members', 'secrets', 'secret_versions', 'secret_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
+  for (const table of ['orgs', 'members', 'secrets', 'folders', 'folder_versions', 'folder_version_changes', 'folder_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
     expect(html).toContain(`<code>${table}</code>`);
   }
+});
+
+test('versions belong to folders, addressed by path, not to individual secrets', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  for (const path of ['/v0/orgs/{orgId}/folder-versions', '/v0/orgs/{orgId}/folder-rollbacks', '/v0/orgs/{orgId}/folder-retrievals']) {
+    expect(yaml).toContain(`\n  ${path}:\n`);
+  }
+  expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
 });
 
 test('design points to the design directory for all design assets', async () => {
