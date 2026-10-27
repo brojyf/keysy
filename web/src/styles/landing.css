@@ -15,16 +15,16 @@
   --button: #2f5aba;
   --soft: #f0f1f3;
   --line: #e3e4e6;
-  --gutter: max(24px, calc((100% - 1200px) / 2));
+  --gutter: max(24px, calc((100% - 1088px) / 2));
 }
 @media (min-width: 1024px) {
   :root {
-    --gutter: max(48px, calc((100% - 1200px) / 2));
+    --gutter: max(48px, calc((100% - 1088px) / 2));
   }
 }
 @media (min-width: 1280px) {
   :root {
-    --gutter: max(96px, calc((100% - 1200px) / 2));
+    --gutter: max(96px, calc((100% - 1088px) / 2));
   }
 }
 * {
@@ -41,6 +41,9 @@ ol {
 }
 body {
   min-width: 320px;
+}
+p {
+  text-wrap: pretty;
 }
 main {
   overflow-x: clip;
@@ -191,7 +194,7 @@ main > .section:not(.hero) {
   position: relative;
   min-width: 0;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1088px;
   margin-inline: auto;
 }
 .section-heading {

@@ -1,25 +1,11 @@
 import { DesignAsset } from "./DesignAsset";
-import { SyntaxCode } from "./SdkShowcase";
-
-const commands = `# 01–02 · Create a secret with a note and reminder
-$ keysy set production/shared/STRIPE_SECRET_KEY
-    --note "Rotate in the Stripe dashboard" --expires 90d
-✓ Saved · production/shared is now v5
-
-# 03 · Allow a service to read it
-$ keysy policy allow checkout-service read production/shared/*
-✓ Policy updated · permissions verified
-
-# 04 · Retrieve it locally
-$ keysy get production/shared/STRIPE_SECRET_KEY
-sk_live_••••••••••••••••`;
+import { TerminalPrompt, TerminalWindow } from "./TerminalWindow";
 
 export default function Workflow() {
   return (
     <div className="split-section">
       <div>
         <div className="section-heading">
-          <p className="eyebrow">Workflow</p>
           <h2>
             From new secret to
             <br />
@@ -47,28 +33,40 @@ export default function Workflow() {
           ))}
         </ol>
       </div>
-      <div className="workflow-terminal">
+      <TerminalWindow className="workflow-terminal" folder="acme">
         <DesignAsset
           section="36776"
           name="imgEllipse"
           className="workflow-glow"
         />
-        <div className="terminal-bar">
-          <span className="terminal-lights">
-            {["imgEllipse1", "imgEllipse2", "imgEllipse3"].map((name) => (
-              <DesignAsset key={name} section="36776" name={name} />
-            ))}
-          </span>
-          <span className="terminal-tab">Terminal</span>
-        </div>
         <pre>
-          <SyntaxCode code={commands} />
+          <code>
+            {"# 01–02 · Create a secret with a note and reminder\n"}
+            <TerminalPrompt folder="acme" />
+            <b>{"keysy set "}</b>
+            {"production/shared/STRIPE_SECRET_KEY\n"}
+            <b>{"    --note "}</b>
+            {'"Rotate in the Stripe dashboard"'}
+            <b>{" --expires "}</b>
+            {"90d\n"}
+            <em>✓ Saved · production/shared is now v5</em>
+            {"\n\n# 03 · Allow a service to read it\n"}
+            <TerminalPrompt folder="acme" />
+            <b>{"keysy policy allow "}</b>
+            {"checkout-service \\\n"}
+            <b>{"    read "}</b>
+            {"production/shared/*\n"}
+            <em>✓ Policy updated · permissions verified</em>
+            {"\n\n# 04 · Retrieve it locally\n"}
+            <TerminalPrompt folder="acme" />
+            <b>{"keysy get "}</b>
+            {"production/shared/STRIPE_SECRET_KEY\nsk_live_"}
+            <span className="terminal-accent">••••••••••••••••</span>
+            {"\n"}
+            <TerminalPrompt folder="acme" />▍
+          </code>
         </pre>
-        <div className="terminal-footer">
-          <span>Illustrative commands</span>
-          <span>zsh · ~/acme</span>
-        </div>
-      </div>
+      </TerminalWindow>
     </div>
   );
 }

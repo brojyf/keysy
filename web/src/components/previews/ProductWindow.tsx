@@ -8,6 +8,7 @@ import { playHeroStory, renderHeroFinal } from "./heroStory";
 import { playUpdateStory, renderUpdateFinal } from "./updateSecretStory";
 import type { PreviewPlayback } from "./previewPlayback";
 import { DesignAsset } from "../DesignAsset";
+import { TerminalPrompt, TerminalWindow } from "../TerminalWindow";
 
 const navItems = [
   "Secrets",
@@ -160,9 +161,6 @@ export default function ProductWindow({
                     })}
                   </tbody>
                 </table>
-                <p className="product-note">
-                  7 secrets · Values hidden by default
-                </p>
               </div>
               {update && <div className="preview-scrim" />}
               <aside className="product-panel">
@@ -176,38 +174,51 @@ export default function ProductWindow({
           </div>
         </div>
         {!update && (
-          <div className="hero-terminal" aria-hidden="true">
-            <div className="terminal-bar">
-              <span className="terminal-lights">
-                {["imgEllipse2", "imgEllipse3", "imgEllipse4"].map((name) => (
-                  <DesignAsset
-                    key={name}
-                    section="36008"
-                    loading={update ? "lazy" : "eager"}
-                    name={name}
-                  />
-                ))}
-              </span>
-              ~/acme/api — zsh
-            </div>
+          <TerminalWindow
+            className="hero-terminal"
+            folder="api"
+            decorative
+            eager
+          >
             <pre>
               <code>
-                <span>$ keysy login</span>
+                <TerminalPrompt folder="api" />
+                <b>keysy login</b>
                 {"\n"}
-                <em>✓ Signed in as alice · workspace acme</em>
-                {"\n\n"}$ keysy ls production/api{"\n"}
-                <span className="code-comment">PATH CHANGED EXPIRES</span>
-                {"\n"}production/api/DATABASE_URL v8 —{"\n"}
-                production/api/REDIS_URL v6 —{"\n"}production/api/SENTRY_DSN v7
-                —{"\n\n"}$ keysy get production/api/DATABASE_URL{"\n"}
-                <em>✓ authorized by policy api-read</em>
-                {"\n"}postgres://app:••••••••@db.internal:5432{"\n\n"}$ keysy
-                get production/shared/STRIPE_SECRET_KEY{"\n"}
-                <span className="code-error">✗ denied by policy api-read</span>
-                {"\n\n"}$ ▍
+                <em>{"✓ "}</em>
+                {"Signed in as "}
+                <b>alice</b>
+                {" · workspace acme\n\n"}
+                <TerminalPrompt folder="api" />
+                <b>{"keysy ls "}</b>
+                {"production/api\n"}
+                {"PATH                              CHANGED   EXPIRES\n"}
+                <b>
+                  {"production/api/DATABASE_URL       v8        —\n"}
+                  {"production/api/REDIS_URL          v6        —\n"}
+                  {"production/api/SENTRY_DSN         v7        —"}
+                </b>
+                {"\n\n"}
+                <TerminalPrompt folder="api" />
+                <b>{"keysy get "}</b>
+                {"production/api/DATABASE_URL\n"}
+                <em>{"✓ "}</em>
+                {"authorized by policy "}
+                <b>api-read</b>
+                {"\npostgres://app:"}
+                <span className="terminal-accent">••••••••</span>
+                {"@db.internal:5432\n\n"}
+                <TerminalPrompt folder="api" />
+                <b>{"keysy get "}</b>
+                {"production/shared/STRIPE_SECRET_KEY\n"}
+                <span className="code-error">{"✗ "}</span>
+                {"denied by policy "}
+                <b>api-read</b>
+                {"\n\n"}
+                <TerminalPrompt folder="api" />▍
               </code>
             </pre>
-          </div>
+          </TerminalWindow>
         )}
       </div>
     </div>

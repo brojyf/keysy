@@ -133,8 +133,9 @@ export function PlatformCards() {
             ["payments", "v3"],
           ].map(([folder, version]) => (
             <p key={folder}>
-              production/{folder}/<span>{version}</span>
+              production/{folder}/
               {folder === "shared" && <b>v5 available</b>}
+              <span>{version}</span>
             </p>
           ))}
         </div>
@@ -263,16 +264,12 @@ export function AvailabilityCards() {
             </p>
           ))}
         </div>
-        <p className="visual-caption">
-          Reads keep working when one instance fails
-        </p>
       </Card>
       <Card
         title="Status in the open."
         description="Check the health of every Keysy service on the public status page."
       >
         <div className="system-health">
-          <span>All systems operational</span>
           <div className="mini-window">
             <small>SYSTEM STATUS</small>
             {["API", "Auth", "Web app", "Notifications"].map((name) => (
@@ -288,7 +285,6 @@ export function AvailabilityCards() {
         <div className="feature-visual uptime">
           <DesignAsset section="36545" name="imgGlow" className="card-glow" />
           <strong>99.9%</strong>
-          <p>Monthly uptime commitment</p>
           <ComingSoon>Uptime SLA</ComingSoon>
         </div>
         <div className="feature-copy">

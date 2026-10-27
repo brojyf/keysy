@@ -56,6 +56,7 @@ export function Footer() {
             <div>
               <h3>Product</h3>
               <a href="/#dashboard">Dashboard</a>
+              <a href="/#workflow">CLI</a>
               <ComingSoon>Browser extension</ComingSoon>
             </div>
             <div>

@@ -45,10 +45,10 @@ export function usePreviewPlayback(
             await story(current, root);
             current.guard();
             if (!loop) {
+              // The story already ends on its final frame; redrawing it would make it jump.
               completed = true;
               playing = false;
               current.stop();
-              renderFinal(root);
               syncPlayback();
               break;
             }

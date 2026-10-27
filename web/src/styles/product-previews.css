@@ -165,6 +165,7 @@
   border-radius: 0.3em;
 }
 .product-main table {
+  font-variant-numeric: tabular-nums;
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
@@ -207,11 +208,6 @@
   color: var(--accent);
   border-radius: 0.4em;
   padding: 0.25em 0.5em;
-}
-.product-note {
-  margin-top: 1.25em;
-  font-size: 0.83em;
-  color: var(--muted);
 }
 .product-panel {
   display: flex;
@@ -319,15 +315,17 @@
   bottom: 0;
   width: 370px;
   height: 244px;
-  background: #101b30;
-  border: 1px solid #46516a;
   border-radius: 8px;
-  color: #d8e1f0;
   box-shadow: 0 12px 30px #101b3030;
   overflow: hidden;
   font-size: 7.2px;
   transform: scale(calc(100cqw / 996px));
   transform-origin: bottom right;
+}
+.terminal-window {
+  background: #101b30;
+  color: #aab8d0;
+  font-weight: 360;
 }
 .terminal-bar {
   display: flex;
@@ -336,11 +334,17 @@
   height: 46px;
   padding-inline: 16px;
   background: #ffffff06;
-  border-bottom: 1px solid #ffffff14;
-  font:
-    11px "Geist Mono Variable",
-    monospace;
-  color: #aab8d0;
+  font-size: 13px;
+}
+.terminal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  font-weight: 560;
+}
+.terminal-title img {
+  width: 1.15em;
+  height: auto;
 }
 .terminal-lights {
   display: flex;
@@ -352,13 +356,27 @@
   gap: 1em;
   font-size: 1em;
 }
+.hero-terminal .terminal-title {
+  font-size: 1.1em;
+}
+.hero-terminal .terminal-lights img {
+  width: 5.67px;
+  height: 5.67px;
+}
 .hero-terminal pre {
   padding: 1.4em;
   line-height: 1.5;
 }
-.hero-terminal em {
-  color: #7dd3a8;
+.terminal-window em {
+  color: #7ee2b8;
   font-style: normal;
+}
+.terminal-window b {
+  color: #fff;
+  font-weight: inherit;
+}
+.terminal-accent {
+  color: #7aa2ff;
 }
 .preview-fields {
   display: flex;
@@ -477,32 +495,11 @@
 .dashboard-stage .environment {
   display: none;
 }
-.terminal-tab {
-  background: #ffffff0a;
-  border: 1px solid #ffffff12;
-  padding: 6px 12px;
-  border-radius: 6px;
-  color: #d8e1f0;
-}
-.terminal-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 11px 24px;
-  border-top: 1px solid #ffffff14;
-  font:
-    10px "Geist Mono Variable",
-    monospace;
-  color: #aab8d0;
-}
 @media (max-width: 700px) {
   .product-stage {
     margin-top: 48px;
   }
   .dashboard-stage {
     margin-top: 40px;
-  }
-  .terminal-footer {
-    padding-inline: 16px;
-    font-size: 8px;
   }
 }

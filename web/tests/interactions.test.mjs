@@ -99,6 +99,28 @@ describe("SDK showcase", () => {
 });
 
 describe("product previews", () => {
+  test("keeps the last frame instead of redrawing it when a single-play story finishes", async () => {
+    let complete;
+    let redraws = 0;
+    const story = () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      });
+    const renderFinal = () => {
+      redraws++;
+    };
+    function SinglePlayPreview() {
+      const scope = useRef(null);
+      usePreviewPlayback(scope, story, renderFinal, false);
+      return React.createElement("div", { ref: scope });
+    }
+    await act(() => root.render(React.createElement(SinglePlayPreview)));
+    await act(async () => {
+      complete();
+      await Promise.resolve();
+    });
+    expect(redraws).toBe(0);
+  });
   test("does not restart a single-play story after completion or visibility changes", async () => {
     let complete;
     let entered;

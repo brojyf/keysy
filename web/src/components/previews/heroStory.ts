@@ -1,24 +1,34 @@
 import { stagger } from "motion";
 import type { OrbState } from "thinking-orbs";
 import { prompt, resetRows } from "./previewContent";
-import { query, spring, exit, type PreviewPlayback } from "./previewPlayback";
+import {
+  query,
+  spring,
+  exit,
+  fade,
+  type PreviewPlayback,
+} from "./previewPlayback";
 
 const moves = [
   ["STRIPE_SECRET_KEY", "production/payments/"],
   ["RESEND_API_KEY", "production/email/"],
 ];
+// Like the API's propose → verify → apply flow, nothing moves until permissions check out.
 const thoughts: [string, OrbState][] = [
   ["Finding affected policies…", "searching"],
-  ["Moving 2 secrets…", "working"],
   ["Verifying permissions…", "solving"],
+  ["Moving 2 secrets…", "working"],
 ];
+const movingStep = 2;
 
 function resetHero(root: HTMLElement) {
   resetRows(root);
   for (const node of root.querySelectorAll<HTMLElement>(
-    ".assistant-prompt, .thinking, .thinking-text, .assistant-reply, .assistant-reply > *, .assistant-reply > div > p",
+    ".composer-text, .assistant-prompt, .thinking, .thinking-text, .assistant-reply, .assistant-reply > *, .assistant-reply > div > p",
   ))
     node.removeAttribute("style");
+  const replyText = query(root, ".assistant-reply > p");
+  replyText.textContent = replyText.textContent;
   query(root, ".thinking").hidden = true;
   query(root, ".composer-text").textContent = "";
   query(root, ".composer-text").classList.remove("typing");
@@ -91,13 +101,21 @@ export async function playHeroStory(
   }
   composer.classList.remove("typing");
   await run.wait(200);
-  composer.textContent = "";
+  // Sending: the bubble rises from below while the typed text fades out. The
+  // placeholder is back before the bubble lands, so nothing pops in afterwards.
+  bubble.style.opacity = "0";
   bubble.hidden = false;
-  await run.play(
-    bubble,
-    { opacity: [0, 1], y: [18, 0], scale: [0.94, 1] },
-    spring(0.35),
-  );
+  await Promise.all([
+    run.play(
+      bubble,
+      { opacity: [0, 1], y: [20, 0] },
+      { ...spring(0.5), opacity: { duration: 0.3, ease: "easeOut" } },
+    ),
+    run.play(composer, { opacity: 0 }, exit).then(() => {
+      composer.textContent = "";
+      run.animate(composer, { opacity: [0, 1] }, fade);
+    }),
+  ]);
   thinking.hidden = false;
   phrase.textContent = thoughts[0][0];
   setOrb(thoughts[0][1]);
@@ -113,7 +131,7 @@ export async function playHeroStory(
         spring(0.3),
       );
     }
-    if (index === 1) {
+    if (index === movingStep) {
       await Promise.all([
         ...moves.map(async ([key], index) => {
           await run.wait(index * 90);
@@ -129,13 +147,27 @@ export async function playHeroStory(
   const text = query(reply, ":scope > p");
   const results = query(reply, ":scope > div");
   const link = query(reply, ":scope > span");
-  for (const part of [text, results, link]) part.style.opacity = "0";
+  for (const part of [results, link]) part.style.opacity = "0";
   const checks = [...results.querySelectorAll("p")];
   checks.forEach((check) => {
     check.style.opacity = "0";
   });
+  // Stream the reply: a new character starts every 25ms and takes 500ms to clear,
+  // so about 20 fade at once and the sentence washes in rather than ticks.
+  const characters = [...(text.textContent ?? "")].map((character) => {
+    const span = text.ownerDocument.createElement("span");
+    span.textContent = character;
+    span.style.opacity = "0";
+    return span;
+  });
+  text.replaceChildren(...characters);
   reply.hidden = false;
-  run.animate(text, { opacity: [0, 1], y: [8, 0] }, spring(0.35));
+  await run.play(
+    characters,
+    { opacity: [0, 1], filter: ["blur(4px)", "blur(0px)"] },
+    { duration: 0.5, ease: "easeOut", delay: stagger(0.025) },
+  );
+  text.textContent = text.textContent;
   run.animate(
     results,
     { opacity: [0, 1], y: [10, 0], scale: [0.97, 1] },

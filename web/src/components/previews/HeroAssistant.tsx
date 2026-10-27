@@ -18,16 +18,16 @@ export default function HeroAssistant({
       <div className="assistant-thread" aria-hidden="true">
         <p className="assistant-prompt">{prompt}</p>
         <div className="thinking" hidden>
-          {orbState && (
-            <ThinkingOrb
-              state={orbState}
-              size={20}
-              color="#1d4ed8"
-              theme="light"
-              paused={!active}
-              aria-hidden="true"
-            />
-          )}
+          {/* Mounted up front: mounting it mid-entrance pushed the phrase aside and
+              flashed the orb's first frames. It idles, paused, until the AI thinks. */}
+          <ThinkingOrb
+            state={orbState ?? "searching"}
+            size={20}
+            color="#1d4ed8"
+            theme="light"
+            paused={!active || !orbState}
+            aria-hidden="true"
+          />
           <span className="thinking-text">Finding affected policies…</span>
         </div>
         <div className="assistant-reply">

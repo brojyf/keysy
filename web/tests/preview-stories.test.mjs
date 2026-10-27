@@ -56,7 +56,7 @@ function immediatePlayback(root) {
 }
 
 describe("HTML demo stories", () => {
-  test("types the prompt, moves only the two paths, verifies, then reveals the reply", async () => {
+  test("types the prompt, verifies permissions, then moves only the two paths and replies", async () => {
     const root = scene();
     const states = [];
     const run = immediatePlayback(root);
@@ -83,17 +83,23 @@ describe("HTML demo stories", () => {
           "Move the Stripe and Resend keys into production/shared.",
       ),
     ).toBe(true);
-    expect(states).toEqual([null, "searching", "working", "solving", null]);
+    expect(states).toEqual([null, "searching", "solving", "working", null]);
     const finding = run.checkpoints.find(
       (step) =>
         step.thought === "Finding affected policies…" && step.ms === 900,
     );
     expect(finding.path).toContain("production/payments/");
-    const verified = run.checkpoints.find(
+    // Nothing moves until the permissions check is done.
+    const verifying = run.checkpoints.find(
       (step) => step.thought === "Verifying permissions…" && step.ms === 900,
     );
-    expect(verified.path).toBe("production/shared/STRIPE_SECRET_KEY");
-    expect(verified.replyHidden).toBe(true);
+    expect(verifying.path).toBe("production/payments/STRIPE_SECRET_KEY");
+    const moving = run.checkpoints.find(
+      (step) => step.thought === "Moving 2 secrets…" && step.ms === 900,
+    );
+    expect(moving.replyHidden).toBe(true);
+    const replied = run.checkpoints.find((step) => step.ms === 520);
+    expect(replied.path).toBe("production/shared/STRIPE_SECRET_KEY");
     expect(
       root.querySelector('[data-secret="RESEND_API_KEY"] td').textContent,
     ).toBe("production/shared/RESEND_API_KEY");
@@ -102,6 +108,75 @@ describe("HTML demo stories", () => {
     ).toEqual(order);
     expect(root.querySelector(".assistant-reply").hidden).toBe(false);
     expect(root.querySelector(".preview-scene").style.opacity).not.toBe("0");
+  });
+
+  test("mounts the thinking orb before the AI starts so its row never shifts", () => {
+    const thinking = scene().querySelector(".thinking");
+    // Mounting it mid-fade pushed the phrase sideways and flashed its first frames.
+    expect(thinking.firstElementChild.tagName).toBe("CANVAS");
+    expect(thinking.lastElementChild.className).toBe("thinking-text");
+  });
+
+  test("streams the reply as overlapping character fades", async () => {
+    const root = scene();
+    const run = immediatePlayback(root);
+    const calls = [];
+    const animate = run.animate;
+    run.animate = run.play = async (targets, frames, options) => {
+      calls.push({ targets, frames, options });
+      await animate(targets, frames);
+    };
+    await playHeroStory(run, root, () => {});
+    const text = root.querySelector(".assistant-reply > p");
+    const sentence =
+      "Done. I moved 2 secrets and updated the policies that use them.";
+    const stream = calls.find(
+      ({ targets }) => Array.isArray(targets) && targets.length > 10,
+    );
+    const characters = stream.targets;
+    expect(characters.map((span) => span.textContent).join("")).toBe(sentence);
+    expect(characters).toHaveLength(sentence.length);
+    // Once streamed, the sentence is plain text again so no filter lingers on it.
+    expect(text.textContent).toBe(sentence);
+    expect(text.children).toHaveLength(0);
+    expect(stream.frames.filter).toEqual(["blur(4px)", "blur(0px)"]);
+    expect(stream.frames.opacity).toEqual([0, 1]);
+    const total = characters.length;
+    const step =
+      stream.options.delay(1, total) - stream.options.delay(0, total);
+    // Each fade spans many characters, so the sentence washes in instead of ticking.
+    expect(stream.options.duration / step).toBeGreaterThanOrEqual(15);
+  });
+
+  test("sends the prompt up from the composer without a late flash", async () => {
+    const root = scene();
+    const run = immediatePlayback(root);
+    const composer = root.querySelector(".composer-text");
+    const bubble = root.querySelector(".assistant-prompt");
+    // Hold the bubble's entrance open to inspect the frame while it is still rising.
+    let finishRise;
+    let rise;
+    const animate = run.animate;
+    run.animate = run.play = (targets, frames, options) => {
+      if (targets !== bubble) return animate(targets, frames);
+      rise = { frames, opacityBeforeStart: bubble.style.opacity };
+      return new Promise((resolve) => {
+        finishRise = resolve;
+      });
+    };
+    const story = playHeroStory(run, root, () => {});
+    while (!finishRise) await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Unhidden while still transparent, so no frame shows it before the fade starts.
+    expect(rise.opacityBeforeStart).toBe("0");
+    // It rises from below with no scaling.
+    expect(rise.frames.y[0]).toBeGreaterThanOrEqual(16);
+    expect(rise.frames.y.at(-1)).toBe(0);
+    expect(rise.frames.scale).toBeUndefined();
+    // The composer already shows its placeholder; nothing reappears once the bubble lands.
+    expect(composer.textContent).toBe("");
+    finishRise();
+    await story;
   });
 
   test("pastes an already masked value, selects the reminder, saves, and resets on replay", async () => {

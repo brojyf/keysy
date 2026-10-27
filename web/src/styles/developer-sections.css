@@ -1,5 +1,5 @@
 .code-error {
-  color: #f7b0af;
+  color: #ff8a80;
 }
 .split-section {
   display: grid;
@@ -50,10 +50,7 @@
 .workflow-terminal {
   position: relative;
   margin-top: 33px;
-  border: 1px solid #293449;
-  background: #101b30;
   border-radius: 16px;
-  color: #d8e1f0;
   box-shadow: 0 20px 50px -20px #101b3070;
 }
 .workflow-glow {
@@ -77,16 +74,6 @@
 }
 .code-comment {
   color: var(--muted);
-}
-.workflow-terminal .code-keyword {
-  color: #c4b5fd;
-}
-.workflow-terminal .code-string {
-  color: #7dd3a8;
-}
-.workflow-terminal .code-comment,
-.hero-terminal .code-comment {
-  color: #aab8d0;
 }
 .sdk-card {
   overflow: hidden;
@@ -174,7 +161,9 @@
     margin-top: 0;
     max-width: 100%;
   }
+  /* Long prompt lines wrap on phones, as in the Figma mobile terminal. */
   .workflow-terminal pre {
+    white-space: pre-wrap;
     font-size: 10px;
     line-height: 23px;
     padding: 18px 16px;

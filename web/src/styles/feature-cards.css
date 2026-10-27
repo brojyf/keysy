@@ -2,10 +2,19 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+/* Each card shares the row tracks, so previews line up however long the copy runs. */
 .channels article {
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  justify-items: start;
   min-width: 0;
   padding: 24px;
   border-left: 1px solid var(--line);
+}
+.channels .channel-preview {
+  justify-self: stretch;
 }
 .channels article:first-child {
   border-left: 0;
@@ -26,14 +35,22 @@
   font-size: 14px;
   line-height: 21px;
   color: var(--muted);
-  min-height: 84px;
 }
 .channel-preview {
   container-type: inline-size;
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   height: 128px;
   overflow: hidden;
   font-size: 9px;
+}
+/* The web app and CLI windows match in size; every preview sits centered. */
+.web-app-preview,
+.tiny-terminal {
+  height: calc(100% - 8px);
+  overflow: hidden;
 }
 .mini-window {
   background: var(--surface);
@@ -53,10 +70,7 @@
   --u: calc(100cqw / 243);
   display: grid;
   grid-template: calc(24 * var(--u)) 1fr / calc(56 * var(--u)) 1fr;
-  height: calc(152 * var(--u));
-  margin-top: calc(4 * var(--u));
   border-radius: calc(10 * var(--u));
-  overflow: hidden;
   box-shadow: none;
 }
 .web-app-chrome {
@@ -131,6 +145,8 @@
   font-weight: 400;
 }
 .extension-preview {
+  position: relative;
+  top: 8px;
   max-width: 200px;
   display: flex;
   flex-direction: column;
@@ -155,13 +171,14 @@
 }
 .agent-preview {
   position: relative;
+  flex: none;
   width: 243px;
-  height: 132px;
+  height: 112px;
   font:
     400 10px/15px "Geist Mono Variable",
     monospace;
   transform: scale(min(1, calc(100cqw / 243px)));
-  transform-origin: top left;
+  transform-origin: left center;
   white-space: nowrap;
 }
 .coding-agent-channel .channel-icon {
@@ -228,6 +245,18 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 1px 2px #101b300a;
+  transition:
+    border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Like Supabase's product cards: the border strengthens and the card lifts under the pointer. */
+@media (hover: hover) {
+  .feature-card:hover {
+    border-color: #c8c9cc;
+    box-shadow:
+      0 4px 6px -1px #101b301a,
+      0 2px 4px -2px #101b301a;
+  }
 }
 .feature-card.wide {
   grid-column: span 3;
@@ -440,10 +469,15 @@
   padding: 4px;
   border-radius: 4px;
 }
+/* The update notice sits before the version, so every version keeps the right edge. */
 .service-versions p b {
+  margin-left: auto;
   color: #b45309;
   font-size: 8px;
   font-weight: 400;
+}
+.service-versions p b + span {
+  margin-left: 0;
 }
 .calendar {
   width: 260px;
@@ -451,6 +485,9 @@
 .calendar > div {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  /* Day rows about as tall as the columns are wide, like the Figma calendar. */
+  grid-template-rows: auto;
+  grid-auto-rows: 26px;
   gap: 4px;
   margin-top: 10px;
   text-align: center;
@@ -463,7 +500,12 @@
     9px "Geist Mono Variable",
     monospace;
 }
+/* A square box keeps the highlighted day round inside its wider grid cell. */
 .calendar .calendar-day {
+  justify-self: center;
+  aspect-ratio: 1;
+  padding: 0;
+  height: 100%;
   background: var(--button);
   color: white;
   border-radius: 50%;
@@ -613,16 +655,6 @@
   position: relative;
   width: 260px;
 }
-.system-health > span {
-  display: block;
-  width: fit-content;
-  margin: 0 auto 14px;
-  padding: 6px;
-  color: var(--accent);
-  background: #e8eefc;
-  border-radius: 6px;
-  font-size: 9px;
-}
 .system-health .mini-window {
   padding: 14px;
 }
@@ -631,12 +663,6 @@
   font-size: 52px;
   font-weight: 600;
   letter-spacing: -0.04em;
-}
-.uptime > p {
-  position: relative;
-  color: var(--muted);
-  margin-top: 8px;
-  font-size: 12px;
 }
 .uptime > .unavailable {
   position: relative;
@@ -681,7 +707,6 @@
   .channels article > p {
     font-size: 12px;
     line-height: 18px;
-    min-height: 90px;
   }
   .channel-preview {
     height: 78px;
@@ -700,6 +725,7 @@
     font-size: 5px;
   }
   .extension-preview {
+    top: 4px;
     gap: 5px;
   }
   .extension-preview code {
