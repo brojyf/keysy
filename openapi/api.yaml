@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The application API provides Keysy's app features: orgs and members, secrets and their versions,
+    The application API provides Keysy's app features: orgs and members, secrets and folder versions,
     access policies, services, AI reorganization, and audit logs.
 
     This is the v0 draft, not a stable release.
@@ -13,6 +13,7 @@ tags:
   - name: Orgs
   - name: Members
   - name: Secrets
+  - name: Folders
   - name: Policies
   - name: Services
   - name: Reorganizations
@@ -246,7 +247,7 @@ paths:
       tags: [Secrets]
       operationId: createSecret
       summary: Create a secret
-      description: Admin or Super Admin. Creates version 1.
+      description: Admin or Super Admin. Creates a new version of its folder.
       requestBody:
         required: true
         content:
@@ -290,8 +291,11 @@ paths:
     patch:
       tags: [Secrets]
       operationId: updateSecret
-      summary: Move a secret or update its note or expiration reminder
-      description: Admin or Super Admin.
+      summary: Update, move, or annotate a secret
+      description: |
+        Admin or Super Admin. Creates a new version of its folder; a move
+        creates one in both the source and the destination folder. Versions
+        beyond the retention limit N are permanently deleted.
       requestBody:
         required: true
         content:
@@ -319,98 +323,10 @@ paths:
       tags: [Secrets]
       operationId: deleteSecret
       summary: Delete a secret
-      description: Admin or Super Admin.
+      description: Admin or Super Admin. Creates a new version of its folder.
       responses:
         '204':
           description: Secret deleted.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /v0/orgs/{orgId}/secrets/{secretId}/versions:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/SecretId'
-    get:
-      tags: [Secrets]
-      operationId: listSecretVersions
-      summary: List recent versions
-      description: Admin or Super Admin. Returns the current version and up to N previous versions, without values.
-      responses:
-        '200':
-          description: Versions, newest first.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/SecretVersion'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags: [Secrets]
-      operationId: createSecretVersion
-      summary: Update a secret's value
-      description: |
-        Admin or Super Admin. Creates a new version. Versions beyond the
-        retention limit N are permanently deleted.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [value]
-              properties:
-                value:
-                  type: string
-      responses:
-        '201':
-          description: Version created.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SecretVersion'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /v0/orgs/{orgId}/secrets/{secretId}/retrievals:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/SecretId'
-    get:
-      tags: [Secrets]
-      operationId: listSecretRetrievals
-      summary: List each service's last retrieval
-      description: Admin or Super Admin. One record per service, separate from audit logs.
-      responses:
-        '200':
-          description: Last retrieval per service.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ServiceRetrieval'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -425,7 +341,7 @@ paths:
       tags: [Secrets]
       operationId: getSecretValue
       summary: Retrieve a secret's current value
-      description: Retrievals by a service update its retrieval record.
+      description: Retrievals by a service update its retrieval record for the secret's folder.
       responses:
         '200':
           description: The current value.
@@ -448,9 +364,9 @@ paths:
       operationId: listSecretValues
       summary: Retrieve current values under a path prefix
       description: |
-        For the CLI and service runtime. Returns only readable secrets. Each
-        value comes from one complete version. Retrievals by a service update
-        its retrieval records.
+        For the CLI and service runtime. Returns only readable secrets. The
+        values from each folder come from one complete version of it.
+        Retrievals by a service update its retrieval record for each folder.
       parameters:
         - name: prefix
           in: query
@@ -478,6 +394,103 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /v0/orgs/{orgId}/folder-versions:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/FolderPath'
+    get:
+      tags: [Folders]
+      operationId: listFolderVersions
+      summary: List a folder's recent versions
+      description: |
+        Admin or Super Admin. Returns the current version and up to N previous
+        versions, with what changed in each and without values.
+      responses:
+        '200':
+          description: Versions, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FolderVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v0/orgs/{orgId}/folder-rollbacks:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      tags: [Folders]
+      operationId: rollBackFolder
+      summary: Roll a folder back to a previous version
+      description: |
+        Admin or Super Admin. Creates a new version with the selected
+        version's secrets; later versions are kept.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path, version]
+              properties:
+                path:
+                  $ref: '#/components/schemas/FolderPath'
+                version:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Rollback version created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolderVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v0/orgs/{orgId}/folder-retrievals:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/FolderPath'
+    get:
+      tags: [Folders]
+      operationId: listFolderRetrievals
+      summary: List each service's last retrieval
+      description: Admin or Super Admin. One record per service, separate from audit logs.
+      responses:
+        '200':
+          description: Last retrieval per service.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceRetrieval'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /v0/orgs/{orgId}/policies:
     parameters:
@@ -770,7 +783,8 @@ paths:
       summary: Apply a proposed reorganization
       description: |
         Admin or Super Admin. Applies all changes in one transaction and
-        verifies the resulting access matches `accessDiff`. If secrets or
+        verifies the resulting access matches `accessDiff`. Each affected
+        folder gets one new version. If secrets or
         policies changed since the proposal, or verification fails, nothing
         is applied and the API returns `409`.
       responses:
@@ -862,6 +876,12 @@ components:
       schema:
         type: string
         format: uuid
+    FolderPath:
+      name: path
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/FolderPath'
     SecretId:
       name: secretId
       in: path
@@ -982,7 +1002,7 @@ components:
       example: production/api/DATABASE_URL
     Secret:
       type: object
-      required: [id, path, note, expiresAt, currentVersion, createdAt, updatedAt]
+      required: [id, path, note, expiresAt, folderVersion, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -999,9 +1019,10 @@ components:
           description: |
             Expiration date. Admins are reminded `expirationReminderDays`
             before it. Keysy does not rotate or invalidate the secret.
-        currentVersion:
+        folderVersion:
           type: integer
           minimum: 1
+          description: The current version of the secret's folder.
         createdAt:
           type: string
           format: date-time
@@ -1038,6 +1059,8 @@ components:
       properties:
         path:
           $ref: '#/components/schemas/SecretPath'
+        value:
+          type: string
         note:
           type: string
           nullable: true
@@ -1045,28 +1068,65 @@ components:
           type: string
           format: date-time
           nullable: true
-    SecretVersion:
+    FolderPath:
+      type: string
+      description: A secret path without its last segment.
+      example: production/shared
+    FolderVersion:
       type: object
-      required: [version, createdAt]
+      required: [version, actorId, rollbackOf, changes, createdAt]
       properties:
         version:
           type: integer
           minimum: 1
+        actorId:
+          type: string
+          format: uuid
+          description: The user who made the change.
+        rollbackOf:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: The version this one restores, or null when it is not a rollback.
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretChange'
         createdAt:
           type: string
           format: date-time
+    SecretChange:
+      type: object
+      required: [secretId, name, change, fields]
+      properties:
+        secretId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: The secret's name in this folder after the change, or before it when it left the folder.
+        change:
+          type: string
+          enum: [created, updated, deleted, moved_in, moved_out]
+        fields:
+          type: array
+          description: The fields an `updated` change modified. Empty for other changes.
+          items:
+            type: string
+            enum: [name, value, note, expiresAt]
     SecretValue:
       type: object
-      required: [secretId, path, version, value]
+      required: [secretId, path, folderVersion, value]
       properties:
         secretId:
           type: string
           format: uuid
         path:
           $ref: '#/components/schemas/SecretPath'
-        version:
+        folderVersion:
           type: integer
           minimum: 1
+          description: The folder version this value comes from.
         value:
           type: string
     ServiceRetrieval:
@@ -1081,6 +1141,7 @@ components:
         version:
           type: integer
           minimum: 1
+          description: The folder version last retrieved.
         retrievedAt:
           type: string
           format: date-time
@@ -1265,7 +1326,7 @@ components:
           format: date-time
     AuditTargetType:
       type: string
-      enum: [secret, policy, member, service]
+      enum: [secret, folder, policy, member, service]
     AuditLog:
       type: object
       required: [id, actorId, action, targetType, targetId, outcome, occurredAt]
@@ -1279,7 +1340,7 @@ components:
           description: The user who made the change.
         action:
           type: string
-          example: secret.version_created
+          example: folder.version_created
         targetType:
           $ref: '#/components/schemas/AuditTargetType'
         targetId:
