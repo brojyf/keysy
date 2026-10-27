@@ -1,0 +1,101 @@
+---
+title: "Landing page copy"
+description: "Clear, concise English copy for Keysy, with official references."
+---
+
+## Recommended copy
+
+**Keysy = key + easy.** Lead with simplicity; show AI through specific features.
+
+| Element | Copy |
+| --- | --- |
+| Category | Secret management for developers |
+| Headline | Keys made easy. |
+| Description | Manage API keys and secrets from development to production. Organize them with AI and control access for your team and services. |
+| Prelaunch status | Coming soon |
+| Prelaunch action | See how it works |
+
+Draft copy based on the [PRD](/prd). Keep **Coming soon** for unreleased features.
+
+## Keep it clear and concise
+
+Give readers enough context to understand the product without making them work through a long explanation. Clarity matters more than a word count.
+
+- Headlines: a short, specific benefit that is easy to scan.
+- Hero descriptions: one or two short sentences explaining the product and its main advantage.
+- Feature descriptions: usually one complete sentence. Add a second only when it clarifies how the feature helps.
+- Buttons: short action labels, usually 2–4 words.
+- One main idea per block. Remove repetition and filler; keep useful context.
+- Use **keys** for the brand and **secrets** for the product category.
+
+## Feature copy
+
+| Heading | Description |
+| --- | --- |
+| Find your secrets. | Keep secrets organized by path, with notes that explain what each key is for. |
+| Organize with AI. | Move secrets with AI assistance, update affected policies, and check that users and services still have the right access. |
+| Control access. | Give each user and service access only to the secrets they need, with policies you can review and update. |
+| Set expiry reminders. | Add expiration reminders to your secrets so you know when a key needs attention. |
+| Review changes. | See who changed secrets, policies, or admin access, when it happened, and whether the change succeeded. |
+
+## Where you work
+
+| Channel | Description |
+| --- | --- |
+| Web app | Manage secrets, review access policies, and add notes or expiration reminders in one workspace. |
+| CLI | Manage secrets and retrieve the values you need without leaving your terminal. |
+| Browser extension | Save newly generated API keys or update existing secrets directly from provider websites. |
+| Coding agents | Use the Keysy skill to help your coding agent retrieve and manage secrets through the CLI. |
+
+Only Admins can create or modify secrets; retrieval follows assigned policies.
+
+## Calls to action
+
+| State | Primary action | Destination |
+| --- | --- | --- |
+| Prelaunch | See how it works | Existing `#workflow` section in the [landing draft](https://github.com/brojyf/keysy/pull/49). |
+| Released | Get started | Working onboarding flow. |
+
+Add **Read the docs** only when public product documentation is available.
+Repeat the primary action at the bottom. Add one short reminder of the benefit if the section needs context.
+
+**Page title:** Keysy — Keys made easy.
+
+**Search description:** Manage API keys and secrets from development to production with AI-assisted organization and access policies for your team and services.
+Append **Coming soon** before launch.
+
+## Headline alternatives
+
+| Option | Pros | Cons |
+| --- | --- | --- |
+| **Keys made easy.** | Short; expresses the name. | Needs the category label. |
+| **Secret management, made easy.** | Clearer category; simplest alternative. | More generic. |
+| **Your secrets. Simply managed.** | Matches the existing design. | Weaker connection to the name. |
+
+Prefer **Keys made easy.**: the category label provides clarity without lengthening the headline.
+
+## Official references
+
+Reviewed **October 26, 2026**. Line breaks normalized; lessons are editorial judgments.
+
+| Source | Observed headline | Lesson |
+| --- | --- | --- |
+| [Supabase](https://supabase.com/) | “Build in a weekend Scale to millions” | Lead with the benefit. |
+| [Cloudflare](https://www.cloudflare.com/) | “Everything we learned from powering 20% of the Internet—yours by default” | Support promises with evidence. |
+| [Cloudflare Developer Platform](https://www.cloudflare.com/developer-platform/) | “Developers who know use Cloudflare” | Name your audience. |
+| [Resend](https://resend.com/) | “Email for developers” | Make the category obvious. |
+| [Clerk](https://clerk.com/) | “Everything you need for authentication” | Follow the headline with concrete features. |
+| [Doppler](https://www.doppler.com/) | “One platform. Every secret. Human or AI.” | Name the object and its users. |
+
+Supabase's **Start your project** and Resend's **Get started** name the next step directly.
+
+## Keep claims accurate
+
+- **Security:** encrypted at rest, with keys stored separately, is a PRD requirement;
+  verify implementation before publishing. Do not claim end-to-end encryption.
+- **Versions:** resolve [PR #53](https://github.com/brojyf/keysy/pull/53)'s proposed
+  folder versioning before writing detailed version or rollback copy.
+- **Retrievals:** say **last retrieved**, not currently running.
+- **Limits:** reminders do not rotate secrets; version history is bounded.
+- **Release claims:** verify SLA, SDK availability, pricing, and AI data-handling
+  promises before publishing them. Design examples alone are not evidence.
