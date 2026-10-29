@@ -75,15 +75,15 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 
 ## Requirements
 
-- Each org has exactly one Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role.
+- Each org has exactly one Admin, whose scope covers every path. The member who creates an org becomes its Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role.
 - The Admin must transfer the role before leaving the org. The previous Admin becomes a Developer whose scope covers every path.
-- A Developer’s scope is a set of path patterns. A Developer can read, create, update, delete, move, or roll back secrets only within it.
+- A Developer’s scope is a set of path patterns, each an exact path or a prefix ending in `/*`, as in a policy. A Developer can read, create, update, delete, move, or roll back secrets only within it.
 - Each service has exactly one policy, and each policy belongs to exactly one service.
-- A Developer can create, change, or delete a service and its policy only when every path in the policy is within the Developer’s scope.
+- A Developer can create, change, or delete a service and its policy only when every path in the policy, both before and after the change, is within the Developer’s scope.
 - A Developer sees only audit records for paths within their scope.
 - Expiration reminders go to the members whose scope covers the secret.
 - Notes and expiration reminders are optional.
-- Developers can retrieve only secrets within their scope; services can retrieve only secrets their policy permits.
+- Services can retrieve only secrets their policy permits.
 - Secret, policy, and member access changes generate audit records without secret values.
 - Each service’s last-retrieved version and time are kept per folder as a single latest record, separate from audit logs and without secret values.
 - Secrets are not versioned individually. Creating, updating, deleting, or moving a secret creates a new version of each folder it affects; a move creates a version in both the source and the destination folder.
