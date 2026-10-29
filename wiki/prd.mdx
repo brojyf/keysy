@@ -75,15 +75,16 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 
 ## Requirements
 
-- Each org has exactly one Admin, whose scope covers every path. The member who creates an org becomes its Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role.
+- Each org has exactly one Admin, whose scope covers every path. The member who creates an org becomes its Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role. Developers can view the member list but cannot change it.
+- If the Admin can no longer be reached, Keysy support transfers the Admin role after verifying the request.
 - The Admin must transfer the role or delete the org before leaving it. The previous Admin becomes a Developer whose scope covers every path.
 - A member who is an org’s Admin cannot delete their account until they transfer the role or delete that org. Deleting an account removes the member from every other org.
 - A Developer’s scope is a set of folder paths, each an exact folder or a prefix ending in `/*`. A scope never names a single secret, so a folder is either fully within it or not at all. A Developer can read, create, update, delete, move, or roll back secrets only within it.
 - Each service has exactly one policy, and each policy belongs to exactly one service.
 - A Developer can create, change, or delete a service and its policy only when every path in the policy, both before and after the change, is within the Developer’s scope.
 - Moving or deleting secrets updates only the policies the member can manage. Every other service’s access still follows the paths in its own policy.
-- A Developer sees only audit records for paths within their scope. Audit records not tied to a secret path, such as member, scope, and Admin role changes, are visible only to the Admin.
-- Each member chooses whether to receive expiration reminders and secret update emails, and how many days before expiration reminders arrive. Emails cover only secrets within the member’s scope. They are on by default for the Admin and off for Developers.
+- A Developer sees only audit records for paths within their scope, and a policy’s audit records only when every path in the policy is within their scope. Audit records not tied to a secret path, such as member, scope, and Admin role changes, are visible only to the Admin.
+- Each member chooses whether to receive expiration reminders and secret update emails, and how many days before expiration reminders arrive. Emails cover only secrets within the member’s scope. They are on by default for the Admin and off for Developers. Members do not get secret update emails for their own changes.
 - Notes and expiration reminders are optional.
 - Services can retrieve only secrets their policy permits.
 - Secret, policy, and member access changes generate audit records without secret values.
