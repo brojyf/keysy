@@ -89,6 +89,7 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - Moving or deleting secrets updates only the policies the member can manage. Every other service’s access still follows the paths in its own policy.
 - A Developer sees only audit records for paths within their scope, and a policy’s audit records only when every path in the policy is within their scope. Audit records not tied to a secret path, such as member, scope, and Admin role changes, are visible only to the Admin.
 - Each member chooses whether to receive expiration reminders and secret update emails, and how many days before expiration reminders arrive. Emails cover only secrets within the member’s scope. They are on by default for the Admin and off for Developers. Members do not get secret update emails for their own changes.
+- Members can see every session signed in to their account across the web app, CLI, and browser extension, and revoke any session except the current one. A revoked session must sign in again.
 - Notes and expiration reminders are optional.
 - Services can retrieve only secrets their policy permits.
 - Secret, policy, and member access changes generate audit records without secret values.
