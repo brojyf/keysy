@@ -15,13 +15,14 @@ As secrets become shared across services, developers struggle to identify which 
 
 The Admin and Developers are an org’s members.
 
-- **Admin:** One per org. Manages members and their path scopes, and has full access to every secret, policy, and service.
-- **Developers:** Manage secrets, services, and policies within the path scope the Admin assigns them.
+- **Admin:** One per org. Manages members and their scopes, and has full access to every secret, policy, and service.
+- **Developers:** Manage secrets, services, and policies within the scope the Admin assigns them through policies and permission sets.
 - **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
-- **Manage members:** The Admin adds and removes members, sets each Developer’s path scope, and transfers the Admin role to another member.
+- **Manage members:** The Admin adds and removes members, sets each Developer’s scope with policies and permission sets, reviews access requests, and transfers the Admin role to another member.
+- **Request access:** Developers see every policy and request the ones they need; the Admin approves or declines.
 - **Manage secrets:** Members create, read, update, and delete secrets within their scope through the web app or CLI, with optional notes and expiration reminders.
 - **Manage service access:** Members create services and grant them read access to paths within their scope.
 - **Reorganize with AI:** Members use the AI agent to move secrets within their scope, identify and update affected policies, and verify permissions.
@@ -49,7 +50,7 @@ The Admin and Developers are an org’s members.
 ## Scope
 
 - **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders.
-- **Scoped access:** The Admin manages members and their path scopes. Developers manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
+- **Scoped access:** The Admin manages members and their scopes, built from policies and reusable permission sets. Developers manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
 - **AI-assisted reorganization:** Move secrets, identify and update affected policies, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
 - **Version history:** View the last N previous versions of each folder, what changed in each, and when, plus each service’s last-retrieved version and time per folder. Roll a folder back to any of these versions. Older versions are permanently deleted.
@@ -68,22 +69,26 @@ The Admin and Developers are an org’s members.
 
 1. A member creates a secret within their scope through the web app or CLI.
 2. The member specifies its storage path and value, optionally adding notes and an expiration reminder.
-3. The member adds the path to a service’s policy, or the Admin adds it to a Developer’s scope.
+3. The member adds the path to a service’s policy, or the Admin adds that policy to a Developer’s scope.
 4. The authorized Developer or service retrieves the secret.
 
-Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Transfer the Admin Role
+Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Request Access to a Policy / Transfer the Admin Role
 
 ## Requirements
 
-- Each org has exactly one Admin, whose scope covers every path. The member who creates an org becomes its Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role.
+- Each org has exactly one Admin, whose scope covers every path. The member who creates an org becomes its Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role. Developers can view other members and their roles, but not their scopes, and cannot change them.
+- If the Admin can no longer be reached, Keysy support transfers the Admin role after verifying the request.
 - The Admin must transfer the role or delete the org before leaving it. The previous Admin becomes a Developer whose scope covers every path.
 - A member who is an org’s Admin cannot delete their account until they transfer the role or delete that org. Deleting an account removes the member from every other org.
-- A Developer’s scope is a set of path patterns, each an exact path or a prefix ending in `/*`, as in a policy. A Developer can read, create, update, delete, move, or roll back secrets only within it.
+- A Developer’s scope is the set of policies and permission sets the Admin assigns them, and covers every path in those policies. A permission set is a named, reusable group of policies. A Developer can read, create, update, delete, move, or roll back secrets only within their scope.
 - Each service has exactly one policy, and each policy belongs to exactly one service.
-- A Developer can create, change, or delete a service and its policy only when every path in the policy, both before and after the change, is within the Developer’s scope.
+- Each path in a policy is a folder path, either an exact folder or a prefix ending in `/*`. A policy never names a single secret, so a folder is either fully within a scope or not at all.
+- A Developer can create, change, or delete a service and its policy only when every path in the policy, both before and after the change, is within the Developer’s scope as it stood before the change.
+- Developers see every policy’s name and service, but not the paths of policies outside their scope. A Developer can request such a policy with an optional reason. The Admin is notified and approves, which adds the policy to the Developer’s scope, or declines.
+- The Admin can remove policies or permission sets from a Developer’s scope at any time.
 - Moving or deleting secrets updates only the policies the member can manage. Every other service’s access still follows the paths in its own policy.
-- A Developer sees only audit records for paths within their scope. Audit records not tied to a secret path, such as member, scope, and Admin role changes, are visible only to the Admin.
-- Expiration reminders go to the Admin.
+- A Developer sees only audit records for paths within their scope, and a policy’s audit records only when every path in the policy is within their scope. Audit records not tied to a secret path, such as member, scope, and Admin role changes, are visible only to the Admin.
+- Each member chooses whether to receive expiration reminders and secret update emails, and how many days before expiration reminders arrive. Emails cover only secrets within the member’s scope. They are on by default for the Admin and off for Developers. Members do not get secret update emails for their own changes.
 - Notes and expiration reminders are optional.
 - Services can retrieve only secrets their policy permits.
 - Secret, policy, and member access changes generate audit records without secret values.
