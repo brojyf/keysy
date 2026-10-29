@@ -13,45 +13,47 @@ As secrets become shared across services, developers struggle to identify which 
 
 ## Users
 
-- **Super Admins:** Can revoke Admin access.
-- **Admins:** Manage secrets, policies, and access for users and services.
-- **Users:** Retrieve authorized secrets for local development.
+The Admin and Users are an org’s members.
+
+- **Admin:** One per org. Manages members and their path scopes, and has full access to every secret, policy, and service.
+- **Users:** Manage secrets, services, and policies within the path scope the Admin assigns them.
 - **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
-- **Manage Admin access:** Super Admins revoke administrative access when needed.
-- **Manage secrets:** Admins create, read, update, and delete secrets through the web app or CLI, with optional notes and expiration reminders.
-- **Reorganize with AI:** Admins use the AI agent to move secrets, identify and update affected policies, and verify permissions.
-- **Track folder versions:** Every change to a secret creates a new version of its folder. Admins can view a folder’s version history, see which version each service last retrieved, and roll the folder back to a previous version.
-- **Review audit logs:** Admins trace changes to secrets, policies, and administrative access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
-- **Access secrets locally:** Users retrieve secrets permitted by their assigned policies for local development.
-- **Access secrets at runtime:** Services retrieve secrets permitted by their assigned policies.
-- **Save or update secrets from the browser:** Admins use the Keysy browser extension to save newly generated API keys as new secrets or update the values of existing secrets, directly from provider websites.
+- **Manage members:** The Admin adds and removes members, sets each User’s path scope, and transfers the Admin role to another member.
+- **Manage secrets:** Members create, read, update, and delete secrets within their scope through the web app or CLI, with optional notes and expiration reminders.
+- **Manage service access:** Members create services and grant them read access to paths within their scope.
+- **Reorganize with AI:** Members use the AI agent to move secrets within their scope, identify and update affected policies, and verify permissions.
+- **Track folder versions:** Every change to a secret creates a new version of its folder. Members can view a folder’s version history, see which version each service last retrieved, and roll the folder back to a previous version.
+- **Review audit logs:** Members trace changes to secrets, policies, and member access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
+- **Access secrets locally:** Users retrieve secrets within their scope for local development.
+- **Access secrets at runtime:** Services retrieve secrets permitted by their policy.
+- **Save or update secrets from the browser:** Members use the Keysy browser extension to save newly generated API keys as new secrets or update the values of existing secrets, directly from provider websites.
 - **Use Keysy with coding agents:** A Keysy skill guides coding agents to retrieve or manage secrets through the CLI.
 
 ## Goals
 
 - **Simplify secret management:** Make secret management straightforward across the web app, CLI, browser extension, and coding agents.
-- **Reduce manual policy maintenance:** Help Admins reorganize secrets and update affected policies with AI assistance.
-- **Maintain least-privilege access:** Ensure users and services can access only the secrets permitted by their assigned policies.
+- **Reduce manual policy maintenance:** Help members reorganize secrets and update affected policies with AI assistance.
+- **Maintain least-privilege access:** Ensure users can access only the secrets within their scope, and services only the secrets their policy permits.
 
 ## Success metrics
 
 - **Setup time:** p50 and p95 time from secret creation to first authorized retrieval.
 - **Atomic updates:** 100% of concurrent read/write tests return a complete folder version, with no partial or mixed-version values.
 - **AI success rate:** Percentage of reorganizations completed with correct permissions and no manual fixes.
-- **Access correctness:** Pass rate of role and policy permission tests.
+- **Access correctness:** Pass rate of role, scope, and policy permission tests.
 - **API performance:** Secret retrieval p95/p99 latency, reported with QPS and sample size, and validated under sustained load.
 
 ## Scope
 
 - **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders.
-- **Policy-based access:** Super Admins can revoke Admin access. Admins manage secrets and policies; users and services retrieve only authorized secrets.
+- **Scoped access:** The Admin manages members and their path scopes. Users manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
 - **AI-assisted reorganization:** Move secrets, identify and update affected policies, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
 - **Version history:** View the last N previous versions of each folder, what changed in each, and when, plus each service’s last-retrieved version and time per folder. Roll a folder back to any of these versions. Older versions are permanently deleted.
-- **Audit logs:** Record secret, policy, and administrative access changes without recording secret values.
+- **Audit logs:** Record secret, policy, and member access changes without recording secret values.
 
 ## Non-goals
 
@@ -60,22 +62,29 @@ As secrets become shared across services, developers struggle to identify which 
 - **Dynamic credential generation:** Keysy stores existing secrets rather than issuing temporary database or cloud credentials.
 - **Unlimited version history:** Keysy keeps only the last N previous versions of each folder; older values cannot be recovered.
 - **End-to-end encryption:** Keysy can decrypt secrets server-side to serve authorized users, services, and integrations.
+- **Read-only members:** Every User can write within their scope; v0 has no read-only access level.
 
 ## User flows (v0)
 
-1. An Admin creates a secret through the web app or CLI.
-2. The Admin specifies its storage path and value, optionally adding notes and an expiration reminder.
-3. The Admin assigns a policy allowing a user or service to read the secret.
+1. A member creates a secret within their scope through the web app or CLI.
+2. The member specifies its storage path and value, optionally adding notes and an expiration reminder.
+3. The member adds the path to a service’s policy, or the Admin adds it to a User’s scope.
 4. The authorized user or service retrieves the secret.
 
-Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Revoke Admin Access
+Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Transfer the Admin Role
 
 ## Requirements
 
-- Only Admins can create or modify secrets.
+- Each org has exactly one Admin. Only the Admin can add or remove members, change scopes, or transfer the Admin role.
+- The Admin must transfer the role before leaving the org. The previous Admin becomes a User whose scope covers every path.
+- A User’s scope is a set of path patterns. A User can read, create, update, delete, move, or roll back secrets only within it.
+- Each service has exactly one policy, and each policy belongs to exactly one service.
+- A User can create, change, or delete a service and its policy only when every path in the policy is within the User’s scope.
+- A User sees only audit records for paths within their scope.
+- Expiration reminders go to the members whose scope covers the secret.
 - Notes and expiration reminders are optional.
-- Users and services can retrieve only secrets permitted by their assigned policies.
-- Secret creation and policy changes generate audit records without secret values.
+- Users can retrieve only secrets within their scope; services can retrieve only secrets their policy permits.
+- Secret, policy, and member access changes generate audit records without secret values.
 - Each service’s last-retrieved version and time are kept per folder as a single latest record, separate from audit logs and without secret values.
 - Secrets are not versioned individually. Creating, updating, deleting, or moving a secret creates a new version of each folder it affects; a move creates a version in both the source and the destination folder.
 - A folder’s versions cover only the secrets directly in that folder, not those in its subfolders.
