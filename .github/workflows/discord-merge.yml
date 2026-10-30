@@ -1,39 +1,38 @@
 name: Discord Merge Notification
 
+# Runs after CI finishes on main, so the message can show the CI result.
 on:
-  pull_request_target:
-    types: [closed]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
 
 permissions: {}
 
 jobs:
-  # Does not check out or run PR code, so the webhook secret stays safe.
+  # Does not check out or run repository code, so the webhook secret stays safe.
   notify:
-    if: github.event.pull_request.merged == true
+    if: github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Notify Discord
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          REPO: ${{ github.repository }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
+          COMMIT_AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
+          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
-          # allowed_mentions blocks pings such as @everyone in PR titles.
+          # allowed_mentions blocks pings such as @everyone in commit messages.
           payload=$(jq -n \
-            --arg repo "$REPO" \
-            --arg title "$PR_TITLE" \
-            --arg url "$PR_URL" \
-            --arg number "$PR_NUMBER" \
-            --arg author "$PR_AUTHOR" \
-            '{content: ("✅ **Merged to main**\n" +
-              "**" + $repo + "** — #" + $number +
-              "\n" + $title + "\n" + $url +
-              "\nby @" + $author),
+            --arg sha "${COMMIT_SHA:0:7}" \
+            --arg message "${COMMIT_MESSAGE%%$'\n'*}" \
+            --arg author "$COMMIT_AUTHOR" \
+            --arg conclusion "$CI_CONCLUSION" \
+            '{content: ("`" + $sha + "`: " + $message + " " +
+              (if $conclusion == "success" then "✅" else "❌" end) +
+              "\nby " + $author),
               allowed_mentions: {parse: []}}')
 
           curl --fail-with-body -sS \
