@@ -30,7 +30,7 @@ jobs:
             --arg message "${COMMIT_MESSAGE%%$'\n'*}" \
             --arg author "$COMMIT_AUTHOR" \
             --arg conclusion "$CI_CONCLUSION" \
-            '{content: ("### `" + $sha + "`: " + $message + " " +
+            '{content: ("### " + $sha + ": " + $message + " " +
               (if $conclusion == "success" then "✅" else "❌" end) +
               "\nby " + $author),
               allowed_mentions: {parse: []}}')
