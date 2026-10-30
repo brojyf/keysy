@@ -28,8 +28,10 @@ jobs:
           CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           # First path segment of each changed file, e.g. "dashboard / wiki".
+          # Falls back so an API failure does not drop the whole message.
           scope=$(gh api "repos/$REPO/commits/$COMMIT_SHA" \
-            --jq '[.files[].filename | split("/")[0]] | unique | join(" / ")')
+            --jq '[.files[].filename | split("/")[0]] | unique | join(" / ")') \
+            || scope="unknown"
 
           # allowed_mentions blocks pings such as @everyone in commit messages.
           payload=$(jq -n \
