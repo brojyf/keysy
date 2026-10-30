@@ -26,7 +26,7 @@ jobs:
             --arg sha "${COMMIT_SHA:0:7}" \
             --arg title "$PR_TITLE" \
             --arg author "$PR_AUTHOR" \
-            '{content: ("`" + $sha + "` " + $title + " — by " + $author),
+            '{content: ("`" + $sha + "` " + $title + "\nby " + $author),
               allowed_mentions: {parse: []}}')
 
           curl --fail-with-body -sS \
