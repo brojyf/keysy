@@ -42,8 +42,8 @@ jobs:
             --arg conclusion "$CI_CONCLUSION" \
             '{content: ("### " + $sha + ": " + $message + " " +
               (if $conclusion == "success" then "✅" else "❌" end) +
-              "\nscope: " + $scope +
-              "\nby: " + $author),
+              "\nScope: " + $scope +
+              "\nBy: " + $author),
               allowed_mentions: {parse: []}}')
 
           curl --fail-with-body -sS \
