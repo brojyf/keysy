@@ -167,9 +167,10 @@ for (const [route, title] of routes) {
     expect(html).toContain(`${title}</h1>`);
     const publicUrl = `https://wiki.keysy.net/${route === 'index' ? '' : route}`;
     const [canonical] = await matches(html, 'link[rel="canonical"]');
-    const [languageLink] = await matches(html, 'link[rel="alternate"][hreflang="en"]');
+    const [document] = await matches(html, 'html');
     expect(canonical?.href).toBe(publicUrl);
-    expect(languageLink?.href).toBe(publicUrl);
+    expect(document?.lang).toBe('en');
+    expect(await matches(html, 'link[rel="alternate"][hreflang]')).toHaveLength(0);
     expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
     const [activeTab] = await matches(html, '.sourcey-section-tabs > a[aria-current="page"]');
     const activeTabHref = ['api', 'auth'].includes(route!) ? `/${route}` : route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/';
@@ -402,8 +403,24 @@ test('public favicon bytes are preserved and native search exports are generated
   const indexes = JSON.parse(metadata!.content!.replaceAll('&quot;', '"')) as string[];
   expect(indexes.length).toBeGreaterThan(0);
   for (const path of indexes) {
-    const context = await Bun.file(new URL(`.${path}`, output)).json();
-    expect(await Bun.file(new URL(context.index, new URL(`.${path}`, output))).exists()).toBe(true);
+    const contextUrl = new URL(`.${path}`, output);
+    const context = await Bun.file(contextUrl).json();
+    expect(context.version).toBe(2);
+    expect(context.chunks.length).toBeGreaterThan(0);
+    expect(context.words.length).toBeGreaterThan(0);
+    for (const [prefix, entries] of [['c', context.chunks], ['v', context.words]] as const) {
+      for (let index = 0; index < entries.length; index++) {
+        expect(await Bun.file(new URL(`${context.files}${prefix}${index}.json`, contextUrl)).json())
+          .toBeArray();
+      }
+    }
+    const directory = new URL(context.files, contextUrl);
+    const fragments = (await readdir(directory)).filter((file) => /^f\d+\.json$/.test(file));
+    expect(fragments.length).toBeGreaterThan(0);
+    const rows = (await Promise.all(fragments.map(async (file) =>
+      await Bun.file(new URL(file, directory)).json() as unknown[][],
+    ))).flat().map((row) => row.slice(0, 2));
+    for (const row of context.openings) expect(rows).toContainEqual([row.title, row.url]);
   }
 });
 
@@ -412,10 +429,9 @@ test('search lists each OpenAPI overview by its sidebar label', async () => {
   const [metadata] = await matches(html, 'meta[name="sourcey-search-indexes"]');
   const [path] = JSON.parse(metadata!.content!.replaceAll('&quot;', '"')) as string[];
   const contextUrl = new URL(`.${path}`, output);
-  const context = await Bun.file(contextUrl).json();
-  const { rows } = await Bun.file(new URL(context.index, contextUrl)).json() as { rows: { title: string; url: string }[] };
+  const { openings } = await Bun.file(contextUrl).json() as { openings: { title: string; url: string }[] };
   for (const url of ['/api', '/auth']) {
-    expect(rows.filter((row) => row.url === url).map((row) => row.title)).toEqual(['Introduction']);
+    expect(openings.filter((row) => row.url === url).map((row) => row.title)).toEqual(['Introduction']);
   }
 });
 

@@ -14,6 +14,6 @@
     "typescript": "7.0.2"
   },
   "patchedDependencies": {
-    "sourcey@3.8.3": "patches/sourcey@3.8.3.patch"
+    "sourcey@3.9.2": "patches/sourcey@3.9.2.patch"
   }
 }
