@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.3",
-    "sourcey": "3.8.3",
+    "sourcey": "3.9.2",
     "typescript": "7.0.2"
   },
   "patchedDependencies": {
