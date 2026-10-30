@@ -21,9 +21,8 @@
 
 - Branch from the latest `origin/main`; never commit directly to `main`.
 - Submit all code changes through PRs and keep them mergeable into `main`.
-- Squash-merge PRs after review. Delete the corresponding remote and local branches after squash merge.
+- Squash-merge PRs after review. Append the PR number to the squash merge commit message, for example `(#123)`. Delete the corresponding remote and local branches after squash merge.
 - Use `<type>(<scope>): <description>` for all commit messages (including squash commits) and PR titles, excluding the temporary `WIP: ` prefix.
-- Append the PR number to squash merge commit messages, for example `(#123)`.
 - Open PRs as drafts with a `WIP: ` title prefix; remove the prefix and draft status only when ready to merge. Merge only after explicit human confirmation.
 - Never run destructive Git operations unless explicitly requested.
 
