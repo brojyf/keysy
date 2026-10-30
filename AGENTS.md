@@ -1,6 +1,7 @@
 ## Working Principles
 
 - Use English for all repository content (including UI copy, documentation, comments, and test descriptions), commit messages, PR titles, and PR descriptions.
+- Write replies in ASD-STE100 (Simplified Technical English) style.
 - Before proposing architecture, research online how major tech companies handle similar cases and explain options, trade-offs, and your recommendation. Implement only after I finalize or approve the architecture.
 - If anything is unclear, uncertain, questionable, or disputed, stop and ask me. Never make assumptions on my behalf.
 - Use minimal code and change only what the task requires; avoid premature abstractions, unrequested features, unused configuration, and unrelated refactoring or formatting. Suggest simpler alternatives.
