@@ -17,23 +17,16 @@ jobs:
       - name: Notify Discord
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           # allowed_mentions blocks pings such as @everyone in PR titles.
           payload=$(jq -n \
-            --arg repo "$REPO" \
+            --arg sha "${COMMIT_SHA:0:7}" \
             --arg title "$PR_TITLE" \
-            --arg url "$PR_URL" \
-            --arg number "$PR_NUMBER" \
             --arg author "$PR_AUTHOR" \
-            '{content: ("✅ **Merged to main**\n" +
-              "**" + $repo + "** — #" + $number +
-              "\n" + $title + "\n" + $url +
-              "\nby @" + $author),
+            '{content: ("`" + $sha + "` " + $title + " — by " + $author),
               allowed_mentions: {parse: []}}')
 
           curl --fail-with-body -sS \
