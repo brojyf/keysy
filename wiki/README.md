@@ -47,7 +47,7 @@ themes, and search method badges take the sidebar's method colors.
 
 Motion timing and easing live in `style.css` tokens such as `--keysy-spring` and
 `--keysy-indicator-*`. Reduced motion disables custom motion, and browsers without
-View Transitions switch directly. A Bun patch in `patches/sourcey@3.8.3.patch`
+View Transitions switch directly. A Bun patch in `patches/sourcey@3.9.2.patch`
 changes Sourcey's built output to:
 
 - keep the mobile drawer open until cross-document navigation captures it, close it
