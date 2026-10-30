@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+git diff --cached --check
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+    printf '%s\n' 'Gitleaks is required. Install it with: brew install gitleaks (see README.md).' >&2
+    exit 1
+fi
+
+exec gitleaks git --pre-commit --staged --redact --verbose --no-banner
