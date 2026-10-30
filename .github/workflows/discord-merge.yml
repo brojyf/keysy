@@ -7,7 +7,8 @@ on:
     types: [completed]
     branches: [main]
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   # Does not check out or run repository code, so the webhook secret stays safe.
@@ -19,20 +20,28 @@ jobs:
       - name: Notify Discord
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
           COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
           COMMIT_AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
           CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
+          # First path segment of each changed file, e.g. "dashboard / wiki".
+          scope=$(gh api "repos/$REPO/commits/$COMMIT_SHA" \
+            --jq '[.files[].filename | split("/")[0]] | unique | join(" / ")')
+
           # allowed_mentions blocks pings such as @everyone in commit messages.
           payload=$(jq -n \
             --arg sha "${COMMIT_SHA:0:7}" \
             --arg message "${COMMIT_MESSAGE%%$'\n'*}" \
+            --arg scope "$scope" \
             --arg author "$COMMIT_AUTHOR" \
             --arg conclusion "$CI_CONCLUSION" \
             '{content: ("### " + $sha + ": " + $message + " " +
               (if $conclusion == "success" then "✅" else "❌" end) +
-              "\nby " + $author),
+              "\nscope: " + $scope +
+              "\nby: " + $author),
               allowed_mentions: {parse: []}}')
 
           curl --fail-with-body -sS \
