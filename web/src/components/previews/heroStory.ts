@@ -59,7 +59,7 @@ async function movePrefix(
   );
 }
 
-// Spring flow (A) from design/landing/motion/hero-motion.html.
+// Spring flow (A) from design/web/motion/hero-motion.html.
 export async function playHeroStory(
   run: PreviewPlayback,
   root: HTMLElement,

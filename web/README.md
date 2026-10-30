@@ -5,7 +5,7 @@ with Privacy Policy and Terms of Use placeholder pages.
 
 Design source: [desktop v4](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-35999),
 [mobile v4](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-36935),
-and the [design branch](https://github.com/brojyf/keysy/tree/design/theme-and-logo/design/landing).
+and the [design sources](../design/web/README.md).
 
 ## Requirements
 
@@ -57,11 +57,11 @@ Dashboard/SDK links in the footer point to homepage sections; GitHub opens the r
 Product windows, commands, SDK package names, and availability diagrams reproduce
 illustrative design content. They do not connect to live APIs or measure service uptime.
 The hero uses **A · Spring flow** from
-[`hero-motion.html`](https://github.com/brojyf/keysy/blob/design/theme-and-logo/design/landing/motion/hero-motion.html):
+[`hero-motion.html`](../design/web/motion/hero-motion.html):
 human-paced typing, three thinking states, animated path prefixes, and staggered results.
 The CTA uses the same demo's 3° tilt without a hover glow.
 The Dashboard follows
-[`update-secret-motion.html`](https://github.com/brojyf/keysy/blob/design/theme-and-logo/design/landing/motion/update-secret-motion.html):
+[`update-secret-motion.html`](../design/web/motion/update-secret-motion.html):
 slide in the panel, paste a masked value, choose the reminder, save, and update the folder version.
 Motion spring parameters and the thinking-orbs indicator come from those demos.
 

@@ -1,19 +1,34 @@
-# Web app
+# Landing page
 
-Figma design for the Keysy web app (v0).
+Figma links and exports, motion prototypes, and the v4 motion page for the landing page.
 
 ## Figma
 
-The web app lives in [Keysy — Secret management](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e).
+The landing page lives in [Keysy — Landing Page](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao).
 
-- [Web app, 1440 px, light (v0)](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=64-4081) covers the core
-  flows from the PRD: Google sign-in (the only sign-in method), secrets, secret details with version history and
-  service reads, new secret, AI reorganization, access policies, audit logs, people, revoking Admin access, and
-  services.
-- [Components](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=64-3744): button, badge, logo, and sidebar.
-- The visual style follows the hero web window in the [landing page](../landing/README.md).
-- Colors come from the `Keysy · Colors · Light` variables, which match [Theme](../theme/README.md). Success, warning,
-  and danger colors are not defined in Theme yet.
+- [Desktop, 1440 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-35999) and
+  [Mobile, 390 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-36935) are the
+  current design. A dot pattern sits behind the hero and the call-to-action card. An Availability
+  section after Security states redundant services, a public status page, and a 99.9% monthly
+  uptime commitment. Earlier versions were removed from the file; Figma's version history keeps
+  them.
+- [Hero story (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-37937) shows key
+  frames of the hero web window. The dots and the hero story play in the
+  [v4 motion page](v4/README.md).
+- The section also holds the components v4 uses: actions, grid marker, nav account, and SDK showcase.
+- Colors come from the `Keysy / Landing` variables, which match [Theme](../theme/README.md).
 - Typography: Geist and Geist Mono.
-- Screens use illustrative data.
-- [Local snapshot](keysy-secret-management.fig) of the Figma file. Update it with File → Save local copy.
+- Product previews use illustrative data. CLI commands, SDK code, and package names are
+  illustrative until the CLI and SDKs define them.
+- [Local snapshot](keysy-landing-page.fig) of the Figma file. Update it with File → Save local copy.
+
+## Motion prototypes
+
+Standalone HTML pages that animate parts of the landing page with Motion. They use the same
+content as the Figma design.
+
+- [Hero](motion/hero-motion.html): the AI assistant moves the Stripe and Resend keys into
+  `production/shared`, with three entrance variants to compare. The call-to-action card
+  tilts toward the pointer.
+- [Update secret](motion/update-secret-motion.html): the Dashboard section updates
+  `STRIPE_SECRET_KEY` with a new value and reminder, and the folder moves to a new version.
