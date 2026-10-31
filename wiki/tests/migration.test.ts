@@ -252,6 +252,8 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Secrets are not versioned individually.');
   expect(prd).toContain('Rolling back a folder creates a new version');
   expect(prd).toContain('A folder holds either secrets or subfolders, never both.');
+  expect(prd).toContain('Save a Key File as a Secret');
+  expect(prd).toContain('A secret value can span multiple lines.');
   expect(prd).not.toContain('secret’s version history');
 });
 

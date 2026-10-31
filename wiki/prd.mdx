@@ -72,7 +72,7 @@ The Admin and Developers are an org’s members.
 3. The member adds the path to a service’s policy, or the Admin adds that policy to a Developer’s scope.
 4. The authorized Developer or service retrieves the secret.
 
-Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Request Access to a Policy / Transfer the Admin Role
+Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Save a Key File as a Secret / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Request Access to a Policy / Transfer the Admin Role
 
 ## Requirements
 
@@ -91,6 +91,7 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - Each member chooses whether to receive expiration reminders and secret update emails, and how many days before expiration reminders arrive. Emails cover only secrets within the member’s scope. They are on by default for the Admin and off for Developers. Members do not get secret update emails for their own changes.
 - Members can see every session signed in to their account across the web app, CLI, and browser extension, and revoke any session except the current one. A revoked session must sign in again.
 - Notes and expiration reminders are optional.
+- A secret value can span multiple lines. Members can fill a value from a text file, such as an Apple `.p8` key or a Google service account JSON; the whole file becomes one secret value. Binary files are not supported.
 - Services can retrieve only secrets their policy permits.
 - Secret, policy, and member access changes generate audit records without secret values.
 - Each service’s last-retrieved version and time are kept per folder as a single latest record, separate from audit logs and without secret values.
