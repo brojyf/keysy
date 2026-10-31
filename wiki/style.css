@@ -230,6 +230,11 @@
   min-height: calc(100dvh - var(--header-height) - var(--sourcey-content-gap));
 }
 
+/* Let the architecture reach its horizontal breakpoint without an empty outline column. */
+#sourcey #docs > div:has(iframe.architecture-diagram) > div[aria-hidden='true'] {
+  display: none;
+}
+
 #sourcey #content-area > div:last-child {
   margin-top: auto;
 }
