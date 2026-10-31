@@ -247,7 +247,9 @@ paths:
       tags: [Secrets]
       operationId: createSecret
       summary: Create a secret
-      description: Admin or Super Admin. Creates a new version of its folder.
+      description: |
+        Admin or Super Admin. Creates a new version of its folder. Returns
+        `409` if a folder would hold both secrets and subfolders.
       requestBody:
         required: true
         content:
@@ -295,7 +297,8 @@ paths:
       description: |
         Admin or Super Admin. Creates a new version of its folder; a move
         creates one in both the source and the destination folder. Versions
-        beyond the retention limit N are permanently deleted.
+        beyond the retention limit N are permanently deleted. Returns `409`
+        if a folder would hold both secrets and subfolders.
       requestBody:
         required: true
         content:
@@ -434,7 +437,8 @@ paths:
       summary: Roll a folder back to a previous version
       description: |
         Admin or Super Admin. Creates a new version with the selected
-        version's secrets; later versions are kept.
+        version's secrets; later versions are kept. Returns `409` if the
+        folder would hold both secrets and subfolders.
       requestBody:
         required: true
         content:
@@ -463,6 +467,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v0/orgs/{orgId}/folder-retrievals:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -785,8 +791,9 @@ paths:
         Admin or Super Admin. Applies all changes in one transaction and
         verifies the resulting access matches `accessDiff`. Each affected
         folder gets one new version. If secrets or
-        policies changed since the proposal, or verification fails, nothing
-        is applied and the API returns `409`.
+        policies changed since the proposal, verification fails, or a folder
+        would hold both secrets and subfolders, nothing is applied and the
+        API returns `409`.
       responses:
         '200':
           description: Reorganization applied.
@@ -1070,8 +1077,8 @@ components:
           nullable: true
     FolderPath:
       type: string
-      description: A secret path without its last segment.
-      example: production/shared
+      description: A secret path without its last segment. A folder holds either secrets or subfolders, never both.
+      example: production/shared/resend
     FolderVersion:
       type: object
       required: [version, actorId, rollbackOf, changes, createdAt]

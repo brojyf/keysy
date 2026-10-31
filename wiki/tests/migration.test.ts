@@ -251,6 +251,9 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Notion is the source of truth for this PRD.');
   expect(prd).toContain('Secrets are not versioned individually.');
   expect(prd).toContain('Rolling back a folder creates a new version');
+  expect(prd).toContain('A folder holds either secrets or subfolders, never both.');
+  expect(prd).toContain('Save a Key File as a Secret');
+  expect(prd).toContain('A secret value can span multiple lines.');
   expect(prd).not.toContain('secret’s version history');
 });
 
@@ -351,6 +354,16 @@ test('versions belong to folders, addressed by path, not to individual secrets',
     expect(yaml).toContain(`\n  ${path}:\n`);
   }
   expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
+});
+
+test('a folder that would hold both secrets and subfolders is a conflict', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  for (const operationId of ['createSecret', 'updateSecret', 'rollBackFolder', 'applyReorganization']) {
+    const start = yaml.indexOf(`operationId: ${operationId}\n`);
+    const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
+    expect(operation).toContain('both secrets and subfolders');
+    expect(operation).toContain("'409':");
+  }
 });
 
 test('design points to the design directory for all design assets', async () => {
