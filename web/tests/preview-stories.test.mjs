@@ -32,6 +32,7 @@ function immediatePlayback(root) {
   };
   return {
     checkpoints,
+    setSpeed() {},
     animate,
     play: async (target, frames) => {
       await animate(target, frames);

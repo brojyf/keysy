@@ -1,9 +1,10 @@
 import { installWindow } from "./dom.mjs";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { Window } from "happy-dom";
 import React, { act, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import SdkShowcase from "../src/components/SdkShowcase";
+import * as playbackModule from "../src/components/previews/previewPlayback";
 
 let browser;
 let root;
@@ -99,6 +100,127 @@ describe("SDK showcase", () => {
 });
 
 describe("product previews", () => {
+  test("waits for the shared hero start before typing the first character", async () => {
+    await act(() => root.render(React.createElement(ProductWindow, { ready: false })));
+    expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(true);
+    expect(container.querySelector(".composer-text").textContent).toBe("");
+    await act(() => root.render(React.createElement(ProductWindow, { ready: true })));
+    expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(false);
+    expect(container.querySelector(".composer-text").textContent).toBe("M");
+  });
+  test("plays the dashboard once, holds the saved frame, and does not replay on return", async () => {
+    let starts = 0;
+    let entered;
+    let stopped = false;
+    const run = {
+      get stopped() { return stopped; },
+      guard() {},
+      setPaused() {},
+      stop() { stopped = true; },
+      animate: async () => {},
+      play: async () => {},
+      wait: async (ms) => {
+        if (ms === 4800) await new Promise(() => {});
+        if (ms === 700 && ++starts > 1) await new Promise(() => {});
+      },
+    };
+    globalThis.IntersectionObserver = class {
+      constructor(callback) { entered = callback; }
+      observe() {}
+      disconnect() {}
+    };
+    const deadline = { setPaused() {}, stop() {}, wait: () => new Promise(() => {}) };
+    const playback = spyOn(playbackModule, "createPreviewPlayback")
+      .mockReturnValueOnce(run).mockReturnValueOnce(deadline);
+    try {
+      await act(() => root.render(React.createElement(ProductWindow, { update: true })));
+      expect(starts).toBe(1);
+      expect(container.querySelector("tbody tr").textContent).toContain("v6");
+      expect(container.querySelector("tbody tr").textContent).toContain("in 90 days");
+      expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(true);
+      await act(() => entered([{ isIntersecting: false }]));
+      await act(() => entered([{ isIntersecting: true }]));
+      for (const matches of [true, false]) {
+        await act(() => {
+          media.matches = matches;
+          media.dispatchEvent(new Event("change"));
+        });
+      }
+      expect(starts).toBe(1);
+      expect(container.querySelector("tbody tr").textContent).toContain("v6");
+    } finally {
+      playback.mockRestore();
+    }
+  });
+  test.each([false, true])("bounds stalled preview playback and shows its complete result (update=%s)", async (update) => {
+    let finish;
+    let budget;
+    let stopped = false;
+    const run = {
+      get stopped() { return stopped; },
+      guard() {},
+      setPaused() {},
+      setSpeed() {},
+      stop() { stopped = true; },
+      wait: () => new Promise(() => {}),
+    };
+    const deadline = {
+      setPaused() {},
+      stop() {},
+      wait: (ms) => new Promise((resolve) => { budget = ms; finish = resolve; }),
+    };
+    const playback = spyOn(playbackModule, "createPreviewPlayback")
+      .mockReturnValueOnce(run).mockReturnValueOnce(deadline);
+    try {
+      await act(() => root.render(React.createElement(ProductWindow, { update })));
+      expect(budget).toBeGreaterThan(0);
+      expect(budget).toBeLessThanOrEqual(5000);
+      container.querySelector(".secret-version").style.opacity = "0";
+      await act(() => finish());
+      await act(() => Bun.sleep(40));
+      expect(stopped).toBe(true);
+      expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(true);
+      expect(container.querySelector(".secret-version").style.opacity).toBe("");
+      if (update) {
+        expect(container.querySelector("tbody tr").textContent).toContain("v6");
+        expect(container.querySelector("tbody tr").textContent).toContain("in 90 days");
+        expect(container.querySelector(".preview-scrim").style.opacity).toBe("0");
+        expect(container.querySelector(".product-panel").style.transform).toBe("translateX(100%)");
+      } else {
+        expect(container.querySelector("tbody tr").textContent).toContain("production/shared/STRIPE_SECRET_KEY");
+        expect(container.querySelector(".thinking").hidden).toBe(true);
+        expect(container.querySelector(".assistant-reply").hidden).toBe(false);
+        expect(container.querySelector(".composer-text").classList.contains("typing")).toBe(false);
+      }
+    } finally {
+      playback.mockRestore();
+    }
+  });
+  test("holds the final dashboard after the real playback deadline cancels the unfinished story", async () => {
+    const nativeAnimate = browser.Element.prototype.animate;
+    const waapi = spyOn(browser.Element.prototype, "animate").mockImplementation(function (...args) {
+      const animation = nativeAnimate.apply(this, args);
+      // Happy DOM eagerly creates this promise; Motion uses its own completion promise.
+      void animation.finished.catch((error) => {
+        if (error.name !== "AbortError") throw error;
+      });
+      return animation;
+    });
+    try {
+      await act(() => root.render(React.createElement(ProductWindow, { update: true })));
+      await act(() => Bun.sleep(4950));
+      expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(true);
+      expect(container.querySelector("tbody tr").textContent).toContain("v6");
+      expect(container.querySelector("tbody tr").textContent).toContain("in 90 days");
+      expect(container.querySelector(".product-panel").style.transform).toBe("translateX(100%)");
+      expect(container.querySelector(".secret-version").style.opacity).toBe("");
+      const final = container.innerHTML;
+      await act(() => Bun.sleep(300));
+      expect(container.innerHTML).toBe(final);
+    } finally {
+      waapi.mockRestore();
+    }
+  }, 10000);
   test("keeps the last frame instead of redrawing it when a single-play story finishes", async () => {
     let complete;
     let redraws = 0;
@@ -236,7 +358,7 @@ describe("product previews", () => {
     expect(container.querySelector("button")).toBeNull();
   });
 
-  test("loops the update story without fading the dashboard in or out", async () => {
+  test("plays the update story without fading the dashboard in or out", async () => {
     const played = [];
     const run = {
       play: async (element, keyframes) => played.push([element, keyframes]),
@@ -289,6 +411,41 @@ describe("product previews", () => {
     );
     expect(container.textContent).toContain("Permissions verified");
   });
+  test("finishes the complete hero story within five seconds and holds its final frame", async () => {
+    const nativeAnimate = browser.Element.prototype.animate;
+    const waapi = spyOn(browser.Element.prototype, "animate").mockImplementation(function (...args) {
+      const animation = nativeAnimate.apply(this, args);
+      // Happy DOM stores playbackRate as a field without rescheduling its finish timer.
+      let rate = animation.playbackRate;
+      Object.defineProperty(animation, "playbackRate", {
+        get: () => rate,
+        set: (next) => {
+          const currentTime = animation.currentTime;
+          rate = next;
+          animation.currentTime = currentTime;
+        },
+      });
+      void animation.finished.catch((error) => {
+        if (error.name !== "AbortError") throw error;
+      });
+      return animation;
+    });
+    try {
+      await act(() => root.render(React.createElement(ProductWindow)));
+      await act(() => Bun.sleep(4950));
+      expect(container.querySelector(".product-stage").classList.contains("preview-paused")).toBe(true);
+      expect(container.querySelector(".thinking").hidden).toBe(true);
+      expect(container.querySelector(".assistant-reply").hidden).toBe(false);
+      expect(container.querySelector(".assistant-reply > p").children).toHaveLength(0);
+      for (const key of ["STRIPE_SECRET_KEY", "RESEND_API_KEY"])
+        expect(container.querySelector(`[data-secret="${key}"] .path-prefix`).textContent).toBe("production/shared/");
+      const final = container.innerHTML;
+      await act(() => Bun.sleep(300));
+      expect(container.innerHTML).toBe(final);
+    } finally {
+      waapi.mockRestore();
+    }
+  }, 10000);
 });
 
 describe("CTA pointer motion", () => {

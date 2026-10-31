@@ -43,9 +43,9 @@ bun run preview  # Preview the production build
 - `astro.config.mjs`: official React integration.
 - `tsconfig.json`: Astro strict mode with React JSX and TypeScript 7.
 
-The page is rendered as static HTML. The Hero preview hydrates on load so its
-story starts promptly; the SDK tabs, Dashboard, dot backgrounds, and CTA hydrate
-when visible. Geist and Geist Mono are served locally.
+The page is rendered as static HTML. The Hero preview and its dot background
+hydrate together on load. The SDK tabs, Dashboard, and CTA hydrate when visible.
+Geist and Geist Mono are served locally.
 Offscreen sections defer rendering with `content-visibility: auto`, reserving
 space from the design's section heights. Below-the-fold images use native lazy
 loading and asynchronous decoding; first-screen images load eagerly.
@@ -58,25 +58,29 @@ Product windows, commands, SDK package names, and availability diagrams reproduc
 illustrative design content. They do not connect to live APIs or measure service uptime.
 The hero uses **A · Spring flow** from
 [`hero-motion.html`](../design/web/motion/hero-motion.html):
-human-paced typing, three thinking states, animated path prefixes, and staggered results.
+typing, three thinking states, animated path prefixes, and staggered results,
+played at 2.5 times the prototype's speed.
 The CTA uses the same demo's 3° tilt without a hover glow.
 The Dashboard follows
 [`update-secret-motion.html`](../design/web/motion/update-secret-motion.html):
 slide in the panel, paste a masked value, choose the reminder, save, and update the folder version.
 Motion spring parameters and the thinking-orbs indicator come from those demos.
 
-The Hero runs once without playback controls, begins typing as soon as it hydrates,
-and remains on its completed result. Returning to the Hero does not replay it.
-The Dashboard control pauses
-both transition and hold times. Both stories pause offscreen and while the document
-is hidden, without losing a manual Dashboard pause.
+The Hero starts typing on the dot grid's first animation frame. If WebGL
+initialization fails, the story still starts with the static background.
+Both stories run once without playback controls and remain on their completed
+results. Returning to either preview does not replay it. Each preview stops
+after at most 4.8 seconds of active playback and shows its completed result,
+including when low frame rates delay the story.
+Both stories pause transitions and hold times offscreen and while the document
+is hidden. The dot grid also preserves its intro and shock-wave progress while paused.
 Reduced-motion preferences show completed states and a static dot texture and disable CTA rotation;
 the texture also works without WebGL or JavaScript.
 SDK tabs support arrow keys, Home, and End.
 
 `bun run test` validates generated links, local assets, legal-page metadata,
-SDK selection/keyboard navigation, story order, single-play completion, Dashboard replay,
-lazy image attributes, playback controls, and CTA pointer behavior. Visual layout and WebGL
+SDK selection/keyboard navigation, story order, single-play completion, synchronized startup,
+WebGL fallback, lazy image attributes, pause/resume behavior, and CTA pointer behavior. Visual layout and WebGL
 behavior require a separate browser review.
 
 `astro check` currently does not support TypeScript 7.0. The `check` command

@@ -75,6 +75,7 @@ export async function playHeroStory(
   root: HTMLElement,
   setOrb: (state: OrbState | null) => void,
 ) {
+  run.setSpeed(2.5);
   resetHero(root);
   setOrb(null);
   const bubble = query(root, ".assistant-prompt");

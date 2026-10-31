@@ -118,6 +118,7 @@ interface DotGridProps {
   dpr?: number;
   className?: string;
   style?: CSSProperties;
+  onReady?: (rendered: boolean) => void;
 }
 
 interface Shock {
@@ -179,7 +180,8 @@ const DotGrid = ({
   paused = false,
   dpr,
   className = '',
-  style
+  style,
+  onReady
 }: DotGridProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<{ rebuild: () => void; refresh: () => void } | null>(null);
@@ -214,13 +216,19 @@ const DotGrid = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
-    if (!gl) return;
+    if (!gl) {
+      onReady?.(false);
+      return;
+    }
 
     const program = gl.createProgram() as WebGLProgram;
     gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERTEX));
     gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAGMENT));
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      onReady?.(false);
+      return;
+    }
 
     const uniforms: Record<string, WebGLUniformLocation | null> = {};
     for (const name of [
@@ -272,6 +280,8 @@ const DotGrid = ({
     let visible = true;
     let raf = 0;
     let last = 0;
+    let animationTime = 0;
+    let ready = false;
 
     const rebuild = () => {
       const { dotSize: size, gap: spacing } = settingsRef.current;
@@ -318,7 +328,7 @@ const DotGrid = ({
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       rebuild();
-      render(performance.now());
+      render(animationTime);
     };
 
     const step = (dt: number, now: number) => {
@@ -538,17 +548,28 @@ const DotGrid = ({
 
     const frame = (now: number) => {
       raf = 0;
-      if (settingsRef.current.paused || !visible) return;
-      if (introStart !== null && introStart < 0) introStart = now;
+      if (settingsRef.current.paused || !visible || document.hidden) return;
+      // Advance animation time only while frames are active.
+      animationTime += Math.max(0, now - last);
+      if (introStart !== null && introStart < 0) introStart = animationTime;
       const dt = Math.min(0.05, (now - last) / 1000 || 0);
       last = now;
-      step(dt, now);
-      render(now);
-      if (!settled(now)) raf = requestAnimationFrame(frame);
+      step(dt, animationTime);
+      render(animationTime);
+      if (!ready) {
+        ready = true;
+        onReady?.(true);
+      }
+      if (!settled(animationTime)) raf = requestAnimationFrame(frame);
     };
 
     const wake = () => {
-      if (raf || settingsRef.current.paused || !visible) return;
+      if (settingsRef.current.paused || !visible || document.hidden) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        return;
+      }
+      if (raf) return;
       last = performance.now();
       raf = requestAnimationFrame(frame);
     };
@@ -598,7 +619,7 @@ const DotGrid = ({
       if (!settingsRef.current.clickShock || reduced) return;
       const [x, y] = locate(event);
       if (x < 0 || y < 0 || x > view.width || y > view.height) return;
-      shocks.push({ x, y, start: performance.now() });
+      shocks.push({ x, y, start: animationTime });
       if (shocks.length > 6) shocks.shift();
       wake();
     };
@@ -616,18 +637,11 @@ const DotGrid = ({
 
     const visibilityObserver = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      if (visible) wake();
+      wake();
     });
     visibilityObserver.observe(canvas);
 
-    const onVisibility = () => {
-      if (document.hidden) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-      } else {
-        wake();
-      }
-    };
+    const onVisibility = () => wake();
     document.addEventListener('visibilitychange', onVisibility);
 
     resize();
@@ -636,11 +650,11 @@ const DotGrid = ({
     engineRef.current = {
       rebuild: () => {
         rebuild();
-        render(performance.now());
+        render(animationTime);
         wake();
       },
       refresh: () => {
-        render(performance.now());
+        render(animationTime);
         wake();
       }
     };

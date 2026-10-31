@@ -20,10 +20,12 @@ export function createPreviewPlayback() {
   const controls = new Set<AnimationPlaybackControlsWithThen>();
   let paused = false;
   let stopped = false;
+  let speed = 1;
   const guard = () => {
     if (stopped) throw new DOMException("Preview stopped", "AbortError");
   };
   const track = (control: AnimationPlaybackControlsWithThen) => {
+    if (speed !== 1) control.speed = speed;
     if (paused) control.pause();
     controls.add(control);
     control.then(() => controls.delete(control));
@@ -58,6 +60,10 @@ export function createPreviewPlayback() {
     setPaused(next: boolean) {
       paused = next;
       controls.forEach((control) => (next ? control.pause() : control.play()));
+    },
+    setSpeed(next: number) {
+      speed = next;
+      controls.forEach((control) => (control.speed = speed));
     },
     stop() {
       stopped = true;

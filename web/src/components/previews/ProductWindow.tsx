@@ -20,8 +20,10 @@ const navItems = [
 
 export default function ProductWindow({
   update = false,
+  ready = true,
 }: {
   update?: boolean;
+  ready?: boolean;
 }) {
   const scope = useRef<HTMLDivElement>(null);
   const [orbState, setOrbState] = useState<OrbState | null>(null);
@@ -39,6 +41,7 @@ export default function ProductWindow({
     update ? playUpdateStory : heroStory,
     update ? renderUpdateFinal : heroFinal,
     update,
+    ready,
   );
   const rows = update
     ? [secretRows[0], ...secretRows.slice(2, 6), secretRows[1], secretRows[6]]
