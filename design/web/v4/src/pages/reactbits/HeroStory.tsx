@@ -5,7 +5,7 @@ import { ProductWindow } from '@/shared/Product'
 import ShinyText from '@/vendor/reactbits/ShinyText'
 import TextType from '@/vendor/reactbits/TextType'
 
-// The AI assistant moves the Stripe and Resend keys into production/shared, as in design/landing/motion/hero-motion.html.
+// The AI assistant moves the Stripe and Resend keys into production/shared, as in design/web/motion/hero-motion.html.
 type Stage = 'typing' | 'sent' | 'thinking' | 'done' | 'fading'
 
 const START_MS = 1200
