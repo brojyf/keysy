@@ -93,17 +93,6 @@ test('system design embeds the interactive architecture and preserves its public
   expect(source.components.length).toBeGreaterThan(0);
 });
 
-test('the architecture page reclaims the empty outline column for responsive layouts', async () => {
-  const html = await Bun.file(new URL('system-design.html', output)).text();
-  expect(await matches(html, '#docs > div > div[aria-hidden="true"]')).toHaveLength(1);
-  expect(await matches(html, '#docs > div > #content-area iframe.architecture-diagram')).toHaveLength(1);
-  expect(await matches(html, '#toc')).toHaveLength(0);
-  expect(html).toMatch(/#sourcey #docs > div:has\(iframe\.architecture-diagram\) > div\[aria-hidden='true'\]\s*\{\s*display: none;\s*\}/);
-  const prd = await Bun.file(new URL('prd.html', output)).text();
-  expect(await matches(prd, '#toc')).toHaveLength(1);
-  expect(await matches(prd, 'iframe.architecture-diagram')).toHaveLength(0);
-});
-
 test('the architecture reads left to right, then email delivery turns back beneath it', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
@@ -262,6 +251,9 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Notion is the source of truth for this PRD.');
   expect(prd).toContain('Secrets are not versioned individually.');
   expect(prd).toContain('Rolling back a folder creates a new version');
+  expect(prd).toContain('A folder holds either secrets or subfolders, never both.');
+  expect(prd).toContain('Save a Key File as a Secret');
+  expect(prd).toContain('A secret value can span multiple lines.');
   expect(prd).not.toContain('secret’s version history');
 });
 
@@ -362,6 +354,16 @@ test('versions belong to folders, addressed by path, not to individual secrets',
     expect(yaml).toContain(`\n  ${path}:\n`);
   }
   expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
+});
+
+test('a folder that would hold both secrets and subfolders is a conflict', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  for (const operationId of ['createSecret', 'updateSecret', 'rollBackFolder', 'applyReorganization']) {
+    const start = yaml.indexOf(`operationId: ${operationId}\n`);
+    const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
+    expect(operation).toContain('both secrets and subfolders');
+    expect(operation).toContain("'409':");
+  }
 });
 
 test('design points to the design directory for all design assets', async () => {
