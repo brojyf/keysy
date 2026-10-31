@@ -167,9 +167,10 @@ for (const [route, title] of routes) {
     expect(html).toContain(`${title}</h1>`);
     const publicUrl = `https://wiki.keysy.net/${route === 'index' ? '' : route}`;
     const [canonical] = await matches(html, 'link[rel="canonical"]');
-    const [languageLink] = await matches(html, 'link[rel="alternate"][hreflang="en"]');
+    const [document] = await matches(html, 'html');
     expect(canonical?.href).toBe(publicUrl);
-    expect(languageLink?.href).toBe(publicUrl);
+    expect(document?.lang).toBe('en');
+    expect(await matches(html, 'link[rel="alternate"][hreflang]')).toHaveLength(0);
     expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
     const [activeTab] = await matches(html, '.sourcey-section-tabs > a[aria-current="page"]');
     const activeTabHref = ['api', 'auth'].includes(route!) ? `/${route}` : route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/';
@@ -242,11 +243,15 @@ test('the published client includes the patched drawer lifecycle and appearance 
 test('PRD requirements and endpoint callout content are published', async () => {
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
-  expect(prd).toContain('Only Admins can create or modify secrets.');
+  expect(prd).toContain('Each org has exactly one Admin, whose scope covers every path.');
+  expect(prd).not.toContain('Super Admin');
   expect(prd).toContain('Secret values are never recorded in audit logs.');
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
   expect(prd).toContain('Notion is the source of truth for this PRD.');
+  expect(prd).toContain('Secrets are not versioned individually.');
+  expect(prd).toContain('Rolling back a folder creates a new version');
+  expect(prd).not.toContain('secret’s version history');
 });
 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
@@ -272,7 +277,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 7],
+    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 8],
     ['auth', 'Auth', ['GET', '/v0/auth/google'], 0],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
@@ -335,9 +340,17 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
 test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
   expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
-  for (const table of ['orgs', 'members', 'secrets', 'secret_versions', 'secret_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
+  for (const table of ['orgs', 'members', 'secrets', 'folders', 'folder_versions', 'folder_version_changes', 'folder_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
     expect(html).toContain(`<code>${table}</code>`);
   }
+});
+
+test('versions belong to folders, addressed by path, not to individual secrets', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  for (const path of ['/v0/orgs/{orgId}/folder-versions', '/v0/orgs/{orgId}/folder-rollbacks', '/v0/orgs/{orgId}/folder-retrievals']) {
+    expect(yaml).toContain(`\n  ${path}:\n`);
+  }
+  expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
 });
 
 test('design points to the design directory for all design assets', async () => {
@@ -390,8 +403,24 @@ test('public favicon bytes are preserved and native search exports are generated
   const indexes = JSON.parse(metadata!.content!.replaceAll('&quot;', '"')) as string[];
   expect(indexes.length).toBeGreaterThan(0);
   for (const path of indexes) {
-    const context = await Bun.file(new URL(`.${path}`, output)).json();
-    expect(await Bun.file(new URL(context.index, new URL(`.${path}`, output))).exists()).toBe(true);
+    const contextUrl = new URL(`.${path}`, output);
+    const context = await Bun.file(contextUrl).json();
+    expect(context.version).toBe(2);
+    expect(context.chunks.length).toBeGreaterThan(0);
+    expect(context.words.length).toBeGreaterThan(0);
+    for (const [prefix, entries] of [['c', context.chunks], ['v', context.words]] as const) {
+      for (let index = 0; index < entries.length; index++) {
+        expect(await Bun.file(new URL(`${context.files}${prefix}${index}.json`, contextUrl)).json())
+          .toBeArray();
+      }
+    }
+    const directory = new URL(context.files, contextUrl);
+    const fragments = (await readdir(directory)).filter((file) => /^f\d+\.json$/.test(file));
+    expect(fragments.length).toBeGreaterThan(0);
+    const rows = (await Promise.all(fragments.map(async (file) =>
+      await Bun.file(new URL(file, directory)).json() as unknown[][],
+    ))).flat().map((row) => row.slice(0, 2));
+    for (const row of context.openings) expect(rows).toContainEqual([row.title, row.url]);
   }
 });
 
@@ -400,10 +429,9 @@ test('search lists each OpenAPI overview by its sidebar label', async () => {
   const [metadata] = await matches(html, 'meta[name="sourcey-search-indexes"]');
   const [path] = JSON.parse(metadata!.content!.replaceAll('&quot;', '"')) as string[];
   const contextUrl = new URL(`.${path}`, output);
-  const context = await Bun.file(contextUrl).json();
-  const { rows } = await Bun.file(new URL(context.index, contextUrl)).json() as { rows: { title: string; url: string }[] };
+  const { openings } = await Bun.file(contextUrl).json() as { openings: { title: string; url: string }[] };
   for (const url of ['/api', '/auth']) {
-    expect(rows.filter((row) => row.url === url).map((row) => row.title)).toEqual(['Introduction']);
+    expect(openings.filter((row) => row.url === url).map((row) => row.title)).toEqual(['Introduction']);
   }
 });
 

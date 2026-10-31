@@ -43,15 +43,16 @@ test('plain search page titles use the UI font without overriding method and pat
 
 test('search method badges use the sidebar method colors in both themes', async () => {
   const sidebar = await readFile(new URL('node_modules/sourcey/dist/components/layout/Sidebar.js', docs), 'utf8');
-  for (const method of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']) {
-    const classes = sidebar.match(new RegExp(`${method}: "([^"]+)"`))![1]!;
-    const [, lightBackground] = classes.match(/(?:^| )bg-(\S+)/)!;
-    const [, darkBackground] = classes.match(/dark:bg-(\S+)\/20/)!;
-    const [, lightText] = classes.match(/(?:^| )text-(\S+)/)!;
-    const [, darkText] = classes.match(/dark:text-(\S+)/)!;
-    const selector = `#sourcey .search-result-method.method-${method.toLowerCase()}`;
-    expect(stylesheet).toContain(`${selector} {\n  background: var(--color-${lightBackground});\n  color: var(--color-${lightText});\n}`);
-    expect(stylesheet).toContain(`.dark ${selector} {\n  background: color-mix(in oklab, var(--color-${darkBackground}) 20%, transparent);\n  color: var(--color-${darkText});\n}`);
+  const nativeTheme = await readFile(new URL('node_modules/sourcey/dist/themes/default/sourcey.css', docs), 'utf8');
+  const rules = [...nativeTheme.matchAll(/([^{}]+)\{([^{}]+)\}/g)];
+  expect(sidebar).toContain('_jsx(MethodBadge,');
+  for (const method of ['get', 'post', 'put', 'delete', 'patch']) {
+    for (const mode of ['', '.dark ']) {
+      const rule = rules.find(([, selector]) => selector!.trim().startsWith(`${mode}#sourcey .method-badge`)
+        && selector!.includes(`[data-method="${method}"]`));
+      expect(rule).toBeDefined();
+      expect(stylesheet).toContain(`${mode}#sourcey .search-result-method.method-${method} {${rule![2]}}`);
+    }
   }
 });
 
@@ -67,7 +68,8 @@ test('both logo variants share an outlined Geist SemiBold wordmark without font 
   const variants = await Promise.all(['light', 'dark'].map(async (mode) => {
     const svg = await Bun.file(new URL(`logo/${mode}.svg`, docs)).text();
     expect(svg).toContain('<desc>Keysy logo with a Geist SemiBold wordmark.</desc>');
-    expect(svg).toContain('width="234" height="85" viewBox="0 0 234 85"');
+    // Same mark as design/logo/logo.svg: the wordmark is tracked −4%, so it runs wider than 234.
+    expect(svg).toContain('width="241.14" height="85" viewBox="0 0 241.14 85"');
     expect(svg).not.toMatch(/<text\b|<image\b|<foreignObject\b|@font-face|font-family=/);
     const paths = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map((match) => match[1]);
     expect(paths).toHaveLength(3);

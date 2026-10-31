@@ -100,6 +100,32 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
    if ('requestIdleCallback' in window) {
      window.requestIdleCallback(init, { timeout: 250 });
    } else {
+diff --git a/dist/client/tabs.js b/dist/client/tabs.js
+--- a/dist/client/tabs.js
++++ b/dist/client/tabs.js
+@@ -166 +166 @@
+-      if (!tab) return;
++      if (!tab || tab.classList.contains("active")) return;
+@@ -170,0 +171,3 @@
++      var previous = container.querySelector('.response-tab.active > .keysy-response-indicator');
++      var from = previous && previous.getBoundingClientRect();
++      if (previous && previous.getAnimations) previous.getAnimations().forEach(function (motion) { motion.cancel(); });
+@@ -187,0 +191,15 @@
++
++
++      var indicator = tab.querySelector('.keysy-response-indicator');
++      if (indicator && indicator.animate && from &&
++          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
++        var to = indicator.getBoundingClientRect();
++        var style = window.getComputedStyle(indicator);
++        if (to.width) indicator.animate(
++          [{ transform: 'translateX(' + (from.left - to.left) + 'px) scaleX(' + (from.width / to.width) + ')' }, { transform: 'none' }],
++          {
++            duration: parseFloat(style.getPropertyValue('--keysy-indicator-duration')) || 360,
++            easing: style.getPropertyValue('--keysy-indicator-easing').trim() || 'ease-out'
++          }
++        );
++      }
 diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
 index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
 --- a/dist/client/theme-init.js
@@ -139,12 +165,18 @@ index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5
    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
    else apply();
 diff --git a/dist/components/layout/Header.js b/dist/components/layout/Header.js
-index 115a997d400caf94e9f0652a42ea3fecd31f4866..bb8a30f08724dd87ea6b6ebd90a399d1fc8b1527 100644
+index 762b8f21cec2272e0f26fd9a07e1ee1c25cd6ec0..5bf3c90b448f8868856f577384e1d08fa64050ef 100644
 --- a/dist/components/layout/Header.js
 +++ b/dist/components/layout/Header.js
-@@ -53,1 +53,1 @@
+@@ -59,7 +59,7 @@ export function Header() {
+     const framed = site.theme.name !== "api-first";
+     return (_jsxs("header", { id: "navbar", class: "z-30 fixed lg:sticky top-0 w-full", children: [_jsx("div", { class: "navbar-band absolute w-full h-full flex-none border-b border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-gray-300)/0.06)] bg-[rgb(var(--color-background-light))] dark:bg-[rgb(var(--color-background-dark))]" }), _jsxs("div", { class: "relative", children: [_jsx("div", { class: "sourcey-header-top relative", children: _jsx("div", { class: `sourcey-header-frame flex items-center h-16 min-w-0 mx-4 ${framed ? "max-w-[92rem] lg:mx-auto" : "lg:mx-0"}`, children: _jsxs("div", { class: "sourcey-header-top-inner h-full relative flex-1 flex items-center gap-x-4 min-w-0", children: [_jsx("div", { class: "sourcey-header-brand flex-1 flex items-center gap-x-4", children: _jsx(Logo, { href: home, logo: site.logo, name: site.name }) }), _jsx("div", { class: "sourcey-header-search relative hidden lg:flex items-center flex-1 z-20 gap-2", children: _jsxs("button", { id: "search-open", type: "button", "aria-keyshortcuts": "/", class: "sourcey-search-control group flex pointer-events-auto rounded-[var(--sourcey-control-radius)] w-full items-center text-sm leading-6 h-[var(--sourcey-control-height)] pl-3.5 pr-3 text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))] ring-1 ring-[rgb(var(--color-gray-400)/0.3)] hover:ring-[rgb(var(--color-gray-600)/0.3)] dark:ring-[rgb(var(--color-gray-600)/0.3)] dark:hover:ring-[rgb(var(--color-gray-500)/0.3)] justify-between truncate gap-2 min-w-[43px] cursor-pointer bg-[rgb(var(--color-background-light))] dark:bg-[rgb(var(--color-background-dark))] dark:brightness-110 dark:hover:brightness-125", children: [_jsxs("div", { class: "flex items-center gap-2 min-w-[42px]", children: [_jsx(SearchIcon, {}), _jsx("div", { class: "truncate min-w-0", children: messages.searchPlaceholder })] }), _jsx("kbd", { "aria-hidden": "true", children: "/" })] }) }), _jsxs("div", { class: "sourcey-header-end contents", children: [_jsx("div", { class: "sourcey-header-actions flex-1 relative hidden lg:flex items-center ml-auto justify-end", children: (site.navbar.links.length > 0 || site.navbar.primary) && _jsx("nav", { class: "text-sm", "aria-label": messages.siteLinks, children: _jsxs("ul", { class: "flex gap-x-1 items-center", children: [site.navbar.links.map((link) => link.type === "menu" ? (_jsx("li", { children: _jsx(HeaderMenu, { menu: link }) }, link.label)) : (_jsx("li", { children: _jsx("a", { href: link.href, ...linkTarget(link.href, site.siteUrl), "aria-label": link.type === "link" || link.repository ? undefined : linkLabel(link), class: `sourcey-header-link flex items-center justify-center h-8 whitespace-nowrap ${link.type === "link" ? "px-2" : link.repository ? "gap-2 px-2" : "w-8"} text-[rgb(var(--color-gray-500))] hover:text-[rgb(var(--color-gray-700))] dark:text-[rgb(var(--color-gray-400))] dark:hover:text-[rgb(var(--color-gray-300))]`, children: link.type === "link" ? linkLabel(link) : _jsxs(_Fragment, { children: [_jsx(SocialIcon, { type: link.type }), link.repository && _jsx(RepositoryStats, { label: linkLabel(link), stats: link.repository })] }) }) }, link.href))), site.navbar.primary && (_jsx("li", { class: "pl-2", children: _jsx(PrimaryAction, { ...site.navbar.primary }) }))] }) }) }), _jsxs("div", { class: "flex items-center gap-1 lg:gap-0", children: [_jsx("button", { id: "search-open-mobile", type: "button", "aria-label": messages.search, class: "text-[rgb(var(--color-gray-500))] w-11 h-11 lg:hidden flex items-center justify-center", children: _jsx(SearchIcon, {}) }), _jsxs("button", { id: "theme-toggle", type: "button", "aria-label": messages.dark, "data-light-label": messages.light, "data-dark-label": messages.dark, class: "w-11 h-11 lg:w-8 lg:h-8 p-2 flex items-center justify-center cursor-pointer text-[rgb(var(--color-gray-400))] hover:text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-500))] dark:hover:text-[rgb(var(--color-gray-300))]", children: [_jsx(SunIcon, {}), _jsx(MoonIcon, {})] }), _jsx("button", { type: "button", "data-drawer-slide": "right", "aria-label": messages.openMenu, class: "text-[rgb(var(--color-gray-500))] w-11 h-11 lg:hidden flex items-center justify-center hover:text-[rgb(var(--color-gray-600))]", children: _jsx("svg", { class: "h-4", fill: "currentColor", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 448 512", children: _jsx("path", { d: "M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z" }) }) })] })] })] }) }) }), _jsxs("div", { class: `sourcey-header-navigation${framed ? " max-w-[92rem] mx-auto" : ""}`, "data-desktop": nav.tabs.length > 1 || hasContextChoices(options.equivalents), children: [_jsx(MobileBreadcrumbs, { nav: nav }), nav.tabs.length > 1 && _jsx("nav", { class: "sourcey-section-tabs", "aria-label": messages.sectionsNavigation, children: nav.tabs.map((tab) => {
+                                     const isActive = tab.slug === nav.activeTabSlug;
 -                                    return (_jsxs("a", { href: joinHref(base, tab.href), class: `group relative h-full gap-2 flex items-center font-medium cursor-pointer transition-colors ${isActive
 +                                    return (_jsxs("a", { href: joinHref(base, tab.href), "aria-current": isActive ? "page" : undefined, class: `group relative h-full gap-2 flex items-center font-medium cursor-pointer transition-colors ${isActive
+                                             ? "text-[rgb(var(--color-gray-800))] dark:text-[rgb(var(--color-gray-200))] [text-shadow:-0.2px_0_0_currentColor,0.2px_0_0_currentColor]"
+                                             : "text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-400))] hover:text-[rgb(var(--color-gray-800))] dark:hover:text-[rgb(var(--color-gray-300))]"}`, children: [tab.label, isActive ? (_jsx("div", { class: "absolute bottom-0 h-[1.5px] w-full left-0 bg-[rgb(var(--color-primary))] dark:bg-[rgb(var(--color-primary-light))]" })) : (_jsx("div", { class: "absolute bottom-0 h-[1.5px] w-full left-0 group-hover:bg-[rgb(var(--color-gray-200))] dark:group-hover:bg-[rgb(var(--color-gray-700))]" }))] }, tab.slug));
+                                 }) }), _jsx(ContextControls, {})] })] })] }));
 diff --git a/dist/components/openapi/Introduction.js b/dist/components/openapi/Introduction.js
 index bb790d8f7fbe4b64e1edafb025c6746339185ef5..4cc39ee351feb58374d5c01a7e4a05a4c806b637 100644
 --- a/dist/components/openapi/Introduction.js
@@ -156,75 +188,64 @@ index bb790d8f7fbe4b64e1edafb025c6746339185ef5..4cc39ee351feb58374d5c01a7e4a05a4
 -    return (_jsxs("div", { id: "introduction", "data-traverse-target": "introduction", class: "mb-8", children: [_jsx(AnchorAliases, { target: "introduction" }), termsUrl && (_jsx("p", { class: "mt-4 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: _jsx("a", { href: termsUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: "Terms of Service" }) })), info.contact?.email && contactEmailUrl && (_jsxs("p", { class: "mt-2 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: ["Contact:", " ", _jsx("a", { href: contactEmailUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: info.contact.email })] })), servers.length > 0 && (_jsxs("div", { class: "mt-6 rounded-[var(--radius)] border border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)] overflow-x-auto", children: [_jsxs("div", { class: "px-4 py-2.5 text-xs font-semibold text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-300))] border-b border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)]", children: ["Base URL", servers.length > 1 ? "s" : ""] }), servers.map((s, i) => (_jsxs("div", { class: `px-4 py-2 ${i > 0 ? "border-t border-[rgb(var(--color-gray-100))] dark:border-[rgb(var(--color-gray-800))]" : ""}`, children: [_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-3 gap-y-0.5", children: [_jsx("code", { class: "font-mono text-sm text-[rgb(var(--color-gray-800))] dark:text-[rgb(var(--color-gray-200))]", children: s.url }), s.description && (_jsx("span", { class: "text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: s.description }))] }), s.variables && Object.keys(s.variables).length > 0 && (_jsx("dl", { class: "mt-1.5 space-y-0.5 text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: Object.entries(s.variables).map(([name, variable]) => (_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-1.5", children: [_jsx("dt", { children: _jsx("code", { class: "font-mono text-[rgb(var(--color-gray-700))] dark:text-[rgb(var(--color-gray-300))]", children: name }) }), _jsxs("dd", { children: [variable.default ? _jsxs(_Fragment, { children: ["default ", _jsx("code", { class: "font-mono", children: variable.default })] }) : "no default", variable.enum && variable.enum.length > 1 && _jsxs(_Fragment, { children: ["; one of ", variable.enum.map((value, index) => _jsxs(Fragment, { children: [index > 0 && ", ", _jsx("code", { class: "font-mono", children: value })] }, value))] }), variable.description && _jsxs(_Fragment, { children: [". ", variable.description] })] })] }, name))) }))] }, i)))] })), info.description && _jsx(Markdown, { content: info.description, class: "max-w-none mt-8" }), _jsx(ExternalDocsLink, { docs: spec.externalDocs })] }));
 +    return (_jsxs("div", { id: "introduction", "data-traverse-target": "introduction", class: "mb-8", children: [_jsx(AnchorAliases, { target: "introduction" }), termsUrl && (_jsx("p", { class: "mt-4 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: _jsx("a", { href: termsUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: "Terms of Service" }) })), info.contact?.email && contactEmailUrl && (_jsxs("p", { class: "mt-2 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: ["Contact:", " ", _jsx("a", { href: contactEmailUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: info.contact.email })] })), servers.some((s) => s.url !== "/") && (_jsxs("div", { class: "mt-6 rounded-[var(--radius)] border border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)] overflow-x-auto", children: [_jsxs("div", { class: "px-4 py-2.5 text-xs font-semibold text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-300))] border-b border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)]", children: ["Base URL", servers.length > 1 ? "s" : ""] }), servers.map((s, i) => (_jsxs("div", { class: `px-4 py-2 ${i > 0 ? "border-t border-[rgb(var(--color-gray-100))] dark:border-[rgb(var(--color-gray-800))]" : ""}`, children: [_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-3 gap-y-0.5", children: [_jsx("code", { class: "font-mono text-sm text-[rgb(var(--color-gray-800))] dark:text-[rgb(var(--color-gray-200))]", children: s.url }), s.description && (_jsx("span", { class: "text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: s.description }))] }), s.variables && Object.keys(s.variables).length > 0 && (_jsx("dl", { class: "mt-1.5 space-y-0.5 text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: Object.entries(s.variables).map(([name, variable]) => (_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-1.5", children: [_jsx("dt", { children: _jsx("code", { class: "font-mono text-[rgb(var(--color-gray-700))] dark:text-[rgb(var(--color-gray-300))]", children: name }) }), _jsxs("dd", { children: [variable.default ? _jsxs(_Fragment, { children: ["default ", _jsx("code", { class: "font-mono", children: variable.default })] }) : "no default", variable.enum && variable.enum.length > 1 && _jsxs(_Fragment, { children: ["; one of ", variable.enum.map((value, index) => _jsxs(Fragment, { children: [index > 0 && ", ", _jsx("code", { class: "font-mono", children: value })] }, value))] }), variable.description && _jsxs(_Fragment, { children: [". ", variable.description] })] })] }, name))) }))] }, i)))] })), info.description && _jsx(Markdown, { content: info.description, class: "max-w-none mt-8" }), _jsx(ExternalDocsLink, { docs: spec.externalDocs })] }));
  }
-diff --git a/dist/client/tabs.js b/dist/client/tabs.js
---- a/dist/client/tabs.js
-+++ b/dist/client/tabs.js
-@@ -166 +166 @@
--      if (!tab) return;
-+      if (!tab || tab.classList.contains("active")) return;
-@@ -170,0 +171,3 @@
-+      var previous = container.querySelector('.response-tab.active > .keysy-response-indicator');
-+      var from = previous && previous.getBoundingClientRect();
-+      if (previous && previous.getAnimations) previous.getAnimations().forEach(function (motion) { motion.cancel(); });
-@@ -187,0 +191,14 @@
-+
-+      var indicator = tab.querySelector('.keysy-response-indicator');
-+      if (indicator && indicator.animate && from &&
-+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-+        var to = indicator.getBoundingClientRect();
-+        var style = window.getComputedStyle(indicator);
-+        if (to.width) indicator.animate(
-+          [{ transform: 'translateX(' + (from.left - to.left) + 'px) scaleX(' + (from.width / to.width) + ')' }, { transform: 'none' }],
-+          {
-+            duration: parseFloat(style.getPropertyValue('--keysy-indicator-duration')) || 360,
-+            easing: style.getPropertyValue('--keysy-indicator-easing').trim() || 'ease-out'
-+          }
-+        );
-+      }
 diff --git a/dist/components/openapi/Operation.js b/dist/components/openapi/Operation.js
+index f1f63e81f9af317ebe5db1ee9cf76b2110ba2144..ae1c5869692f7b8049599a697a681f65764802d1 100644
 --- a/dist/components/openapi/Operation.js
 +++ b/dist/components/openapi/Operation.js
-@@ -41 +41 @@
--    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: op.summary ? _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), mcp ? (_jsx(McpEndpointBar, { method: op.method, path: op.path })) : (_jsx(EndpointBar, { operation: op }))] }));
-+    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: standalone && !mcp ? op.path : op.summary ? _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), mcp ? (_jsx(McpEndpointBar, { method: op.method, path: op.path })) : (_jsx(EndpointBar, { operation: op }))] }));
-@@ -48 +48 @@
+@@ -41,7 +41,7 @@ function OperationIdentity({ operation: op }) {
+     const Heading = standalone ? "h1" : "h2";
+     const mcp = op.mcpExtras;
+     const { kind, named } = useMcpLine(op);
+-    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: op.summary ? bareName(op.summary) ? _jsx(Breakable, { text: op.summary }) : _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), !mcp ? _jsx(EndpointBar, { operation: op }) : (kind || named) && _jsx(McpEndpointBar, { method: kind ? op.method : undefined, path: op.path })] }));
++    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: standalone && !mcp ? op.path : op.summary ? bareName(op.summary) ? _jsx(Breakable, { text: op.summary }) : _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), !mcp ? _jsx(EndpointBar, { operation: op }) : (kind || named) && _jsx(McpEndpointBar, { method: kind ? op.method : undefined, path: op.path })] }));
+ }
+ /**
+  * What an MCP entry's line under its title says: its kind where its section
+@@ -60,7 +60,7 @@ function useMcpLine(op) {
+  * move beside the copy where the column has room for both.
+  */
+ function DefaultOperationDetail({ operation: op }) {
 -    return (_jsxs("div", { class: "operation-layout", children: [(op.mcpExtras || op.description || op.externalDocs) && (_jsxs("div", { class: "operation-intro", children: [op.mcpExtras && _jsx(OperationIdentity, { operation: op }), op.description && _jsx(Markdown, { content: op.description, class: "mb-6 max-w-none" }), _jsx(ExternalDocsLink, { docs: op.externalDocs })] })), _jsx("aside", { class: "sourcey-operation-examples", children: _jsx(OperationExamples, { operation: op }) }), operationSections(op).length > 0 && _jsx("div", { class: "operation-details", children: _jsx(OperationSections, { operation: op, sectionClass: "mt-6" }) })] }));
 +    return (_jsxs("div", { class: "operation-layout", children: [(op.mcpExtras || op.description || op.externalDocs) && (_jsxs("div", { class: "operation-intro", children: [op.mcpExtras && _jsx(OperationIdentity, { operation: op }), op.description && _jsx(Markdown, { content: op.description, class: "mb-6 max-w-none" }), _jsx(ExternalDocsLink, { docs: op.externalDocs })] })), operationSections(op).length > 0 && _jsx("div", { class: "operation-details", children: _jsx(OperationSections, { operation: op, sectionClass: "mt-6" }) }), _jsx("aside", { class: "sourcey-operation-examples", children: _jsx(OperationExamples, { operation: op }) })] }));
+ }
+ /**
+  * The full-width theme's operation: two equal columns. The left starts with
 diff --git a/dist/components/openapi/Responses.js b/dist/components/openapi/Responses.js
+index ef6102a6353a25b550a4a48b3845751025999eb2..11f4fef4bcfebaf90f9b0f7f1d6496e9fa692adc 100644
 --- a/dist/components/openapi/Responses.js
 +++ b/dist/components/openapi/Responses.js
-@@ -60 +60 @@
+@@ -57,7 +57,7 @@ export function ResponsesExamples({ responses }) {
+     // Multiple status codes: status tabs on the left of the header; on the right,
+     // a per-status variant switcher (shown for the active status) next to copy,
+     // matching the language select. Panels live in the clipped card body.
 -    return (_jsxs("div", { class: "response-tabs code-group not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "response-tab-list flex gap-1 overflow-x-auto text-xs leading-6", role: "tablist", children: groups.map((g, i) => (_jsx("button", { type: "button", role: "tab", "aria-selected": i === 0 ? "true" : "false", class: `response-tab group relative my-1 mb-1.5 flex items-center gap-1.5 whitespace-nowrap font-medium outline-0${i === 0 ? " active" : ""}`, "data-response-index": String(i), children: _jsx("div", { class: "z-10 flex items-center gap-1.5 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: g.statusCode }) }, g.statusCode))) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [groups.map((g, i) => g.variants.length > 1 ? (_jsx("div", { "data-response-dropdown": String(i), class: i === 0 ? undefined : "hidden", children: _jsx(VariantDropdown, { variants: g.variants }) }, g.statusCode)) : null), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: groups.map((g, i) => (_jsx("div", { class: `response-panel${i === 0 ? " active" : ""}`, role: "tabpanel", "data-response-panel": String(i), children: g.variants.length > 1 ? (g.variants.map((v, j) => (_jsx("div", { class: `code-lang-panel${j === 0 ? " active" : ""}`, "data-lang-panel": String(j), children: _jsx(VariantBody, { variant: v }) }, j)))) : (_jsx(VariantBody, { variant: g.variants[0] })) }, g.statusCode))) })] }));
-+    return (_jsxs("div", { class: "response-tabs code-group not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "response-tab-list flex gap-1 overflow-x-auto text-xs leading-6", role: "tablist", children: groups.map((g, i) => (_jsx("button", { type: "button", role: "tab", "aria-selected": i === 0 ? "true" : "false", class: `response-tab group relative my-1 mb-1.5 flex items-center gap-1.5 whitespace-nowrap font-medium outline-0${i === 0 ? " active" : ""}`, "data-response-index": String(i), children: [_jsx("div", { class: "z-10 flex items-center gap-1.5 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: g.statusCode }), _jsx("span", { class: "keysy-response-indicator", "aria-hidden": "true" })] }, g.statusCode))) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [groups.map((g, i) => g.variants.length > 1 ? (_jsx("div", { "data-response-dropdown": String(i), class: i === 0 ? undefined : "hidden", children: _jsx(VariantDropdown, { variants: g.variants }) }, g.statusCode)) : null), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: groups.map((g, i) => (_jsx("div", { class: `response-panel${i === 0 ? " active" : ""}`, role: "tabpanel", "data-response-panel": String(i), children: g.variants.length > 1 ? (g.variants.map((v, j) => (_jsx("div", { class: `code-lang-panel${j === 0 ? " active" : ""}`, "data-lang-panel": String(j), children: _jsx(VariantBody, { variant: v }) }, j)))) : (_jsx(VariantBody, { variant: g.variants[0] })) }, g.statusCode))) })] }));
++    return (_jsxs("div", { class: "response-tabs code-group not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "response-tab-list flex gap-1 overflow-x-auto text-xs leading-6", role: "tablist", children: groups.map((g, i) => (_jsxs("button", { type: "button", role: "tab", "aria-selected": i === 0 ? "true" : "false", class: `response-tab group relative my-1 mb-1.5 flex items-center gap-1.5 whitespace-nowrap font-medium outline-0${i === 0 ? " active" : ""}`, "data-response-index": String(i), children: [_jsx("div", { class: "z-10 flex items-center gap-1.5 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: g.statusCode }), _jsx("span", { class: "keysy-response-indicator", "aria-hidden": "true" })] }, g.statusCode))) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [groups.map((g, i) => g.variants.length > 1 ? (_jsx("div", { "data-response-dropdown": String(i), class: i === 0 ? undefined : "hidden", children: _jsx(VariantDropdown, { variants: g.variants }) }, g.statusCode)) : null), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: groups.map((g, i) => (_jsx("div", { class: `response-panel${i === 0 ? " active" : ""}`, role: "tabpanel", "data-response-panel": String(i), children: g.variants.length > 1 ? (g.variants.map((v, j) => (_jsx("div", { class: `code-lang-panel${j === 0 ? " active" : ""}`, "data-lang-panel": String(j), children: _jsx(VariantBody, { variant: v }) }, j)))) : (_jsx(VariantBody, { variant: g.variants[0] })) }, g.statusCode))) })] }));
+ }
+ function renderResponseType(r) {
+     const schema = getResponseSchema(r);
 diff --git a/dist/core/search-indexer.js b/dist/core/search-indexer.js
-index 5506de988cd7a7c61299a36f357961f4a4905f39..6bbcfed66003c5a15cbd090be68d3fc5bd3c260f 100644
+index ac2f463179458bdfccc7ce749ca6f24d26136dc1..d33b6cee928502554cc24357997afee1e30cf05c 100644
 --- a/dist/core/search-indexer.js
 +++ b/dist/core/search-indexer.js
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
+ import { isMainChangelogPage } from "./site-model.js";
 -import { readingOrder } from "./navigation.js";
 +import { readingOrder, isNavGroup } from "./navigation.js";
- import { toPublicPath } from "../site-url.js";
- import { tabIndexOutputPath } from "../config.js";
- import { operationAnchor, definitionAnchor } from "./reference-identity.js";
-@@ -26,11 +26,13 @@ export function buildSearchIndex(specs, pages, navigation, assetBase = "/", feat
-         const tabBase = toPublicPath(tabIndexOutputPath(tabSlug, prettyUrls), base, prettyUrls);
+ // ---------------------------------------------------------------------------
+ // Index builder
+ // ---------------------------------------------------------------------------
+@@ -44,7 +44,7 @@ targets, featuredSlugs = []) {
          // The reference's own page, titled as it is: an MCP server's by its tab.
          const mcp = spec.operations.some((op) => op.mcpExtras?.connection);
-+        const url = targets?.get(tabSlug)?.overview.href ?? tabBase;
          add(tabSlug, {
 -            title: mcp ? tabLabel : spec.info.title,
-+            // Keysy: the overview reads as the sidebar names it.
-+            title: mcp ? tabLabel : navLabel(tab?.groups ?? [], url) ?? spec.info.title,
++            title: mcp ? tabLabel : navLabel(tab?.groups ?? [], destinations.overview.href) ?? spec.info.title,
              content: (spec.info.summary ?? spec.info.description ?? "").slice(0, 200),
              searchText: [spec.info.title, spec.info.summary, spec.info.description].filter(Boolean).join(" "),
--            url: targets?.get(tabSlug)?.overview.href ?? tabBase,
-+            url,
-             tab: tabLabel,
-             category: "Pages",
-         });
-@@ -171,6 +173,14 @@ function markOpenings(entries, owners, featured, navigation) {
-         }
-     }
+             url: destinations.overview.href,
+@@ -285,3 +285,11 @@ export function referenceOverviewSearchText(spec) {
+         ...Object.entries(spec.securitySchemes).flatMap(([name, scheme]) => [name, scheme.name, scheme.description]),
+     ].filter(Boolean).join(" ");
  }
 +function navLabel(groups, href) {
 +    for (const group of groups)
@@ -234,6 +255,17 @@ index 5506de988cd7a7c61299a36f357961f4a4905f39..6bbcfed66003c5a15cbd090be68d3fc5
 +                return label;
 +        }
 +}
- /**
-  * Strip HTML tags from a string to get plain text.
-  */
+diff --git a/dist/renderer/assets.js b/dist/renderer/assets.js
+index cf13957fe961a9ab032847982b1908230a8a478c..f76765504c248d34662533beabdb628792c5e3b0 100644
+--- a/dist/renderer/assets.js
++++ b/dist/renderer/assets.js
+@@ -86,7 +86,8 @@ export async function buildAssets(theme, consoleEnabled) {
+     const key = JSON.stringify([projectRoot, theme, consoleEnabled, mode]);
+     let build = builds.get(key);
+     if (!build) {
+-        const packaged = mode === "production" ? await packagedAssets(theme, consoleEnabled) : undefined;
++        // Keysy patches the client scripts, so build those sources instead of the stock bundles.
++        const packaged = undefined;
+         build = (packaged ? Promise.resolve(packaged) : cachedArtifacts("engine-assets", JSON.stringify([theme, consoleEnabled, mode]), ["vite", "@preact/preset-vite", "@tailwindcss/vite", "preact"], async () => {
+             const dir = await mkdtemp(join(tmpdir(), "sourcey-assets-"));
+             try {
