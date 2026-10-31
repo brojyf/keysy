@@ -95,7 +95,7 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - Secret, policy, and member access changes generate audit records without secret values.
 - Each service’s last-retrieved version and time are kept per folder as a single latest record, separate from audit logs and without secret values.
 - Secrets are not versioned individually. Creating, updating, deleting, or moving a secret creates a new version of each folder it affects; a move creates a version in both the source and the destination folder.
-- A folder’s versions cover only the secrets directly in that folder, not those in its subfolders.
+- A folder holds either secrets or subfolders, never both. A folder whose secrets are all gone can hold subfolders; it then cannot be rolled back to a version with secrets.
 - Rolling back a folder creates a new version with the selected version’s secrets; later versions are kept.
 - Each folder keeps at most N previous versions. Audit records are retained independently of this limit.
 - Secrets are encrypted at rest, the keys are stored separately from the database, and a database leak alone cannot reveal plaintext.

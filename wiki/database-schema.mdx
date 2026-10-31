@@ -150,7 +150,7 @@ erDiagram
 | --- | --- |
 | `orgs` | Tenants. `expiration_reminder_days` holds the org's reminder lead time and defaults to 7. |
 | `members` | A user's role in an org: `super_admin`, `admin`, or `user`. Admins add members by email, unique per org; `user_id` stays null until the first Google sign-in. |
-| `folders` | A secret path without its last segment, unique per org. Created with its first secret and kept after its last one is gone, so its history stays available. `current_version` is the version that reads return. |
+| `folders` | A secret path without its last segment, unique per org. Created with its first secret and kept after its last one is gone, so its history stays available. A folder holds either secrets or subfolders, never both; a folder whose secrets are all gone can hold subfolders. `current_version` is the version that reads return. |
 | `secrets` | The current state of each secret. `path` is unique per org; `note` and `expires_at` are optional. `vault_secret_id` references the current value. |
 | `folder_versions` | The current version and up to N previous versions of each folder. One change creates at most one version per affected folder. `rollback_of` is the version a rollback restores. |
 | `folder_version_changes` | What each version changed: a secret's name, note, expiration, and Vault entry before and after. Null `before_*` columns mean the secret was created or moved in; null `after_*` columns mean it was deleted or moved out. A rollback undoes the later changes in reverse order. A Vault entry is removed once neither `secrets` nor a kept change references it. |
