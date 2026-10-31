@@ -2,3 +2,7 @@
 /supabase/.temp/
 node_modules/
 dist/
+
+# iCloud sync duplicates
+* 2
+* 2.*
