@@ -304,7 +304,7 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
 test('operation page headings show the endpoint path', async () => {
   for (const [route, path] of [
     ['api/operations/operation-v0-orgs-post', '/v0/orgs'],
-    ['api/operations/operation-v0-orgs-orgid-settings-patch', '/v0/orgs/{orgId}/settings'],
+    ['api/operations/operation-v0-orgs-orgid-me-notification-preferences-patch', '/v0/orgs/{orgId}/me/notification-preferences'],
     ['auth/operations/operation-v0-auth-google-get', '/v0/auth/google'],
   ]) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
@@ -314,7 +314,7 @@ test('operation page headings show the endpoint path', async () => {
 });
 
 test('response examples keep separate cards and one moving underline per status tab', async () => {
-  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-settings-patch.html', output)).text();
+  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-me-notification-preferences-patch.html', output)).text();
   expect(await matches(html, '#responses details.schema-expandable')).not.toHaveLength(0);
   const tabs = await matches(html, '.response-tab');
   expect(tabs.length).toBeGreaterThan(1);
@@ -323,7 +323,7 @@ test('response examples keep separate cards and one moving underline per status 
 });
 
 test('single-column operation pages read fields and responses before terminal examples', async () => {
-  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-settings-patch.html', output)).text();
+  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-me-notification-preferences-patch.html', output)).text();
   const children = (await matches(html, '[data-sourcey-operation] > .operation-layout > *')).map(({ class: name }) => name);
   expect(children).toContain('operation-details');
   expect(children).toContain('sourcey-operation-examples');

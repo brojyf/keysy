@@ -78,6 +78,7 @@ paths:
       operationId: refreshSession
       security: []
       summary: Refresh the session
+      description: Reject a revoked Keysy session as well as an invalid provider refresh token.
       requestBody:
         required: true
         content:
@@ -98,6 +99,7 @@ paths:
       tags: [Session]
       operationId: logout
       summary: Sign out and revoke the refresh token
+      description: Mark the current Keysy session revoked, revoke its refresh token, and reject its JWT on the next API request.
       security:
         - bearerAuth: []
       responses:
@@ -105,6 +107,56 @@ paths:
           description: Signed out.
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /v0/auth/sessions:
+    get:
+      tags: [Session]
+      operationId: listSessions
+      summary: List your signed-in sessions
+      description: Return only this account's web, CLI and extension sessions. Mark the current session.
+        Session IDs and metadata never include bearer or refresh tokens.
+      responses:
+        '200':
+          description: List your signed-in sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+  /v0/auth/sessions/{sessionId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Session]
+      operationId: revokeSession
+      summary: Revoke another session
+      description: Revoke only a session belonging to this account. Reject the current session with
+        409; use logout to sign it out. Revoke its refresh token and reject its JWT on the next request
+        by checking the session record. The revoked client must sign in again.
+      responses:
+        '204':
+          description: Revoke another session
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      security:
+        - bearerAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -139,6 +191,24 @@ components:
               type: string
             message:
               type: string
+    AccountSession:
+      type: object
+      required: [id, client, createdAt, lastSeenAt, current]
+      properties:
+        id:
+          type: string
+          format: uuid
+        client:
+          type: string
+          enum: [web, cli, extension]
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
   responses:
     Session:
       description: Session tokens.
@@ -159,6 +229,18 @@ components:
             $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Missing, invalid, or expired token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Session not found for this account.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: The current session cannot be revoked here.
       content:
         application/json:
           schema:

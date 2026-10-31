@@ -35,12 +35,26 @@ paths:
                 $ref: '#/components/schemas/Me'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Orgs]
+      operationId: deleteAccount
+      summary: Delete your account
+      description: Reject with 409 while the account is Admin of any org. Transfer the Admin role or
+        delete those orgs first. Otherwise remove memberships in all orgs and revoke all account sessions.
+      responses:
+        '204':
+          description: Delete your account
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v0/orgs:
     post:
       tags: [Orgs]
       operationId: createOrg
       summary: Create an org
-      description: Any signed-in user can create an org and becomes its Super Admin.
+      description: Any signed-in user can create an org and becomes its only Admin. Org creation and membership
+        commit atomically.
       requestBody:
         required: true
         content:
@@ -62,50 +76,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /v0/orgs/{orgId}/settings:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-    get:
-      tags: [Orgs]
-      operationId: getOrgSettings
-      summary: Get org settings
-      description: Admin or Super Admin.
-      responses:
-        '200':
-          description: Org settings.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrgSettings'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    patch:
-      tags: [Orgs]
-      operationId: updateOrgSettings
-      summary: Update org settings
-      description: Admin or Super Admin.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrgSettings'
-      responses:
-        '200':
-          description: Settings updated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrgSettings'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
   /v0/orgs/{orgId}/members:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -113,7 +83,8 @@ paths:
       tags: [Members]
       operationId: listMembers
       summary: List members
-      description: Admin or Super Admin.
+      description: All members can view member names and roles. This response never includes another member's
+        scope.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -132,9 +103,8 @@ paths:
       tags: [Members]
       operationId: addMember
       summary: Add a member by email
-      description: |
-        Admin or Super Admin. The member gets the `user` role and no policies.
-        The org appears for that user after they sign in with this email.
+      description: Admin only. Add a Developer with no assigned policies or permission sets. The org appears
+        after the member signs in with this email. Email is unique within the org.
       requestBody:
         required: true
         content:
@@ -165,44 +135,13 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/MemberId'
-    patch:
-      tags: [Members]
-      operationId: updateMemberRole
-      summary: Grant or revoke Admin access
-      description: Super Admin only. A Super Admin's role cannot be changed.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [role]
-              properties:
-                role:
-                  type: string
-                  enum: [admin, user]
-      responses:
-        '200':
-          description: Role updated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Member'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
     delete:
       tags: [Members]
       operationId: removeMember
       summary: Remove a member
-      description: |
-        Admin or Super Admin can remove a user. Only a Super Admin can remove
-        an Admin. A Super Admin cannot be removed.
+      description: Admin only, except a Developer can remove their own membership to leave the org. The
+        Admin must transfer the role or delete the org before leaving; reject attempts to remove the Admin
+        with 409. Access is removed on the next authorized request.
       responses:
         '204':
           description: Member removed.
@@ -213,6 +152,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v0/orgs/{orgId}/secrets:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -247,7 +188,8 @@ paths:
       tags: [Secrets]
       operationId: createSecret
       summary: Create a secret
-      description: Admin or Super Admin. Creates a new version of its folder.
+      description: Admin, or a Developer within their assigned scope. Services cannot write. Creates a
+        new version of its folder.
       requestBody:
         required: true
         content:
@@ -292,10 +234,11 @@ paths:
       tags: [Secrets]
       operationId: updateSecret
       summary: Update, move, or annotate a secret
-      description: |
-        Admin or Super Admin. Creates a new version of its folder; a move
-        creates one in both the source and the destination folder. Versions
-        beyond the retention limit N are permanently deleted.
+      description: "Admin, or a Developer within their assigned scope. Services cannot write. Creates a\
+        \ new version of its folder; a move\ncreates one in both the source and the destination folder.\
+        \ Versions\nbeyond the retention limit N are permanently deleted.\n A move must keep both source\
+        \ and destination folders within the caller's scope. Update only policies the caller can manage;\
+        \ other services continue to follow their unchanged policy paths."
       requestBody:
         required: true
         content:
@@ -323,7 +266,9 @@ paths:
       tags: [Secrets]
       operationId: deleteSecret
       summary: Delete a secret
-      description: Admin or Super Admin. Creates a new version of its folder.
+      description: Admin, or a Developer within their assigned scope. Services cannot write. Creates a
+        new version of its folder. Update only policies the caller can manage; other policies retain their
+        paths.
       responses:
         '204':
           description: Secret deleted.
@@ -403,9 +348,12 @@ paths:
       tags: [Folders]
       operationId: listFolderVersions
       summary: List a folder's recent versions
-      description: |
-        Admin or Super Admin. Returns the current version and up to N previous
+      description: 'Admin, or a Developer within their assigned scope. Services cannot write. Returns the
+        current version and up to N previous
+
         versions, with what changed in each and without values.
+
+        '
       responses:
         '200':
           description: Versions, newest first.
@@ -432,9 +380,12 @@ paths:
       tags: [Folders]
       operationId: rollBackFolder
       summary: Roll a folder back to a previous version
-      description: |
-        Admin or Super Admin. Creates a new version with the selected
-        version's secrets; later versions are kept.
+      description: 'Admin, or a Developer within their assigned scope. Services cannot write. Creates a
+        new version with the selected
+
+        version''s secrets; later versions are kept.
+
+        '
       requestBody:
         required: true
         content:
@@ -471,7 +422,8 @@ paths:
       tags: [Folders]
       operationId: listFolderRetrievals
       summary: List each service's last retrieval
-      description: Admin or Super Admin. One record per service, separate from audit logs.
+      description: Admin, or a Developer within their assigned scope. Services cannot write. One record
+        per service, separate from audit logs.
       responses:
         '200':
           description: Last retrieval per service.
@@ -499,7 +451,8 @@ paths:
       tags: [Policies]
       operationId: listPolicies
       summary: List policies
-      description: Admin or Super Admin.
+      description: All members see every policy name and its service. Return paths as null when the policy
+        is outside the Developer's scope. Services cannot list policies.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -514,30 +467,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-    post:
-      tags: [Policies]
-      operationId: createPolicy
-      summary: Create a policy
-      description: Admin or Super Admin.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PolicyCreate'
-      responses:
-        '201':
-          description: Policy created.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Policy'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
   /v0/orgs/{orgId}/policies/{policyId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -546,7 +475,9 @@ paths:
       tags: [Policies]
       operationId: updatePolicy
       summary: Update a policy
-      description: Admin or Super Admin.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation. A policy belongs
+        to exactly one service; membership grants change only through the Admin scope endpoints.
       requestBody:
         required: true
         content:
@@ -568,21 +499,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Policies]
-      operationId: deletePolicy
-      summary: Delete a policy
-      description: Admin or Super Admin.
-      responses:
-        '204':
-          description: Policy deleted.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /v0/orgs/{orgId}/services:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -590,7 +506,8 @@ paths:
       tags: [Services]
       operationId: listServices
       summary: List services
-      description: Admin or Super Admin.
+      description: Admin, or a Developer listing only services whose complete policy is within their scope.
+        A policy directory exposes other service names without exposing policy paths.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -609,17 +526,15 @@ paths:
       tags: [Services]
       operationId: createService
       summary: Create a service
-      description: Admin or Super Admin.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation. Create the
+        service and its exactly one policy atomically. A policy cannot be created independently.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [name]
-              properties:
-                name:
-                  type: string
+              $ref: '#/components/schemas/ServiceCreate'
       responses:
         '201':
           description: Service created.
@@ -643,7 +558,10 @@ paths:
       tags: [Services]
       operationId: deleteService
       summary: Delete a service and revoke its tokens
-      description: Admin or Super Admin.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation. Delete its
+        policy, remove that policy from member scopes and permission sets, close related access requests,
+        and revoke all service tokens in the same transaction.
       responses:
         '204':
           description: Service deleted.
@@ -653,6 +571,39 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Services]
+      operationId: updateService
+      summary: Rename a service
+      description: Admin, or a Developer when every policy path before and after the change is within
+        their scope as it stood before the change. Never expand authority through this operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Rename a service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v0/orgs/{orgId}/services/{serviceId}/tokens:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -661,7 +612,9 @@ paths:
       tags: [Services]
       operationId: listServiceTokens
       summary: List a service's tokens
-      description: Admin or Super Admin. Token values are never returned.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation. Token values
+        are never returned.
       responses:
         '200':
           description: Tokens.
@@ -685,7 +638,9 @@ paths:
       tags: [Services]
       operationId: createServiceToken
       summary: Issue a service token
-      description: Admin or Super Admin. The token value is returned only once.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation. The token value
+        is returned only once.
       responses:
         '201':
           description: Token issued.
@@ -722,7 +677,8 @@ paths:
       tags: [Services]
       operationId: revokeServiceToken
       summary: Revoke a service token
-      description: Admin or Super Admin.
+      description: Admin, or a Developer when every policy path before and after the change is within their
+        scope as it stood before the change. Never expand authority through this operation.
       responses:
         '204':
           description: Token revoked.
@@ -740,10 +696,11 @@ paths:
       tags: [Reorganizations]
       operationId: proposeReorganization
       summary: Propose an AI reorganization
-      description: |
-        Admin or Super Admin. The AI agent proposes secret moves and policy
-        changes. Nothing changes until the proposal is applied. `accessDiff`
-        lists every user and service whose readable secrets would change.
+      description: Admin, or a Developer within their scope. The AI agent proposes moves and changes only
+        to policies the caller can manage. Do not send secret values to the LLM. Nothing changes until
+        the proposal is applied. accessDiff lists affected readable secret IDs only where the caller can
+        view them; it must not reveal hidden paths or other members' scopes. Other services continue to
+        follow their unchanged policy paths.
       requestBody:
         required: true
         content:
@@ -781,12 +738,11 @@ paths:
       tags: [Reorganizations]
       operationId: applyReorganization
       summary: Apply a proposed reorganization
-      description: |
-        Admin or Super Admin. Applies all changes in one transaction and
-        verifies the resulting access matches `accessDiff`. Each affected
-        folder gets one new version. If secrets or
-        policies changed since the proposal, or verification fails, nothing
-        is applied and the API returns `409`.
+      description: Recheck the caller's current scope before applying. Every source and destination folder
+        and every managed policy path before and after the change must be within that scope. Apply all
+        changes in one transaction and verify the authorized access diff. Each affected folder gets one
+        new version. Return 409 and apply nothing if secrets or policies changed after proposal, or verification
+        fails.
       responses:
         '200':
           description: Reorganization applied.
@@ -810,10 +766,10 @@ paths:
       tags: [Audit logs]
       operationId: listAuditLogs
       summary: List audit logs
-      description: |
-        Admin or Super Admin. Records change attempts, including denied and
-        failed ones; secret value retrievals are not audited. Records never
-        contain secret values.
+      description: Admin sees all org records. Developers see only records for paths within their scope
+        and policy records only if every recorded policy path is within that scope. Member, scope, permission-set
+        and Admin role records are Admin-only. Record change attempts, including denied and failed ones,
+        without secret values. Service retrievals update the latest folder retrieval record separately.
       parameters:
         - name: targetType
           in: query
@@ -855,6 +811,423 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /v0/orgs/{orgId}:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Orgs]
+      operationId: deleteOrg
+      summary: Delete an org
+      description: Admin only. Delete the org and its business data, memberships and service tokens.
+        Audit retention is independent of folder history; the audit retention and account-erasure procedure
+        remain to be finalized.
+      responses:
+        '204':
+          description: Delete an org
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v0/orgs/{orgId}/admin-transfer:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Members]
+      operationId: transferAdmin
+      summary: Transfer the Admin role
+      description: Admin only. Transfer to an existing signed-in member in one transaction and keep
+        exactly one Admin. The previous Admin becomes a Developer with scope over every path. Support
+        uses a verified recovery procedure if the Admin cannot be reached; that procedure is not a
+        public endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [memberId]
+              properties:
+                memberId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Transfer the Admin role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v0/orgs/{orgId}/me/notification-preferences:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Members]
+      operationId: getNotificationPreferences
+      summary: Get your notification preferences
+      description: Members read their own preferences in this org. On membership creation both email
+        options default to on for the Admin and off for Developers. Reminder lead time is a positive
+        number of days.
+      responses:
+        '200':
+          description: Get your notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Members]
+      operationId: updateNotificationPreferences
+      summary: Update your notification preferences
+      description: Members update only their own preferences. Email recipients must still have scope
+        over the affected secrets at send time. Exclude the actor from secret update emails. Expiration
+        reminders do not rotate, delete or invalidate secrets.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesUpdate'
+      responses:
+        '200':
+          description: Update your notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v0/orgs/{orgId}/members/{memberId}/scope:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Members]
+      operationId: getMemberScope
+      summary: Get a member scope
+      description: Admin or the member themselves. Other Developers cannot read this scope. Admin scope
+        always covers every path.
+      responses:
+        '200':
+          description: Get a member scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberScope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Members]
+      operationId: updateMemberScope
+      summary: Replace a Developer scope
+      description: Admin only. Replace the Developer's policy and permission-set assignments and full-path
+        marker atomically. All IDs must belong to this org. Revocation takes effect on the next request,
+        including cached reads. The Admin's own full scope cannot be reduced.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberScope'
+      responses:
+        '200':
+          description: Replace a Developer scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberScope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v0/orgs/{orgId}/permission-sets:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Policies]
+      operationId: listPermissionSets
+      summary: List permission sets
+      description: Admin only. Permission sets are reusable named groups of policies within this org.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List permission sets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionSetPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Policies]
+      operationId: createPermissionSet
+      summary: Create a permission set
+      description: Admin only. All referenced policies must belong to this org.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionSetWrite'
+      responses:
+        '201':
+          description: Create a permission set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionSet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v0/orgs/{orgId}/permission-sets/{permissionSetId}:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: permissionSetId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Policies]
+      operationId: updatePermissionSet
+      summary: Replace a permission set
+      description: Admin only. Update the name and policy IDs. The effective scope of assigned Developers
+        changes on the next request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionSetWrite'
+      responses:
+        '200':
+          description: Replace a permission set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionSet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Policies]
+      operationId: deletePermissionSet
+      summary: Delete a permission set
+      description: Admin only. Remove its member assignments. Independently assigned policies and permission
+        sets remain in effect.
+      responses:
+        '204':
+          description: Delete a permission set
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v0/orgs/{orgId}/access-requests:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Policies]
+      operationId: listAccessRequests
+      summary: List policy access requests
+      description: Admin sees all requests; Developers see only their own. Services cannot use this
+        endpoint.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List policy access requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequestPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Policies]
+      operationId: createAccessRequest
+      summary: Request access to a policy
+      description: A Developer requests an out-of-scope policy with an optional reason. Notify the
+        Admin without exposing hidden policy paths. Reject a duplicate pending request with 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [policyId]
+              properties:
+                policyId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+      responses:
+        '201':
+          description: Request access to a policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v0/orgs/{orgId}/access-requests/{requestId}:
+    parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Policies]
+      operationId: reviewAccessRequest
+      summary: Approve or decline an access request
+      description: Admin only. Approval adds the policy to the Developer's direct scope in the same
+        transaction. Decline changes no scope. Only a pending request can be reviewed; return 409 for
+        a resolved request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, declined]
+      responses:
+        '200':
+          description: Approve or decline an access request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 components:
   securitySchemes:
     bearerAuth:
@@ -924,7 +1297,7 @@ components:
   schemas:
     Role:
       type: string
-      enum: [super_admin, admin, user]
+      enum: [admin, developer]
     Me:
       type: object
       required: [id, email, memberships]
@@ -957,14 +1330,6 @@ components:
         createdAt:
           type: string
           format: date-time
-    OrgSettings:
-      type: object
-      required: [expirationReminderDays]
-      properties:
-        expirationReminderDays:
-          type: integer
-          minimum: 1
-          description: Days before a secret's `expiresAt` when Admins receive a reminder.
     Member:
       type: object
       required: [id, email, role, userId, createdAt]
@@ -1016,9 +1381,8 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: |
-            Expiration date. Admins are reminded `expirationReminderDays`
-            before it. Keysy does not rotate or invalidate the secret.
+          description: Optional reminder date. A member receives reminders according to their own preferences
+            and scope. Keysy does not rotate or invalidate the secret.
         folderVersion:
           type: integer
           minimum: 1
@@ -1158,12 +1522,14 @@ components:
           description: A member ID or a service ID.
     PathPattern:
       type: string
-      description: An exact secret path, or a prefix ending in `/*`.
+      description: An exact folder path, or a folder prefix ending in /*. Never a single secret path. The
+        whole folder is within scope or outside it.
       example: production/api/*
     Policy:
       type: object
-      required: [id, name, paths, assignees, createdAt, updatedAt]
-      description: Grants its assignees read access to matching secrets.
+      required: [id, serviceId, name, paths, createdAt, updatedAt]
+      description: Exactly one policy per service. Its paths grant runtime read access to that service
+        and contribute to assigned Developer scopes.
       properties:
         id:
           type: string
@@ -1174,16 +1540,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PathPattern'
-        assignees:
-          type: array
-          items:
-            $ref: '#/components/schemas/Assignee'
+          nullable: true
+          description: Null outside the Developer's scope. Otherwise folder path rules.
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+        serviceId:
+          type: string
+          format: uuid
     PolicyPage:
       type: object
       required: [items, nextCursor]
@@ -1195,21 +1562,6 @@ components:
         nextCursor:
           type: string
           nullable: true
-    PolicyCreate:
-      type: object
-      required: [name, paths, assignees]
-      properties:
-        name:
-          type: string
-        paths:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/PathPattern'
-        assignees:
-          type: array
-          items:
-            $ref: '#/components/schemas/Assignee'
     PolicyUpdate:
       type: object
       minProperties: 1
@@ -1221,13 +1573,9 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/PathPattern'
-        assignees:
-          type: array
-          items:
-            $ref: '#/components/schemas/Assignee'
     Service:
       type: object
-      required: [id, name, createdAt]
+      required: [id, name, policyId, createdAt]
       properties:
         id:
           type: string
@@ -1237,6 +1585,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        policyId:
+          type: string
+          format: uuid
     ServicePage:
       type: object
       required: [items, nextCursor]
@@ -1302,7 +1653,8 @@ components:
                   $ref: '#/components/schemas/PathPattern'
         accessDiff:
           type: array
-          description: Empty when every user and service keeps the same readable secrets.
+          description: Authorized access changes only. Do not expose other members' scopes or hidden policy
+            paths to Developers. Empty when no visible assignee changes readable secrets.
           items:
             type: object
             required: [assignee, gained, lost]
@@ -1326,7 +1678,7 @@ components:
           format: date-time
     AuditTargetType:
       type: string
-      enum: [secret, folder, policy, member, service]
+      enum: [secret, folder, policy, member, service, org, permission_set, access_request]
     AuditLog:
       type: object
       required: [id, actorId, action, targetType, targetId, outcome, occurredAt]
@@ -1379,6 +1731,146 @@ components:
               example: secret_path_conflict
             message:
               type: string
+    NotificationPreferences:
+      type: object
+      required: [expirationReminders, secretUpdateEmails, reminderDays]
+      properties:
+        expirationReminders:
+          type: boolean
+        secretUpdateEmails:
+          type: boolean
+        reminderDays:
+          type: integer
+          minimum: 1
+          description: Days before expiresAt. The initial lead time is not yet selected.
+    NotificationPreferencesUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        expirationReminders:
+          type: boolean
+        secretUpdateEmails:
+          type: boolean
+        reminderDays:
+          type: integer
+          minimum: 1
+          description: Days before expiresAt. The initial lead time is not yet selected.
+    MemberScope:
+      type: object
+      required: [allPaths, policyIds, permissionSetIds]
+      properties:
+        allPaths:
+          type: boolean
+          description: Full path scope, including the scope retained by the previous Admin. Only the
+            Admin can change this marker; it is not another role.
+        policyIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        permissionSetIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    ServiceCreate:
+      type: object
+      required: [name, policy]
+      properties:
+        name:
+          type: string
+        policy:
+          type: object
+          required: [name, paths]
+          properties:
+            name:
+              type: string
+            paths:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/PathPattern'
+    PermissionSet:
+      type: object
+      required: [id, name, policyIds]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        policyIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    PermissionSetWrite:
+      type: object
+      required: [name, policyIds]
+      properties:
+        name:
+          type: string
+        policyIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    PermissionSetPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionSet'
+        nextCursor:
+          type: string
+          nullable: true
+    AccessRequest:
+      type: object
+      required: [id, memberId, policyId, reason, status, createdAt, reviewedBy, reviewedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        policyId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, declined]
+        createdAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+          format: uuid
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+    AccessRequestPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessRequest'
+        nextCursor:
+          type: string
+          nullable: true
   responses:
     BadRequest:
       description: Invalid request.
@@ -1393,7 +1885,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Forbidden:
-      description: The caller's role does not allow this action.
+      description: The caller's role or path scope does not allow this action.
       content:
         application/json:
           schema:
