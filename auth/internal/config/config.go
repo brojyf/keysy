@@ -36,8 +36,12 @@ func Load() (Config, error) {
 	}
 	for name, value := range map[string]string{"AUTH_URL": c.AuthURL, "WEB_APP_URL": c.WebAppURL, "SUPABASE_URL": c.SupabaseURL} {
 		u, err := url.Parse(value)
-		if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (name != "WEB_APP_URL" && u.Path != "" && u.Path != "/") {
-			return c, fmt.Errorf("%s must be an HTTPS URL without credentials, query, or fragment; service URLs must not have a path", name)
+		if err != nil {
+			return c, fmt.Errorf("%s must be a valid URL", name)
+		}
+		localBrowser := name != "SUPABASE_URL" && u.Scheme == "http" && u.Hostname() == "localhost"
+		if (u.Scheme != "https" && !localBrowser) || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (name != "WEB_APP_URL" && u.Path != "" && u.Path != "/") {
+			return c, fmt.Errorf("%s requires HTTPS, except localhost browser URLs; credentials, query, and fragment are forbidden; service URLs must not have a path", name)
 		}
 	}
 	if c.Port == "" {

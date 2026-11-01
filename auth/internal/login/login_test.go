@@ -31,15 +31,27 @@ type loginFixture struct {
 	googleForm     url.Values
 	supabaseGrant  map[string]string
 	supabaseAgent  string
+	userStatus     int
+	userBody       string
+	userCalls      int
+	logoutCalls    int
+	logoutStatus   int
 }
 
 func newFixture(t *testing.T) *loginFixture {
+	t.Helper()
+	return newFixtureWithRedirectURL(t, "https://auth.keysy.test/v0/auth/callback")
+}
+
+func newFixtureWithRedirectURL(t *testing.T, redirectURL string) *loginFixture {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	f := &loginFixture{
 		googleStatus: 200, supabaseStatus: 200,
 		googleBody:   `{"access_token":"google-access","token_type":"Bearer","id_token":"google-id"}`,
 		supabaseBody: `{"access_token":"keysy-access","refresh_token":"keysy-refresh","token_type":"bearer","expires_in":3600}`,
+		userStatus:   200, userBody: `{"id":"user-id","email":"member@example.com","user_metadata":{"access_token":"private-metadata"}}`,
+		logoutStatus: http.StatusNoContent,
 	}
 	google := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.googleCalls++
@@ -56,6 +68,24 @@ func newFixture(t *testing.T) *loginFixture {
 	}))
 	t.Cleanup(google.Close)
 	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/logout" {
+			f.logoutCalls++
+			if r.Method != http.MethodPost || r.URL.Query().Get("scope") != "local" || r.Header.Get("Authorization") != "Bearer keysy-access" || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" {
+				t.Error("invalid server-side logout request")
+			}
+			w.WriteHeader(f.logoutStatus)
+			return
+		}
+		if r.URL.Path == "/auth/v1/user" {
+			f.userCalls++
+			if r.Method != http.MethodGet || r.Header.Get("Authorization") != "Bearer keysy-access" || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" {
+				t.Error("invalid server-side user verification request")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(f.userStatus)
+			io.WriteString(w, f.userBody)
+			return
+		}
 		f.supabaseCalls++
 		if r.Method != http.MethodPost || r.URL.Path != "/auth/v1/token" || r.URL.Query().Get("grant_type") != "id_token" {
 			t.Errorf("unexpected Supabase request: %s %s", r.Method, r.URL)
@@ -79,7 +109,7 @@ func newFixture(t *testing.T) *loginFixture {
 	f.handler, err = New(Options{
 		OAuth: oauth2.Config{
 			ClientID: "google-client", ClientSecret: "google-secret",
-			RedirectURL: "https://auth.keysy.test/v0/auth/callback",
+			RedirectURL: redirectURL,
 			Scopes:      []string{"openid", "email", "profile"},
 			Endpoint:    oauth2.Endpoint{AuthURL: "https://accounts.google.com/o/oauth2/v2/auth", TokenURL: google.URL, AuthStyle: oauth2.AuthStyleInParams},
 		},
@@ -172,11 +202,11 @@ func TestGoogleLoginSetsCookiesWithoutExposingTokens(t *testing.T) {
 		seen[c.Name] = true
 		switch c.Name {
 		case accessCookieName:
-			if c.Value != "keysy-access" || c.MaxAge != 3600 {
+			if openTestCookie(t, f.handler, c.Name, c.Value) != "keysy-access" || c.MaxAge != 3600 {
 				t.Errorf("invalid access cookie: %+v", c)
 			}
 		case refreshCookieName:
-			if c.Value != "keysy-refresh" {
+			if openTestCookie(t, f.handler, c.Name, c.Value) != "keysy-refresh" || c.MaxAge != 0 {
 				t.Errorf("invalid refresh cookie: %+v", c)
 			}
 		case oauthCookieName:
@@ -412,9 +442,9 @@ func TestHTTPInputValidation(t *testing.T) {
 	}
 }
 
-func TestOnlyTwoLoginRoutesAreRegistered(t *testing.T) {
+func TestUnsupportedAuthRoutesAreNotRegistered(t *testing.T) {
 	f := newFixture(t)
-	for _, path := range []string{"/v0/auth/token", "/v0/auth/refresh", "/v0/auth/logout", "/v0/auth/github"} {
+	for _, path := range []string{"/v0/auth/token", "/v0/auth/refresh", "/v0/auth/github"} {
 		w := httptest.NewRecorder()
 		f.router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
 		if w.Code != 404 {

@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,6 +43,7 @@ type Handler struct {
 	webAppURL   string
 	cipher      cipher.AEAD
 	httpClient  *http.Client
+	localHTTP   bool
 	now         func() time.Time
 }
 
@@ -63,8 +66,13 @@ func New(options Options) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	redirectURL, err := url.Parse(options.OAuth.RedirectURL)
+	if err != nil {
+		return nil, err
+	}
 	return &Handler{
-		oauth: options.OAuth, supabaseURL: options.SupabaseURL,
+		localHTTP: redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
+		oauth:     options.OAuth, supabaseURL: options.SupabaseURL,
 		supabaseKey: options.SupabaseKey, webAppURL: options.WebAppURL,
 		cipher: aead, httpClient: options.HTTPClient, now: time.Now,
 	}, nil
@@ -73,6 +81,8 @@ func New(options Options) (*Handler, error) {
 func (h *Handler) Register(router *gin.Engine) {
 	router.GET("/v0/auth/google", h.start)
 	router.GET("/v0/auth/callback", h.callback)
+	router.GET("/v0/auth/session", h.currentSession)
+	router.POST("/v0/auth/logout", h.logout)
 }
 
 func sensitiveResponse(c *gin.Context) {
@@ -96,7 +106,7 @@ func (h *Handler) start(c *gin.Context) {
 		return
 	}
 	sealed := h.cipher.Seal(nil, nil, plaintext, []byte(oauthCookieName))
-	http.SetCookie(c.Writer, newCookie(oauthCookieName, base64.RawURLEncoding.EncodeToString(sealed), int(transactionLifetime.Seconds())))
+	http.SetCookie(c.Writer, h.newCookie(oauthCookieName, base64.RawURLEncoding.EncodeToString(sealed), int(transactionLifetime.Seconds())))
 	nonce := sha256.Sum256([]byte(tx.Nonce))
 	location := h.oauth.AuthCodeURL(tx.State,
 		oauth2.S256ChallengeOption(tx.Verifier),
@@ -107,7 +117,7 @@ func (h *Handler) start(c *gin.Context) {
 
 func (h *Handler) callback(c *gin.Context) {
 	sensitiveResponse(c)
-	http.SetCookie(c.Writer, newCookie(oauthCookieName, "", -1))
+	http.SetCookie(c.Writer, h.newCookie(oauthCookieName, "", -1))
 	query, err := loginQuery(c.Request, true)
 	if err != nil {
 		respondError(c, 400, "INVALID_REQUEST")
@@ -146,8 +156,8 @@ func (h *Handler) callback(c *gin.Context) {
 		return
 	}
 	cookies := []*http.Cookie{
-		newCookie(accessCookieName, session.AccessToken, session.ExpiresIn),
-		newCookie(refreshCookieName, session.RefreshToken, 0),
+		h.newTokenCookie(accessCookieName, session.AccessToken, session.ExpiresIn),
+		h.newTokenCookie(refreshCookieName, session.RefreshToken, 0),
 	}
 	for _, cookie := range cookies {
 		if cookie.Valid() != nil || len(cookie.String()) > 4096 {
@@ -163,7 +173,7 @@ func (h *Handler) callback(c *gin.Context) {
 
 func (h *Handler) readTransaction(r *http.Request) (transaction, error) {
 	var tx transaction
-	cookies := r.CookiesNamed(oauthCookieName)
+	cookies := r.CookiesNamed(h.cookieName(oauthCookieName))
 	if len(cookies) != 1 {
 		return tx, errors.New("expected one OAuth transaction cookie")
 	}
@@ -189,8 +199,15 @@ func randomToken() string {
 	return rand.Text()
 }
 
-func newCookie(name, value string, maxAge int) *http.Cookie {
-	return &http.Cookie{Name: name, Value: value, Path: "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
+func (h *Handler) cookieName(name string) string {
+	if h.localHTTP {
+		return strings.TrimPrefix(name, "__Host-")
+	}
+	return name
+}
+
+func (h *Handler) newCookie(name, value string, maxAge int) *http.Cookie {
+	return &http.Cookie{Name: h.cookieName(name), Value: value, Path: "/", Secure: !h.localHTTP, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
 }
 
 func respondError(c *gin.Context, status int, code string) {

@@ -44,3 +44,19 @@ func TestLoadValidatesConfiguration(t *testing.T) {
 		})
 	}
 }
+
+func TestAllowsHTTPOnlyForLocalBrowserDevelopment(t *testing.T) {
+	for _, name := range []string{"AUTH_URL", "WEB_APP_URL", "SUPABASE_URL"} {
+		for _, address := range []string{"http://localhost:5173", "http://localhost.attacker.test:5173", "http://auth.keysy.test"} {
+			t.Run(name+"/"+address, func(t *testing.T) {
+				setEnvironment(t)
+				t.Setenv(name, address)
+				_, err := Load()
+				allowed := name != "SUPABASE_URL" && address == "http://localhost:5173"
+				if (err == nil) != allowed {
+					t.Fatalf("allowed = %v, error = %v", allowed, err)
+				}
+			})
+		}
+	}
+}

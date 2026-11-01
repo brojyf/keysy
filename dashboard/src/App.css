@@ -74,6 +74,7 @@
   color: var(--color-text);
   background: var(--color-surface);
   font: 500 14px/18px 'Geist Variable', sans-serif;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -88,11 +89,6 @@
 
 .auth-button img {
   flex-shrink: 0;
-}
-
-.logout-button {
-  width: 160px;
-  max-width: 100%;
 }
 
 .sign-in-terms {

@@ -2,6 +2,7 @@
 /supabase/.temp/
 node_modules/
 dist/
+/auth/.env.local
 
 # iCloud sync duplicates
 * 2
