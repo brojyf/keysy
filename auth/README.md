@@ -45,7 +45,8 @@ Supabase URLs must always use HTTPS.
 ## Configuration
 
 Use the variables listed in `.env.example`. Export them before running the
-service; it does not load environment files automatically.
+service directly; it does not load environment files automatically. For local
+development, Air loads the ignored `.env.local` file.
 
 `OAUTH_COOKIE_KEY` is a Base64-encoded, random 32-byte key used for all three
 cookies. All auth replicas must use the same key. Generate one with:
@@ -61,14 +62,46 @@ cookies must sign in again after this change.
 For local development, use `AUTH_URL=http://localhost:5173` and
 `WEB_APP_URL=http://localhost:5173/`. Register
 `http://localhost:5173/v0/auth/callback` in Google. Run the service on port 8080
-and the dashboard's Vite server on port 5173.
+and the dashboard's Next.js development server on port 5173.
 
 For production, route `/v0/auth` on the dashboard origin to this service and
 set `AUTH_URL` to that HTTPS origin. Host-only cookies do not cross subdomains.
 Register `{AUTH_URL}/v0/auth/callback` in Google and configure the same Google
 client in Supabase.
 
+## Development with Air
+
+Install [Air](https://github.com/air-verse/air) as a development tool, not an
+application dependency:
+
+```sh
+go install github.com/air-verse/air@v1.67.4
+export PATH="$(go env GOPATH)/bin:$PATH"
+```
+
+From `auth/`, create `.env.local` from `.env.example` if it does not exist,
+then set the local values. Do not overwrite an existing `.env.local` or generate
+a new cookie key on each restart.
+
+```sh
+air
+```
+
+Air reads `.air.toml` and `.env.local`. It rebuilds and restarts the service on
+port 8080 when Go source files, `go.mod`, `go.sum`, or `.env.local` change.
+Test-only Go files are excluded. Air does not overwrite variables exported before
+it starts. Build failures stop the old binary instead of serving stale code.
+Generated binaries and build errors stay in the ignored `tmp/` directory.
+Stop any existing service on port 8080 before starting Air.
+
+This is process reload, not in-process HMR. In-memory state is lost on restart.
+Cookies remain usable while `OAUTH_COOKIE_KEY` is unchanged. The dashboard's
+Next.js development server keeps its own Fast Refresh connection; no Air browser
+proxy is needed. Air is not used in production.
+
 ## Run and verify
+
+Run directly without the development watcher (export configuration first):
 
 ```sh
 go run .
