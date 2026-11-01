@@ -14,9 +14,7 @@
 ## Tech Stack
 
 - Use Bun and TypeScript 7 for web applications.
-- Use Go and Gin for backend services.
-- Use GORM for database access in backend services.
-- Use Air for automatic rebuilds and restarts during backend development.
+- Use Go with Gin for backend services, GORM for database access, and Air for automatic rebuilds and restarts during development.
 
 ## Git Workflow
 
