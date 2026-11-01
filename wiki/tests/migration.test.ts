@@ -213,7 +213,7 @@ for (const [route, title] of routes) {
 test('tech stack names the frontend, backend, data, messaging, email and DevOps choices', async () => {
   const html = await Bun.file(new URL('tech-stack.html', output)).text();
   for (const choice of [
-    'TypeScript', 'React', 'Go', 'Gin', 'GORM', 'Supabase', 'Dragonfly', 'Aiven', 'Kafka', 'PostgreSQL',
+    'TypeScript', 'Next.js', 'Go', 'Gin', 'GORM', 'Supabase', 'Dragonfly', 'Aiven', 'Kafka', 'PostgreSQL',
     'Cloudflare Queues', 'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io', 'Grafana k6',
   ]) expect(html).toContain(choice);
 });

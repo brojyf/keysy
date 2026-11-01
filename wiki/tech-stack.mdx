@@ -5,14 +5,11 @@ description: "Keysy's technology choices."
 
 ## Application
 
-Use Next.js with Bun and TypeScript 7 for frontend development. The existing
-`dashboard/` and `web/` applications have not yet migrated to Next.js.
-
 | Layer | Technology | Role |
 | --- | --- | --- |
-| Frontend | Next.js with TypeScript 7 on Bun | Required framework, language, runtime and toolchain for frontend applications |
-| Current web app | React with Vite | Existing single-page application in `dashboard/` |
-| Current landing page | Astro with React | Existing static marketing site in `web/` |
+| Frontend | TypeScript 7 on Bun | Language, runtime and toolchain for web applications |
+| Dashboard | Next.js | Web application in `dashboard/` |
+| Web | Next.js | Marketing site in `web/` |
 | Backend services | Go with Gin | HTTP services and event consumers |
 | Database access | GORM | ORM for PostgreSQL access from Go services |
 
