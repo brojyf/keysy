@@ -22,6 +22,14 @@ updates:
       prefix: chore
       include: scope
 
+  - package-ecosystem: gomod
+    directory: /auth
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
