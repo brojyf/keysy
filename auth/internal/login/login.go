@@ -81,8 +81,10 @@ func New(options Options) (*Handler, error) {
 func (h *Handler) Register(router *gin.Engine) {
 	router.GET("/v0/auth/google", h.start)
 	router.GET("/v0/auth/callback", h.callback)
-	router.GET("/v0/auth/session", h.currentSession)
-	router.POST("/v0/auth/logout", h.logout)
+	router.GET("/v0/auth/session", h.dashboardCORS(http.MethodGet), h.currentSession)
+	router.OPTIONS("/v0/auth/session", h.dashboardCORS(http.MethodGet))
+	router.POST("/v0/auth/logout", h.dashboardCORS(http.MethodPost), h.logout)
+	router.OPTIONS("/v0/auth/logout", h.dashboardCORS(http.MethodPost))
 }
 
 func sensitiveResponse(c *gin.Context) {

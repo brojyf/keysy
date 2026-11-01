@@ -145,6 +145,8 @@ jobs:
       - name: Lint
         run: bun run lint
       - name: Typecheck and build
+        env:
+          NEXT_PUBLIC_AUTH_URL: https://auth.keysy.net
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test

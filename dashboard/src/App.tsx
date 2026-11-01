@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 function App() {
+  const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
   const [user, setUser] = useState<{ id: string; email?: string } | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
@@ -11,8 +12,8 @@ function App() {
     const controller = new AbortController()
     async function checkSession() {
       try {
-        const response = await fetch('/v0/auth/session', {
-          credentials: 'same-origin',
+        const response = await fetch(new URL('/v0/auth/session', authURL).href, {
+          credentials: 'include',
           signal: controller.signal,
         })
         if (response.status === 401) {
@@ -34,13 +35,13 @@ function App() {
     }
     void checkSession()
     return () => controller.abort()
-  }, [])
+  }, [authURL])
 
   async function logout() {
     if (logoutStatus === 'pending') return
     setLogoutStatus('pending')
     try {
-      const response = await fetch('/v0/auth/logout', { method: 'POST', credentials: 'same-origin' })
+      const response = await fetch(new URL('/v0/auth/logout', authURL).href, { method: 'POST', credentials: 'include' })
       if (!response.ok) throw new Error('Logout failed')
       setUser(null)
       setSessionError(false)
@@ -77,7 +78,7 @@ function App() {
           <p>Use your Google account to continue.</p>
         </div>
         {sessionError && <p role="alert">Could not check your session. Reload the page to try again.</p>}
-        <a className="auth-button" href="/v0/auth/google">
+        <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>
           <img src="/sign-in/google-symbol.svg" width="18" height="18" alt="" />
           Continue with Google
         </a>

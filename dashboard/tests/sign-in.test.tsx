@@ -8,10 +8,12 @@ let browser: Window
 let root: Root
 let container: HTMLDivElement
 const originalFetch = globalThis.fetch
+const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
-  browser = new Window({ url: 'http://localhost:5173' })
+  process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
+  browser = new Window({ url: 'https://dashboard.keysy.net' })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
   Object.assign(globalThis, {
     window: browser,
@@ -27,6 +29,8 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
+  if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
+  else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
 })
 
@@ -34,21 +38,29 @@ async function renderApp() {
   await act(async () => root.render(<App />))
 }
 
-test('shows the sign-in design and links to the same-origin auth service', async () => {
+test('shows the sign-in design and links directly to the auth origin', async () => {
   await renderApp()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.textContent).toContain('Use your Google account to continue.')
   const login = container.querySelector<HTMLAnchorElement>('a.auth-button')
   expect(login?.textContent).toBe('Continue with Google')
-  expect(login?.getAttribute('href')).toBe('/v0/auth/google')
-  expect(login?.href).toBe('http://localhost:5173/v0/auth/google')
+  expect(login?.getAttribute('href')).toBe('https://auth.keysy.net/v0/auth/google')
+  expect(login?.href).toBe('https://auth.keysy.net/v0/auth/google')
   expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('width')).toBe('36')
   expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/sign-in/keysy-symbol.svg')
   expect(login?.querySelector('img')?.getAttribute('width')).toBe('18')
   expect(login?.querySelector('img')?.getAttribute('src')).toBe('/sign-in/google-symbol.svg')
   expect(container.querySelectorAll('[aria-disabled="true"]')).toHaveLength(5)
-  expect(sessionRequest.mock.calls[0]?.[0]).toBe('/v0/auth/session')
-  expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('same-origin')
+  expect(sessionRequest.mock.calls[0]?.[0]).toBe('https://auth.keysy.net/v0/auth/session')
+  expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
+})
+
+test('development calls the separate localhost auth port without a rewrite', async () => {
+  delete process.env.NEXT_PUBLIC_AUTH_URL
+  await renderApp()
+  expect(container.querySelector('a.auth-button')?.getAttribute('href')).toBe('http://localhost:8080/v0/auth/google')
+  expect(sessionRequest.mock.calls[0]?.[0]).toBe('http://localhost:8080/v0/auth/session')
+  expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
 })
 
 test('shows a signed-in state only after server verification', async () => {
@@ -70,8 +82,8 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   await act(async () => logout.click())
   expect(logout.disabled).toBe(true)
   expect(logout.textContent).toBe('Signing out...')
-  expect(sessionRequest.mock.calls[1]?.[0]).toBe('/v0/auth/logout')
-  expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'same-origin' })
+  expect(sessionRequest.mock.calls[1]?.[0]).toBe('https://auth.keysy.net/v0/auth/logout')
+  expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'include' })
   logout.click()
   expect(sessionRequest).toHaveBeenCalledTimes(2)
   expect(container.querySelector('h1')).toBeNull()
