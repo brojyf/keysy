@@ -41,6 +41,7 @@ type Handler struct {
 	supabaseURL string
 	supabaseKey string
 	webAppURL   string
+	webOrigin   string
 	cipher      cipher.AEAD
 	httpClient  *http.Client
 	localHTTP   bool
@@ -70,11 +71,20 @@ func New(options Options) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	webURL, err := url.Parse(options.WebAppURL)
+	if err != nil {
+		return nil, err
+	}
+	webHost := strings.ToLower(webURL.Host)
+	if (webURL.Scheme == "https" && webURL.Port() == "443") || (webURL.Scheme == "http" && webURL.Port() == "80") {
+		webHost = strings.TrimSuffix(webHost, ":"+webURL.Port())
+	}
 	return &Handler{
 		localHTTP: redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
 		oauth:     options.OAuth, supabaseURL: options.SupabaseURL,
 		supabaseKey: options.SupabaseKey, webAppURL: options.WebAppURL,
-		cipher: aead, httpClient: options.HTTPClient, now: time.Now,
+		webOrigin: webURL.Scheme + "://" + webHost,
+		cipher:    aead, httpClient: options.HTTPClient, now: time.Now,
 	}, nil
 }
 

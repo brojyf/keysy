@@ -2,7 +2,6 @@ package login
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +15,7 @@ func (h *Handler) dashboardCORS(method string) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		webURL, err := url.Parse(h.webAppURL)
-		if err != nil || len(origins) != 1 || origins[0] != webURL.Scheme+"://"+webURL.Host {
+		if len(origins) != 1 || origins[0] != h.webOrigin {
 			respondError(c, http.StatusForbidden, "INVALID_ORIGIN")
 			return
 		}

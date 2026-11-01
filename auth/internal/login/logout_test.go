@@ -10,8 +10,7 @@ import (
 func TestLogoutRevokesCurrentSessionAndClearsCookies(t *testing.T) {
 	for _, origin := range []string{"https://auth.keysy.test", "http://localhost:5173"} {
 		t.Run(origin, func(t *testing.T) {
-			f := newFixtureWithRedirectURL(t, origin+"/v0/auth/callback")
-			f.handler.webAppURL = origin + "/"
+			f := newFixtureWithBrowserURLs(t, origin+"/v0/auth/callback", origin+"/")
 			r := httptest.NewRequest(http.MethodPost, origin+"/v0/auth/logout", nil)
 			r.Header.Set("Origin", origin)
 			r.AddCookie(f.handler.newTokenCookie(accessCookieName, "keysy-access", 3600))

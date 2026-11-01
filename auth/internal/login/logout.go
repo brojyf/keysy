@@ -2,16 +2,14 @@ package login
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) logout(c *gin.Context) {
 	sensitiveResponse(c)
-	webURL, err := url.Parse(h.webAppURL)
 	origins := c.Request.Header.Values("Origin")
-	if err != nil || len(origins) != 1 || origins[0] != webURL.Scheme+"://"+webURL.Host {
+	if len(origins) != 1 || origins[0] != h.webOrigin {
 		respondError(c, http.StatusForbidden, "INVALID_ORIGIN")
 		return
 	}

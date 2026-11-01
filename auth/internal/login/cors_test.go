@@ -7,6 +7,61 @@ import (
 	"testing"
 )
 
+func TestDashboardRequestsUseCanonicalConfiguredOrigin(t *testing.T) {
+	for _, browser := range []struct{ webAppURL, origin string }{
+		{"https://dashboard.keysy.net:443/", "https://dashboard.keysy.net"},
+		{"https://DASHBOARD.keysy.net/", "https://dashboard.keysy.net"},
+		{"https://DASHBOARD.keysy.net:443/workspace", "https://dashboard.keysy.net"},
+		{"http://localhost:80/", "http://localhost"},
+		{"https://DASHBOARD.keysy.net:8443/", "https://dashboard.keysy.net:8443"},
+		{"http://localhost:5173/", "http://localhost:5173"},
+		{"https://[::1]:443/", "https://[::1]"},
+		{"https://[::1]:8443/", "https://[::1]:8443"},
+	} {
+		for _, route := range []struct {
+			method, path string
+			want         int
+		}{
+			{http.MethodGet, "/v0/auth/session", http.StatusOK},
+			{http.MethodPost, "/v0/auth/logout", http.StatusNoContent},
+		} {
+			for _, preflight := range []bool{false, true} {
+				name := browser.webAppURL + "/" + route.method
+				if preflight {
+					name += "/preflight"
+				}
+				t.Run(name, func(t *testing.T) {
+					f := newFixtureWithBrowserURLs(t, "https://auth.keysy.test/v0/auth/callback", browser.webAppURL)
+					method, want := route.method, route.want
+					if preflight {
+						method, want = http.MethodOptions, http.StatusNoContent
+					}
+					r := httptest.NewRequest(method, route.path, nil)
+					r.Header.Set("Origin", browser.origin)
+					if preflight {
+						r.Header.Set("Access-Control-Request-Method", route.method)
+					} else {
+						r.AddCookie(f.handler.newTokenCookie(accessCookieName, "keysy-access", 3600))
+					}
+					w := httptest.NewRecorder()
+					f.router.ServeHTTP(w, r)
+					if w.Code != want {
+						t.Fatalf("status = %d, want %d", w.Code, want)
+					}
+					assertDashboardCORS(t, w, browser.origin)
+					if preflight {
+						if f.userCalls != 0 || f.logoutCalls != 0 || w.Header().Get("Access-Control-Allow-Methods") != route.method {
+							t.Fatal("invalid preflight handling")
+						}
+					} else if f.userCalls+f.logoutCalls != 1 {
+						t.Fatal("request did not reach Supabase")
+					}
+				})
+			}
+		}
+	}
+}
+
 func TestDashboardRequestsAllowCredentialsOnSuccessAndErrors(t *testing.T) {
 	for _, item := range []struct {
 		name, method, path   string

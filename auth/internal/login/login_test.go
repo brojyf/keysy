@@ -45,6 +45,11 @@ func newFixture(t *testing.T) *loginFixture {
 
 func newFixtureWithRedirectURL(t *testing.T, redirectURL string) *loginFixture {
 	t.Helper()
+	return newFixtureWithBrowserURLs(t, redirectURL, "https://app.keysy.test/")
+}
+
+func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *loginFixture {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 	f := &loginFixture{
 		googleStatus: 200, supabaseStatus: 200,
@@ -114,7 +119,7 @@ func newFixtureWithRedirectURL(t *testing.T, redirectURL string) *loginFixture {
 			Endpoint:    oauth2.Endpoint{AuthURL: "https://accounts.google.com/o/oauth2/v2/auth", TokenURL: google.URL, AuthStyle: oauth2.AuthStyleInParams},
 		},
 		SupabaseURL: supabase.URL, SupabaseKey: "publishable-key",
-		WebAppURL: "https://app.keysy.test/", CookieKey: []byte(strings.Repeat("k", 32)),
+		WebAppURL: webAppURL, CookieKey: []byte(strings.Repeat("k", 32)),
 		HTTPClient: NewHTTPClient(),
 	})
 	if err != nil {

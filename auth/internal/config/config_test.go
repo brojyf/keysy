@@ -60,3 +60,15 @@ func TestAllowsHTTPOnlyForLocalBrowserDevelopment(t *testing.T) {
 		}
 	}
 }
+
+func TestAllowsNoncanonicalDashboardURLs(t *testing.T) {
+	for _, address := range []string{"https://dashboard.keysy.net:443/", "https://DASHBOARD.keysy.net/"} {
+		t.Run(address, func(t *testing.T) {
+			setEnvironment(t)
+			t.Setenv("WEB_APP_URL", address)
+			if _, err := Load(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

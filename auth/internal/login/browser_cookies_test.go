@@ -18,8 +18,7 @@ func TestBrowserCookieRoundTrip(t *testing.T) {
 		{"https://auth.keysy.net", "https://dashboard.keysy.net"},
 	} {
 		t.Run(origins.auth+"/"+origins.dashboard, func(t *testing.T) {
-			f := newFixtureWithRedirectURL(t, origins.auth+"/v0/auth/callback")
-			f.handler.webAppURL = origins.dashboard + "/"
+			f := newFixtureWithBrowserURLs(t, origins.auth+"/v0/auth/callback", origins.dashboard+"/")
 			base, err := url.Parse(origins.auth)
 			if err != nil {
 				t.Fatal(err)
