@@ -25,6 +25,7 @@ jobs:
     outputs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
       cli: ${{ steps.filter.outputs.cli }}
+      auth: ${{ steps.filter.outputs.auth }}
       web: ${{ steps.filter.outputs.web }}
       wiki: ${{ steps.filter.outputs.wiki }}
       bun: ${{ steps.filter.outputs.bun }}
@@ -42,6 +43,9 @@ jobs:
               - '.github/**'
             cli:
               - 'cli/**'
+              - '.github/**'
+            auth:
+              - 'auth/**'
               - '.github/**'
             web:
               - 'web/**'
@@ -199,6 +203,30 @@ jobs:
         run: bun run check
       - name: Build and test
         run: bun run test
+
+  auth:
+    name: Auth
+    needs: changes
+    if: needs.changes.outputs.auth == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: auth
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: auth/go.mod
+          cache-dependency-path: auth/go.sum
+      - name: Test
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build ./...
 
   cli:
     name: CLI
