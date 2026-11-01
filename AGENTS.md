@@ -13,7 +13,7 @@
 
 ## Tech Stack
 
-- Use Bun and TypeScript 7 for web applications.
+- Use Next.js with Bun and TypeScript 7 for frontend applications.
 - Use Go and Gin for backend services.
 - Use GORM for database access in backend services.
 
