@@ -2,24 +2,58 @@
 -- All fixtures and assertions are rolled back.
 begin;
 
-insert into auth.users (id) values
-  ('00000000-0000-0000-0000-000000000001'),
-  ('00000000-0000-0000-0000-000000000002');
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000001', null, null),
+  ('00000000-0000-0000-0000-000000000002', null, null),
+  ('00000000-0000-0000-0000-000000000011', 'ada@example.com', '{"full_name": "  Ada Lovelace  "}'),
+  ('00000000-0000-0000-0000-000000000012', 'long@example.com', jsonb_build_object('full_name', repeat('名', 40))),
+  ('00000000-0000-0000-0000-000000000013', 'grace@example.com', jsonb_build_object('full_name', E' \t ')),
+  ('00000000-0000-0000-0000-000000000014', repeat('g', 40) || '@example.com', '{}');
+
+do $$
+begin
+  assert (select display_name = 'Ada Lovelace' from public.profiles
+    where id = '00000000-0000-0000-0000-000000000011'),
+    'New users must get their trimmed Google name';
+  assert (select display_name = repeat('名', 32) from public.profiles
+    where id = '00000000-0000-0000-0000-000000000012'),
+    'Long Google names must be cut to 32 characters';
+  assert (select display_name = 'grace' from public.profiles
+    where id = '00000000-0000-0000-0000-000000000013'),
+    'Blank Google names must fall back to the email local part';
+  assert (select display_name = repeat('g', 32) from public.profiles
+    where id = '00000000-0000-0000-0000-000000000014'),
+    'Long email local parts must be cut to 32 characters';
+  assert (select display_name = 'User' from public.profiles
+    where id = '00000000-0000-0000-0000-000000000001'),
+    'Users without a name or email must get the default name';
+
+  update auth.users set raw_user_meta_data = '{"full_name": "Countess"}'
+    where id = '00000000-0000-0000-0000-000000000011';
+  assert (select display_name = 'Ada Lovelace' from public.profiles
+    where id = '00000000-0000-0000-0000-000000000011'),
+    'Later Google name changes must not overwrite the display name';
+
+  assert not has_function_privilege('anon', 'public.initial_display_name(text, text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.initial_display_name(text, text)', 'execute'),
+    'API roles must not call the display name helper';
+end;
+$$;
 
 do $$
 declare
   invalid_name text;
 begin
-  insert into public.profiles (id, display_name)
-    values ('00000000-0000-0000-0000-000000000001', 'A');
+  update public.profiles set display_name = 'A'
+    where id = '00000000-0000-0000-0000-000000000001';
   update public.profiles set display_name = repeat('名', 32)
     where id = '00000000-0000-0000-0000-000000000001';
   assert (select char_length(display_name) = 32 from public.profiles
     where id = '00000000-0000-0000-0000-000000000001'),
     'Names must accept 32 multibyte characters';
 
-  insert into public.profiles (id, display_name)
-    values ('00000000-0000-0000-0000-000000000002', repeat('名', 32));
+  update public.profiles set display_name = repeat('名', 32)
+    where id = '00000000-0000-0000-0000-000000000002';
 
   foreach invalid_name in array array['', '   ', E'\t\n'] loop
     begin
