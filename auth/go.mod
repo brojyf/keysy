@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/gin-gonic/gin v1.12.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 )
 
 require (
