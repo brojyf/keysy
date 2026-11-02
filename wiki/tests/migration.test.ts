@@ -45,9 +45,10 @@ test('the public origin is the confirmed documentation domain', () => {
 // API and Auth publish one page per operation and model beside their overviews.
 const referencePage = /^(api|auth)\/(operations|models)\//;
 
-async function operationCount(spec: 'api' | 'auth') {
+async function operationCount(spec: 'api' | 'auth', includeOptions = true) {
   const yaml = await Bun.file(new URL(`../../openapi/${spec}.yaml`, import.meta.url)).text();
-  return (yaml.match(/^    (get|put|post|delete|patch):$/gm) ?? []).length;
+  const operations = yaml.match(/^    (get|put|post|delete|patch|options):$/gm) ?? [];
+  return operations.filter((operation) => includeOptions || operation.trim() !== 'options:').length;
 }
 
 test('the sitemap uses absolute URLs on the documentation domain', async () => {
@@ -281,7 +282,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   const auth = await Bun.file(new URL('auth.html', output)).text();
   expect(auth).toContain('the source of truth for the authentication API.');
   expect(auth).toContain('This is the v0 draft, not a stable release.');
-  expect(auth).toContain('Exchange the sign-in code for a session');
+  expect(auth).toContain('Finish Google sign-in');
   expect(auth).toContain('The authentication API signs users in to Keysy with Google');
   // Each operation loads on its own page, so the overview stays small.
   for (const html of [api, auth]) expect(html.length).toBeLessThan(150_000);
@@ -292,15 +293,16 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
     ['api', 'API', ['Orgs', 'GET', '/v0/me'], 8],
-    ['auth', 'Auth', ['GET', '/v0/auth/google'], 0],
+    ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 2],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?</nav>`))![0];
     const labels = [...sidebar.matchAll(/>([^<>]+)</g)].map((match) => match[1]!.trim()).filter(Boolean);
     const endpointLinks = (await matches(sidebar, 'a[href]')).map(({ href }) => href!).filter((href) => href.startsWith(`/${route}/operations/`));
     expect(labels.slice(0, 3 + firstEntries.length)).toEqual(['General', 'Introduction', 'API endpoints', ...firstEntries]);
-    expect(labels.filter((entry) => entry.startsWith('/v0/'))).toHaveLength(await operationCount(route));
-    expect(endpointLinks).toHaveLength(await operationCount(route));
+    // Sourcey publishes OPTIONS pages but omits them from sidebar navigation.
+    expect(labels.filter((entry) => entry.startsWith('/v0/'))).toHaveLength(await operationCount(route, false));
+    expect(endpointLinks).toHaveLength(await operationCount(route, false));
     expect(await matches(sidebar, 'details.sourcey-nav-group')).toHaveLength(groupCount);
     expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);
     expect(html).not.toContain('>Base URL<');
