@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import '../index.css'
-import '../App.css'
-import '../dashboard/dashboard.css'
-import App from '../App'
+import './globals.css'
+import '../components/sign-in.css'
+import '../components/dashboard.css'
+import SessionGate from '../components/session-gate'
 
 export const metadata: Metadata = {
   title: 'Sign in — Keysy',
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <App>{children}</App>
+        <SessionGate>{children}</SessionGate>
       </body>
     </html>
   )

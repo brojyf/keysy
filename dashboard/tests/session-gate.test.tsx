@@ -2,7 +2,7 @@ import { Window } from 'happy-dom'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import App from '../src/App'
+import SessionGate from '../src/components/session-gate'
 
 let currentPathname = '/secrets'
 mock.module('next/navigation', () => ({ usePathname: () => currentPathname }))
@@ -38,8 +38,8 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderApp() {
-  await act(async () => root.render(<App><p>This is the Secrets page.</p></App>))
+async function renderSessionGate() {
+  await act(async () => root.render(<SessionGate><p>This is the Secrets page.</p></SessionGate>))
 }
 
 function signOutButton() {
@@ -47,7 +47,7 @@ function signOutButton() {
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
-  await renderApp()
+  await renderSessionGate()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.textContent).toContain('Use your Google account to continue.')
   const login = container.querySelector<HTMLAnchorElement>('a.auth-button')
@@ -55,9 +55,9 @@ test('shows the sign-in design and links directly to the auth origin', async () 
   expect(login?.getAttribute('href')).toBe('https://auth.keysy.net/v0/auth/google')
   expect(login?.href).toBe('https://auth.keysy.net/v0/auth/google')
   expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('width')).toBe('36')
-  expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/sign-in/keysy-symbol.svg')
+  expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
   expect(login?.querySelector('img')?.getAttribute('width')).toBe('18')
-  expect(login?.querySelector('img')?.getAttribute('src')).toBe('/sign-in/google-symbol.svg')
+  expect(login?.querySelector('img')?.getAttribute('src')).toBe('/google-symbol.svg')
   expect(container.querySelectorAll('[aria-disabled="true"]')).toHaveLength(5)
   expect(sessionRequest.mock.calls[0]?.[0]).toBe('https://auth.keysy.net/v0/auth/session')
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
@@ -65,7 +65,7 @@ test('shows the sign-in design and links directly to the auth origin', async () 
 
 test('development calls the separate localhost auth port without a rewrite', async () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
-  await renderApp()
+  await renderSessionGate()
   expect(container.querySelector('a.auth-button')?.getAttribute('href')).toBe('http://localhost:8080/v0/auth/google')
   expect(sessionRequest.mock.calls[0]?.[0]).toBe('http://localhost:8080/v0/auth/session')
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
@@ -73,7 +73,7 @@ test('development calls the separate localhost auth port without a rewrite', asy
 
 test('shows the rail and page content only after server verification', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id', email: 'member@example.com' } })))
-  await renderApp()
+  await renderSessionGate()
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
@@ -95,7 +95,7 @@ test('shows the rail and page content only after server verification', async () 
 
 test('logout waits for the server, prevents duplicate requests, and restores sign-in', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
-  await renderApp()
+  await renderSessionGate()
   let finishLogout!: (response: Response) => void
   sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
   const logout = signOutButton()!
@@ -114,9 +114,9 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
 
 test('shows the top bar with the mock organization and action buttons', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
-  await renderApp()
+  await renderSessionGate()
   const topbar = container.querySelector('header.topbar')
-  expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/sign-in/keysy-symbol.svg')
+  expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
   expect(topbar?.querySelector('button.topbar-org')?.textContent).toBe('platform')
   expect([...topbar!.querySelectorAll('button')].map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual([
     'platform',
@@ -131,13 +131,13 @@ test('shows the top bar with the mock organization and action buttons', async ()
 test('highlights the rail item for nested paths', async () => {
   currentPathname = '/audit-log/2026'
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
-  await renderApp()
+  await renderSessionGate()
   expect(container.querySelector('nav a[aria-current="page"]')?.getAttribute('aria-label')).toBe('Audit log')
 })
 
 test('failed logout keeps the signed-in state and allows retry', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
-  await renderApp()
+  await renderSessionGate()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => signOutButton()!.click())
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not sign out. Try again.')
@@ -150,10 +150,10 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
 
 test('a reload verifies the session again instead of trusting local state', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id', email: 'member@example.com' } })))
-  await renderApp()
+  await renderSessionGate()
   await act(() => root.unmount())
   root = createRoot(container)
-  await renderApp()
+  await renderSessionGate()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(sessionRequest).toHaveBeenCalledTimes(2)
 })
@@ -161,7 +161,7 @@ test('a reload verifies the session again instead of trusting local state', asyn
 test('an unavailable or invalid session response never fabricates a login', async () => {
   for (const response of [new Response(null, { status: 503 }), Response.json({ user: {} })]) {
     sessionRequest.mockImplementation(() => Promise.resolve(response))
-    await renderApp()
+    await renderSessionGate()
     expect(container.querySelector('[role="alert"]')?.textContent).toContain('Could not check your session.')
     expect(container.querySelector('nav')).toBeNull()
     await act(() => root.unmount())

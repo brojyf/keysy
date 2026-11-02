@@ -7,7 +7,7 @@
   padding: 80px 20px;
   background-image:
     radial-gradient(ellipse at center, transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
-    url('./assets/sign-in/dots.png');
+    url('./sign-in-dots.png');
   background-size: auto, 25px 25px;
 }
 

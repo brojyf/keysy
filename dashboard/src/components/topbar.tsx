@@ -25,7 +25,7 @@ export default function Topbar() {
   return (
     <header className="topbar">
       <span className="topbar-logo">
-        <img src="/sign-in/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
+        <img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
       </span>
       <button className="topbar-org" type="button">
         {organizationName}

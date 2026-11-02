@@ -21,7 +21,7 @@ Cookies stay on the auth hostname; they are not shared with the dashboard or par
 domain. The production dashboard and auth origins must use HTTPS on the same site.
 The browser does not call Supabase directly.
 Status, Privacy, and Terms remain non-interactive placeholders until their public URLs are available.
-The symbols in `public/sign-in/` and the dot tile in `src/assets/sign-in/` were exported from this Figma screen.
+The symbols in `public/` and the dot tile `src/components/sign-in-dots.png` were exported from this Figma screen.
 
 ## Development
 
