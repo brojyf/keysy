@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import Rail from './dashboard/Rail'
 
-function App() {
+function App({ children }: { children: ReactNode }) {
   const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
   const [user, setUser] = useState<{ id: string; email?: string } | null>()
   const [sessionError, setSessionError] = useState(false)
@@ -57,15 +58,10 @@ function App() {
 
   if (user) {
     return (
-      <main className="auth-page">
-        <section className="sign-in-card">
-          <p role="status">Signed in as {user.email || 'your account'}.</p>
-          <button className="auth-button" type="button" disabled={logoutStatus === 'pending'} onClick={logout}>
-            {logoutStatus === 'pending' ? 'Signing out...' : 'Logout'}
-          </button>
-          {logoutStatus === 'error' && <p role="alert">Could not sign out. Try again.</p>}
-        </section>
-      </main>
+      <div className="dashboard">
+        <Rail email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
+        <main className="dashboard-content">{children}</main>
+      </div>
     )
   }
 

@@ -4,6 +4,9 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import App from '../src/App'
 
+let currentPathname = '/secrets'
+mock.module('next/navigation', () => ({ usePathname: () => currentPathname }))
+
 let browser: Window
 let root: Root
 let container: HTMLDivElement
@@ -12,6 +15,7 @@ const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
+  currentPathname = '/secrets'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
@@ -35,7 +39,11 @@ afterEach(async () => {
 })
 
 async function renderApp() {
-  await act(async () => root.render(<App />))
+  await act(async () => root.render(<App><p>This is the Secrets page.</p></App>))
+}
+
+function signOutButton() {
+  return [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.startsWith('Sign')) ?? null
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
@@ -63,12 +71,24 @@ test('development calls the separate localhost auth port without a rewrite', asy
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
 })
 
-test('shows a signed-in state only after server verification', async () => {
+test('shows the rail and page content only after server verification', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id', email: 'member@example.com' } })))
   await renderApp()
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('Signed in as member@example.com.')
   expect(container.querySelector('a.auth-button')).toBeNull()
-  expect(container.querySelector('button')?.textContent).toBe('Logout')
+  const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
+  expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
+    ['Secrets', '/secrets'],
+    ['Policies', '/policies'],
+    ['Members', '/members'],
+    ['Audit log', '/audit-log'],
+    ['Settings', '/settings'],
+  ])
+  expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.getAttribute('aria-label'))).toEqual(['Secrets'])
+  expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
+  expect(container.querySelector('button[aria-label="Account menu"]')).not.toBeNull()
+  expect(container.querySelector('[popover]')?.textContent).toContain('member@example.com')
+  expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
+  expect(signOutButton()?.textContent).toBe('Sign out')
   expect(browser.localStorage.length).toBe(0)
   expect(browser.sessionStorage.length).toBe(0)
 })
@@ -78,7 +98,7 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   await renderApp()
   let finishLogout!: (response: Response) => void
   sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
-  const logout = container.querySelector<HTMLButtonElement>('button')!
+  const logout = signOutButton()!
   await act(async () => logout.click())
   expect(logout.disabled).toBe(true)
   expect(logout.textContent).toBe('Signing out...')
@@ -89,19 +109,26 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('h1')).toBeNull()
   await act(async () => finishLogout(new Response(null, { status: 204 })))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
-  expect(container.textContent).not.toContain('Signed in as')
+  expect(container.querySelector('nav')).toBeNull()
+})
+
+test('highlights the rail item for nested paths', async () => {
+  currentPathname = '/audit-log/2026'
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  await renderApp()
+  expect(container.querySelector('nav a[aria-current="page"]')?.getAttribute('aria-label')).toBe('Audit log')
 })
 
 test('failed logout keeps the signed-in state and allows retry', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
   await renderApp()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
-  await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
+  await act(async () => signOutButton()!.click())
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not sign out. Try again.')
-  expect(container.querySelector('button')?.disabled).toBe(false)
-  expect(container.textContent).toContain('Signed in as your account.')
+  expect(signOutButton()?.disabled).toBe(false)
+  expect(container.querySelector('nav')).not.toBeNull()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
-  await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
+  await act(async () => signOutButton()!.click())
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
 })
 
@@ -120,7 +147,7 @@ test('an unavailable or invalid session response never fabricates a login', asyn
     sessionRequest.mockImplementation(() => Promise.resolve(response))
     await renderApp()
     expect(container.querySelector('[role="alert"]')?.textContent).toContain('Could not check your session.')
-    expect(container.textContent).not.toContain('Signed in as')
+    expect(container.querySelector('nav')).toBeNull()
     await act(() => root.unmount())
     root = createRoot(container)
   }
