@@ -1,0 +1,244 @@
+/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions. */
+.dashboard-content:has(> .account) {
+  padding: 0;
+}
+
+.account {
+  display: flex;
+  min-height: calc(100svh - 52px);
+}
+
+.account-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  width: 240px;
+  padding: 13px 16px 12px 12px;
+  border-right: 1px solid var(--color-line);
+  background: var(--color-bg);
+}
+
+.account-sidebar-title {
+  padding: 6px 0;
+  color: var(--color-text);
+  font-size: var(--text-title-3);
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.account-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-nav-item {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--text-callout);
+  text-decoration: none;
+}
+
+.account-nav-item:hover,
+.account-nav-item[aria-current='page'] {
+  background: var(--color-soft);
+}
+
+.account-nav-item[aria-current='page'] {
+  font-weight: 500;
+}
+
+.account-nav-item:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: -2px;
+}
+
+.account-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  min-width: 0;
+  padding: 24px 32px 48px;
+}
+
+.account-page-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+}
+
+.account-page-slash {
+  color: var(--color-line);
+  font-size: var(--text-title-2);
+}
+
+.account-page-header h1 {
+  margin: 0;
+  font-size: var(--text-title-2);
+  font-weight: 600;
+}
+
+/* General */
+.account-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 720px;
+}
+
+.account-sections h2 {
+  margin: 0 0 8px;
+  font-size: var(--text-title-2);
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.account-sections .account-danger {
+  color: var(--color-danger);
+}
+
+.account-rows {
+  margin: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.account-rows > div {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 56px;
+  padding: 12px 0;
+}
+
+.account-rows dt {
+  flex-shrink: 0;
+  width: 240px;
+  font-size: var(--text-callout);
+  font-weight: 500;
+}
+
+.account-rows dd {
+  flex: 1;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.account-rows .account-control {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.account-control button:disabled {
+  cursor: default;
+}
+
+.account-switch {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-line);
+}
+
+.account-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.account-theme {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-soft);
+}
+
+.account-theme button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-muted);
+  background: none;
+}
+
+.account-theme button[aria-pressed='true'] {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.account-delete {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  background: var(--color-surface);
+  font: 500 var(--text-callout) / 17px var(--font-sans);
+}
+
+/* Organizations and Sessions */
+.account-table {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.account-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.account-table th,
+.account-table td {
+  padding: 11px 14px;
+  text-align: left;
+}
+
+.account-table th {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.account-table td {
+  line-height: 18px;
+}
+
+.account-table tbody tr + tr td {
+  border-top: 1px solid var(--color-line);
+}
+
+.account-sessions th:is(:first-child, :nth-child(3)) {
+  width: 200px;
+}
+
+.account-sessions th:last-child {
+  width: 120px;
+}
+
+.account-sessions .account-session-status {
+  color: var(--color-muted);
+  text-align: right;
+}

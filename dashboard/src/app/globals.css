@@ -12,6 +12,8 @@
   --color-on-button: #ffffff;
   --color-soft: #f0f1f3;
   --color-line: #e3e4e6;
+  /* Not in design/theme yet; from the Figma Danger zone. */
+  --color-danger: #b3261e;
 
   --font-sans: 'Geist Variable', sans-serif;
   --font-mono: 'Geist Mono Variable', monospace;
@@ -21,6 +23,8 @@
   --text-footnote: 12px;
   --text-callout: 13px;
   --text-body: 14px;
+  --text-title-3: 15px;
+  --text-title-2: 17px;
   --text-title: 22px;
 
   /* Concentric radii: outer = inner + padding (menu 14 = item 8 + padding 6). */

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import './globals.css'
 import '../components/sign-in.css'
 import '../components/dashboard.css'
+import '../components/account.css'
 import SessionGate from '../components/session-gate'
 
 export const metadata: Metadata = {
