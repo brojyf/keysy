@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { KeyRound, ScrollText, Settings, Shield, Users, type LucideIcon } from 'lucide-react'
+import { KeyRound, ScrollText, Server, Settings, Users, type LucideIcon } from 'lucide-react'
 import { Fragment } from 'react'
 import AccountMenu, { type AccountMenuProps } from './account-menu'
 
 const railGroups: { href: string; label: string; Icon: LucideIcon }[][] = [
   [{ href: '/secrets', label: 'Secrets', Icon: KeyRound }],
   [
-    { href: '/policies', label: 'Policies', Icon: Shield },
+    { href: '/services', label: 'Services', Icon: Server },
     { href: '/members', label: 'Members', Icon: Users },
     { href: '/audit-log', label: 'Audit log', Icon: ScrollText },
   ],

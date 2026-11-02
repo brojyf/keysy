@@ -78,7 +78,7 @@ test('shows the rail and page content only after server verification', async () 
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
     ['Secrets', '/secrets'],
-    ['Policies', '/policies'],
+    ['Services', '/services'],
     ['Members', '/members'],
     ['Audit log', '/audit-log'],
     ['Settings', '/settings'],
