@@ -197,7 +197,7 @@
 
 .account-menu {
   position: fixed;
-  inset: auto auto 10px 64px;
+  inset: auto auto 10px 56px;
   width: 220px;
   margin: 0;
   padding: 6px;
@@ -206,12 +206,101 @@
   color: var(--color-text);
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
+  transform-origin: left bottom;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    overlay 150ms allow-discrete,
+    display 150ms allow-discrete;
+}
+
+.account-menu:popover-open {
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.account-menu:not(:popover-open) {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+@starting-style {
+  .account-menu:popover-open {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu {
+    transform: none !important;
+  }
+}
+
+.account-menu-identity {
+  padding: 8px 10px;
+}
+
+.account-menu-name {
+  margin: 0;
+  color: var(--color-text);
+  font: 500 var(--text-body)/18px var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 4px 0;
+  border: 0;
+  background: var(--color-line);
+}
+
+.account-menu-email {
+  margin: 2px 0 0;
+}
+
+.account-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 4px 10px;
+  font: var(--text-body)/18px var(--font-sans);
+}
+
+.theme-switch {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-soft);
+}
+
+.theme-switch button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-muted);
+  background: none;
+  cursor: not-allowed;
+}
+
+.theme-switch button[aria-pressed='true'] {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px #00000014;
+}
+
+.account-menu-error {
+  margin: 0;
+  padding: 8px 10px;
 }
 
 .account-menu-email,
 .account-menu-error {
-  margin: 0;
-  padding: 8px 10px;
   color: var(--color-muted);
   font-size: var(--text-footnote);
   line-height: 16px;

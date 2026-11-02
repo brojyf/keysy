@@ -86,8 +86,15 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.getAttribute('aria-label'))).toEqual(['Secrets'])
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
   expect(container.querySelector('button[aria-label="Account menu"]')).not.toBeNull()
-  expect(container.querySelector('[popover]')?.textContent).toContain('member@example.com')
+  expect(container.querySelector('.account-menu-name')?.textContent).toBe('Jordan Lee')
+  expect(container.querySelector('.account-menu-email')?.textContent).toBe('member@example.com')
   expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
+  const themeButtons = [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Theme"] button')]
+  expect(themeButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('aria-pressed'), button.disabled])).toEqual([
+    ['System', 'true', true],
+    ['Light', 'false', true],
+    ['Dark', 'false', true],
+  ])
   expect(signOutButton()?.textContent).toBe('Sign out')
   expect(browser.localStorage.length).toBe(0)
   expect(browser.sessionStorage.length).toBe(0)
