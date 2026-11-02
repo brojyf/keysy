@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import Rail from './dashboard/Rail'
+import Topbar from './dashboard/Topbar'
 
 function App({ children }: { children: ReactNode }) {
   const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
@@ -59,8 +60,11 @@ function App({ children }: { children: ReactNode }) {
   if (user) {
     return (
       <div className="dashboard">
-        <Rail email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
-        <main className="dashboard-content">{children}</main>
+        <Topbar />
+        <div className="dashboard-body">
+          <Rail email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
+          <main className="dashboard-content">{children}</main>
+        </div>
       </div>
     )
   }

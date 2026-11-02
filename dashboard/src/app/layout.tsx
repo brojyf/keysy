@@ -7,7 +7,12 @@ import App from '../App'
 
 export const metadata: Metadata = {
   title: 'Sign in — Keysy',
-  icons: { icon: '/sign-in/keysy-symbol.svg' },
+  icons: {
+    icon: [
+      { url: '/favicon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
+      { url: '/favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
+    ],
+  },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -112,6 +112,22 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('nav')).toBeNull()
 })
 
+test('shows the top bar with the mock organization and action buttons', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  await renderApp()
+  const topbar = container.querySelector('header.topbar')
+  expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/sign-in/keysy-symbol.svg')
+  expect(topbar?.querySelector('button.topbar-org')?.textContent).toBe('platform')
+  expect([...topbar!.querySelectorAll('button')].map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual([
+    'platform',
+    'Search',
+    'Report issue',
+    'Support',
+    'Notifications',
+    'Open agent',
+  ])
+})
+
 test('highlights the rail item for nested paths', async () => {
   currentPathname = '/audit-log/2026'
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))

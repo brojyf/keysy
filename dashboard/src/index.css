@@ -1,17 +1,39 @@
 @import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 
+/* Token names follow the Tailwind v4 namespaces. Color names and values match design/theme (light). */
 :root {
-  --color-background: #fafafa;
+  --color-bg: #fafafa;
   --color-surface: #ffffff;
   --color-text: #1b1c1e;
   --color-muted: #64666b;
-  --color-line: #e3e4e6;
-  --color-selected: #f0f1f3;
+  --color-accent: #1d4ed8;
   --color-button: #2f5aba;
+  --color-on-button: #ffffff;
+  --color-soft: #f0f1f3;
+  --color-line: #e3e4e6;
 
-  font-family: 'Geist Variable', sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
+  --font-mono: 'Geist Mono Variable', monospace;
+
+  /* Apple macOS text-style steps; body stays at the Figma 14px. */
+  --text-caption: 11px;
+  --text-footnote: 12px;
+  --text-callout: 13px;
+  --text-body: 14px;
+  --text-title: 22px;
+
+  /* Concentric radii: outer = inner + padding (menu 14 = item 8 + padding 6). */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-md: 0 1px 2px #101b300a, 0 12px 32px -8px #101b300f;
+
+  font-family: var(--font-sans);
   color: var(--color-muted);
-  background: var(--color-background);
+  background: var(--color-bg);
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;

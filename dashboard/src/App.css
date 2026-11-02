@@ -6,7 +6,7 @@
   min-height: 100svh;
   padding: 80px 20px;
   background-image:
-    radial-gradient(ellipse at center, transparent, #fafafa99 55%, var(--color-background) 100%),
+    radial-gradient(ellipse at center, transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
     url('./assets/sign-in/dots.png');
   background-size: auto, 25px 25px;
 }
@@ -34,9 +34,9 @@
   width: min(400px, 100%);
   padding: 36px 32px 32px;
   border: 1px solid var(--color-line);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: 0 1px 2px #101b300a, 0 12px 32px -8px #101b300f;
+  box-shadow: var(--shadow-md);
   text-align: center;
 }
 
@@ -49,7 +49,7 @@
 .sign-in-copy h1 {
   margin: 0;
   color: var(--color-text);
-  font-size: 22px;
+  font-size: var(--text-title);
   font-weight: 600;
   line-height: 29px;
   letter-spacing: -0.015em;
@@ -57,7 +57,7 @@
 
 .sign-in-copy p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 18px;
 }
 
@@ -73,13 +73,13 @@
   border-radius: 10px;
   color: var(--color-text);
   background: var(--color-surface);
-  font: 500 14px/18px 'Geist Variable', sans-serif;
+  font: 500 var(--text-body)/18px var(--font-sans);
   text-decoration: none;
   cursor: pointer;
 }
 
 .auth-button:hover {
-  background: var(--color-background);
+  background: var(--color-bg);
 }
 
 .auth-button:focus-visible {
@@ -93,7 +93,7 @@
 
 .sign-in-terms {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--text-footnote);
   line-height: 16px;
 }
 
@@ -110,6 +110,6 @@
   justify-content: center;
   gap: 8px 20px;
   max-width: calc(100% - 40px);
-  font-size: 12.5px;
+  font-size: var(--text-footnote);
   line-height: 16px;
 }
