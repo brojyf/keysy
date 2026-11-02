@@ -15,5 +15,9 @@ export default function nextConfig(phase) {
       throw new Error('NEXT_PUBLIC_AUTH_URL requires an HTTPS origin, except HTTP localhost; credentials, paths, query, and fragment are forbidden')
     }
   }
-  return {}
+  return {
+    devIndicators: {
+      position: 'bottom-right',
+    },
+  }
 }

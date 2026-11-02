@@ -16,6 +16,11 @@ for (const phase of ['phase-development-server', 'phase-production-build', 'phas
   })
 }
 
+test('development indicator defaults to the bottom-right corner', () => {
+  delete process.env.NEXT_PUBLIC_AUTH_URL
+  assert.equal(nextConfig('phase-development-server').devIndicators?.position, 'bottom-right')
+})
+
 test('production builds require an explicit public auth URL', () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
   assert.throws(() => nextConfig('phase-production-build'), /NEXT_PUBLIC_AUTH_URL/)
