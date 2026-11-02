@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: 'Sign in — Keysy',
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
       { url: '/favicon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
       { url: '/favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
     ],
