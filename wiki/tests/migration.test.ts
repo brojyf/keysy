@@ -274,7 +274,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
   expect(api).toContain('This is the v0 draft, not a stable release.');
-  expect(api).toContain("The application API provides Keysy's app features");
+  expect(api).toContain("The implemented application API provides the signed-in user's profile.");
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
     expect(api).toContain(operation);
