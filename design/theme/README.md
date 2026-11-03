@@ -3,7 +3,7 @@
 Blue accents with white and light gray backgrounds in light mode, and black and
 dark gray backgrounds in dark mode.
 
-[Color values](palettes.js)
+[Color values](palettes.ts)
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |

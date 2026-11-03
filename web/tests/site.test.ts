@@ -7,7 +7,7 @@ const output = resolve(import.meta.dir, "../dist");
 const pages = new Map(
   ["/", "/policy/", "/terms/"].map((route) => {
     const html = readFileSync(resolve(output, `.${route}index.html`), "utf8");
-    const document = new Window().document;
+    const document = new Window().document as unknown as Document;
     document.write(html);
     return [route, { html, document }];
   }),
@@ -15,12 +15,12 @@ const pages = new Map(
 
 describe("built landing site", () => {
   test("loads first-screen images eagerly and defers later image decoding and requests", () => {
-    const { document } = pages.get("/");
-    for (const image of document.querySelectorAll(
+    const { document } = pages.get("/")!;
+    for (const image of document.querySelectorAll<HTMLImageElement>(
       ".site-header img, .hero img",
     ))
       expect(image.loading).toBe("eager");
-    for (const image of document.querySelectorAll(
+    for (const image of document.querySelectorAll<HTMLImageElement>(
       "main > section:not(.hero) img, footer img",
     )) {
       expect(image.loading).toBe("lazy");
@@ -31,8 +31,8 @@ describe("built landing site", () => {
   });
 
   test("announces coming soon once, in the hero badge", () => {
-    const { document } = pages.get("/");
-    expect(document.querySelector(".hero-badge").textContent).toContain(
+    const { document } = pages.get("/")!;
+    expect(document.querySelector<HTMLElement>(".hero-badge")!.textContent).toContain(
       "Coming soon",
     );
     expect(document.body.textContent.match(/Coming soon/g)).toHaveLength(1);
@@ -40,7 +40,7 @@ describe("built landing site", () => {
 
   test("links the Keysy mark as an SVG favicon on every page", () => {
     for (const [route, { document }] of pages) {
-      const icon = document.querySelector('link[rel="icon"]');
+      const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')!;
       expect(icon?.getAttribute("href"), route).toBe("/favicon.svg");
       expect(icon.getAttribute("type")).toBe("image/svg+xml");
     }
@@ -48,26 +48,26 @@ describe("built landing site", () => {
   });
 
   test("renders the coding-agent transcript above its command bar and status", () => {
-    const widget = pages.get("/").document.querySelector(".agent-preview");
+    const widget = pages.get("/")!.document.querySelector<HTMLElement>(".agent-preview")!;
     expect([...widget.children].map((child) => child.className)).toEqual([
       "agent-transcript",
       "agent-command",
       "agent-status",
     ]);
-    expect(widget.querySelector(".agent-transcript").textContent).toContain(
+    expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
       "Skill(keysy)",
     );
-    expect(widget.querySelector(".agent-transcript").textContent).toContain(
+    expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
       "Bash(keysy ls production/api)",
     );
-    expect(widget.querySelector(".agent-status").textContent).toBe(
+    expect(widget.querySelector<HTMLElement>(".agent-status")!.textContent).toBe(
       "▸▸ keysy skill on · policy agent-dev",
     );
   });
   test("renders the complete landing page and useful semantic navigation", () => {
-    const { document } = pages.get("/");
+    const { document } = pages.get("/")!;
     expect(document.querySelectorAll("h1")).toHaveLength(1);
-    expect(document.querySelectorAll("main > section")).toHaveLength(9);
+    expect(document.querySelectorAll<HTMLElement>("main > section")).toHaveLength(9);
     for (const title of [
       "One vault. Four ways in.",
       "Room to breathe.",
@@ -80,19 +80,19 @@ describe("built landing site", () => {
     ]) {
       expect(document.body.textContent).toContain(title);
     }
-    expect(document.querySelector(".skip-link").getAttribute("href")).toBe(
+    expect(document.querySelector<HTMLElement>(".skip-link")!.getAttribute("href")).toBe(
       "#main-content",
     );
   });
 
   test("all local links resolve to a generated page and an existing anchor", () => {
     for (const [route, { document }] of pages) {
-      for (const anchor of document.querySelectorAll("a[href]")) {
-        const href = anchor.getAttribute("href");
+      for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+        const href = anchor.getAttribute("href")!;
         expect(href).not.toBe("#");
         const url = new URL(href, `https://keysy.example${route}`);
         if (url.origin !== "https://keysy.example") continue;
-        const target = pages.get(url.pathname);
+        const target = pages.get(url.pathname)!;
         expect(target, `${route}: ${href}`).toBeDefined();
         if (url.hash)
           expect(
@@ -104,53 +104,53 @@ describe("built landing site", () => {
   });
 
   test("the footer product column lists the dashboard, CLI, and browser extension", () => {
-    const { document } = pages.get("/");
-    const product = [...document.querySelectorAll(".footer-links > div")].find(
-      (column) => column.querySelector("h3").textContent === "Product",
-    );
+    const { document } = pages.get("/")!;
+    const product = [...document.querySelectorAll<HTMLElement>(".footer-links > div")].find(
+      (column) => column.querySelector("h3")!.textContent === "Product",
+    )!;
     expect(
       [...product.children].slice(1).map((item) => item.textContent),
     ).toEqual(["Dashboard", "CLI", "Browser extension"]);
     expect(
       [...product.querySelectorAll("a")]
-        .find((a) => a.textContent === "CLI")
+        .find((a) => a.textContent === "CLI")!
         .getAttribute("href"),
     ).toBe("/#workflow");
   });
 
   test("the workflow terminal matches the hero terminal", () => {
-    const { document } = pages.get("/");
+    const { document } = pages.get("/")!;
     for (const [selector, folder, commands] of [
       [".hero-terminal", "api", 4],
       [".workflow-terminal", "acme", 3],
-    ]) {
-      const terminal = document.querySelector(selector);
-      const bar = terminal.querySelector(".terminal-bar");
-      expect(bar.querySelectorAll(".terminal-lights img")).toHaveLength(3);
+    ] as const) {
+      const terminal = document.querySelector(selector)!;
+      const bar = terminal.querySelector<HTMLElement>(".terminal-bar")!;
+      expect(bar.querySelectorAll<HTMLElement>(".terminal-lights img")).toHaveLength(3);
       // Like the Figma terminals: a macOS Terminal title with a folder icon.
-      expect(bar.querySelector(".terminal-title img")).not.toBeNull();
+      expect(bar.querySelector<HTMLElement>(".terminal-title img")).not.toBeNull();
       expect(bar.textContent).toBe(`${folder} — -zsh — 80×24`);
-      const lines = terminal.querySelector("pre").textContent.split("\n");
+      const lines = terminal.querySelector("pre")!.textContent!.split("\n");
       expect(lines.filter((line) => line.startsWith("$"))).toEqual([]);
       expect(lines.at(-1)).toBe(`alice@mbp ${folder} % ▍`);
       expect(
         lines.filter((line) => line.startsWith(`alice@mbp ${folder} % keysy `)),
       ).toHaveLength(commands);
-      expect(terminal.querySelector(".terminal-tab, .terminal-footer")).toBeNull();
-      expect(terminal.querySelector("pre em").textContent).toStartWith("✓");
-      expect(terminal.querySelector(".code-keyword, .code-string")).toBeNull();
+      expect(terminal.querySelector<HTMLElement>(".terminal-tab, .terminal-footer")).toBeNull();
+      expect(terminal.querySelector<HTMLElement>("pre em")!.textContent).toStartWith("✓");
+      expect(terminal.querySelector<HTMLElement>(".code-keyword, .code-string")).toBeNull();
     }
   });
 
   test("section headings open with the title, without a small label above it", () => {
-    expect(pages.get("/").document.querySelectorAll("main .eyebrow")).toHaveLength(0);
+    expect(pages.get("/")!.document.querySelectorAll<HTMLElement>("main .eyebrow")).toHaveLength(0);
   });
 
   test("availability visuals do not repeat what their card copy already says", () => {
     const visuals = pages
-      .get("/")
-      .document.querySelector("#availability")
-      .querySelectorAll(".feature-visual");
+      .get("/")!
+      .document.querySelector<HTMLElement>("#availability")!
+      .querySelectorAll<HTMLElement>(".feature-visual");
     const text = [...visuals].map((visual) => visual.textContent).join(" ");
     for (const repeated of [
       "Reads keep working when one instance fails",
@@ -161,27 +161,27 @@ describe("built landing site", () => {
   });
 
   test("unreleased destinations are disabled and do not link to invented URLs", () => {
-    const { document } = pages.get("/");
-    for (const item of document.querySelectorAll('[aria-disabled="true"]')) {
+    const { document } = pages.get("/")!;
+    for (const item of document.querySelectorAll<HTMLElement>('[aria-disabled="true"]')) {
       expect(item.textContent).not.toContain("Coming soon");
       expect(item.hasAttribute("href")).toBe(false);
     }
-    expect(document.querySelectorAll('a[href^="https:"]')).toHaveLength(1);
-    expect(document.querySelector('a[href^="https:"]').href).toBe(
+    expect(document.querySelectorAll<HTMLAnchorElement>('a[href^="https:"]')).toHaveLength(1);
+    expect(document.querySelector<HTMLAnchorElement>('a[href^="https:"]')!.href).toBe(
       "https://github.com/brojyf/keysy",
     );
   });
 
   test("legal routes are clear placeholders with noindex and working return links", () => {
     for (const route of ["/policy/", "/terms/"]) {
-      const { document } = pages.get(route);
-      expect(document.querySelector("main").textContent).toContain(
+      const { document } = pages.get(route)!;
+      expect(document.querySelector<HTMLElement>("main")!.textContent).toContain(
         "This page is a placeholder.",
       );
-      expect(document.querySelector('meta[name="robots"]').content).toBe(
+      expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')!.content).toBe(
         "noindex, nofollow",
       );
-      expect(document.querySelector(".back-link").getAttribute("href")).toBe(
+      expect(document.querySelector<HTMLElement>(".back-link")!.getAttribute("href")).toBe(
         "/",
       );
       expect(document.querySelectorAll("h1")).toHaveLength(1);
@@ -191,7 +191,7 @@ describe("built landing site", () => {
   test("every image and stylesheet exists locally and SVG proportions match Figma exports", () => {
     for (const { document, html } of pages.values()) {
       expect(html).not.toContain("www.figma.com/api/mcp/asset");
-      for (const node of document.querySelectorAll(
+      for (const node of document.querySelectorAll<HTMLElement>(
         'img[src], link[rel="stylesheet"][href], script[src]',
       )) {
         const path = resolve(
@@ -201,9 +201,9 @@ describe("built landing site", () => {
         expect(existsSync(path), path).toBe(true);
         expect(statSync(path).size).toBeGreaterThan(0);
         if (node.tagName !== "IMG" || !path.endsWith(".svg")) continue;
-        const svg = readFileSync(path, "utf8").match(/<svg\b[^>]*>/)[0];
-        const width = Number(svg.match(/width="([\d.]+)/)[1]);
-        const height = Number(svg.match(/height="([\d.]+)/)[1]);
+        const svg = readFileSync(path, "utf8").match(/<svg\b[^>]*>/)![0];
+        const width = Number(svg.match(/width="([\d.]+)/)![1]);
+        const height = Number(svg.match(/height="([\d.]+)/)![1]);
         expect(
           Number(node.getAttribute("width")) /
             Number(node.getAttribute("height")),

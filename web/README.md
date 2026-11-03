@@ -40,7 +40,7 @@ bun run preview  # Preview the production build
 - `public/design/`: local Figma SVG and dot-pattern exports, at their original proportions.
 - `src/vendor/reactbits/`: DotGrid copied from the design branch, with its license.
 - `tests/`: DOM interaction and generated-site checks; no browser automation.
-- `astro.config.mjs`: official React integration.
+- `astro.config.ts`: official React integration.
 - `tsconfig.json`: Astro strict mode with React JSX and TypeScript 7.
 
 The page is rendered as static HTML. The Hero preview and its dot background
