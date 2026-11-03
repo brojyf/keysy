@@ -35,7 +35,7 @@ export default function AccountMenu({ displayName, avatarUrl, email, signOutStat
         <span className="rail-avatar">
           {avatarUrl && failedAvatarURL !== avatarUrl
             ? <img src={avatarUrl} referrerPolicy="no-referrer" alt="" onError={() => setFailedAvatarURL(avatarUrl)} />
-            : <UserRound size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />}
+            : <UserRound size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />}
         </span>
       </button>
       <div id="account-menu" className="account-menu" popover="auto" ref={menu}>
