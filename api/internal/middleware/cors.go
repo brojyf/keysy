@@ -17,7 +17,6 @@ func CORS(webAppURL string) gin.HandlerFunc {
 	origin := u.Scheme + "://" + host
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
-		c.Writer.Header().Add("Vary", "Origin")
 		origins := c.Request.Header.Values("Origin")
 		if len(origins) == 0 && c.Request.Method != http.MethodOptions {
 			c.Next()
@@ -28,7 +27,6 @@ func CORS(webAppURL string) gin.HandlerFunc {
 			return
 		}
 		if c.Request.Method == http.MethodOptions {
-			c.Writer.Header().Add("Vary", "Access-Control-Request-Method, Access-Control-Request-Headers")
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
 			headers := c.Request.Header.Values("Access-Control-Request-Headers")
 			if len(methods) != 1 || (methods[0] != http.MethodGet && methods[0] != http.MethodPatch) || len(headers) > 1 || (len(headers) == 1 && !strings.EqualFold(strings.TrimSpace(headers[0]), "content-type")) {

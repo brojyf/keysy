@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +39,7 @@ func TestCORS(t *testing.T) {
 		}
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
-		if w.Code != item.status || !strings.Contains(w.Header().Get("Vary"), "Origin") || w.Header().Get("Cache-Control") != "no-store" {
+		if w.Code != item.status || len(w.Header().Values("Vary")) != 0 || w.Header().Get("Cache-Control") != "no-store" {
 			t.Fatalf("%+v: %d", item, w.Code)
 		}
 		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, PATCH" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {

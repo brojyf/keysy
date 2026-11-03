@@ -3,7 +3,6 @@ package login
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -89,7 +88,7 @@ func TestDashboardRequestsAllowCredentialsOnSuccessAndErrors(t *testing.T) {
 
 func assertDashboardCORS(t *testing.T, w *httptest.ResponseRecorder, origin string) {
 	t.Helper()
-	if w.Header().Get("Access-Control-Allow-Origin") != origin || w.Header().Get("Access-Control-Allow-Credentials") != "true" || !strings.Contains(strings.Join(w.Header().Values("Vary"), ","), "Origin") {
+	if w.Header().Get("Access-Control-Allow-Origin") != origin || w.Header().Get("Access-Control-Allow-Credentials") != "true" || len(w.Header().Values("Vary")) != 0 {
 		t.Fatalf("missing credentialed CORS headers: %v", w.Header())
 	}
 	if w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Referrer-Policy") != "no-referrer" {
@@ -113,7 +112,7 @@ func TestBrowserRoutesRejectUnapprovedOriginsBeforeCallingSupabase(t *testing.T)
 				r.AddCookie(f.handler.newTokenCookie(refreshCookieName, "keysy-refresh", 0))
 				w := httptest.NewRecorder()
 				f.router.ServeHTTP(w, r)
-				if w.Code != http.StatusForbidden || f.logoutCalls != 0 || f.refreshCalls != 0 || len(w.Result().Cookies()) != 0 || w.Header().Get("Access-Control-Allow-Origin") != "" || w.Header().Get("Access-Control-Allow-Credentials") != "" {
+				if w.Code != http.StatusForbidden || f.logoutCalls != 0 || f.refreshCalls != 0 || len(w.Result().Cookies()) != 0 || w.Header().Get("Access-Control-Allow-Origin") != "" || w.Header().Get("Access-Control-Allow-Credentials") != "" || len(w.Header().Values("Vary")) != 0 {
 					t.Fatalf("unapproved browser origin accepted: status=%d headers=%v", w.Code, w.Header())
 				}
 			})
@@ -159,7 +158,7 @@ func TestDashboardPreflightIsLimitedToSupportedRoutesAndMethods(t *testing.T) {
 				if w.Header().Get("Access-Control-Allow-Methods") != item.method || w.Header().Get("Access-Control-Allow-Headers") != "" || w.Body.Len() != 0 {
 					t.Fatalf("invalid preflight response: %v", w.Header())
 				}
-			} else if w.Header().Get("Access-Control-Allow-Origin") != "" {
+			} else if w.Header().Get("Access-Control-Allow-Origin") != "" || len(w.Header().Values("Vary")) != 0 {
 				t.Fatal("rejected preflight allows a browser origin")
 			}
 		})
