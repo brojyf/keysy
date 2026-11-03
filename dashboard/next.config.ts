@@ -1,4 +1,6 @@
-export default function nextConfig(phase) {
+import type { NextConfig } from 'next'
+
+export default function nextConfig(phase: string): NextConfig {
   const authURL = process.env.NEXT_PUBLIC_AUTH_URL
   if (!authURL && phase === 'phase-production-build') {
     throw new Error('NEXT_PUBLIC_AUTH_URL is required at build time')
