@@ -15,8 +15,6 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Selected or subtle background | `soft` | `#f0f1f3` | `#2a2a2a` |
 | Decorative divider | `line` | `#e3e4e6` | `#2e2e2e` |
 | Table header background | `table-header` | `#fcfcfc` | `#1e1e1e` |
-| Success text and icons | `success` | `#137333` | `#80c9a2` |
-| Success background | `success-bg` | `#e6f4ea` | `#1b3027` |
 | Destructive text, icons, and buttons | `danger` | `#b3261e` | `#ef9a9a` |
 | Destructive background | `danger-bg` | `#fce8e6` | `#392424` |
 

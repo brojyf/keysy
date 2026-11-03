@@ -39,7 +39,7 @@ test('color rows match all CSS colors in both modes', () => {
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(names, Object.keys(lightColors).sort());
   assert.deepEqual(names, Object.keys(darkColors).sort());
-  assert.equal(names.length, 15);
+  assert.equal(names.length, 13);
   for (const [, name, lightValue, darkValue] of rows) {
     assert.match(lightValue, /^#[0-9a-f]{6}$/);
     assert.match(darkValue, /^#[0-9a-f]{6}$/);
@@ -92,7 +92,7 @@ for (const [mode, values] of Object.entries({ light: lightColors, dark: darkColo
         assert.ok(ratio >= minimum, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected ${minimum}:1`);
       }
     }
-    for (const [foreground, background] of [['on-button', 'button'], ['danger', 'danger-bg'], ['success', 'success-bg']]) {
+    for (const [foreground, background] of [['on-button', 'button'], ['danger', 'danger-bg']]) {
       const ratio = contrast(values[foreground], values[background]);
       assert.ok(ratio >= 4.5, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected 4.5:1`);
     }
