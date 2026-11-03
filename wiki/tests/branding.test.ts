@@ -60,6 +60,19 @@ test('search section headings use bold primary text in both themes', () => {
   expect(stylesheet).toMatch(/#sourcey #search-dialog \.search-category\s*\{\s*font-weight: 700;\s*color: var\(--keysy-text\);/);
 });
 
+test('search and drawer menus use the design raised layer color in both themes', async () => {
+  const { palettes } = await import('../../design/theme/palettes.js');
+  const [palette] = palettes;
+  expect(stylesheet).toMatch(new RegExp(`:root\\s*\\{[^}]*--keysy-raised: ${palette.light.raised};`));
+  expect(stylesheet).toMatch(new RegExp(`\\.dark\\s*\\{[^}]*--keysy-raised: ${palette.dark.raised};`));
+  for (const selector of ['#sourcey .search-dialog-inner', '#sourcey .drawer-dropdown-list']) {
+    for (const mode of ['', '.dark ']) {
+      expect(stylesheet).toContain(`${mode}${selector}`);
+    }
+  }
+  expect(stylesheet).toMatch(/\.dark #sourcey \.search-dialog-inner,\s*\.dark #sourcey \.drawer-dropdown-list\s*\{\s*background: var\(--keysy-raised\);/);
+});
+
 test('the documentation logo is 48px tall and preserves its aspect ratio', () => {
   expect(stylesheet).toMatch(/#sourcey \.sourcey-logo img\s*\{\s*height: 3rem;\s*width: auto;/);
 });

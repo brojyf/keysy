@@ -38,7 +38,7 @@ test('the single palette defines complete light and dark roles', () => {
   for (const id of ['graphite', 'evergreen', 'inkiris', 'orchid', 'cocoaice', 'terminal', 'slate', 'ember', 'cobalt', 'citron', 'jade', 'sand', 'clay', 'vermilion', 'sulfur', 'oxblood', 'olive', 'petrol', 'ochre', 'pinechalk', 'aubergineceladon']) {
     assert.ok(!palettes.some(palette => palette.id === id));
   }
-  const roles = ['bg', 'surface', 'text', 'muted', 'accent', 'button', 'on-button', 'soft', 'line'];
+  const roles = ['bg', 'surface', 'raised', 'text', 'muted', 'accent', 'button', 'on-button', 'soft', 'line'];
   for (const palette of palettes) {
     for (const role of roles) {
       assert.match(palette.light[role], /^#[0-9a-f]{6}$/);
@@ -51,7 +51,7 @@ test('the single palette defines complete light and dark roles', () => {
 
 test('every palette keeps page, panel, selection, and divider colors close to neutral', () => {
   for (const palette of palettes) for (const mode of ['light', 'dark']) {
-    for (const role of ['bg', 'surface', 'soft', 'line']) {
+    for (const role of ['bg', 'surface', 'raised', 'soft', 'line']) {
       const channels = palette[mode][role].slice(1).match(/../g).map(channel => parseInt(channel, 16));
       assert.ok(Math.max(...channels) - Math.min(...channels) <= 8, `${palette.id} ${mode} ${role} is too colorful`);
       if (role === 'line') continue;
@@ -63,7 +63,7 @@ test('every palette keeps page, panel, selection, and divider colors close to ne
 
 for (const palette of palettes) {
   test(`${palette.id} dark: all structural surfaces use achromatic black or gray`, () => {
-    for (const role of ['bg', 'surface', 'soft', 'line']) {
+    for (const role of ['bg', 'surface', 'raised', 'soft', 'line']) {
       const [red, green, blue] = palette.dark[role].slice(1).match(/../g);
       assert.ok(red === green && green === blue, `${role}: ${palette.dark[role]} must have equal RGB channels`);
     }
@@ -75,9 +75,9 @@ for (const palette of palettes) {
     test(`${palette.id} ${mode}: text, selected states, and controls meet contrast targets`, () => {
       const colors = palette[mode];
       for (const [foreground, background] of [
-        ['text', 'bg'], ['text', 'surface'], ['text', 'soft'],
-        ['muted', 'bg'], ['muted', 'surface'], ['muted', 'soft'],
-        ['accent', 'bg'], ['accent', 'surface'], ['accent', 'soft'],
+        ['text', 'bg'], ['text', 'surface'], ['text', 'raised'], ['text', 'soft'],
+        ['muted', 'bg'], ['muted', 'surface'], ['muted', 'raised'], ['muted', 'soft'],
+        ['accent', 'bg'], ['accent', 'surface'], ['accent', 'raised'], ['accent', 'soft'],
         ['on-button', 'button'],
       ]) {
         const ratio = contrast(colors[foreground], colors[background]);
@@ -89,4 +89,14 @@ for (const palette of palettes) {
       }
     });
   }
+}
+
+for (const palette of palettes) {
+  test(`${palette.id}: raised layers stand above panels, and selected items stay visible on them`, () => {
+    const { light, dark } = palette;
+    assert.ok(luminance(light.raised) >= luminance(light.surface), 'light raised must not be darker than surface');
+    assert.ok(luminance(dark.bg) < luminance(dark.surface), 'dark surface must be lighter than bg');
+    assert.ok(luminance(dark.surface) < luminance(dark.raised), 'dark raised must be lighter than surface');
+    assert.ok(luminance(dark.raised) < luminance(dark.soft), 'dark soft must be lighter than raised');
+  });
 }

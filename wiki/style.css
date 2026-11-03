@@ -16,6 +16,7 @@
   --keysy-text: #1b1c1e;
   --keysy-accent: #1d4ed8;
   --keysy-soft: #f0f1f3;
+  --keysy-raised: #ffffff;
   /* Critically damped spring (damping 1.0, response 0.4 s), sampled until it settles. */
   --keysy-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
     0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
@@ -29,6 +30,7 @@
   --keysy-text: #ededee;
   --keysy-accent: #7aa2ff;
   --keysy-soft: #2a2a2a;
+  --keysy-raised: #222222;
   --color-gray-200: 237 237 238;
 }
 
@@ -116,6 +118,16 @@
 .dark #sourcey .search-result-method.method-patch {
   background: color-mix(in oklab, var(--color-orange-400) 20%, transparent);
   color: var(--color-orange-300);
+}
+
+/* Menus and dialogs use the raised layer from design/theme. The open drawer trigger joins its list. */
+#sourcey .search-dialog-inner,
+#sourcey .drawer-dropdown-list,
+#sourcey .drawer-dropdown-trigger[aria-expanded='true'],
+.dark #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
+.dark #sourcey .search-dialog-inner,
+.dark #sourcey .drawer-dropdown-list {
+  background: var(--keysy-raised);
 }
 
 #sourcey .nav-group-label {
