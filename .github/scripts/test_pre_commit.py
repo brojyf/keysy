@@ -85,13 +85,13 @@ class PreCommitTests(unittest.TestCase):
         path.write_text("Trailing spaces.  \n")
         self.commit()
 
-    def test_missing_gitleaks_blocks_commit_with_install_hint(self):
+    def test_missing_gitleaks_warns_and_allows_commit(self):
         self.stage("Clean content.\n")
         tools = self.repository / "tools"
         tools.mkdir()
         (tools / "git").symlink_to(shutil.which("git"))
-        output = self.commit(expected_exit=1, env={**self.environment, "PATH": str(tools)})
-        self.assertIn("brew install gitleaks", output)
+        output = self.commit(env={**self.environment, "PATH": str(tools)})
+        self.assertIn("Gitleaks not found", output)
 
     def test_commit_from_subdirectory_scans_unusual_filename(self):
         self.stage(f"token={self.secret}\n", filename="credentials with spaces.txt")
