@@ -6,7 +6,6 @@
 - Use minimal code and change only what the task requires; avoid premature abstractions, unrequested features, unused configuration, and unrelated refactoring or formatting. Abstract only when code is reused. Clean up only what you introduced. Suggest simpler alternatives.
 - Do not add unnecessary or redundant UI elements. Every element must serve a clear, distinct purpose.
 - When designing, reference the design tokens in `design/tokens`.
-- Never delete code you do not understand.
 - Separate responsibilities, use clear domain-specific names and appropriate directories, and split large files or functions when needed.
 - Define success criteria first and a verification check for each plan step; support correctness claims with tests, logs, or results.
 - For bugs, write a failing test before fixing. Verify new features with tests as you go.
