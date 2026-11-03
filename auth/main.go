@@ -1,16 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/brojyf/keysy/auth/internal/config"
 	"github.com/brojyf/keysy/auth/internal/login"
 	"github.com/brojyf/keysy/auth/internal/middleware"
+	"github.com/brojyf/keysy/auth/internal/telemetry"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +25,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	stopTelemetry, err := telemetry.Start(ctx, "keysy-auth")
+	if err != nil {
+		log.Fatal("telemetry initialization failed")
+	}
+	// Log route templates only: callback URLs carry short-lived authorization codes.
+	requestLogger := slog.New(slog.NewMultiHandler(slog.NewJSONHandler(os.Stdout, nil), otelslog.NewHandler("github.com/brojyf/keysy/auth")))
+	slog.SetDefault(requestLogger)
 	handler, err := login.New(login.Options{
 		OAuth: oauth2.Config{
 			ClientID: c.GoogleClientID, ClientSecret: c.GoogleClientSecret,
@@ -35,10 +50,8 @@ func main() {
 		log.Fatal(err)
 	}
 	gin.SetMode(gin.ReleaseMode)
-	// Log route templates only: callback URLs carry short-lived authorization codes.
-	requestLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	router := gin.New()
-	router.Use(middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger))
+	router.Use(middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()), middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger))
 	router.HandleMethodNotAllowed = true
 	if err := router.SetTrustedProxies(nil); err != nil {
 		log.Fatal(err)
@@ -49,5 +62,14 @@ func main() {
 		ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second,
 		MaxHeaderBytes: 16 << 10,
 	}
-	log.Fatal(server.ListenAndServe())
+	go func() {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	<-ctx.Done()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = server.Shutdown(shutdownCtx)
+	_ = stopTelemetry(shutdownCtx)
 }

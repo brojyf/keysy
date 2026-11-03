@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/time/rate"
 )
 
@@ -27,7 +28,7 @@ func newKeys(ctx context.Context, url string, unknownKIDInterval time.Duration) 
 	keys := Keys{fetched: &atomic.Bool{}}
 	var err error
 	keys.Keyfunc, err = keyfunc.NewDefaultOverrideCtx(ctx, []string{url}, keyfunc.Override{
-		Client:            &http.Client{Transport: fetchTracker{keys.fetched}},
+		Client:            &http.Client{Transport: otelhttp.NewTransport(fetchTracker{keys.fetched})},
 		RefreshUnknownKID: rate.NewLimiter(rate.Every(unknownKIDInterval), 1),
 		RateLimitWaitMax:  3 * time.Second,
 		RefreshErrorHandlerFunc: func(u string) func(context.Context, error) {

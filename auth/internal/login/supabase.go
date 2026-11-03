@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"io"
 	"net"
 	"net/http"
@@ -22,7 +23,7 @@ func NewHTTPClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.DialContext = (&net.Dialer{Timeout: 5 * time.Second}).DialContext
 	return &http.Client{
-		Transport: transport, Timeout: 10 * time.Second,
+		Transport: otelhttp.NewTransport(transport), Timeout: 10 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 }

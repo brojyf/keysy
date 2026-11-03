@@ -35,8 +35,11 @@ services.
 ## Architecture
 
 - `main.go` wires configuration, the Google OAuth client, and the Gin router.
-  It uses recovery, generated request IDs, and JSON request logs with route
-  templates only, because callback URLs carry authorization codes. It trusts no proxies and sets strict server timeouts.
+  It uses telemetry, recovery, generated request IDs, and JSON request logs with route
+  templates only, because callback URLs carry authorization codes. When
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set, spans, metrics, and logs go to `../otel`;
+  spans carry the same fields as the request log. No propagator is set, so
+  Supabase and Google never receive trace headers. It trusts no proxies and sets strict server timeouts.
 - `internal/config` reads environment variables and rejects unsafe values at
   startup. Browser URLs (`AUTH_URL`, `WEB_APP_URL`) must be HTTPS, except
   `http://localhost`. `SUPABASE_URL` must always be HTTPS.

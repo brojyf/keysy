@@ -6,6 +6,7 @@ dist/
 /auth/tmp/
 /api/.env.local
 /api/tmp/
+/otel/.env.local
 
 # iCloud sync duplicates
 * 2

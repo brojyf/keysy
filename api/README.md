@@ -40,9 +40,15 @@ go test -race -cover ./...
 go build ./...
 ```
 
-Middleware order: recovery → requestid → log → timeout → CORS → session → handler.
+Middleware order: telemetry → recovery → requestid → log → timeout → CORS → session → handler.
 Request IDs are always new UUIDs. JSON logs go to stdout and contain only
 request_id, user_id, method, route template, status, and duration_ms. The fixed
 10-second timeout cancels the request context; it does not interrupt handlers or
 replace an already written response. Database queries use that context.
+When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the service exports traces, metrics,
+and logs over OTLP/HTTP to the collector in `../otel`. Without it, nothing is
+exported. Server spans and the `http.server.request.duration` histogram carry
+only the method, route template, status, and request ID. JWKS fetches and
+database queries (without query variables) are child spans. Incoming trace
+headers are ignored and outgoing requests carry none. Logs keep going to stdout.
 Tests use local JWKS servers and fake profile lookups, with no live services.
