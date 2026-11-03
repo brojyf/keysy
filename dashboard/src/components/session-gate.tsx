@@ -75,7 +75,6 @@ function SessionGate({ children }: { children: ReactNode }) {
         <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
         <div className="sign-in-copy">
           <h1 id="sign-in-title">Sign in to Keysy</h1>
-          <p>Use your Google account to continue.</p>
         </div>
         {sessionError && <p role="alert">Could not check your session. Reload the page to try again.</p>}
         <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>

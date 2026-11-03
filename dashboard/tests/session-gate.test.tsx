@@ -49,7 +49,7 @@ function signOutButton() {
 test('shows the sign-in design and links directly to the auth origin', async () => {
   await renderSessionGate()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
-  expect(container.textContent).toContain('Use your Google account to continue.')
+  expect(container.textContent).not.toContain('Use your Google account to continue.')
   const login = container.querySelector<HTMLAnchorElement>('a.auth-button')
   expect(login?.textContent).toBe('Continue with Google')
   expect(login?.getAttribute('href')).toBe('https://auth.keysy.net/v0/auth/google')
