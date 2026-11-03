@@ -3,7 +3,7 @@ import { defineConfig, markdown, openapi } from 'sourcey';
 import { architectureDiagram } from './components/architecture-diagram';
 
 // Lists each operation by its path, in spec order, from the `paths` block's fixed indentation.
-// Specs with several tags get one collapsed group per tag.
+// Specs with several tags get one collapsed group per tag. OPTIONS preflights are left out.
 function endpointNavigation(specPath: string) {
   const spec = readFileSync(new URL(specPath, import.meta.url), 'utf8');
   const tagGroups = new Map<string, { group: string; collapsed: boolean; pages: { operation: string; label: string }[] }>();
@@ -11,10 +11,10 @@ function endpointNavigation(specPath: string) {
   let operation = '';
   for (const line of spec.slice(spec.indexOf('\npaths:'), spec.indexOf('\ncomponents:')).split('\n')) {
     path = line.match(/^  (\/\S+):$/)?.[1] ?? path;
-    const method = line.match(/^    (get|put|post|delete|patch):$/)?.[1];
-    if (method) operation = `${method.toUpperCase()} ${path}`;
+    const method = line.match(/^    (get|put|post|delete|patch|options):$/)?.[1];
+    if (method) operation = method === 'options' ? '' : `${method.toUpperCase()} ${path}`;
     const tag = line.match(/^      tags: \[(.+)\]$/)?.[1];
-    if (!tag) continue;
+    if (!tag || !operation) continue;
     if (!tagGroups.has(tag)) tagGroups.set(tag, { group: tag, collapsed: true, pages: [] });
     tagGroups.get(tag)!.pages.push({ operation, label: path });
   }
