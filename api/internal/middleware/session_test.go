@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
+	"github.com/brojyf/keysy/api/internal/jwks"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -123,7 +125,7 @@ func TestSessionJWKS(t *testing.T) {
 					value = "invalid"
 				}
 				r := gin.New()
-				r.Use(Session(cookieKey, local, server.URL+"/auth/v1", keys.KeyfuncCtx))
+				r.Use(Session(cookieKey, local, server.URL+"/auth/v1", keys.KeyfuncCtx, func() bool { return true }))
 				r.GET("/v0/me", func(c *gin.Context) {
 					c.JSON(200, gin.H{"id": c.GetString("user_id"), "email": c.GetString("email"), "avatar": c.GetString("avatar_url")})
 				})
@@ -152,7 +154,7 @@ func TestSessionJWKS(t *testing.T) {
 					if scenario == "valid" && body["avatar"] != "https://google.test/photo" || scenario != "valid" && body["avatar"] != "" {
 						t.Fatal(body)
 					}
-				} else if w.Code != 401 || !strings.Contains(w.Body.String(), `"code":"UNAUTHENTICATED"`) || strings.Contains(w.Body.String(), signed) {
+				} else if w.Code != 401 || !strings.Contains(w.Body.String(), `"code":"UNAUTHENTICATED"`) || !strings.Contains(w.Body.String(), `"message":"Your session is invalid or has expired. Sign in again."`) || strings.Contains(w.Body.String(), signed) {
 					t.Fatalf("unexpected rejection: %d %s", w.Code, w.Body.String())
 				}
 				if w.Header().Get("Cache-Control") != "no-store" {
@@ -197,7 +199,7 @@ func TestSessionJWKSRefreshHonorsRequestDeadline(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := gin.New()
-	r.Use(Timeout(), Session(cookieKey, false, server.URL+"/auth/v1", keys.KeyfuncCtx))
+	r.Use(Timeout(), Session(cookieKey, false, server.URL+"/auth/v1", keys.KeyfuncCtx, func() bool { return true }))
 	r.GET("/v0/me", func(c *gin.Context) { c.Status(204) })
 	// An earlier parent deadline stands in for the fixed 10s request timeout.
 	reqCtx, reqCancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
@@ -212,5 +214,108 @@ func TestSessionJWKSRefreshHonorsRequestDeadline(t *testing.T) {
 	}
 	if w.Code != 503 || !strings.Contains(w.Body.String(), `"code":"REQUEST_TIMEOUT"`) {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestSessionKeyLookupFailure(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	private, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token.Header["kid"] = "rotated"
+	signed, err := token.SignedString(private)
+	if err != nil {
+		t.Fatal(err)
+	}
+	missingKey := func(context.Context) jwt.Keyfunc {
+		return func(*jwt.Token) (any, error) { return nil, errors.New("key not found") }
+	}
+	otherKey := func(context.Context) jwt.Keyfunc {
+		return func(*jwt.Token) (any, error) { return &other.PublicKey, nil }
+	}
+	for _, tc := range []struct {
+		name      string
+		keyfunc   func(context.Context) jwt.Keyfunc
+		available bool
+		status    int
+		code      string
+	}{
+		{"JWKS down", missingKey, false, 503, "KEYS_UNAVAILABLE"},
+		{"key absent from fetched JWKS", missingKey, true, 401, "UNAUTHENTICATED"},
+		{"bad signature while JWKS down", otherKey, false, 401, "UNAUTHENTICATED"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := gin.New()
+			r.Use(Session(cookieKey, false, "issuer", tc.keyfunc, func() bool { return tc.available }))
+			r.GET("/v0/me", func(c *gin.Context) { c.Status(204) })
+			req := httptest.NewRequest("GET", "/v0/me", nil)
+			req.AddCookie(&http.Cookie{Name: accessCookieName, Value: sealedCookie(t, signed, accessCookieName)})
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tc.status || !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) {
+				t.Fatalf("%d %s", w.Code, w.Body.String())
+			}
+			if tc.code == "UNAUTHENTICATED" && !strings.Contains(w.Body.String(), `"message":"Your session is invalid or has expired. Sign in again."`) {
+				t.Fatalf("unexpected unauthenticated message: %s", w.Body.String())
+			}
+		})
+	}
+}
+
+func TestSessionWithProductionJWKS(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	private, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encode := func(value []byte) string { return base64.RawURLEncoding.EncodeToString(value) }
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token.Header["kid"] = "rotated"
+	signed, err := token.SignedString(private)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name   string
+		down   bool
+		status int
+	}{
+		{"JWKS down after rotation", true, 503},
+		{"rotated kid absent from JWKS", false, 401},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var down atomic.Bool
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if down.Load() {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					return
+				}
+				json.NewEncoder(w).Encode(map[string]any{"keys": []any{map[string]any{"kty": "EC", "crv": "P-256", "kid": "old", "alg": "ES256", "use": "sig", "x": encode(private.X.FillBytes(make([]byte, 32))), "y": encode(private.Y.FillBytes(make([]byte, 32)))}}})
+			}))
+			defer server.Close()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			keys, err := jwks.New(ctx, server.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			down.Store(tc.down)
+			r := gin.New()
+			r.Use(Timeout(), Session(cookieKey, false, "issuer", keys.KeyfuncCtx, keys.Available))
+			r.GET("/v0/me", func(c *gin.Context) { c.Status(204) })
+			req := httptest.NewRequest("GET", "/v0/me", nil)
+			req.AddCookie(&http.Cookie{Name: accessCookieName, Value: sealedCookie(t, signed, accessCookieName)})
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tc.status {
+				t.Fatalf("%d %s", w.Code, w.Body.String())
+			}
+		})
 	}
 }

@@ -31,7 +31,7 @@ func TestTimeout(t *testing.T) {
 			if w.Code != 202 || w.Body.String() != "accepted" {
 				t.Fatal("changed written response")
 			}
-		} else if w.Code != 503 || !strings.Contains(w.Body.String(), "REQUEST_TIMEOUT") {
+		} else if w.Code != 503 || !strings.Contains(w.Body.String(), "REQUEST_TIMEOUT") || !strings.Contains(w.Body.String(), `"message":"The request took too long. Try again."`) {
 			t.Fatalf("%d %s", w.Code, w.Body.String())
 		}
 	}

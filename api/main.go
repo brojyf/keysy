@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/MicahParks/keyfunc/v3"
 	"github.com/brojyf/keysy/api/internal/config"
+	"github.com/brojyf/keysy/api/internal/jwks"
 	"github.com/brojyf/keysy/api/internal/me"
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/brojyf/keysy/api/internal/profile"
@@ -30,7 +30,7 @@ func main() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	keys, err := keyfunc.NewDefaultCtx(ctx, []string{c.SupabaseURL + "/auth/v1/.well-known/jwks.json"})
+	keys, err := jwks.New(ctx, c.SupabaseURL+"/auth/v1/.well-known/jwks.json")
 	if err != nil {
 		log.Fatal("JWKS initialization failed")
 	}
@@ -42,7 +42,7 @@ func main() {
 	}
 	router.Use(middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger), middleware.Timeout(), middleware.CORS(c.WebAppURL))
 	router.OPTIONS("/v0/me")
-	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx), me.Get(profile.Store{DB: db}))
+	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Get(profile.Store{DB: db}))
 	server := &http.Server{Addr: ":" + c.Port, Handler: router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	log.Fatal(server.ListenAndServe())
 }

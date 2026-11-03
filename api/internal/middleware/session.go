@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"net/url"
 
@@ -38,7 +39,7 @@ func OpenCookie(key []byte, value string) (string, error) {
 	return string(token), err
 }
 
-func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Context) jwt.Keyfunc) gin.HandlerFunc {
+func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Context) jwt.Keyfunc, keysAvailable func() bool) gin.HandlerFunc {
 	name := accessCookieName
 	if localHTTP {
 		name = "keysy-access"
@@ -47,12 +48,12 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Con
 		c.Header("Cache-Control", "no-store")
 		cookies := c.Request.CookiesNamed(name)
 		if len(cookies) != 1 {
-			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED")
+			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session is invalid or has expired. Sign in again.")
 			return
 		}
 		token, err := OpenCookie(key, cookies[0].Value)
 		if err != nil {
-			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED")
+			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session is invalid or has expired. Sign in again.")
 			return
 		}
 		claims := &sessionClaims{}
@@ -62,8 +63,13 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Con
 			c.Abort()
 			return
 		}
+		if errors.Is(err, jwt.ErrTokenUnverifiable) && !keysAvailable() {
+			// The signing key is unknown because JWKS is unreachable, not because the session is invalid.
+			Error(c, http.StatusServiceUnavailable, "KEYS_UNAVAILABLE", "Your session cannot be verified right now. Try again later.")
+			return
+		}
 		if err != nil || !parsed.Valid || claims.Subject == "" {
-			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED")
+			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session is invalid or has expired. Sign in again.")
 			return
 		}
 		avatar, _ := claims.UserMetadata["avatar_url"].(string)

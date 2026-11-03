@@ -24,14 +24,14 @@ func CORS(webAppURL string) gin.HandlerFunc {
 			return
 		}
 		if len(origins) != 1 || origins[0] != origin {
-			Error(c, http.StatusForbidden, "INVALID_ORIGIN")
+			Error(c, http.StatusForbidden, "INVALID_ORIGIN", "This request is not allowed from this website.")
 			return
 		}
 		if c.Request.Method == http.MethodOptions {
 			c.Writer.Header().Add("Vary", "Access-Control-Request-Method, Access-Control-Request-Headers")
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
 			if len(methods) != 1 || methods[0] != http.MethodGet || len(c.Request.Header.Values("Access-Control-Request-Headers")) != 0 {
-				Error(c, http.StatusForbidden, "INVALID_REQUEST")
+				Error(c, http.StatusForbidden, "INVALID_REQUEST", "This request uses an unsupported method or header.")
 				return
 			}
 			c.Header("Access-Control-Allow-Methods", http.MethodGet)

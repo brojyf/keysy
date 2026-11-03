@@ -16,7 +16,7 @@ func Timeout() gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) && !c.Writer.Written() {
-			Error(c, http.StatusServiceUnavailable, "REQUEST_TIMEOUT")
+			Error(c, http.StatusServiceUnavailable, "REQUEST_TIMEOUT", "The request took too long. Try again.")
 		}
 	}
 }

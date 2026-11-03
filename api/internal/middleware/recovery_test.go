@@ -22,7 +22,7 @@ func TestRecoveryReturnsSafeInternalError(t *testing.T) {
 	req.Header.Set("Cookie", "session=secret-cookie")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-	if w.Code != 500 || !strings.Contains(w.Body.String(), `"code":"INTERNAL_ERROR"`) {
+	if w.Code != 500 || !strings.Contains(w.Body.String(), `"code":"INTERNAL_ERROR"`) || !strings.Contains(w.Body.String(), `"message":"The request failed. Try again later."`) {
 		t.Fatalf("unexpected response: %d %s", w.Code, w.Body.String())
 	}
 	if strings.Contains(output.String(), "secret-code") || strings.Contains(output.String(), "?code=") || strings.Contains(output.String(), "secret-cookie") {

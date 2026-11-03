@@ -89,6 +89,17 @@ func TestLogoutRejectsCrossOriginAndInvalidRequests(t *testing.T) {
 			if w.Code != want || f.logoutCalls != 0 || len(w.Result().Cookies()) != 0 {
 				t.Fatalf("logout = %d, want %d; upstream calls = %d", w.Code, want, f.logoutCalls)
 			}
+			if want != http.StatusMethodNotAllowed {
+				wantMessage := "This request is not allowed from this website."
+				if name == "unexpected-query" || name == "request-body" {
+					wantMessage = "Check your logout request and try again."
+				} else if name == "duplicate-cookie" {
+					wantMessage = "Your logout request contains duplicate session cookies."
+				}
+				if !strings.Contains(w.Body.String(), `"message":"`+wantMessage+`"`) {
+					t.Fatalf("unexpected error message: %s", w.Body.String())
+				}
+			}
 		})
 	}
 }
@@ -118,6 +129,9 @@ func TestLogoutDoesNotFollowRedirectsOrClearCookiesOnNetworkFailure(t *testing.T
 			f.router.ServeHTTP(w, r)
 			if w.Code != http.StatusServiceUnavailable || followed || len(w.Result().Cookies()) != 0 {
 				t.Fatalf("unsafe upstream failure handling: status %d, followed %v", w.Code, followed)
+			}
+			if !strings.Contains(w.Body.String(), `"message":"Sign-out is temporarily unavailable. Try again later."`) {
+				t.Fatalf("unexpected error message: %s", w.Body.String())
 			}
 		})
 	}

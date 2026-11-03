@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
@@ -51,7 +52,7 @@ func TestMe(t *testing.T) {
 				return
 			}
 			if scenario == "missing-profile" || scenario == "database-error" {
-				if w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"The request could not be completed."}}` {
+				if w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}` {
 					t.Fatal(w.Body.String())
 				}
 				return
@@ -82,5 +83,36 @@ func TestMeTimeout(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest("GET", "/v0/me", nil).WithContext(ctx))
 	if w.Body.Len() != 0 {
 		t.Fatal("cancelled request wrote a response")
+	}
+}
+
+func TestMeRejectsUnexpectedInput(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, scenario := range []struct {
+		name, query, body string
+		chunked           bool
+	}{
+		{"query", "?unexpected=secret", "", false},
+		{"malformed-query", "?bad=%zz", "", false},
+		{"body", "", "secret", false},
+		{"chunked-body", "", "secret", true},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			r := gin.New()
+			r.GET("/v0/me", Get(profileLookup(func(context.Context, string) (string, error) {
+				t.Error("looked up a profile for invalid input")
+				return "", nil
+			})))
+			req := httptest.NewRequest("GET", "/v0/me"+scenario.query, strings.NewReader(scenario.body))
+			if scenario.chunked {
+				req.ContentLength = -1
+				req.TransferEncoding = []string{"chunked"}
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != 400 || !strings.Contains(w.Body.String(), `"code":"INVALID_REQUEST"`) || !strings.Contains(w.Body.String(), `"message":"Remove the query string and request body, then try again."`) || strings.Contains(w.Body.String(), "secret") {
+				t.Fatalf("%d %s", w.Code, w.Body.String())
+			}
+		})
 	}
 }

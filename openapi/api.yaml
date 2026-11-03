@@ -28,6 +28,7 @@ paths:
         - accessCookie: []
       operationId: getMe
       summary: Get the signed-in user and their orgs
+      description: Takes no query parameters and no request body.
       responses:
         '200':
           description: The signed-in user.
@@ -35,8 +36,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v0/orgs:
     post:
       tags: [Orgs]
@@ -1424,6 +1429,12 @@ components:
             $ref: '#/components/schemas/Error'
     Conflict:
       description: Conflicts with the current state, such as an existing path.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Temporarily unavailable; retry later. Codes are KEYS_UNAVAILABLE (signing keys cannot be fetched) and REQUEST_TIMEOUT.
       content:
         application/json:
           schema:

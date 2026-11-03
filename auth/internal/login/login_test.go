@@ -269,6 +269,17 @@ func TestCallbackRejectsInvalidLoginTransactions(t *testing.T) {
 			if w.Code != http.StatusBadRequest {
 				t.Fatalf("callback status = %d: %s", w.Code, w.Body.String())
 			}
+			// Malformed queries fail validation before the transaction cookie is read.
+			wantMessage := "Your sign-in session is invalid or expired. Start sign-in again."
+			switch name {
+			case "wrong-state", "missing-code", "duplicate-code", "provider-error":
+				wantMessage = "Check your sign-in request and try again."
+			case "provider-denied":
+				wantMessage = "Sign-in was canceled. Start sign-in again."
+			}
+			if !strings.Contains(w.Body.String(), `"message":"`+wantMessage+`"`) {
+				t.Fatalf("unexpected error message: %s", w.Body.String())
+			}
 			if f.googleCalls != 0 || f.supabaseCalls != 0 {
 				t.Error("invalid transaction reached an upstream")
 			}
@@ -304,6 +315,13 @@ func TestRejectsDuplicateCookiesAndInvalidUserAgents(t *testing.T) {
 			f.router.ServeHTTP(w, r)
 			if w.Code != 400 || f.googleCalls != 0 || f.supabaseCalls != 0 {
 				t.Fatalf("accepted invalid request: %d", w.Code)
+			}
+			wantMessage := "Check your sign-in request and try again."
+			if name == "duplicate-cookie" {
+				wantMessage = "Your sign-in session is invalid or expired. Start sign-in again."
+			}
+			if !strings.Contains(w.Body.String(), `"message":"`+wantMessage+`"`) {
+				t.Fatalf("unexpected error message: %s", w.Body.String())
 			}
 		})
 	}

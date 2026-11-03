@@ -303,6 +303,7 @@ paths:
       summary: CORS preflight for the logout route
       description: |
         Allows only the dashboard origin, only the `POST` method, and no custom request headers.
+        No query parameters or request body are accepted. User-Agent must be printable ASCII and at most 2048 bytes.
         The service makes no Supabase request.
       parameters:
         - $ref: '#/components/parameters/Origin'
@@ -316,6 +317,12 @@ paths:
       responses:
         '204':
           $ref: '#/components/responses/PreflightAllowed'
+        '400':
+          description: Invalid request (INVALID_REQUEST).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '403':
           $ref: '#/components/responses/PreflightRejected'
 components:
@@ -376,7 +383,7 @@ components:
               description: A stable error code, such as `INVALID_REQUEST`.
             message:
               type: string
-              description: Always `Sign-in could not be completed.`, for every route and every code.
+              description: A short message that describes this error and may suggest an action.
   responses:
     InvalidRequest:
       description: Invalid request, such as a query string, a body, or an invalid `User-Agent`. The `code` is `INVALID_REQUEST`.
