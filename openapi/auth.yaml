@@ -10,7 +10,7 @@ info:
     Sign-in is a server-side flow. The browser visits only Keysy and Google. Only the auth service calls Supabase.
     Session tokens stay in encrypted `HttpOnly` cookies. They never reach browser JavaScript or a response body.
 
-    Refresh is not implemented. An expired access token requires a new sign-in.
+    The access cookie lives as long as the access token. When it expires, the dashboard calls `POST /v0/auth/refresh` once and retries.
 
     This is the v0 draft, not a stable release.
 
@@ -233,10 +233,12 @@ paths:
         The request must have no body and no query parameters.
         The `Origin` header is required and must match the dashboard origin.
 
-        A missing, invalid, or expired access cookie still clears the cookies.
+        Without a valid access cookie, the service uses the refresh cookie to get an access token, then revokes the session.
+        A missing, invalid, or rejected credential still clears the cookies.
         If Supabase is unavailable, the service keeps the cookies so the user can retry.
       security:
         - accessCookie: []
+        - refreshCookie: []
       parameters:
         - $ref: '#/components/parameters/Origin'
       responses:
@@ -258,7 +260,7 @@ paths:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
         '400':
-          description: Invalid request, such as a query string, a body, or duplicate access cookies. The `code` is `INVALID_REQUEST`.
+          description: Invalid request, such as a query string, a body, or duplicate session cookies. The `code` is `INVALID_REQUEST`.
           headers:
             Access-Control-Allow-Origin:
               $ref: '#/components/headers/AllowOrigin'
@@ -325,6 +327,101 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           $ref: '#/components/responses/PreflightRejected'
+  /v0/auth/refresh:
+    post:
+      tags: [Session]
+      operationId: refreshSession
+      summary: Renew the session
+      description: |
+        Exchanges the refresh cookie with Supabase and sets new access and refresh cookies.
+        Supabase rotates the refresh token on each use.
+
+        The request must have no body and no query parameters.
+        The `Origin` header is required and must match the dashboard origin.
+      security:
+        - refreshCookie: []
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      responses:
+        '204':
+          description: Renewed. The response has no body.
+          headers:
+            Set-Cookie:
+              description: The new encrypted access and refresh cookies.
+              schema:
+                type: string
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+        '400':
+          description: Invalid request, such as a query string, a body, or duplicate refresh cookies. The `code` is `INVALID_REQUEST`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: |
+            The refresh cookie is missing or invalid, or Supabase rejected the refresh token. The `code` is `SESSION_EXPIRED`.
+            The response clears the three auth cookies. Sign in again.
+          headers:
+            Set-Cookie:
+              description: Expired `__Host-keysy-oauth`, `__Secure-keysy-access`, and `__Host-keysy-refresh` cookies.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '502':
+          description: Supabase sent an invalid session, or the new cookies are too large. The service keeps the cookies. The `code` is `INVALID_PROVIDER_RESPONSE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Supabase is unavailable or rate limited. The service keeps the cookies. The `code` is `REFRESH_UNAVAILABLE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    options:
+      tags:
+        - Session
+      operationId: preflightRefresh
+      security: []
+      summary: CORS preflight for the refresh route
+      description: |
+        Allows only the dashboard origin, only the `POST` method, and no custom request headers.
+        The service makes no Supabase request.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          description: Must be `POST`.
+          schema:
+            type: string
+            enum: [POST]
+      responses:
+        '204':
+          $ref: '#/components/responses/PreflightAllowed'
+        '400':
+          description: Invalid request (INVALID_REQUEST).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/PreflightRejected'
 components:
   securitySchemes:
     accessCookie:
@@ -337,6 +434,13 @@ components:
         Clients cannot create it. Browsers send it with `credentials: 'include'`.
 
         For local HTTP development only (`AUTH_URL=http://localhost:<port>`), the cookie drops `Secure`, Domain, and the `__Secure-` prefix, so its name is `keysy-access`.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-keysy-refresh
+      description: |
+        The encrypted Supabase refresh token (AES-256-GCM). It is host-only on the auth origin and is a browser session cookie.
+        Browsers send it to the auth origin with `credentials: 'include'`. On HTTP localhost its name is `keysy-refresh`.
   parameters:
     Origin:
       name: Origin

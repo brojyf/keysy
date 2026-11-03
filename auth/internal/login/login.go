@@ -96,6 +96,8 @@ func (h *Handler) Register(router *gin.Engine) {
 	router.GET("/v0/auth/callback", h.callback)
 	router.POST("/v0/auth/logout", h.dashboardCORS(), h.logout)
 	router.OPTIONS("/v0/auth/logout", h.dashboardCORS())
+	router.POST("/v0/auth/refresh", h.dashboardCORS(), h.refresh)
+	router.OPTIONS("/v0/auth/refresh", h.dashboardCORS())
 }
 
 func sensitiveResponse(c *gin.Context) {
@@ -168,20 +170,34 @@ func (h *Handler) callback(c *gin.Context) {
 		respondError(c, status, "SIGN_IN_FAILED", "Sign-in failed. Try again.")
 		return
 	}
+	if !h.setSessionCookies(c.Writer, session) {
+		respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE", "Sign-in could not be completed. Try again.")
+		return
+	}
+	c.Redirect(http.StatusSeeOther, h.webAppURL)
+}
+
+// setSessionCookies sets both token cookies, or none if either is invalid.
+func (h *Handler) setSessionCookies(w http.ResponseWriter, session session) bool {
 	cookies := []*http.Cookie{
 		h.newTokenCookie(accessCookieName, session.AccessToken, session.ExpiresIn),
 		h.newTokenCookie(refreshCookieName, session.RefreshToken, 0),
 	}
 	for _, cookie := range cookies {
 		if cookie.Valid() != nil || len(cookie.String()) > 4096 {
-			respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE", "Sign-in could not be completed. Try again.")
-			return
+			return false
 		}
 	}
 	for _, cookie := range cookies {
-		http.SetCookie(c.Writer, cookie)
+		http.SetCookie(w, cookie)
 	}
-	c.Redirect(http.StatusSeeOther, h.webAppURL)
+	return true
+}
+
+func (h *Handler) clearSessionCookies(w http.ResponseWriter) {
+	for _, name := range []string{oauthCookieName, accessCookieName, refreshCookieName} {
+		http.SetCookie(w, h.newCookie(name, "", -1))
+	}
 }
 
 func (h *Handler) readTransaction(r *http.Request) (transaction, error) {

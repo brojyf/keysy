@@ -12,22 +12,31 @@ Supabase JWKS for local JWT verification.
 | `GET /v0/auth/callback` | Exchange the authorization code, set token cookies, and redirect to `WEB_APP_URL`. |
 | `POST /v0/auth/logout` | Revoke the current Supabase session and clear all three cookies. |
 | `OPTIONS /v0/auth/logout` | Validate the dashboard origin and requested method for CORS preflight. |
+| `POST /v0/auth/refresh` | Exchange the refresh cookie with Supabase and set new access and refresh cookies. |
+| `OPTIONS /v0/auth/refresh` | Validate the dashboard origin and requested method for CORS preflight. |
 
-The logout route allows credentialed CORS requests only from the
+The logout and refresh routes allow credentialed CORS requests only from the
 exact origin of `WEB_APP_URL`. Responses include `Access-Control-Allow-Origin`,
 `Access-Control-Allow-Credentials: true`, and `Vary: Origin`, including error
 responses for the allowed origin. Other origins, including sibling subdomains,
-are rejected before any Supabase request. Preflight allows only POST for logout, with no custom request headers. Login and callback are
-browser navigations, not CORS endpoints. Logout always requires the dashboard origin.
+are rejected before any Supabase request. Preflight allows only POST for logout and refresh, with no custom request headers. Login and callback are
+browser navigations, not CORS endpoints. Logout and refresh always require the dashboard origin.
 
 Logout requires an `Origin` header that matches the origin of `WEB_APP_URL`.
 It takes no body or query parameters. It uses Supabase's `scope=local`, so it
 does not sign out other devices. A missing, invalid, or expired credential
-still permits local cookie cleanup. If Supabase is unavailable, logout returns
+still permits local cookie cleanup. Without a valid access cookie, logout uses
+the refresh cookie to get an access token, then revokes the session. If Supabase is unavailable, logout returns
 503 and retains the cookies so the user can retry. Already issued JWTs can
 remain valid until their expiry even after session revocation.
 
-Refresh is not implemented. An expired access token requires a new sign-in.
+Refresh takes no body or query parameters. Supabase rotates the refresh token
+on each use and accepts the old token again only within its reuse interval
+(10 seconds by default), so concurrent refreshes from several tabs succeed.
+A missing or rejected refresh token returns 401 `SESSION_EXPIRED` and clears all
+three cookies. If Supabase is unavailable, refresh returns 503 and keeps the
+cookies. The access token lifetime is a Supabase project setting; the access
+cookie uses Supabase's `expires_in`.
 The dashboard reads the current user from the API at `GET /v0/me`.
 
 ## Cookies
@@ -90,7 +99,7 @@ service and the dashboard hostname to Next.js. Both can run behind one proxy on
 the same Fly Machine; sharing a Machine does not make their browser origins equal.
 The browser navigates to the auth origin to start login, returns to the auth
 origin for the callback, then redirects to the dashboard. The dashboard calls
-the API origin for `/v0/me` and the auth origin for logout requests.
+the API origin for `/v0/me` and the auth origin for refresh and logout requests.
 Register `https://auth.keysy.net/v0/auth/callback` in Google and configure the
 same Google client in Supabase.
 

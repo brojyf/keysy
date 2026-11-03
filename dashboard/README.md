@@ -13,9 +13,10 @@ as its design reference.
 - On each page load, `{NEXT_PUBLIC_API_URL}/v0/me` verifies the access token on the server.
 - The dashboard shows the verified user's display name, email, and optional Google avatar. It does not read or store tokens.
 - Logout revokes the current session and clears the auth cookies through `{NEXT_PUBLIC_AUTH_URL}/v0/auth/logout`.
-- Logout shows a pending state and allows retry after a failure. Refresh is not implemented.
+- Logout shows a pending state and allows retry after a failure.
+- A 401 from the API triggers one `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh shows sign-in; an unavailable one shows retry.
 
-Session and logout requests use `credentials: 'include'`. The API and auth services allow
+Session, refresh, and logout requests use `credentials: 'include'`. The API and auth services allow
 credentialed CORS only from the configured dashboard origin, including on errors.
 The access cookie uses the parent domain; refresh and OAuth cookies stay on the
 auth hostname. All cookies remain HttpOnly. The production dashboard and auth origins must use HTTPS on the same site.

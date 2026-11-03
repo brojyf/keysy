@@ -19,11 +19,11 @@ func (h *Handler) dashboardCORS() gin.HandlerFunc {
 			c.Writer.Header().Add("Vary", "Access-Control-Request-Method, Access-Control-Request-Headers")
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
 			if len(methods) != 1 || methods[0] != http.MethodPost || len(c.Request.Header.Values("Access-Control-Request-Headers")) != 0 {
-				respondError(c, http.StatusForbidden, "INVALID_REQUEST", "This logout request uses an unsupported method or header.")
+				respondError(c, http.StatusForbidden, "INVALID_REQUEST", "This request uses an unsupported method or header.")
 				return
 			}
 			if _, err := loginQuery(c.Request, false); err != nil {
-				respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your logout request and try again.")
+				respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request and try again.")
 				return
 			}
 			c.Header("Access-Control-Allow-Methods", http.MethodPost)

@@ -29,11 +29,23 @@ func NewHTTPClient() *http.Client {
 }
 
 func (h *Handler) exchangeIDToken(ctx context.Context, idToken, accessToken, nonce, userAgent string) (session, int) {
-	body, _ := json.Marshal(map[string]string{
+	return h.requestSession(ctx, "id_token", map[string]string{
 		"provider": "google", "id_token": idToken,
 		"access_token": accessToken, "nonce": nonce,
-	})
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(h.supabaseURL, "/")+"/auth/v1/token?grant_type=id_token", bytes.NewReader(body))
+	}, userAgent)
+}
+
+// refreshSession rotates the refresh token. Supabase accepts the old token
+// again only within its reuse interval, so callers must store the new pair.
+func (h *Handler) refreshSession(ctx context.Context, refreshToken, userAgent string) (session, int) {
+	return h.requestSession(ctx, "refresh_token", map[string]string{"refresh_token": refreshToken}, userAgent)
+}
+
+// requestSession returns 400 when Supabase rejects the grant, 503 when it is
+// unavailable, and 502 for an invalid session response.
+func (h *Handler) requestSession(ctx context.Context, grantType string, grant map[string]string, userAgent string) (session, int) {
+	body, _ := json.Marshal(grant)
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(h.supabaseURL, "/")+"/auth/v1/token?grant_type="+grantType, bytes.NewReader(body))
 	if err != nil {
 		return session{}, http.StatusInternalServerError
 	}

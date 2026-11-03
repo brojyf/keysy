@@ -172,3 +172,31 @@ func TestLogoutHandlesMissingCredentialsAndUpstreamFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestLogoutWithoutAccessCookieRefreshesBeforeRevoking(t *testing.T) {
+	for _, upstream := range []struct {
+		name                       string
+		refreshStatus, want, calls int
+	}{
+		{"refreshed", 200, http.StatusNoContent, 1},
+		{"refresh-rejected", 400, http.StatusNoContent, 0},
+		{"refresh-unavailable", 503, http.StatusServiceUnavailable, 0},
+	} {
+		t.Run(upstream.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.refreshStatus, f.logoutToken = upstream.refreshStatus, "keysy-access-2"
+			r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+			r.URL.Path = "/v0/auth/logout"
+			w := httptest.NewRecorder()
+			f.router.ServeHTTP(w, r)
+			if w.Code != upstream.want || f.refreshCalls != 1 || f.logoutCalls != upstream.calls {
+				t.Fatalf("logout = %d, want %d; refresh calls = %d, logout calls = %d", w.Code, upstream.want, f.refreshCalls, f.logoutCalls)
+			}
+			if upstream.want == http.StatusNoContent {
+				assertClearedCookies(t, f.handler, w)
+			} else if len(w.Result().Cookies()) != 0 {
+				t.Error("cleared cookies without completing logout")
+			}
+		})
+	}
+}

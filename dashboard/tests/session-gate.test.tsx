@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
+import { fetchWithSessionRefresh } from '../src/lib/session-refresh'
 
 let currentPathname = '/secrets'
 mock.module('next/navigation', () => ({ usePathname: () => currentPathname }))
@@ -167,7 +168,63 @@ test('a reload verifies the session again instead of trusting local state', asyn
   root = createRoot(container)
   await renderSessionGate()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+  expect(sessionRequest.mock.calls.map((call) => call[0])).toEqual([
+    'https://api.keysy.net/v0/me',
+    'https://api.keysy.net/v0/me',
+    'https://auth.keysy.net/v0/auth/refresh',
+  ])
+})
+
+function respondByURL(refreshStatus: number) {
+  let meCalls = 0
+  sessionRequest.mockImplementation((url: string) => {
+    if (url.endsWith('/v0/auth/refresh')) return Promise.resolve(new Response(null, { status: refreshStatus }))
+    meCalls += 1
+    if (meCalls === 1) return Promise.resolve(new Response(null, { status: 401 }))
+    return Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' }))
+  })
+}
+
+test('an expired access token is refreshed once, then the session check is retried', async () => {
+  respondByURL(204)
+  await renderSessionGate()
+  expect(sessionRequest.mock.calls.map((call) => call[0])).toEqual([
+    'https://api.keysy.net/v0/me',
+    'https://auth.keysy.net/v0/auth/refresh',
+    'https://api.keysy.net/v0/me',
+  ])
+  expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'include' })
+  expect(sessionRequest.mock.calls[2]?.[1].credentials).toBe('include')
+  expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
+})
+
+test('a rejected refresh shows sign-in without retrying the session check', async () => {
+  respondByURL(401)
+  await renderSessionGate()
   expect(sessionRequest).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+})
+
+test('an unavailable refresh shows an error with retry instead of sign-in', async () => {
+  respondByURL(503)
+  await renderSessionGate()
+  expect(sessionRequest).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
+})
+
+test('concurrent expired requests share one refresh', async () => {
+  let finishRefresh!: (response: Response) => void
+  sessionRequest.mockImplementation((url: string) => {
+    if (url.endsWith('/v0/auth/refresh')) return new Promise<Response>((resolve) => { finishRefresh = resolve })
+    return Promise.resolve(new Response(null, { status: 401 }))
+  })
+  const first = fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/')
+  const second = fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/')
+  while (!finishRefresh) await Promise.resolve()
+  finishRefresh(new Response(null, { status: 401 }))
+  expect((await first).status).toBe(401)
+  expect((await second).status).toBe(401)
+  expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/refresh'))).toHaveLength(1)
 })
 
 test('an unavailable or invalid session check shows an error with retry instead of sign-in', async () => {

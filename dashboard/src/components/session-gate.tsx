@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { fetchWithSessionRefresh } from '../lib/session-refresh'
 import Rail from './rail'
 import Topbar from './topbar'
 
@@ -16,10 +17,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     const controller = new AbortController()
     async function checkSession() {
       try {
-        const response = await fetch(new URL('/v0/me', apiURL).href, {
-          credentials: 'include',
-          signal: controller.signal,
-        })
+        const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, { signal: controller.signal })
         if (response.status === 401) {
           if (!controller.signal.aborted) setUser(null)
           return
@@ -37,7 +35,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     }
     void checkSession()
     return () => controller.abort()
-  }, [apiURL, sessionCheck])
+  }, [apiURL, authURL, sessionCheck])
 
   function retrySessionCheck() {
     setSessionError(false)

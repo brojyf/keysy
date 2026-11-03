@@ -33,6 +33,12 @@ type loginFixture struct {
 	supabaseAgent  string
 	logoutCalls    int
 	logoutStatus   int
+	logoutToken    string
+	refreshCalls   int
+	refreshStatus  int
+	refreshBody    string
+	refreshGrant   map[string]string
+	refreshAgent   string
 }
 
 func newFixture(t *testing.T) *loginFixture {
@@ -52,7 +58,9 @@ func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *log
 		googleStatus: 200, supabaseStatus: 200,
 		googleBody:   `{"access_token":"google-access","token_type":"Bearer","id_token":"google-id"}`,
 		supabaseBody: `{"access_token":"keysy-access","refresh_token":"keysy-refresh","token_type":"bearer","expires_in":3600}`,
-		logoutStatus: http.StatusNoContent,
+		logoutStatus: http.StatusNoContent, logoutToken: "keysy-access",
+		refreshStatus: 200,
+		refreshBody:   `{"access_token":"keysy-access-2","refresh_token":"keysy-refresh-2","token_type":"bearer","expires_in":600}`,
 	}
 	google := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.googleCalls++
@@ -71,10 +79,24 @@ func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *log
 	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/auth/v1/logout" {
 			f.logoutCalls++
-			if r.Method != http.MethodPost || r.URL.Query().Get("scope") != "local" || r.Header.Get("Authorization") != "Bearer keysy-access" || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" {
+			if r.Method != http.MethodPost || r.URL.Query().Get("scope") != "local" || r.Header.Get("Authorization") != "Bearer "+f.logoutToken || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" {
 				t.Error("invalid server-side logout request")
 			}
 			w.WriteHeader(f.logoutStatus)
+			return
+		}
+		if r.URL.Query().Get("grant_type") == "refresh_token" {
+			f.refreshCalls++
+			if r.Method != http.MethodPost || r.URL.Path != "/auth/v1/token" || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" || r.Header.Get("Authorization") != "" {
+				t.Error("invalid Supabase refresh request")
+			}
+			if err := json.NewDecoder(r.Body).Decode(&f.refreshGrant); err != nil {
+				t.Error(err)
+			}
+			f.refreshAgent = r.UserAgent()
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(f.refreshStatus)
+			io.WriteString(w, f.refreshBody)
 			return
 		}
 		f.supabaseCalls++
@@ -467,7 +489,7 @@ func TestHTTPInputValidation(t *testing.T) {
 
 func TestUnsupportedAuthRoutesAreNotRegistered(t *testing.T) {
 	f := newFixture(t)
-	for _, path := range []string{"/v0/auth/token", "/v0/auth/refresh", "/v0/auth/github"} {
+	for _, path := range []string{"/v0/auth/token", "/v0/auth/github"} {
 		w := httptest.NewRecorder()
 		f.router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
 		if w.Code != 404 {

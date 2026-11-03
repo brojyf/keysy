@@ -53,9 +53,13 @@ services.
     stored in encrypted `HttpOnly` cookies (AES-256-GCM, random nonce, cookie
     name as additional authenticated data).
   - The dashboard reads the current user from the API's `GET /v0/me` route.
+  - `POST /v0/auth/refresh` exchanges the refresh cookie with Supabase and
+    sets both token cookies again (Supabase rotates the refresh token). A
+    rejected refresh token returns 401 and clears all auth cookies.
   - `POST /v0/auth/logout` revokes only the current Supabase session
-    (`scope=local`) and clears all auth cookies.
-  - Credentialed CORS is allowed only for logout, and only from the
+    (`scope=local`) and clears all auth cookies. Without a valid access
+    cookie, it refreshes first so it can still revoke the session.
+  - Credentialed CORS is allowed only for logout and refresh, and only from the
     exact origin of `WEB_APP_URL`.
 
 ## Invariants
@@ -74,5 +78,5 @@ Keep these unless the user approves a design change:
   The HTTP client does not follow upstream redirects.
 - All replicas share one `OAUTH_COOKIE_KEY`. Changing it invalidates all
   existing cookies.
-- Session refresh is not implemented. An expired access token requires a new
-  sign-in.
+- Only auth reads the refresh cookie. The API never refreshes sessions; the
+  dashboard calls refresh after a 401 and retries once.

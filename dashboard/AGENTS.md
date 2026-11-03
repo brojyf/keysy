@@ -41,7 +41,9 @@ both public service URLs, the tests, and `bun test` in
 - `src/app/layout.tsx` wraps every route in `SessionGate`
   (`src/components/session-gate.tsx`), a Client Component. It calls
   `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
-  On 401 it shows the sign-in screen. On success it shows the shell (`Topbar`,
+  On 401 it calls `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` once
+  (`src/lib/session-refresh.ts`; concurrent 401s share one refresh) and
+  retries. If refresh returns 401, it shows the sign-in screen. On success it shows the shell (`Topbar`,
   `Rail`, page content). Logout calls `/v0/auth/logout` the same way.
   There is no Next.js middleware or server-side session check.
 - The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
