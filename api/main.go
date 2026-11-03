@@ -42,7 +42,7 @@ func main() {
 	}
 	router.Use(middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger), middleware.Timeout(), middleware.CORS(c.WebAppURL))
 	router.OPTIONS("/v0/me")
-	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.Keyfunc), me.Get(profile.Store{DB: db}))
+	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx), me.Get(profile.Store{DB: db}))
 	server := &http.Server{Addr: ":" + c.Port, Handler: router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	log.Fatal(server.ListenAndServe())
 }

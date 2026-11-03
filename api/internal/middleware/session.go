@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
@@ -37,7 +38,7 @@ func OpenCookie(key []byte, value string) (string, error) {
 	return string(token), err
 }
 
-func Session(key []byte, localHTTP bool, issuer string, keyfunc jwt.Keyfunc) gin.HandlerFunc {
+func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Context) jwt.Keyfunc) gin.HandlerFunc {
 	name := accessCookieName
 	if localHTTP {
 		name = "keysy-access"
@@ -55,7 +56,12 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc jwt.Keyfunc) gin
 			return
 		}
 		claims := &sessionClaims{}
-		parsed, err := jwt.ParseWithClaims(token, claims, keyfunc, jwt.WithValidMethods([]string{"ES256"}), jwt.WithIssuer(issuer), jwt.WithAudience("authenticated"), jwt.WithExpirationRequired())
+		parsed, err := jwt.ParseWithClaims(token, claims, keyfunc(c.Request.Context()), jwt.WithValidMethods([]string{"ES256"}), jwt.WithIssuer(issuer), jwt.WithAudience("authenticated"), jwt.WithExpirationRequired())
+		if err != nil && c.Request.Context().Err() != nil {
+			// A JWKS refresh hit the request deadline; Timeout writes the 503.
+			c.Abort()
+			return
+		}
 		if err != nil || !parsed.Valid || claims.Subject == "" {
 			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED")
 			return

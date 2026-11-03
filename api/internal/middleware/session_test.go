@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -122,7 +123,7 @@ func TestSessionJWKS(t *testing.T) {
 					value = "invalid"
 				}
 				r := gin.New()
-				r.Use(Session(cookieKey, local, server.URL+"/auth/v1", keys.Keyfunc))
+				r.Use(Session(cookieKey, local, server.URL+"/auth/v1", keys.KeyfuncCtx))
 				r.GET("/v0/me", func(c *gin.Context) {
 					c.JSON(200, gin.H{"id": c.GetString("user_id"), "email": c.GetString("email"), "avatar": c.GetString("avatar_url")})
 				})
@@ -159,5 +160,57 @@ func TestSessionJWKS(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSessionJWKSRefreshHonorsRequestDeadline(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	private, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encode := func(value []byte) string { return base64.RawURLEncoding.EncodeToString(value) }
+	release := make(chan struct{})
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) > 1 {
+			// A key rotation refresh that hangs until the test ends or 2s pass.
+			select {
+			case <-release:
+			case <-time.After(2 * time.Second):
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]any{"keys": []any{map[string]any{"kty": "EC", "crv": "P-256", "kid": "old", "alg": "ES256", "use": "sig", "x": encode(private.X.FillBytes(make([]byte, 32))), "y": encode(private.Y.FillBytes(make([]byte, 32)))}}})
+	}))
+	defer server.Close()
+	defer close(release) // Runs first, so Close does not wait for the hung refresh.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	keys, err := keyfunc.NewDefaultCtx(ctx, []string{server.URL + "/auth/v1/.well-known/jwks.json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": server.URL + "/auth/v1", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token.Header["kid"] = "rotated"
+	signed, err := token.SignedString(private)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := gin.New()
+	r.Use(Timeout(), Session(cookieKey, false, server.URL+"/auth/v1", keys.KeyfuncCtx))
+	r.GET("/v0/me", func(c *gin.Context) { c.Status(204) })
+	// An earlier parent deadline stands in for the fixed 10s request timeout.
+	reqCtx, reqCancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer reqCancel()
+	req := httptest.NewRequest("GET", "/v0/me", nil).WithContext(reqCtx)
+	req.AddCookie(&http.Cookie{Name: accessCookieName, Value: sealedCookie(t, signed, accessCookieName)})
+	w := httptest.NewRecorder()
+	start := time.Now()
+	r.ServeHTTP(w, req)
+	if elapsed := time.Since(start); elapsed > time.Second {
+		t.Fatalf("JWKS refresh ignored the request deadline: %s", elapsed)
+	}
+	if w.Code != 503 || !strings.Contains(w.Body.String(), `"code":"REQUEST_TIMEOUT"`) {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 }
