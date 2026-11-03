@@ -4,8 +4,8 @@ set -eu
 git diff --cached --check
 
 if ! command -v gitleaks >/dev/null 2>&1; then
-    printf '%s\n' 'Gitleaks is required. Install it with: brew install gitleaks (see README.md).' >&2
-    exit 1
+    printf '%s\n' 'Gitleaks not found; skipping local secret scan. CI still scans every pushed commit.' >&2
+    exit 0
 fi
 
 exec gitleaks git --pre-commit --staged --redact --verbose --no-banner

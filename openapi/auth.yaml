@@ -3,130 +3,506 @@ info:
   title: Keysy Auth API
   version: 0.0.0
   description: |
-    The authentication API signs users in to Keysy with Google and manages their sessions for the
-    web app, CLI, and browser extension.
+    The authentication API signs users in to Keysy with Google and manages their sessions.
+
+    The dashboard is the only client today. The CLI and the browser extension are planned.
+
+    Sign-in is a server-side flow. The browser visits only Keysy and Google. Only the auth service calls Supabase.
+    Session tokens stay in encrypted `HttpOnly` cookies. They never reach browser JavaScript or a response body.
+
+    Refresh is not implemented. An expired access token requires a new sign-in.
 
     This is the v0 draft, not a stable release.
 
     This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
 tags:
+  - name: Sign-in
   - name: Session
 paths:
   /v0/auth/google:
     get:
-      tags: [Session]
+      tags: [Sign-in]
       operationId: startGoogleSignIn
       security: []
       summary: Start Google sign-in
-      description: Redirects to Google. After sign-in, the browser returns to `redirect_uri` with a `code` query parameter.
-      parameters:
-        - name: redirect_uri
-          in: query
-          required: true
-          description: Must be on the allowlist, such as the web app, a CLI `localhost` callback, or the extension.
-          schema:
-            type: string
-            format: uri
-        - name: code_challenge
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: code_challenge_method
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [S256]
+      description: |
+        Starts the Google authorization code flow with state, PKCE S256, and an OIDC nonce.
+        The browser navigates to this path. It is not a CORS endpoint.
+
+        The request must have no body, no query parameters, and a printable ASCII `User-Agent` of at most 2048 bytes.
+        The service sets a short-lived encrypted `__Host-keysy-oauth` cookie that holds the sign-in transaction.
+        The transaction expires after 10 minutes.
       responses:
         '302':
           description: Redirect to Google.
           headers:
             Location:
+              description: The Google authorization URL.
               schema:
                 type: string
                 format: uri
+            Set-Cookie:
+              description: The encrypted sign-in transaction cookie.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
         '400':
-          $ref: '#/components/responses/BadRequest'
-  /v0/auth/token:
-    post:
-      tags: [Session]
-      operationId: exchangeCode
+          $ref: '#/components/responses/InvalidRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v0/auth/callback:
+    get:
+      tags: [Sign-in]
+      operationId: finishGoogleSignIn
       security: []
-      summary: Exchange the sign-in code for a session
-      description: Creates the user's account on first sign-in.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [code, codeVerifier]
-              properties:
-                code:
-                  type: string
-                codeVerifier:
-                  type: string
+      summary: Finish Google sign-in
+      description: |
+        Google redirects the browser here. The service checks the sign-in transaction cookie,
+        exchanges the authorization code with Google, and creates the Supabase session.
+
+        On success, the service sets the access and refresh cookies and redirects to the dashboard (`WEB_APP_URL`).
+        On every response, the service clears the sign-in transaction cookie.
+        The service never returns a partial session.
+
+        The request must have no body and a printable ASCII `User-Agent` of at most 2048 bytes.
+        It must have exactly one of `code` or `error`. The query string is at most 8192 bytes.
+        Unknown query parameters are rejected.
+      parameters:
+        - name: state
+          in: query
+          required: true
+          description: The state value from the sign-in transaction. It has 22 to 128 characters from `A-Z`, `a-z`, `0-9`, `_`, and `-`.
+          schema:
+            type: string
+            minLength: 22
+            maxLength: 128
+            pattern: '^[A-Za-z0-9_-]+$'
+        - name: code
+          in: query
+          required: false
+          description: The Google authorization code. Send this or `error`, not both.
+          schema:
+            type: string
+            maxLength: 4096
+        - name: error
+          in: query
+          required: false
+          description: The Google error code. Send this or `code`, not both. The service returns `SIGN_IN_FAILED`.
+          schema:
+            type: string
+            maxLength: 4096
+        - name: error_description
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: error_uri
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: authuser
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: prompt
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: hd
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 4096
+      responses:
+        '303':
+          description: Signed in. Redirect to the dashboard.
+          headers:
+            Location:
+              description: The dashboard URL (`WEB_APP_URL`).
+              schema:
+                type: string
+                format: uri
+            Set-Cookie:
+              description: |
+                Three cookies: the encrypted access cookie, the encrypted refresh cookie, and an expired
+                `__Host-keysy-oauth` cookie that clears the sign-in transaction.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+        '400':
+          description: |
+            The request or the sign-in was rejected. The `code` is one of:
+            `INVALID_REQUEST` (bad query, body, or `User-Agent`),
+            `INVALID_LOGIN_TRANSACTION` (the transaction cookie is missing, duplicated, invalid, expired, or does not match `state`),
+            or `SIGN_IN_FAILED` (Google returned `error`, or Google or Supabase rejected the sign-in).
+          headers:
+            Set-Cookie:
+              description: An expired `__Host-keysy-oauth` cookie.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal error. The `code` is `SIGN_IN_FAILED`.
+          headers:
+            Set-Cookie:
+              description: An expired `__Host-keysy-oauth` cookie.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: |
+            Google or Supabase sent an invalid response, or the session cookies are too large (over 4096 bytes).
+            The `code` is `INVALID_PROVIDER_RESPONSE` or `SIGN_IN_FAILED`.
+          headers:
+            Set-Cookie:
+              description: An expired `__Host-keysy-oauth` cookie.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Google or Supabase is unavailable. The `code` is `SIGN_IN_FAILED`.
+          headers:
+            Set-Cookie:
+              description: An expired `__Host-keysy-oauth` cookie.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v0/auth/session:
+    get:
+      tags: [Session]
+      operationId: getSession
+      summary: Get the current user
+      description: |
+        Decrypts the access cookie and verifies the access token with Supabase on each call.
+        Returns only the user ID and the optional email. It never returns tokens.
+
+        The request must have no body and no query parameters.
+        Browsers must send the dashboard origin. Requests without an `Origin` header are allowed for non-browser clients.
+        Other origins are rejected with `403` before any Supabase request.
+      security:
+        - accessCookie: []
       responses:
         '200':
-          $ref: '#/components/responses/Session'
+          description: The signed-in user.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
-  /v0/auth/refresh:
-    post:
-      tags: [Session]
-      operationId: refreshSession
-      security: []
-      summary: Refresh the session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [refreshToken]
-              properties:
-                refreshToken:
-                  type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/Session'
+          description: Invalid request, such as a query string, a body, or duplicate access cookies. The `code` is `INVALID_REQUEST`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: The access cookie is missing, invalid, or expired, or Supabase rejected the token. The `code` is `UNAUTHENTICATED`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          description: Supabase sent an invalid response. The `code` is `INVALID_PROVIDER_RESPONSE`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Supabase is unavailable. The `code` is `SESSION_UNAVAILABLE`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    options:
+      tags:
+        - Session
+      operationId: preflightSession
+      security: []
+      summary: CORS preflight for the session route
+      description: |
+        Allows only the dashboard origin, only the `GET` method, and no custom request headers.
+        The service makes no Supabase request.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          description: Must be `GET`.
+          schema:
+            type: string
+            enum: [GET]
+      responses:
+        '204':
+          $ref: '#/components/responses/PreflightAllowed'
+        '403':
+          $ref: '#/components/responses/PreflightRejected'
   /v0/auth/logout:
     post:
       tags: [Session]
       operationId: logout
-      summary: Sign out and revoke the refresh token
+      summary: Sign out
+      description: |
+        Revokes the current Supabase session (`scope=local`, so other devices stay signed in) and clears all three auth cookies.
+        Already issued access tokens can stay valid until they expire.
+
+        The request must have no body and no query parameters.
+        The `Origin` header is required and must match the dashboard origin.
+
+        A missing, invalid, or expired access cookie still clears the cookies.
+        If Supabase is unavailable, the service keeps the cookies so the user can retry.
       security:
-        - bearerAuth: []
+        - accessCookie: []
+      parameters:
+        - $ref: '#/components/parameters/Origin'
       responses:
         '204':
-          description: Signed out.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Signed out. The response clears the three auth cookies.
+          headers:
+            Set-Cookie:
+              description: Expired `__Host-keysy-oauth`, `__Host-keysy-access`, and `__Host-keysy-refresh` cookies.
+              schema:
+                type: string
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+        '400':
+          description: Invalid request, such as a query string, a body, or duplicate access cookies. The `code` is `INVALID_REQUEST`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: Supabase is unavailable. The service keeps the cookies. The `code` is `LOGOUT_UNAVAILABLE`.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Referrer-Policy:
+              $ref: '#/components/headers/ReferrerPolicy'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    options:
+      tags:
+        - Session
+      operationId: preflightLogout
+      security: []
+      summary: CORS preflight for the logout route
+      description: |
+        Allows only the dashboard origin, only the `POST` method, and no custom request headers.
+        The service makes no Supabase request.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          description: Must be `POST`.
+          schema:
+            type: string
+            enum: [POST]
+      responses:
+        '204':
+          $ref: '#/components/responses/PreflightAllowed'
+        '403':
+          $ref: '#/components/responses/PreflightRejected'
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-keysy-access
+      description: |
+        The encrypted Supabase access token (AES-256-GCM). The service sets it at sign-in with
+        `HttpOnly; Secure; SameSite=Lax; Path=/` and no `Domain`. The cookie lives as long as the access token.
+        Clients cannot create it. Browsers send it with `credentials: 'include'`.
+
+        For local HTTP development only (`AUTH_URL=http://localhost:<port>`), the cookie drops `Secure` and the `__Host-` prefix, so its name is `keysy-access`.
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      description: Must equal the dashboard origin (`WEB_APP_URL`). Send it once.
+      schema:
+        type: string
+  headers:
+    CacheControl:
+      description: Always `no-store`.
+      schema:
+        type: string
+        enum: [no-store]
+    ReferrerPolicy:
+      description: Always `no-referrer`.
+      schema:
+        type: string
+        enum: [no-referrer]
+    AllowOrigin:
+      description: The dashboard origin. The service sets it only when the request has that `Origin`.
+      schema:
+        type: string
+    AllowCredentials:
+      description: Always `true`. The service sets it only when the request has the dashboard `Origin`.
+      schema:
+        type: string
+        enum: ['true']
+    Vary:
+      description: Includes `Origin`.
+      schema:
+        type: string
   schemas:
-    Session:
+    SessionResponse:
       type: object
-      required: [accessToken, refreshToken, tokenType, expiresIn]
+      required: [user]
       properties:
-        accessToken:
-          type: string
-          description: Supabase JWT for the Keysy API.
-        refreshToken:
-          type: string
-        tokenType:
-          type: string
-          enum: [bearer]
-        expiresIn:
-          type: integer
-          description: Access token lifetime in seconds.
+        user:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+              description: Present only when Supabase returns an email.
     Error:
       type: object
       required: [error]
@@ -137,28 +513,74 @@ components:
           properties:
             code:
               type: string
+              description: A stable error code, such as `INVALID_REQUEST`.
             message:
               type: string
+              description: Always `Sign-in could not be completed.`, for every route and every code.
   responses:
-    Session:
-      description: Session tokens.
+    InvalidRequest:
+      description: Invalid request, such as a query string, a body, or an invalid `User-Agent`. The `code` is `INVALID_REQUEST`.
       headers:
         Cache-Control:
-          schema:
-            type: string
-            enum: [no-store]
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Session'
-    BadRequest:
-      description: Invalid request.
+          $ref: '#/components/headers/CacheControl'
+        Referrer-Policy:
+          $ref: '#/components/headers/ReferrerPolicy'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing, invalid, or expired token.
+    InternalError:
+      description: Internal error. The `code` is `INTERNAL_ERROR`.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        Referrer-Policy:
+          $ref: '#/components/headers/ReferrerPolicy'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidOrigin:
+      description: The `Origin` header is missing (logout only), repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`. This response has no CORS allow headers.
+      headers:
+        Vary:
+          $ref: '#/components/headers/Vary'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        Referrer-Policy:
+          $ref: '#/components/headers/ReferrerPolicy'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PreflightAllowed:
+      description: The preflight is allowed. The response has no body.
+      headers:
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+        Access-Control-Allow-Methods:
+          description: The one allowed method for the route.
+          schema:
+            type: string
+        Vary:
+          $ref: '#/components/headers/Vary'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        Referrer-Policy:
+          $ref: '#/components/headers/ReferrerPolicy'
+    PreflightRejected:
+      description: |
+        The origin is not the dashboard origin (`INVALID_ORIGIN`), or the requested method is wrong
+        or the request has custom headers (`INVALID_REQUEST`). The response has no CORS allow headers.
+      headers:
+        Vary:
+          $ref: '#/components/headers/Vary'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        Referrer-Policy:
+          $ref: '#/components/headers/ReferrerPolicy'
       content:
         application/json:
           schema:

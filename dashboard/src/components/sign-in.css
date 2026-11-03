@@ -1,0 +1,115 @@
+.auth-page {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 80px 20px;
+  background-image:
+    radial-gradient(ellipse at center, transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
+    url('./sign-in-dots.png');
+  background-size: auto, 25px 25px;
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(50% + 70px);
+  left: 50%;
+  width: min(400px, 100%);
+  height: 200px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #a5b8ff2e;
+  filter: blur(160px);
+  pointer-events: none;
+}
+
+.sign-in-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: min(400px, 100%);
+  padding: 36px 32px 32px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.sign-in-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sign-in-copy h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: 29px;
+  letter-spacing: -0.015em;
+}
+
+.sign-in-copy p {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 18px;
+}
+
+.auth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: 500 var(--text-body)/18px var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-button:hover {
+  background: var(--color-bg);
+}
+
+.auth-button:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 3px;
+}
+
+.auth-button img {
+  flex-shrink: 0;
+}
+
+.sign-in-terms {
+  margin: 0;
+  font-size: var(--text-footnote);
+  line-height: 16px;
+}
+
+.sign-in-terms span {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.sign-in-footer {
+  position: absolute;
+  bottom: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  max-width: calc(100% - 40px);
+  font-size: var(--text-footnote);
+  line-height: 16px;
+}

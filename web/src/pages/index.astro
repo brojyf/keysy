@@ -1,15 +1,108 @@
 ---
-import Landing from '../components/Landing';
+import Page from "../layouts/Page.astro";
+import Hero from "../components/Hero";
+import ProductWindow from "../components/previews/ProductWindow";
+import AccessChannels from "../components/AccessChannels";
+import {
+  PlatformCards,
+  SecurityCards,
+  AvailabilityCards,
+} from "../components/previews/FeatureCards";
+import Workflow from "../components/Workflow";
+import SdkShowcase from "../components/SdkShowcase";
+import CallToAction from "../components/CallToAction";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Keysy</title>
-	</head>
-	<body>
-		<Landing />
-	</body>
-</html>
+<Page
+  title="Keysy — Your secrets. Simply managed."
+  description="A calmer way to manage secrets for local development and deployed services. AI keeps access policies right as things move."
+>
+  <main id="main-content">
+    <section class="section hero" aria-labelledby="hero-title">
+      <Hero client:load />
+    </section>
+    <section class="section access-section" aria-labelledby="access-title">
+      <div class="section-inner">
+        <div class="section-heading centered">
+          <h2 id="access-title">
+            One vault. Four ways in.
+          </h2>
+        </div><AccessChannels />
+      </div>
+    </section>
+    <section class="section" id="platform" aria-labelledby="platform-title">
+      <div class="section-inner">
+        <div class="section-heading">
+          <h2 id="platform-title">
+            Everything you need.<br />Room to breathe.
+          </h2><p>An organized home for the secrets your work depends on.</p>
+        </div><PlatformCards />
+      </div>
+    </section>
+    <section class="section" id="security" aria-labelledby="security-title">
+      <div class="section-inner">
+        <div class="section-heading">
+          <h2 id="security-title">
+            Locked by default.<br />Opened by policy.
+          </h2><p>
+            Encrypted at rest, keys kept apart, and decrypted only for the
+            policies that allow it.
+          </p>
+        </div><SecurityCards />
+      </div>
+    </section>
+    <section
+      class="section"
+      id="availability"
+      aria-labelledby="availability-title"
+    >
+      <div class="section-inner">
+        <div class="section-heading">
+          <h2 id="availability-title">
+            Always available.<br />No single point of failure.
+          </h2><p>
+            Redundant services, a public status page, and a 99.9% uptime
+            commitment.
+          </p>
+        </div><AvailabilityCards />
+      </div>
+    </section>
+    <section
+      class="section dashboard-section"
+      id="dashboard"
+      aria-labelledby="dashboard-title"
+    >
+      <div class="section-inner">
+        <div class="section-heading centered">
+          <h2 id="dashboard-title">
+            From paste<br />to protected.
+          </h2><p>
+            Paste a new value and reset the reminder. Keysy hides the value, and
+            every save adds a version to its folder.
+          </p>
+        </div><ProductWindow update client:visible />
+      </div>
+    </section>
+    <section
+      class="section workflow-section"
+      id="workflow"
+      aria-label="Workflow"
+    >
+      <div class="section-inner"><Workflow /></div>
+    </section>
+    <section class="section sdk-section" id="sdks" aria-labelledby="sdk-title">
+      <div class="section-inner split-section">
+        <div class="section-heading">
+          <h2 id="sdk-title">
+            <span class="muted">Fetch secrets</span><br />from your code.
+          </h2><p>Available for Go, TypeScript, Python, Rust, Java, and C#.</p>
+        </div><SdkShowcase client:visible />
+      </div>
+    </section>
+    <section class="section cta-section" aria-labelledby="cta-title">
+      <div class="section-inner">
+        <CallToAction client:visible />
+      </div>
+    </section>
+  </main>
+</Page>
