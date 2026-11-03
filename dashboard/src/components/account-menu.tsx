@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { Monitor, Moon, Sun, UserRound } from 'lucide-react'
-import { useRef } from 'react'
-import { mockProfile } from '../app/account/mock-account'
+import { useRef, useState } from 'react'
 
 // Theme is not available yet: the dashboard is light-only, so the switch is disabled.
 const themeOptions = [
@@ -13,12 +12,15 @@ const themeOptions = [
 ]
 
 export type AccountMenuProps = {
-  email?: string
+  displayName: string
+  avatarUrl?: string
+  email: string
   signOutStatus: 'idle' | 'pending' | 'error'
   onSignOut: () => void
 }
 
-export default function AccountMenu({ email, signOutStatus, onSignOut, selected }: AccountMenuProps & { selected: boolean }) {
+export default function AccountMenu({ displayName, avatarUrl, email, signOutStatus, onSignOut, selected }: AccountMenuProps & { selected: boolean }) {
+  const [failedAvatarURL, setFailedAvatarURL] = useState<string>()
   const menu = useRef<HTMLDivElement>(null)
   return (
     <>
@@ -31,13 +33,14 @@ export default function AccountMenu({ email, signOutStatus, onSignOut, selected 
         data-selected={selected || undefined}
       >
         <span className="rail-avatar">
-          <UserRound size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
+          {avatarUrl && failedAvatarURL !== avatarUrl
+            ? <img src={avatarUrl} referrerPolicy="no-referrer" alt="" onError={() => setFailedAvatarURL(avatarUrl)} />
+            : <UserRound size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />}
         </span>
       </button>
       <div id="account-menu" className="account-menu" popover="auto" ref={menu}>
         <div className="account-menu-identity">
-          {/* The session has no name yet; the name is mock data like the Account page. */}
-          <p className="account-menu-name">{mockProfile.name}</p>
+          <p className="account-menu-name">{displayName}</p>
           {email && <p className="account-menu-email">{email}</p>}
         </div>
         <hr className="account-menu-divider" />

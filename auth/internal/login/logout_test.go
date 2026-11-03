@@ -36,7 +36,12 @@ func assertClearedCookies(t *testing.T, h *Handler, w *httptest.ResponseRecorder
 	seen := map[string]bool{}
 	for _, c := range cookies {
 		seen[c.Name] = true
-		if c.Value != "" || c.MaxAge >= 0 || c.Path != "/" || c.Domain != "" || !c.HttpOnly || c.Secure == h.localHTTP || c.SameSite != http.SameSiteLaxMode {
+		if c.Value != "" || c.MaxAge >= 0 || c.Path != "/" || c.Domain != func() string {
+			if c.Name == accessCookieName && !h.localHTTP {
+				return h.cookieDomain
+			}
+			return ""
+		}() || !c.HttpOnly || c.Secure == h.localHTTP || c.SameSite != http.SameSiteLaxMode {
 			t.Errorf("unsafe cleared cookie %s", c.Name)
 		}
 	}

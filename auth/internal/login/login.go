@@ -22,30 +22,32 @@ import (
 
 const (
 	oauthCookieName     = "__Host-keysy-oauth"
-	accessCookieName    = "__Host-keysy-access"
+	accessCookieName    = "__Secure-keysy-access"
 	refreshCookieName   = "__Host-keysy-refresh"
 	transactionLifetime = 10 * time.Minute
 )
 
 type Options struct {
-	OAuth       oauth2.Config
-	SupabaseURL string
-	SupabaseKey string
-	WebAppURL   string
-	CookieKey   []byte
-	HTTPClient  *http.Client
+	CookieDomain string
+	OAuth        oauth2.Config
+	SupabaseURL  string
+	SupabaseKey  string
+	WebAppURL    string
+	CookieKey    []byte
+	HTTPClient   *http.Client
 }
 
 type Handler struct {
-	oauth       oauth2.Config
-	supabaseURL string
-	supabaseKey string
-	webAppURL   string
-	webOrigin   string
-	cipher      cipher.AEAD
-	httpClient  *http.Client
-	localHTTP   bool
-	now         func() time.Time
+	cookieDomain string
+	oauth        oauth2.Config
+	supabaseURL  string
+	supabaseKey  string
+	webAppURL    string
+	webOrigin    string
+	cipher       cipher.AEAD
+	httpClient   *http.Client
+	localHTTP    bool
+	now          func() time.Time
 }
 
 type transaction struct {
@@ -80,8 +82,9 @@ func New(options Options) (*Handler, error) {
 		webHost = strings.TrimSuffix(webHost, ":"+webURL.Port())
 	}
 	return &Handler{
-		localHTTP: redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
-		oauth:     options.OAuth, supabaseURL: options.SupabaseURL,
+		cookieDomain: options.CookieDomain,
+		localHTTP:    redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
+		oauth:        options.OAuth, supabaseURL: options.SupabaseURL,
 		supabaseKey: options.SupabaseKey, webAppURL: options.WebAppURL,
 		webOrigin: webURL.Scheme + "://" + webHost,
 		cipher:    aead, httpClient: options.HTTPClient, now: time.Now,
@@ -91,10 +94,8 @@ func New(options Options) (*Handler, error) {
 func (h *Handler) Register(router *gin.Engine) {
 	router.GET("/v0/auth/google", h.start)
 	router.GET("/v0/auth/callback", h.callback)
-	router.GET("/v0/auth/session", h.dashboardCORS(http.MethodGet), h.currentSession)
-	router.OPTIONS("/v0/auth/session", h.dashboardCORS(http.MethodGet))
-	router.POST("/v0/auth/logout", h.dashboardCORS(http.MethodPost), h.logout)
-	router.OPTIONS("/v0/auth/logout", h.dashboardCORS(http.MethodPost))
+	router.POST("/v0/auth/logout", h.dashboardCORS(), h.logout)
+	router.OPTIONS("/v0/auth/logout", h.dashboardCORS())
 }
 
 func sensitiveResponse(c *gin.Context) {
@@ -213,13 +214,17 @@ func randomToken() string {
 
 func (h *Handler) cookieName(name string) string {
 	if h.localHTTP {
-		return strings.TrimPrefix(name, "__Host-")
+		return strings.TrimPrefix(strings.TrimPrefix(name, "__Host-"), "__Secure-")
 	}
 	return name
 }
 
 func (h *Handler) newCookie(name, value string, maxAge int) *http.Cookie {
-	return &http.Cookie{Name: h.cookieName(name), Value: value, Path: "/", Secure: !h.localHTTP, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
+	domain := ""
+	if name == accessCookieName && !h.localHTTP {
+		domain = h.cookieDomain
+	}
+	return &http.Cookie{Domain: domain, Name: h.cookieName(name), Value: value, Path: "/", Secure: !h.localHTTP, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
 }
 
 func respondError(c *gin.Context, status int, code string) {

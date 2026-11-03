@@ -3,6 +3,7 @@ package login
 import (
 	"encoding/base64"
 	"encoding/json"
+	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -111,6 +112,43 @@ func TestCallbackChecksCookieSizeAfterSealing(t *testing.T) {
 					}
 				}
 			})
+		}
+	}
+}
+
+func TestAccessCookiePolicyAndAAD(t *testing.T) {
+	for _, local := range []bool{false, true} {
+		redirect := "https://auth.keysy.net/v0/auth/callback"
+		if local {
+			redirect = "http://localhost:8080/v0/auth/callback"
+		}
+		h, err := New(Options{OAuth: oauth2.Config{RedirectURL: redirect}, WebAppURL: "https://dashboard.keysy.net/", CookieDomain: "keysy.net", CookieKey: []byte(strings.Repeat("k", 32))})
+		if err != nil {
+			t.Fatal(err)
+		}
+		cookie := h.newTokenCookie(accessCookieName, "access-token", 3600)
+		wantName, wantDomain := accessCookieName, "keysy.net"
+		if local {
+			wantName, wantDomain = "keysy-access", ""
+		}
+		if cookie.Name != wantName || cookie.Domain != wantDomain || cookie.Secure == local {
+			t.Fatal("wrong access cookie policy")
+		}
+		if got := openTestCookie(t, h, "__Secure-keysy-access", cookie.Value); got != "access-token" {
+			t.Fatal("wrong AAD")
+		}
+		if _, err := h.openTokenCookie("keysy-access", cookie.Value); err == nil {
+			t.Fatal("accepted stripped-name AAD")
+		}
+		cleared := h.newCookie(accessCookieName, "", -1)
+		if cleared.Name != cookie.Name || cleared.Domain != cookie.Domain || cleared.MaxAge != -1 {
+			t.Fatal("logout cookie scope differs")
+		}
+		for _, name := range []string{refreshCookieName, oauthCookieName} {
+			cookie := h.newCookie(name, "", -1)
+			if cookie.Domain != "" {
+				t.Fatal("host-only cookie has a Domain")
+			}
 		}
 	}
 }

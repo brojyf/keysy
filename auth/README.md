@@ -1,7 +1,8 @@
 # Keysy auth
 
 Go and Gin service for server-side Google sign-in. The browser visits Keysy
-and Google. Only the auth service calls Supabase.
+and Google. Auth handles token exchanges with Supabase; the API fetches
+Supabase JWKS for local JWT verification.
 
 ## Routes
 
@@ -9,18 +10,15 @@ and Google. Only the auth service calls Supabase.
 |---|---|
 | `GET /v0/auth/google` | Start Google sign-in with state, PKCE S256, and an OIDC nonce. |
 | `GET /v0/auth/callback` | Exchange the authorization code, set token cookies, and redirect to `WEB_APP_URL`. |
-| `GET /v0/auth/session` | Decrypt the access cookie, verify it with Supabase, and return the user's ID and optional email. |
 | `POST /v0/auth/logout` | Revoke the current Supabase session and clear all three cookies. |
-| `OPTIONS /v0/auth/session`, `OPTIONS /v0/auth/logout` | Validate the dashboard origin and requested method for CORS preflight. |
+| `OPTIONS /v0/auth/logout` | Validate the dashboard origin and requested method for CORS preflight. |
 
-The session and logout routes allow credentialed CORS requests only from the
+The logout route allows credentialed CORS requests only from the
 exact origin of `WEB_APP_URL`. Responses include `Access-Control-Allow-Origin`,
 `Access-Control-Allow-Credentials: true`, and `Vary: Origin`, including error
 responses for the allowed origin. Other origins, including sibling subdomains,
-are rejected before any Supabase request. Preflight allows only GET for session
-and POST for logout, with no custom request headers. Login and callback are
-browser navigations, not CORS endpoints. Session requests without `Origin` remain
-available to non-browser clients; logout always requires the dashboard origin.
+are rejected before any Supabase request. Preflight allows only POST for logout, with no custom request headers. Login and callback are
+browser navigations, not CORS endpoints. Logout always requires the dashboard origin.
 
 Logout requires an `Origin` header that matches the origin of `WEB_APP_URL`.
 It takes no body or query parameters. It uses Supabase's `scope=local`, so it
@@ -30,7 +28,7 @@ still permits local cookie cleanup. If Supabase is unavailable, logout returns
 remain valid until their expiry even after session revocation.
 
 Refresh is not implemented. An expired access token requires a new sign-in.
-The session route never returns tokens to the browser.
+The dashboard reads the current user from the API at `GET /v0/me`.
 
 ## Cookies
 
@@ -41,22 +39,21 @@ Their values use unpadded URL-safe Base64 encoding.
 | Cookie | Contents | Lifetime |
 |---|---|---|
 | `__Host-keysy-oauth` | State, PKCE verifier, nonce, and issue time | 10 minutes; cleared on callback |
-| `__Host-keysy-access` | Supabase access token | Supabase's `expires_in` |
+| `__Secure-keysy-access` | Supabase access token | Supabase's `expires_in` |
 | `__Host-keysy-refresh` | Supabase refresh token | Browser session cookie |
 
-HTTPS cookies use `HttpOnly; Secure; SameSite=Lax; Path=/` and no `Domain`.
-They belong to the auth hostname, not to the dashboard or the parent domain.
-The HTTPS auth and dashboard origins must be on the same site, such as
-`auth.keysy.net` and `dashboard.keysy.net`. They are cross-origin but same-site,
-so credentialed fetch requests can send the auth cookies without `SameSite=None`
-or a shared `Domain=keysy.net` cookie. Different sites are not supported by this
-cookie policy. On localhost, cookies are shared across ports because cookies
-are scoped to hosts, not ports.
+HTTPS cookies use `HttpOnly; Secure; SameSite=Lax; Path=/`. The access cookie
+uses `Domain=<COOKIE_DOMAIN>` (`keysy.net` in production), so the API can read it.
+Refresh and OAuth cookies remain host-only, with no Domain. Browser origins must
+remain on the same site. On localhost, cookies are shared across ports.
+The access cookie always uses `__Secure-keysy-access` as AES-GCM AAD, even when
+the local browser cookie is named `keysy-access`.
+
 The callback checks the complete serialized size after encryption and rejects
 cookies larger than 4096 bytes without issuing a partial session.
 
 For local HTTP development only, `AUTH_URL=http://localhost:<port>` removes
-`Secure` and the `__Host-` prefix. Other HTTP hosts are not allowed by configuration.
+`Secure`, Domain, and the `__Host-` / `__Secure-` prefixes. Other HTTP hosts are not allowed by configuration.
 Supabase URLs must always use HTTPS.
 
 ## Configuration
@@ -65,8 +62,12 @@ Use the variables listed in `.env.example`. Export them before running the
 service directly; it does not load environment files automatically. For local
 development, Air loads the ignored `.env.local` file.
 
+`COOKIE_DOMAIN` is required for HTTPS auth, must be a bare domain without a
+scheme, port, or leading dot, and must equal or contain the auth hostname.
+Set it to `keysy.net` in production and leave it empty for HTTP localhost.
+
 `OAUTH_COOKIE_KEY` is a Base64-encoded, random 32-byte key used for all three
-cookies. All auth replicas must use the same key. Generate one with:
+cookies. All auth and API replicas must use the same key. Generate one with:
 
 ```sh
 openssl rand -base64 32
@@ -89,7 +90,7 @@ service and the dashboard hostname to Next.js. Both can run behind one proxy on
 the same Fly Machine; sharing a Machine does not make their browser origins equal.
 The browser navigates to the auth origin to start login, returns to the auth
 origin for the callback, then redirects to the dashboard. The dashboard calls
-the auth origin directly for session and logout requests.
+the API origin for `/v0/me` and the auth origin for logout requests.
 Register `https://auth.keysy.net/v0/auth/callback` in Google and configure the
 same Google client in Supabase.
 

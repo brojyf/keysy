@@ -5,8 +5,9 @@ import Rail from './rail'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'
   const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
-  const [user, setUser] = useState<{ id: string; email?: string } | null>()
+  const [user, setUser] = useState<{ id: string; email: string; displayName: string; avatarUrl?: string } | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
 
@@ -14,7 +15,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     const controller = new AbortController()
     async function checkSession() {
       try {
-        const response = await fetch(new URL('/v0/auth/session', authURL).href, {
+        const response = await fetch(new URL('/v0/me', apiURL).href, {
           credentials: 'include',
           signal: controller.signal,
         })
@@ -24,10 +25,10 @@ function SessionGate({ children }: { children: ReactNode }) {
         }
         if (!response.ok) throw new Error('Session check failed')
         const session = await response.json()
-        if (typeof session?.user?.id !== 'string' || !session.user.id || (session.user.email !== undefined && typeof session.user.email !== 'string')) {
+        if (typeof session?.id !== 'string' || !session.id || typeof session.email !== 'string' || typeof session.displayName !== 'string' || (session.avatarUrl !== undefined && typeof session.avatarUrl !== 'string')) {
           throw new Error('Invalid session response')
         }
-        if (!controller.signal.aborted) setUser(session.user)
+        if (!controller.signal.aborted) setUser(session)
       } catch {
         if (!controller.signal.aborted) {
           setUser(null)
@@ -37,7 +38,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     }
     void checkSession()
     return () => controller.abort()
-  }, [authURL])
+  }, [apiURL])
 
   async function logout() {
     if (logoutStatus === 'pending') return
@@ -62,7 +63,7 @@ function SessionGate({ children }: { children: ReactNode }) {
       <div className="dashboard">
         <Topbar />
         <div className="dashboard-body">
-          <Rail email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
+          <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
           <main className="dashboard-content">{children}</main>
         </div>
       </div>

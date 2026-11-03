@@ -221,133 +221,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /v0/auth/session:
-    get:
-      tags: [Session]
-      operationId: getSession
-      summary: Get the current user
-      description: |
-        Decrypts the access cookie and verifies the access token with Supabase on each call.
-        Returns only the user ID and the optional email. It never returns tokens.
-
-        The request must have no body and no query parameters.
-        Browsers must send the dashboard origin. Requests without an `Origin` header are allowed for non-browser clients.
-        Other origins are rejected with `403` before any Supabase request.
-      security:
-        - accessCookie: []
-      responses:
-        '200':
-          description: The signed-in user.
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Vary:
-              $ref: '#/components/headers/Vary'
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-            Referrer-Policy:
-              $ref: '#/components/headers/ReferrerPolicy'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SessionResponse'
-        '400':
-          description: Invalid request, such as a query string, a body, or duplicate access cookies. The `code` is `INVALID_REQUEST`.
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Vary:
-              $ref: '#/components/headers/Vary'
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-            Referrer-Policy:
-              $ref: '#/components/headers/ReferrerPolicy'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: The access cookie is missing, invalid, or expired, or Supabase rejected the token. The `code` is `UNAUTHENTICATED`.
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Vary:
-              $ref: '#/components/headers/Vary'
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-            Referrer-Policy:
-              $ref: '#/components/headers/ReferrerPolicy'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          $ref: '#/components/responses/InvalidOrigin'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '502':
-          description: Supabase sent an invalid response. The `code` is `INVALID_PROVIDER_RESPONSE`.
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Vary:
-              $ref: '#/components/headers/Vary'
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-            Referrer-Policy:
-              $ref: '#/components/headers/ReferrerPolicy'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '503':
-          description: Supabase is unavailable. The `code` is `SESSION_UNAVAILABLE`.
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Vary:
-              $ref: '#/components/headers/Vary'
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-            Referrer-Policy:
-              $ref: '#/components/headers/ReferrerPolicy'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    options:
-      tags:
-        - Session
-      operationId: preflightSession
-      security: []
-      summary: CORS preflight for the session route
-      description: |
-        Allows only the dashboard origin, only the `GET` method, and no custom request headers.
-        The service makes no Supabase request.
-      parameters:
-        - $ref: '#/components/parameters/Origin'
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          description: Must be `GET`.
-          schema:
-            type: string
-            enum: [GET]
-      responses:
-        '204':
-          $ref: '#/components/responses/PreflightAllowed'
-        '403':
-          $ref: '#/components/responses/PreflightRejected'
   /v0/auth/logout:
     post:
       tags: [Session]
@@ -371,7 +244,7 @@ paths:
           description: Signed out. The response clears the three auth cookies.
           headers:
             Set-Cookie:
-              description: Expired `__Host-keysy-oauth`, `__Host-keysy-access`, and `__Host-keysy-refresh` cookies.
+              description: Expired `__Host-keysy-oauth`, `__Secure-keysy-access`, and `__Host-keysy-refresh` cookies.
               schema:
                 type: string
             Access-Control-Allow-Origin:
@@ -450,13 +323,13 @@ components:
     accessCookie:
       type: apiKey
       in: cookie
-      name: __Host-keysy-access
+      name: __Secure-keysy-access
       description: |
         The encrypted Supabase access token (AES-256-GCM). The service sets it at sign-in with
-        `HttpOnly; Secure; SameSite=Lax; Path=/` and no `Domain`. The cookie lives as long as the access token.
+        `HttpOnly; Secure; SameSite=Lax; Path=/; Domain=<COOKIE_DOMAIN>` (`keysy.net` in production). Refresh and OAuth cookies stay host-only. The cookie lives as long as the access token.
         Clients cannot create it. Browsers send it with `credentials: 'include'`.
 
-        For local HTTP development only (`AUTH_URL=http://localhost:<port>`), the cookie drops `Secure` and the `__Host-` prefix, so its name is `keysy-access`.
+        For local HTTP development only (`AUTH_URL=http://localhost:<port>`), the cookie drops `Secure`, Domain, and the `__Secure-` prefix, so its name is `keysy-access`.
   parameters:
     Origin:
       name: Origin
@@ -490,19 +363,6 @@ components:
       schema:
         type: string
   schemas:
-    SessionResponse:
-      type: object
-      required: [user]
-      properties:
-        user:
-          type: object
-          required: [id]
-          properties:
-            id:
-              type: string
-            email:
-              type: string
-              description: Present only when Supabase returns an email.
     Error:
       type: object
       required: [error]
@@ -541,7 +401,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InvalidOrigin:
-      description: The `Origin` header is missing (logout only), repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`. This response has no CORS allow headers.
+      description: The `Origin` header is missing, repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`. This response has no CORS allow headers.
       headers:
         Vary:
           $ref: '#/components/headers/Vary'

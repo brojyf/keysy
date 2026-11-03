@@ -29,7 +29,7 @@ func TestBrowserCookieRoundTrip(t *testing.T) {
 			}
 			request := func(method, path string) *httptest.ResponseRecorder {
 				r := httptest.NewRequest(method, origins.auth+path, nil)
-				if method == http.MethodPost || path == "/v0/auth/session" {
+				if method == http.MethodPost {
 					r.Header.Set("Origin", origins.dashboard)
 				}
 				for _, cookie := range jar.Cookies(base) {
@@ -39,7 +39,12 @@ func TestBrowserCookieRoundTrip(t *testing.T) {
 				f.router.ServeHTTP(w, r)
 				for _, cookie := range w.Result().Cookies() {
 					secure := base.Scheme == "https"
-					if cookie.Secure != secure || strings.HasPrefix(cookie.Name, "__Host-") != secure || !cookie.HttpOnly || cookie.Path != "/" || cookie.Domain != "" || cookie.SameSite != http.SameSiteLaxMode {
+					if cookie.Secure != secure || (strings.HasPrefix(cookie.Name, "__Host-") || strings.HasPrefix(cookie.Name, "__Secure-")) != secure || !cookie.HttpOnly || cookie.Path != "/" || cookie.Domain != func() string {
+						if cookie.Name == accessCookieName {
+							return f.handler.cookieDomain
+						}
+						return ""
+					}() || cookie.SameSite != http.SameSiteLaxMode {
 						t.Errorf("cookie policy does not match browser origin %s: %s", origins.auth, cookie.Name)
 					}
 				}
@@ -66,25 +71,15 @@ func TestBrowserCookieRoundTrip(t *testing.T) {
 			if origins.auth == "https://auth.keysy.net" {
 				for _, address := range []string{origins.dashboard, "https://keysy.net", "https://other.keysy.net"} {
 					otherHost, _ := url.Parse(address)
-					if len(jar.Cookies(otherHost)) != 0 {
-						t.Fatalf("auth cookies leaked to %s", address)
+					if cookies := jar.Cookies(otherHost); len(cookies) != 1 || cookies[0].Name != accessCookieName {
+						t.Fatalf("shared access cookie missing or host-only cookies leaked to %s", address)
 					}
 				}
-			}
-			session := request(http.MethodGet, "/v0/auth/session")
-			assertDashboardCORS(t, session, origins.dashboard)
-			if session.Code != http.StatusOK || f.userCalls != 1 {
-				t.Fatalf("session status = %d: %s", session.Code, session.Body.String())
 			}
 			logout := request(http.MethodPost, "/v0/auth/logout")
 			assertDashboardCORS(t, logout, origins.dashboard)
 			if logout.Code != http.StatusNoContent || f.logoutCalls != 1 || len(jar.Cookies(base)) != 0 {
 				t.Fatalf("logout status = %d; cookies or session were not cleared", logout.Code)
-			}
-			session = request(http.MethodGet, "/v0/auth/session")
-			assertDashboardCORS(t, session, origins.dashboard)
-			if session.Code != http.StatusUnauthorized || f.userCalls != 1 {
-				t.Fatalf("session survived logout: %d", session.Code)
 			}
 		})
 	}

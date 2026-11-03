@@ -26,6 +26,7 @@ jobs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
       cli: ${{ steps.filter.outputs.cli }}
       auth: ${{ steps.filter.outputs.auth }}
+      api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
       wiki: ${{ steps.filter.outputs.wiki }}
       bun: ${{ steps.filter.outputs.bun }}
@@ -43,6 +44,9 @@ jobs:
               - '.github/**'
             cli:
               - 'cli/**'
+              - '.github/**'
+            api:
+              - 'api/**'
               - '.github/**'
             auth:
               - 'auth/**'
@@ -147,6 +151,7 @@ jobs:
       - name: Typecheck and build
         env:
           NEXT_PUBLIC_AUTH_URL: https://auth.keysy.net
+          NEXT_PUBLIC_API_URL: https://api.keysy.net
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test
@@ -223,6 +228,30 @@ jobs:
         with:
           go-version-file: auth/go.mod
           cache-dependency-path: auth/go.sum
+      - name: Test
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build ./...
+
+  api:
+    name: API
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
       - name: Test
         run: go test -race ./...
       - name: Vet

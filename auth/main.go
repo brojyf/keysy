@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/brojyf/keysy/auth/internal/config"
 	"github.com/brojyf/keysy/auth/internal/login"
+	"github.com/brojyf/keysy/auth/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 )
@@ -26,14 +29,16 @@ func main() {
 			},
 		},
 		SupabaseURL: c.SupabaseURL, SupabaseKey: c.SupabaseKey, WebAppURL: c.WebAppURL,
-		CookieKey: c.CookieKey, HTTPClient: login.NewHTTPClient(),
+		CookieDomain: c.CookieDomain, CookieKey: c.CookieKey, HTTPClient: login.NewHTTPClient(),
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 	gin.SetMode(gin.ReleaseMode)
-	// Avoid request logging: callback URLs carry short-lived authorization codes.
+	// Log route templates only: callback URLs carry short-lived authorization codes.
+	requestLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	router := gin.New()
+	router.Use(middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger))
 	router.HandleMethodNotAllowed = true
 	if err := router.SetTrustedProxies(nil); err != nil {
 		log.Fatal(err)

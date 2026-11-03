@@ -11,11 +11,13 @@ let browser: Window
 let root: Root
 let container: HTMLDivElement
 const originalFetch = globalThis.fetch
+const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
 const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
   currentPathname = '/secrets'
+  process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net/'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
@@ -33,6 +35,8 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
+  if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
+  else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
   if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
   else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
@@ -59,20 +63,21 @@ test('shows the sign-in design and links directly to the auth origin', async () 
   expect(login?.querySelector('img')?.getAttribute('width')).toBe('18')
   expect(login?.querySelector('img')?.getAttribute('src')).toBe('/google-symbol.svg')
   expect(container.querySelectorAll('[aria-disabled="true"]')).toHaveLength(5)
-  expect(sessionRequest.mock.calls[0]?.[0]).toBe('https://auth.keysy.net/v0/auth/session')
+  expect(sessionRequest.mock.calls[0]?.[0]).toBe('https://api.keysy.net/v0/me')
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
 })
 
 test('development calls the separate localhost auth port without a rewrite', async () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
+  delete process.env.NEXT_PUBLIC_API_URL
   await renderSessionGate()
   expect(container.querySelector('a.auth-button')?.getAttribute('href')).toBe('http://localhost:8080/v0/auth/google')
-  expect(sessionRequest.mock.calls[0]?.[0]).toBe('http://localhost:8080/v0/auth/session')
+  expect(sessionRequest.mock.calls[0]?.[0]).toBe('http://localhost:8081/v0/me')
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
 })
 
 test('shows the rail and page content only after server verification', async () => {
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id', email: 'member@example.com' } })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
@@ -86,7 +91,7 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.getAttribute('aria-label'))).toEqual(['Secrets'])
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
   expect(container.querySelector('button[aria-label="Account menu"]')).not.toBeNull()
-  expect(container.querySelector('.account-menu-name')?.textContent).toBe('Jordan Lee')
+  expect(container.querySelector('.account-menu-name')?.textContent).toBe('Test Member')
   expect(container.querySelector('.account-menu-email')?.textContent).toBe('member@example.com')
   expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
   const themeButtons = [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Theme"] button')]
@@ -101,7 +106,7 @@ test('shows the rail and page content only after server verification', async () 
 })
 
 test('logout waits for the server, prevents duplicate requests, and restores sign-in', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   let finishLogout!: (response: Response) => void
   sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
@@ -120,7 +125,7 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
 })
 
 test('shows the top bar with the mock organization and action buttons', async () => {
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   const topbar = container.querySelector('header.topbar')
   expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
@@ -137,13 +142,13 @@ test('shows the top bar with the mock organization and action buttons', async ()
 
 test('highlights the rail item for nested paths', async () => {
   currentPathname = '/audit-log/2026'
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   expect(container.querySelector('nav a[aria-current="page"]')?.getAttribute('aria-label')).toBe('Audit log')
 })
 
 test('failed logout keeps the signed-in state and allows retry', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id' } })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => signOutButton()!.click())
@@ -156,7 +161,7 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
 })
 
 test('a reload verifies the session again instead of trusting local state', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ user: { id: 'user-id', email: 'member@example.com' } })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()
   await act(() => root.unmount())
   root = createRoot(container)
@@ -174,4 +179,26 @@ test('an unavailable or invalid session response never fabricates a login', asyn
     await act(() => root.unmount())
     root = createRoot(container)
   }
+})
+
+test('shows the Google avatar and falls back after an image error', async () => {
+ sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member', avatarUrl: 'https://google.test/avatar' })))
+ await renderSessionGate()
+ const avatar = container.querySelector<HTMLImageElement>('.rail-avatar img')!
+ expect(avatar.getAttribute('src')).toBe('https://google.test/avatar')
+ expect(avatar.getAttribute('referrerpolicy')).toBe('no-referrer')
+ expect(avatar.alt).toBe('')
+ await act(() => avatar.dispatchEvent(new browser.Event('error')))
+ expect(container.querySelector('.rail-avatar img')).toBeNull()
+ expect(container.querySelector('.rail-avatar svg')).not.toBeNull()
+})
+
+test('rejects malformed me fields', async () => {
+ for (const fields of [{ id: 1 }, { email: null }, { displayName: null }, { avatarUrl: 42 }]) {
+ sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Member', ...fields })))
+ await renderSessionGate()
+ expect(container.querySelector('nav')).toBeNull()
+ expect(container.querySelector('[role="alert"]')).not.toBeNull()
+ await act(() => root.unmount()); root = createRoot(container)
+ }
 })

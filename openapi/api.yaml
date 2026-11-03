@@ -24,6 +24,8 @@ paths:
   /v0/me:
     get:
       tags: [Orgs]
+      security:
+        - accessCookie: []
       operationId: getMe
       summary: Get the signed-in user and their orgs
       responses:
@@ -864,6 +866,10 @@ paths:
 
 components:
   securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-keysy-access
     bearerAuth:
       type: http
       scheme: bearer
@@ -934,7 +940,7 @@ components:
       enum: [super_admin, admin, user]
     Me:
       type: object
-      required: [id, email, memberships]
+      required: [id, email, displayName, memberships]
       properties:
         id:
           type: string
@@ -942,6 +948,11 @@ components:
         email:
           type: string
           format: email
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
         memberships:
           type: array
           items:

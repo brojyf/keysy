@@ -35,8 +35,8 @@ services.
 ## Architecture
 
 - `main.go` wires configuration, the Google OAuth client, and the Gin router.
-  It uses `gin.New()` without request logging, because callback URLs carry
-  authorization codes. It trusts no proxies and sets strict server timeouts.
+  It uses recovery, generated request IDs, and JSON request logs with route
+  templates only, because callback URLs carry authorization codes. It trusts no proxies and sets strict server timeouts.
 - `internal/config` reads environment variables and rejects unsafe values at
   startup. Browser URLs (`AUTH_URL`, `WEB_APP_URL`) must be HTTPS, except
   `http://localhost`. `SUPABASE_URL` must always be HTTPS.
@@ -49,11 +49,10 @@ services.
   - Supabase access and refresh tokens never reach browser JavaScript. They are
     stored in encrypted `HttpOnly` cookies (AES-256-GCM, random nonce, cookie
     name as additional authenticated data).
-  - `GET /v0/auth/session` verifies the access token with Supabase on each call
-    and returns only the user ID and optional email.
+  - The dashboard reads the current user from the API's `GET /v0/me` route.
   - `POST /v0/auth/logout` revokes only the current Supabase session
     (`scope=local`) and clears all auth cookies.
-  - Credentialed CORS is allowed only for session and logout, and only from the
+  - Credentialed CORS is allowed only for logout, and only from the
     exact origin of `WEB_APP_URL`.
 
 ## Invariants
@@ -61,10 +60,11 @@ services.
 Keep these unless the user approves a design change:
 
 - Auth and dashboard are different origins on the same site
-  (`auth.keysy.net`, `dashboard.keysy.net`). Cookies are host-only on the auth
-  host: `__Host-` prefix, `Secure`, `HttpOnly`, `SameSite=Lax`, no `Domain`.
-  Do not add `Domain=keysy.net` or `SameSite=None`. Only localhost HTTP drops
-  `Secure` and the `__Host-` prefix.
+  (`auth.keysy.net`, `dashboard.keysy.net`). The access cookie is `__Secure-keysy-access` with `Domain=keysy.net`.
+  Refresh and OAuth cookies remain host-only with the `__Host-` prefix. All
+  cookies use `Secure`, `HttpOnly`, and `SameSite=Lax`. Only HTTP localhost
+  drops `Secure` and both prefixes, with no Domain. `COOKIE_DOMAIN` must be
+  empty locally and must contain the auth host in production.
 - Reject a bad origin, method, header, or cookie before any Supabase call.
 - Do not put tokens, authorization codes, or upstream error text in response
   bodies or logs. Sensitive responses use `no-store` and `no-referrer`.

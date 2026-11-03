@@ -26,29 +26,29 @@ Run from `dashboard/`:
 bun install --frozen-lockfile
 bun run dev        # http://localhost:5173, Fast Refresh; auth defaults to http://localhost:8080
 bun run lint       # oxlint
-NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net bun run build   # tsc --noEmit, then next build
+NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net NEXT_PUBLIC_API_URL=https://api.keysy.net bun run build   # tsc --noEmit, then next build
 bun run test       # node --test tests/*.test.mjs, then bun test on the .tsx tests
 node --test tests/next-config.test.mjs                  # one Node test file
 bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 ```
 
 CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build with
-`NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net`, the tests, and `bun test` in
+both public service URLs, the tests, and `bun test` in
 `design/theme`.
 
 ## Architecture
 
 - `src/app/layout.tsx` wraps every route in `SessionGate`
   (`src/components/session-gate.tsx`), a Client Component. It calls
-  `{NEXT_PUBLIC_AUTH_URL}/v0/auth/session` with `credentials: 'include'`.
+  `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
   On 401 it shows the sign-in screen. On success it shows the shell (`Topbar`,
   `Rail`, page content). Logout calls `/v0/auth/logout` the same way.
   There is no Next.js middleware or server-side session check.
-- The auth service owns the session. Its cookies stay on the auth host, so
+- The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
   the browser calls the auth origin directly through credentialed CORS.
-- `NEXT_PUBLIC_AUTH_URL` is embedded at build time. `next.config.mjs` requires
-  it for production builds and accepts only an HTTPS origin (or HTTP localhost)
+- `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL` are embedded at build time. `next.config.mjs` requires
+  both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
 - Route pages under `src/app/` are stubs, except `/account`, which renders mock

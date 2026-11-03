@@ -31,9 +31,6 @@ type loginFixture struct {
 	googleForm     url.Values
 	supabaseGrant  map[string]string
 	supabaseAgent  string
-	userStatus     int
-	userBody       string
-	userCalls      int
 	logoutCalls    int
 	logoutStatus   int
 }
@@ -55,7 +52,6 @@ func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *log
 		googleStatus: 200, supabaseStatus: 200,
 		googleBody:   `{"access_token":"google-access","token_type":"Bearer","id_token":"google-id"}`,
 		supabaseBody: `{"access_token":"keysy-access","refresh_token":"keysy-refresh","token_type":"bearer","expires_in":3600}`,
-		userStatus:   200, userBody: `{"id":"user-id","email":"member@example.com","user_metadata":{"access_token":"private-metadata"}}`,
 		logoutStatus: http.StatusNoContent,
 	}
 	google := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,16 +75,6 @@ func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *log
 				t.Error("invalid server-side logout request")
 			}
 			w.WriteHeader(f.logoutStatus)
-			return
-		}
-		if r.URL.Path == "/auth/v1/user" {
-			f.userCalls++
-			if r.Method != http.MethodGet || r.Header.Get("Authorization") != "Bearer keysy-access" || r.Header.Get("apikey") != "publishable-key" || r.Header.Get("Cookie") != "" {
-				t.Error("invalid server-side user verification request")
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(f.userStatus)
-			io.WriteString(w, f.userBody)
 			return
 		}
 		f.supabaseCalls++
@@ -119,7 +105,16 @@ func newFixtureWithBrowserURLs(t *testing.T, redirectURL, webAppURL string) *log
 			Endpoint:    oauth2.Endpoint{AuthURL: "https://accounts.google.com/o/oauth2/v2/auth", TokenURL: google.URL, AuthStyle: oauth2.AuthStyleInParams},
 		},
 		SupabaseURL: supabase.URL, SupabaseKey: "publishable-key",
-		WebAppURL: webAppURL, CookieKey: []byte(strings.Repeat("k", 32)),
+		CookieDomain: func() string {
+			u, _ := url.Parse(redirectURL)
+			if strings.HasSuffix(u.Hostname(), "keysy.net") {
+				return "keysy.net"
+			}
+			if strings.HasSuffix(u.Hostname(), "keysy.test") {
+				return "keysy.test"
+			}
+			return ""
+		}(), WebAppURL: webAppURL, CookieKey: []byte(strings.Repeat("k", 32)),
 		HTTPClient: NewHTTPClient(),
 	})
 	if err != nil {
@@ -201,7 +196,12 @@ func TestGoogleLoginSetsCookiesWithoutExposingTokens(t *testing.T) {
 	}
 	seen := map[string]bool{}
 	for _, c := range w.Result().Cookies() {
-		if !c.HttpOnly || !c.Secure || c.Path != "/" || c.Domain != "" || c.SameSite != http.SameSiteLaxMode {
+		if !c.HttpOnly || !c.Secure || c.Path != "/" || c.Domain != func() string {
+			if c.Name == accessCookieName {
+				return "keysy.test"
+			}
+			return ""
+		}() || c.SameSite != http.SameSiteLaxMode {
 			t.Errorf("unsafe callback cookie: %+v", c)
 		}
 		seen[c.Name] = true
