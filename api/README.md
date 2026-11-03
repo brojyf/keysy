@@ -2,16 +2,16 @@
 
 Go, Gin, and GORM service. `GET /v0/me` returns the authenticated user's ID,
 email, profile display name, optional Google avatar, and empty memberships.
-A missing profile row is an internal error. This service does not refresh sessions.
+`PATCH /v0/me` updates the display name. A missing profile row is an internal error. This service does not refresh sessions.
 
 ## Configuration
 
 Copy `.env.example` to ignored `.env.local` for Air. Direct runs require exported
 variables. `PORT` defaults to 8081. `DATABASE_URL` must be a PostgreSQL URL with
-permission to read `public.profiles`. Use Supabase's direct or session pooler
+permission to SELECT and UPDATE `public.profiles`. Use Supabase's direct or session pooler
 connection (port 5432); the transaction pooler (port 6543) breaks prepared statements. `SUPABASE_URL` requires HTTPS.
 `WEB_APP_URL` requires HTTPS except `http://localhost`; its exact origin is
-allowed for credentialed GET requests and OPTIONS preflight.
+allowed for credentialed GET and PATCH requests and OPTIONS preflight. CORS allows only the `Content-Type` request header.
 `OAUTH_COOKIE_KEY` must decode from Base64 to 32 bytes and match auth's key.
 Never commit secrets.
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
+import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh } from '../src/lib/session-refresh'
 
 let currentPathname = '/secrets'
@@ -276,4 +277,16 @@ test('rejects malformed me fields', async () => {
  expect(container.querySelector('[role="alert"]')).not.toBeNull()
  await act(() => root.unmount()); root = createRoot(container)
  }
+})
+
+
+test('a context user change updates the account menu name', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  function ChangeName() {
+    const { user, onUserChange } = useCurrentUser()
+    return <button onClick={() => onUserChange({ ...user, displayName: 'Updated Member' })}>Change name</button>
+  }
+  await act(async () => root.render(<SessionGate><ChangeName /></SessionGate>))
+  await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Change name')!.click())
+  expect(container.querySelector('.account-menu-name')?.textContent).toBe('Updated Member')
 })

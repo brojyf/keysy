@@ -1,5 +1,11 @@
+'use client'
+
 import { Monitor, Moon, Sun } from 'lucide-react'
-import { mockProfile } from './mock-account'
+import { useState, type FormEvent } from 'react'
+import { useCurrentUser } from '../../components/current-user'
+import { fetchWithSessionRefresh } from '../../lib/session-refresh'
+import { parseSessionUser } from '../../lib/session-user'
+import { serviceURLs } from '../../lib/service-urls'
 
 const themes = [
   { label: 'System', Icon: Monitor },
@@ -8,14 +14,49 @@ const themes = [
 ]
 
 export default function GeneralPage() {
+  const { user, onUserChange, onSignedOut } = useCurrentUser()
+  const [draft, setDraft] = useState(user.displayName)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(false)
+  const trimmed = draft.trim()
+  const changed = trimmed !== user.displayName
+  const valid = trimmed.length > 0 && [...trimmed].length <= 32
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!changed || !valid || saving) return
+    setSaving(true)
+    setError(false)
+    try {
+      const { apiURL, authURL } = serviceURLs()
+      const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: trimmed }),
+      })
+      if (response.status === 401) {
+        onSignedOut()
+        return
+      }
+      if (!response.ok) throw new Error('Save failed')
+      const updated = parseSessionUser(await response.json())
+      setDraft(updated.displayName)
+      onUserChange(updated)
+    } catch {
+      setError(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <div className="account-sections">
+    <form className={`account-sections${changed ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <section>
         <h2>Profile</h2>
         <dl className="account-rows">
-          <div><dt>Name</dt><dd>{mockProfile.name}</dd></div>
-          <div><dt>Email</dt><dd>{mockProfile.email}</dd></div>
-          <div><dt>Sign-in method</dt><dd>{mockProfile.signInMethod}</dd></div>
+          <div><dt><label htmlFor="account-name">Name</label></dt><dd><input id="account-name" className="account-name" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false) }} /></dd></div>
+          <div><dt>Email</dt><dd>{user.email}</dd></div>
+          <div><dt>Sign-in method</dt><dd>Google</dd></div>
         </dl>
       </section>
       <section>
@@ -57,6 +98,14 @@ export default function GeneralPage() {
           </div>
         </dl>
       </section>
-    </div>
+      {changed && (
+        <div className="account-save-bar">
+          <span role="status">1 unsaved change</span>
+          {error && <span role="alert">Could not save. Try again.</span>}
+          <button type="button" disabled={saving} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
+          <button type="submit" disabled={saving || !valid}>{saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      )}
+    </form>
   )
 }

@@ -2,13 +2,15 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { fetchWithSessionRefresh } from '../lib/session-refresh'
+import { parseSessionUser, type SessionUser } from '../lib/session-user'
+import { serviceURLs } from '../lib/service-urls'
+import { CurrentUserContext } from './current-user'
 import Rail from './rail'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
-  const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'
-  const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
-  const [user, setUser] = useState<{ id: string; email: string; displayName: string; avatarUrl?: string } | null>()
+  const { apiURL, authURL } = serviceURLs()
+  const [user, setUser] = useState<SessionUser | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
   const [sessionCheck, setSessionCheck] = useState(0)
@@ -23,10 +25,7 @@ function SessionGate({ children }: { children: ReactNode }) {
           return
         }
         if (!response.ok) throw new Error('Session check failed')
-        const session = await response.json()
-        if (typeof session?.id !== 'string' || !session.id || typeof session.email !== 'string' || typeof session.displayName !== 'string' || (session.avatarUrl !== undefined && typeof session.avatarUrl !== 'string')) {
-          throw new Error('Invalid session response')
-        }
+        const session = parseSessionUser(await response.json())
         if (!controller.signal.aborted) setUser(session)
       } catch {
         // Only a 401 means signed out; any other failure must not show sign-in.
@@ -78,13 +77,15 @@ function SessionGate({ children }: { children: ReactNode }) {
 
   if (user) {
     return (
-      <div className="dashboard">
-        <Topbar />
-        <div className="dashboard-body">
-          <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
-          <main className="dashboard-content">{children}</main>
+      <CurrentUserContext.Provider value={{ user, onUserChange: setUser, onSignedOut: () => setUser(null) }}>
+        <div className="dashboard">
+          <Topbar />
+          <div className="dashboard-body">
+            <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
+            <main className="dashboard-content">{children}</main>
+          </div>
         </div>
-      </div>
+      </CurrentUserContext.Provider>
     )
   }
 

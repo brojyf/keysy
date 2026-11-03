@@ -53,8 +53,7 @@ both public service URLs, the tests, and `bun test` in
   both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`, which renders mock
-  data from `src/app/account/mock-account.ts`. `/` redirects to `/secrets`.
+- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens in `src/app/globals.css` use Tailwind v4
   namespace names (`--color-*`, `--text-*`, `--radius-*`), but Tailwind is not
   installed. Color values must match `design/theme` (light mode only).

@@ -1,7 +1,9 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, the me handler, and profile lookup. Use English for
+configuration, middleware, the me handler, and profile lookup and update. `PATCH /v0/me` updates the display name.
+`DATABASE_URL` needs SELECT and UPDATE on `public.profiles`. CORS allows GET
+and PATCH with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with `/v0/me`.
 
 Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and

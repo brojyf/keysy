@@ -30,11 +30,13 @@ func CORS(webAppURL string) gin.HandlerFunc {
 		if c.Request.Method == http.MethodOptions {
 			c.Writer.Header().Add("Vary", "Access-Control-Request-Method, Access-Control-Request-Headers")
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
-			if len(methods) != 1 || methods[0] != http.MethodGet || len(c.Request.Header.Values("Access-Control-Request-Headers")) != 0 {
+			headers := c.Request.Header.Values("Access-Control-Request-Headers")
+			if len(methods) != 1 || (methods[0] != http.MethodGet && methods[0] != http.MethodPatch) || len(headers) > 1 || (len(headers) == 1 && !strings.EqualFold(strings.TrimSpace(headers[0]), "content-type")) {
 				Error(c, http.StatusForbidden, "INVALID_REQUEST", "This request uses an unsupported method or header.")
 				return
 			}
-			c.Header("Access-Control-Allow-Methods", http.MethodGet)
+			c.Header("Access-Control-Allow-Methods", "GET, PATCH")
+			c.Header("Access-Control-Allow-Headers", "Content-Type")
 		}
 		c.Header("Access-Control-Allow-Origin", origins[0])
 		c.Header("Access-Control-Allow-Credentials", "true")

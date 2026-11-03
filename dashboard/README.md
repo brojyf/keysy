@@ -12,6 +12,7 @@ as its design reference.
 - The auth service handles the callback on its own origin, sets encrypted HttpOnly cookies, and redirects to the dashboard.
 - On each page load, `{NEXT_PUBLIC_API_URL}/v0/me` verifies the access token on the server.
 - The dashboard shows the verified user's display name, email, and optional Google avatar. It does not read or store tokens.
+- Account General edits the display name with `PATCH /v0/me`.
 - Logout revokes the current session and clears the auth cookies through `{NEXT_PUBLIC_AUTH_URL}/v0/auth/logout`.
 - Logout shows a pending state and allows retry after a failure.
 - A 401 from the API triggers one `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh shows sign-in; an unavailable one shows retry.

@@ -18,6 +18,10 @@ func TestCORS(t *testing.T) {
 		{"https://other.keysy.net", "GET", "", "", 403}, {"null", "GET", "", "", 403},
 		{"https://dashboard.keysy.net", "OPTIONS", "GET", "", 204},
 		{"https://dashboard.keysy.net", "OPTIONS", "POST", "", 403},
+		{"https://dashboard.keysy.net", "OPTIONS", "PATCH", " content-TYPE ", 204},
+		{"https://dashboard.keysy.net", "OPTIONS", "DELETE", "", 403},
+		{"https://dashboard.keysy.net", "OPTIONS", "PUT", "", 403},
+		{"https://dashboard.keysy.net", "OPTIONS", "PATCH", "content-type, x-foo", 403},
 		{"https://dashboard.keysy.net", "OPTIONS", "GET", "Authorization", 403}, {"", "OPTIONS", "GET", "", 403},
 	} {
 		r := gin.New()
@@ -38,6 +42,9 @@ func TestCORS(t *testing.T) {
 		r.ServeHTTP(w, req)
 		if w.Code != item.status || !strings.Contains(w.Header().Get("Vary"), "Origin") || w.Header().Get("Cache-Control") != "no-store" {
 			t.Fatalf("%+v: %d", item, w.Code)
+		}
+		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, PATCH" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {
+			t.Fatal("missing preflight headers")
 		}
 		if item.origin == "https://dashboard.keysy.net" && item.status < 400 && (w.Header().Get("Access-Control-Allow-Origin") != item.origin || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
 			t.Fatal("missing credentialed CORS")

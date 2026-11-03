@@ -10,6 +10,7 @@ import (
 
 type Profiles interface {
 	DisplayName(context.Context, string) (string, error)
+	UpdateDisplayName(context.Context, string, string) error
 }
 
 type response struct {
