@@ -1,5 +1,6 @@
-# Design references and prototypes are supporting documentation.
+# Design references, prototypes, and the internal wiki are documentation.
 design/** linguist-documentation=true
+wiki/** linguist-documentation=true
 
 # Archify viewers and Figma exports are generated assets.
 wiki/public/architecture/*.html linguist-generated=true
