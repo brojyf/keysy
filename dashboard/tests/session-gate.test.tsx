@@ -98,9 +98,9 @@ test('shows the rail and page content only after server verification', async () 
   expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
   const themeButtons = [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Theme"] button')]
   expect(themeButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('aria-pressed'), button.disabled])).toEqual([
-    ['System', 'true', true],
-    ['Light', 'false', true],
-    ['Dark', 'false', true],
+    ['System', 'true', false],
+    ['Light', 'false', false],
+    ['Dark', 'false', false],
   ])
   expect(signOutButton()?.textContent).toBe('Sign out')
   expect(browser.localStorage.length).toBe(0)

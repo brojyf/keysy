@@ -1,7 +1,7 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
 
-/* Token names follow the Tailwind v4 namespaces. Color names and values match design/theme (light). */
+/* Token names follow the Tailwind v4 namespaces. Color names and values match design/theme. */
 :root {
   --color-bg: #fafafa;
   --color-surface: #ffffff;
@@ -51,4 +51,34 @@
 
 body {
   margin: 0;
+}
+
+:root.dark {
+  --color-bg: #121212;
+  --color-surface: #1b1b1b;
+  --color-text: #ededee;
+  --color-muted: #a3a4a8;
+  --color-accent: #7aa2ff;
+  --color-button: #638ce5;
+  --color-on-button: #0e1b34;
+  --color-soft: #2a2a2a;
+  --color-line: #2e2e2e;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.keysy-theme-transition *,
+  html.keysy-theme-transition *::before,
+  html.keysy-theme-transition *::after {
+    transition: none !important;
+    view-transition-name: none !important;
+  }
+
+  html.keysy-theme-transition::view-transition { pointer-events: none; }
+  html.keysy-theme-transition::view-transition-image-pair(root) { isolation: isolate; }
+  html.keysy-theme-transition::view-transition-old(root),
+  html.keysy-theme-transition::view-transition-new(root) { mix-blend-mode: plus-lighter; }
+  html.keysy-theme-transition::view-transition-old(root) { animation: keysy-theme-fade-out 300ms ease-in-out both; }
+  html.keysy-theme-transition::view-transition-new(root) { animation: keysy-theme-fade-in 300ms ease-in-out both; }
+  @keyframes keysy-theme-fade-out { to { opacity: 0; } }
+  @keyframes keysy-theme-fade-in { from { opacity: 0; } }
 }

@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { Monitor, Moon, Sun, UserRound } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { setTheme, useTheme, type Theme } from '../lib/theme'
 
-// Theme is not available yet: the dashboard is light-only, so the switch is disabled.
 const themeOptions = [
   { label: 'System', Icon: Monitor },
   { label: 'Light', Icon: Sun },
@@ -20,6 +20,7 @@ export type AccountMenuProps = {
 }
 
 export default function AccountMenu({ displayName, avatarUrl, email, signOutStatus, onSignOut, selected }: AccountMenuProps & { selected: boolean }) {
+  const theme = useTheme()
   const [failedAvatarURL, setFailedAvatarURL] = useState<string>()
   const menu = useRef<HTMLDivElement>(null)
   return (
@@ -49,9 +50,9 @@ export default function AccountMenu({ displayName, avatarUrl, email, signOutStat
         </Link>
         <div className="account-menu-row">
           Theme
-          <div className="theme-switch" role="group" aria-label="Theme" title="Coming soon">
+          <div className="theme-switch" role="group" aria-label="Theme">
             {themeOptions.map(({ label, Icon }) => (
-              <button key={label} type="button" aria-label={label} aria-pressed={label === 'System'} disabled>
+              <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
                 <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
               </button>
             ))}

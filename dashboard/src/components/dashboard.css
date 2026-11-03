@@ -292,7 +292,7 @@
   border-radius: var(--radius-full);
   color: var(--color-muted);
   background: none;
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 .theme-switch button[aria-pressed='true'] {

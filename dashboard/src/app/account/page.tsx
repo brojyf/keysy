@@ -6,6 +6,7 @@ import { useCurrentUser } from '../../components/current-user'
 import { fetchWithSessionRefresh } from '../../lib/session-refresh'
 import { parseSessionUser } from '../../lib/session-user'
 import { serviceURLs } from '../../lib/service-urls'
+import { setTheme, useTheme, type Theme } from '../../lib/theme'
 
 const themes = [
   { label: 'System', Icon: Monitor },
@@ -15,6 +16,7 @@ const themes = [
 
 export default function GeneralPage() {
   const { user, onUserChange, onSignedOut } = useCurrentUser()
+  const theme = useTheme()
   const [draft, setDraft] = useState(user.displayName)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
@@ -77,8 +79,8 @@ export default function GeneralPage() {
             <dt>Theme</dt>
             <dd className="account-control">
               <span className="account-theme" role="group" aria-label="Theme">
-                {themes.map(({ label, Icon }, index) => (
-                  <button key={label} type="button" aria-label={label} aria-pressed={index === 0} disabled title="Coming soon">
+                {themes.map(({ label, Icon }) => (
+                  <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
                     <Icon size={14} strokeWidth={2} aria-hidden />
                   </button>
                 ))}

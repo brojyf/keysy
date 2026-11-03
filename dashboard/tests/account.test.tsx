@@ -79,7 +79,7 @@ test('General shows the session profile', async () => {
   expect(container.querySelector('[role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.every((button) => button.disabled)).toBe(true)
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label'))).toEqual(['System', 'Light', 'Dark'])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
