@@ -61,10 +61,11 @@ test('search section headings use bold primary text in both themes', () => {
 });
 
 test('search and drawer menus use the design raised layer color in both themes', async () => {
-  const { palettes } = await import('../../design/theme/palettes.js');
-  const [palette] = palettes;
-  expect(stylesheet).toMatch(new RegExp(`:root\\s*\\{[^}]*--keysy-raised: ${palette.light.raised};`));
-  expect(stylesheet).toMatch(new RegExp(`\\.dark\\s*\\{[^}]*--keysy-raised: ${palette.dark.raised};`));
+  const tokens = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text();
+  const light = tokens.match(/:root\s*\{[^}]*--color-raised:\s*(#[0-9a-f]{6});/i)![1];
+  const dark = tokens.match(/\.dark\s*\{[^}]*--color-raised:\s*(#[0-9a-f]{6});/i)![1];
+  expect(stylesheet).toMatch(new RegExp(`:root\\s*\\{[^}]*--keysy-raised: ${light};`));
+  expect(stylesheet).toMatch(new RegExp(`\\.dark\\s*\\{[^}]*--keysy-raised: ${dark};`));
   for (const selector of ['#sourcey .search-dialog-inner', '#sourcey .drawer-dropdown-list']) {
     for (const mode of ['', '.dark ']) {
       expect(stylesheet).toContain(`${mode}${selector}`);

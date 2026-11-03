@@ -8,14 +8,10 @@
 | Interface font | Geist Sans |
 | Code font | Geist Mono |
 | Design reference | Vercel Geist |
-| Colors | [Blue accents and neutral backgrounds](../theme/README.md) |
+| Colors | [Blue accents and neutral backgrounds](../tokens/README.md) |
 
 Navigation group labels use the primary text color at font weight 700. Selected
 sidebar items use the primary text color on the selected background. Dashboard
 section headings use the primary text color at font weight 600. Landing page
 eyebrow labels and inline code use the accent color at font weight 600. Code
 blocks retain their syntax colors.
-
-In dark mode, every font weight is 40 lower: 400 becomes 360, 500 becomes 460,
-600 becomes 560, and 700 becomes 660. Geist and Geist Mono are variable fonts,
-so these weights render exactly.

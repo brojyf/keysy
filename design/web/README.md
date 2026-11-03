@@ -16,7 +16,7 @@ The landing page lives in [Keysy — Landing Page](https://www.figma.com/design/
   frames of the hero web window. The dots and the hero story play in the
   [v4 motion page](v4/README.md).
 - The section also holds the components v4 uses: actions, grid marker, nav account, and SDK showcase.
-- Colors come from the `Keysy / Landing` variables, which match [Theme](../theme/README.md).
+- Colors come from the `Keysy / Landing` variables, which match [Tokens](../tokens/README.md).
 - Typography: Geist and Geist Mono.
 - Product previews use illustrative data. CLI commands, SDK code, and package names are
   illustrative until the CLI and SDKs define them.

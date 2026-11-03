@@ -120,7 +120,7 @@
   color: var(--color-orange-300);
 }
 
-/* Menus and dialogs use the raised layer from design/theme. The open drawer trigger joins its list. */
+/* Menus and dialogs use the raised layer from design/tokens. The open drawer trigger joins its list. */
 #sourcey .search-dialog-inner,
 #sourcey .drawer-dropdown-list,
 #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
