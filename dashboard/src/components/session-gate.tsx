@@ -10,6 +10,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<{ id: string; email: string; displayName: string; avatarUrl?: string } | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
+  const [sessionCheck, setSessionCheck] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -30,15 +31,19 @@ function SessionGate({ children }: { children: ReactNode }) {
         }
         if (!controller.signal.aborted) setUser(session)
       } catch {
-        if (!controller.signal.aborted) {
-          setUser(null)
-          setSessionError(true)
-        }
+        // Only a 401 means signed out; any other failure must not show sign-in.
+        if (!controller.signal.aborted) setSessionError(true)
       }
     }
     void checkSession()
     return () => controller.abort()
-  }, [apiURL])
+  }, [apiURL, sessionCheck])
+
+  function retrySessionCheck() {
+    setSessionError(false)
+    setUser(undefined)
+    setSessionCheck((count) => count + 1)
+  }
 
   async function logout() {
     if (logoutStatus === 'pending') return
@@ -52,6 +57,21 @@ function SessionGate({ children }: { children: ReactNode }) {
     } catch {
       setLogoutStatus('error')
     }
+  }
+
+  if (sessionError) {
+    return (
+      <main className="auth-page" aria-labelledby="session-error-title">
+        <section className="sign-in-card">
+          <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
+          <div className="sign-in-copy">
+            <h1 id="session-error-title">Can't reach Keysy</h1>
+            <p role="alert">Your session could not be checked. Try again in a moment.</p>
+          </div>
+          <button type="button" className="auth-button" onClick={retrySessionCheck}>Try again</button>
+        </section>
+      </main>
+    )
   }
 
   if (user === undefined) {
@@ -78,7 +98,6 @@ function SessionGate({ children }: { children: ReactNode }) {
           <h1 id="sign-in-title">Sign in to Keysy</h1>
           <p>Use your Google account to continue.</p>
         </div>
-        {sessionError && <p role="alert">Could not check your session. Reload the page to try again.</p>}
         <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>
           <img src="/google-symbol.svg" width="18" height="18" alt="" />
           Continue with Google

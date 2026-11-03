@@ -170,15 +170,32 @@ test('a reload verifies the session again instead of trusting local state', asyn
   expect(sessionRequest).toHaveBeenCalledTimes(2)
 })
 
-test('an unavailable or invalid session response never fabricates a login', async () => {
-  for (const response of [new Response(null, { status: 503 }), Response.json({ user: {} })]) {
-    sessionRequest.mockImplementation(() => Promise.resolve(response))
+test('an unavailable or invalid session check shows an error with retry instead of sign-in', async () => {
+  for (const respond of [
+    () => Promise.resolve(new Response(null, { status: 503 })),
+    () => Promise.reject(new TypeError('Failed to fetch')),
+    () => Promise.resolve(Response.json({ user: {} })),
+  ]) {
+    sessionRequest.mockImplementation(respond)
     await renderSessionGate()
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain('Could not check your session.')
+    expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe('Your session could not be checked. Try again in a moment.')
+    expect(container.querySelector('a.auth-button')).toBeNull()
+    expect([...container.querySelectorAll('button')].map((button) => button.textContent)).toEqual(['Try again'])
     expect(container.querySelector('nav')).toBeNull()
     await act(() => root.unmount())
     root = createRoot(container)
   }
+})
+
+test('retry checks the session again', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
+  await renderSessionGate()
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
+  expect(sessionRequest).toHaveBeenCalledTimes(2)
+  expect(sessionRequest.mock.calls[1]?.[0]).toBe('https://api.keysy.net/v0/me')
+  expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
 })
 
 test('shows the Google avatar and falls back after an image error', async () => {
@@ -198,6 +215,7 @@ test('rejects malformed me fields', async () => {
  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Member', ...fields })))
  await renderSessionGate()
  expect(container.querySelector('nav')).toBeNull()
+ expect(container.querySelector('a.auth-button')).toBeNull()
  expect(container.querySelector('[role="alert"]')).not.toBeNull()
  await act(() => root.unmount()); root = createRoot(container)
  }
