@@ -7,6 +7,8 @@ import GeneralPage from '../src/app/account/page'
 import AccountMenu from '../src/components/account-menu'
 import { applyTheme, readTheme, setTheme } from '../src/lib/theme'
 
+const stylesheet = await Bun.file(new URL('../src/app/globals.css', import.meta.url)).text()
+
 let browser: Window
 let cookie: string
 let written: string
@@ -34,6 +36,15 @@ afterEach(async () => {
   if (root) { await act(() => root.unmount()); root = undefined as unknown as Root }
   await browser.happyDOM.close()
 })
+
+async function renderThemeControls() {
+  const container = document.createElement('div')
+  document.body.append(container)
+  root = createRoot(container)
+  const user = { id: 'id', email: 'test@example.com', displayName: 'Test', memberships: [] }
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user, onUserChange: () => {}, onSignedOut: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" signOutStatus="idle" onSignOut={() => {}} selected={false} /></CurrentUserContext.Provider>))
+  return container
+}
 
 test('stores choices with domain and secure attributes, and removes system preference', () => {
   for (const choice of ['light', 'dark'] as const) {
@@ -94,12 +105,34 @@ test('applies instantly when motion is reduced or transitions are unsupported', 
   expect(document.documentElement.style.colorScheme).toBe('light')
 })
 
+test('keeps both old selections until the transition update and commits both new selections synchronously', async () => {
+  const container = await renderThemeControls()
+  const pressed = () => [...container.querySelectorAll('[aria-label="Theme"] button[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))
+  let update!: () => void
+  let finish!: () => void
+  const finished = new Promise<void>((resolve) => { finish = resolve })
+  Object.assign(document, { startViewTransition: (callback: () => void) => { update = callback; return { finished, skipTransition() {} } } })
+
+  await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Light"]')!.click())
+  expect(pressed()).toEqual(['System', 'System'])
+  await act(() => {
+    update()
+    expect(pressed()).toEqual(['Light', 'Light'])
+    expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+  await act(() => container.querySelector<HTMLButtonElement>('.theme-switch button[aria-label="Dark"]')!.click())
+  expect(pressed()).toEqual(['Light', 'Light'])
+  await act(() => {
+    update()
+    expect(pressed()).toEqual(['Dark', 'Dark'])
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+  finish()
+  await finished
+})
+
 test('both controls share their selection and system changes update the page', async () => {
-  const container = document.createElement('div')
-  document.body.append(container)
-  root = createRoot(container)
-  const user = { id: 'id', email: 'test@example.com', displayName: 'Test', memberships: [] }
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user, onUserChange: () => {}, onSignedOut: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" signOutStatus="idle" onSignOut={() => {}} selected={false} /></CurrentUserContext.Provider>))
+  const container = await renderThemeControls()
   const buttons = (label: string) => [...container.querySelectorAll<HTMLButtonElement>(`[aria-label="Theme"] button[aria-label="${label}"]`)]
   expect(buttons('System').map((button) => [button.disabled, button.getAttribute('aria-pressed')])).toEqual([[false, 'true'], [false, 'true']])
   await act(() => buttons('Dark')[0]!.click())
@@ -110,4 +143,108 @@ test('both controls share their selection and system changes update the page', a
   dark = true
   change?.()
   expect(document.documentElement.classList.contains('dark')).toBe(true)
+})
+
+for (const updateFirst of [false, true]) {
+  test(`rapid choices keep the latest selection and transition cleanup with the first update ${updateFirst ? 'completed' : 'pending'}`, async () => {
+    const container = await renderThemeControls()
+    const updates: (() => void)[] = []
+    const finishes: (() => void)[] = []
+    const skips: ReturnType<typeof mock>[] = []
+    Object.assign(document, { startViewTransition: (update: () => void) => {
+      updates.push(update)
+      const finished = new Promise<void>((resolve) => { finishes.push(resolve) })
+      const skipTransition = mock(() => {})
+      skips.push(skipTransition)
+      return { finished, skipTransition }
+    } })
+    await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Light"]')!.click())
+    if (updateFirst) await act(() => updates[0]!())
+    await act(() => container.querySelector<HTMLButtonElement>('.theme-switch button[aria-label="Dark"]')!.click())
+    expect(skips[0]).toHaveBeenCalledTimes(1)
+    expect(readTheme()).toBe('dark')
+    await act(() => {
+      updates[1]!()
+      // A skipped transition can still run its pending update callback.
+      if (!updateFirst) updates[0]!()
+      expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Dark', 'Dark'])
+    })
+    finishes[0]!()
+    await Promise.resolve()
+    expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(true)
+    finishes[1]!()
+    await Promise.resolve()
+    expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(false)
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+}
+
+test('reduced motion updates both controls without starting a transition', async () => {
+  const container = await renderThemeControls()
+  const start = mock(() => { throw new Error('Unexpected transition') })
+  Object.assign(document, { startViewTransition: start })
+  reduced = true
+  await act(() => container.querySelector<HTMLButtonElement>('.theme-switch button[aria-label="Dark"]')!.click())
+  expect(start).not.toHaveBeenCalled()
+  expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Dark', 'Dark'])
+  expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(false)
+})
+
+test('both thumb groups use the wiki spring for 600ms without animating their images', () => {
+  expect(stylesheet).toContain('--ease-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,\n    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);')
+  expect(stylesheet.match(/--ease-spring:/g)).toHaveLength(1)
+  expect(stylesheet).toContain('--duration-spring: 600ms;')
+  for (const name of ['keysy-menu-theme-thumb', 'keysy-account-theme-thumb']) {
+    const group = stylesheet.match(new RegExp(`::view-transition-group\\(${name}\\)[^{]*\\{([^}]+)\\}`))![1]!
+    expect(group).toContain('animation-duration: var(--duration-spring);')
+    expect(group).toContain('animation-timing-function: var(--ease-spring);')
+    expect(group).toContain('z-index: 1;')
+    for (const state of ['old', 'new']) {
+      expect(stylesheet).toMatch(new RegExp(`::view-transition-${state}\\(${name}\\)[^{]*\\{\\s*animation: none;`))
+    }
+    expect(stylesheet).toMatch(new RegExp(`::view-transition-old\\(${name}\\)[^{]*\\{\\s*display: none;`))
+  }
+})
+
+test('thumbs and icons have unique names across both controls, including the closed menu DOM', async () => {
+  await renderThemeControls()
+  document.documentElement.classList.add('keysy-theme-transition')
+  expect(document.querySelector('#account-menu')?.getAttribute('popover')).toBe('auto')
+  const namedRules = [...stylesheet.matchAll(/(html\.keysy-theme-transition \.(?:theme-switch|account-theme)[^{]+)\{\s*view-transition-name: ([\w-]+) !important;\s*\}/g)]
+  expect(namedRules).toHaveLength(8)
+  expect(new Set(namedRules.map((rule) => rule[2])).size).toBe(8)
+  for (const [, selector, name] of namedRules) {
+    expect(document.querySelectorAll(selector!.trim())).toHaveLength(1)
+    if (name!.endsWith('-thumb')) {
+      expect(selector).toContain("button[aria-pressed='true']")
+    } else {
+      expect(selector!.trim().endsWith(' svg')).toBe(true)
+      const group = stylesheet.match(new RegExp(`::view-transition-group\\(${name}\\)[^{]*\\{([^}]+)\\}`))![1]!
+      expect(group).toContain('z-index: 2;')
+      expect(group).toContain('animation-duration: 0s;')
+    }
+  }
+  expect(stylesheet).toMatch(/::view-transition-group\(root\)\s*\{ z-index: 0; \}/)
+})
+
+test('all view transition motion stays inside the no-preference media query and preserves the page crossfade', () => {
+  const gate = '@media (prefers-reduced-motion: no-preference) {'
+  const [before, motion] = stylesheet.split(gate)
+  expect(motion).toBeDefined()
+  expect(before).not.toMatch(/view-transition|animation:|transition:/)
+  // The media query must enclose every remaining rule in the stylesheet.
+  let depth = 1
+  let minimumDepth = 1
+  for (const character of motion!.trim().slice(0, -1)) {
+    if (character === '{') depth++
+    if (character === '}') depth--
+    minimumDepth = Math.min(minimumDepth, depth)
+  }
+  expect(minimumDepth).toBeGreaterThan(0)
+  expect(depth).toBe(1)
+  expect(motion!.trim().endsWith('}')).toBe(true)
+  expect(motion).toContain('animation: keysy-theme-fade-out 300ms ease-in-out both;')
+  expect(motion).toContain('animation: keysy-theme-fade-in 300ms ease-in-out both;')
+  expect(motion).toContain('mix-blend-mode: plus-lighter;')
+  expect(motion).toContain('pointer-events: none;')
 })
