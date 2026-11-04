@@ -49,16 +49,13 @@
 .sign-in-copy h1 {
   margin: 0;
   color: var(--color-text);
-  font-size: var(--text-title);
-  font-weight: 600;
-  line-height: 29px;
-  letter-spacing: -0.015em;
+  font: var(--text-title--font-weight) var(--text-title)/var(--text-title--line-height) var(--font-sans);
+  letter-spacing: var(--text-title--letter-spacing);
 }
 
 .sign-in-copy p {
   margin: 0;
-  font-size: var(--text-body);
-  line-height: 18px;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
 .auth-button {
@@ -73,7 +70,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-text);
   background: var(--color-surface);
-  font: 500 var(--text-body)/18px var(--font-sans);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
   text-decoration: none;
   cursor: pointer;
 }
@@ -93,8 +90,7 @@
 
 .sign-in-terms {
   margin: 0;
-  font-size: var(--text-footnote);
-  line-height: 16px;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
 .sign-in-terms span {
@@ -110,6 +106,5 @@
   justify-content: center;
   gap: 8px 20px;
   max-width: calc(100% - 40px);
-  font-size: var(--text-footnote);
-  line-height: 16px;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
