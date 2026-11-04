@@ -24,6 +24,7 @@
 ## CI/CD
 
 - Supabase continuous deployment (CD) is configured.
+- Cloudflare Workers CD is configured for `wiki/` and `web/`.
 
 ## CLI tools
 
