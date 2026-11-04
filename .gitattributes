@@ -1,0 +1,10 @@
+# Design references, prototypes, and the internal wiki are documentation.
+design/** linguist-documentation=true
+wiki/** linguist-documentation=true
+
+# Archify viewers and Figma exports are generated assets.
+wiki/public/architecture/*.html linguist-generated=true
+web/public/design/** linguist-generated=true
+
+# Copied third-party components are not first-party source.
+**/src/vendor/** linguist-vendored=true

@@ -24,10 +24,20 @@
         "name": "next"
       }
     ],
-    "allowJs": true
+    "allowJs": true,
+    "allowImportingTsExtensions": true,
+    "types": [
+      "node",
+      "bun",
+      "react",
+      "react-dom"
+    ]
   },
   "include": [
     "next-env.d.ts",
+    "next.config.ts",
+    "tests/*.ts",
+    "../design/theme/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts",

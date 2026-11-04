@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { test } from 'node:test'
 
-for (const mode of ['development', 'production']) {
+for (const mode of ['development', 'production'] as const) {
   test(`React DOM client loads in ${mode} mode`, () => {
     execFileSync(process.execPath, ['--input-type=module', '-e', "import 'react-dom/client'"], {
       cwd: new URL('..', import.meta.url),
