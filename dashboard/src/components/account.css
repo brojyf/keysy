@@ -168,12 +168,11 @@
   height: 14px;
   border-radius: var(--radius-full);
   background: var(--color-surface);
-  box-shadow: 0 1px 2px #00000026;
+  box-shadow: var(--shadow-knob);
 }
 
 :root.dark .account-switch::after {
   background: var(--color-muted);
-  box-shadow: 0 1px 2px #0f121a73;
 }
 
 .account-theme {
@@ -305,13 +304,12 @@
   border-radius: 12px;
   color: var(--color-text);
   background: var(--color-bg);
-  box-shadow: 0 4px 16px #00000014;
+  box-shadow: var(--shadow-bar);
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
 :root.dark .account-save-bar {
   background: var(--color-raised);
-  box-shadow: 0 4px 16px #0f121a3d;
 }
 
 .account-save-bar [role='status'] {

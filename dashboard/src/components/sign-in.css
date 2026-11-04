@@ -21,7 +21,7 @@
   height: 200px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: #a5b8ff2e;
+  background: var(--color-glow);
   filter: blur(160px);
   pointer-events: none;
 }

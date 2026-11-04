@@ -191,8 +191,8 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  color: #2f4aa8;
-  background: #dce6ff;
+  color: var(--color-avatar-text);
+  background: var(--color-avatar-bg);
 }
 
 .rail-avatar img {

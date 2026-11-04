@@ -25,6 +25,12 @@ test('old text tokens are absent', () => {
   for (const css of files) assert.doesNotMatch(css, /--text-(?:callout|footnote|title-2|title-3)\b/)
 })
 
+test('stylesheets contain no hex color literals', () => {
+  for (const [index, css] of files.entries()) {
+    assert.doesNotMatch(css, /(?:\{|;)\s*[\w-]+\s*:[^;{}]*#[\da-f]{3,8}\b/i, paths[index])
+  }
+})
+
 test('all CSS variables used by the dashboard are defined', () => {
   const tokens = readFileSync(new URL('../../design/tokens/tokens.css', import.meta.url), 'utf8')
   const defined = new Set([tokens, ...files].flatMap(css => Array.from(css.matchAll(/(--[\w-]+)\s*:/g), match => match[1])))
