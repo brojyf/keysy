@@ -22,7 +22,7 @@
 .channel-icon {
   display: inline-flex;
   padding: 8px;
-  background: #e8eefc;
+  background: var(--color-tint);
   border-radius: 10px;
   margin-bottom: 20px;
 }
@@ -56,7 +56,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 8px 20px -6px #101b3014;
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--color-dark) 8%, transparent);
 }
 .mini-window small {
   display: block;
@@ -123,7 +123,7 @@
   text-overflow: ellipsis;
 }
 .web-app-paths .selected {
-  background: #e8eefc;
+  background: var(--color-tint);
   color: var(--accent);
 }
 .tiny-terminal {
@@ -167,7 +167,7 @@
   background: var(--surface);
   padding: 6px;
   border-radius: 7px;
-  box-shadow: 0 4px 12px #101b3014;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-dark) 8%, transparent);
 }
 .agent-preview {
   position: relative;
@@ -187,7 +187,7 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 1px 1px #101b300d;
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--color-dark) 5%, transparent);
 }
 .agent-transcript {
   position: absolute;
@@ -244,7 +244,7 @@
   border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 1px 2px #101b300a;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-dark) 4%, transparent);
   transition:
     border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -254,8 +254,8 @@
   .feature-card:hover {
     border-color: #c8c9cc;
     box-shadow:
-      0 4px 6px -1px #101b301a,
-      0 2px 4px -2px #101b301a;
+      0 4px 6px -1px color-mix(in srgb, var(--color-dark) 10%, transparent),
+      0 2px 4px -2px color-mix(in srgb, var(--color-dark) 10%, transparent);
   }
 }
 .feature-card.wide {
@@ -299,7 +299,7 @@
 .reorganization {
   width: min(350px, 90%);
   padding: 16px;
-  box-shadow: 0 16px 40px #1d4ed81a;
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 .reorganization > strong,
 .verified {
@@ -331,7 +331,7 @@
 }
 .diff-lines b {
   color: var(--accent);
-  background: #e8eefc;
+  background: var(--color-tint);
   font-weight: 400;
 }
 .reorganization > p {
@@ -368,7 +368,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 8px 20px -6px #101b3014;
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--color-dark) 8%, transparent);
   font-size: 12px;
   line-height: 16px;
   white-space: nowrap;
@@ -446,7 +446,7 @@
   padding: 4px 8px;
 }
 .version-list .active-version {
-  background: #e8eefc;
+  background: var(--color-tint);
   color: var(--accent);
 }
 .service-versions strong {
@@ -472,7 +472,7 @@
 /* The update notice sits before the version, so every version keeps the right edge. */
 .service-versions p b {
   margin-left: auto;
-  color: #b45309;
+  color: var(--color-amber);
   font-size: 8px;
   font-weight: 400;
 }
@@ -626,7 +626,7 @@
   gap: 5px;
   align-items: center;
   padding: 3px 9px 3px 7px;
-  background: #e8eefc;
+  background: var(--color-tint);
   border-radius: 999px;
   font-weight: 500;
   color: var(--accent);

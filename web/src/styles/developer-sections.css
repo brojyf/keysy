@@ -51,7 +51,7 @@
   position: relative;
   margin-top: 33px;
   border-radius: 16px;
-  box-shadow: 0 20px 50px -20px #101b3070;
+  box-shadow: 0 20px 50px -20px color-mix(in srgb, var(--color-dark) 44%, transparent);
 }
 .workflow-glow {
   position: absolute;
@@ -70,7 +70,7 @@
   color: var(--accent);
 }
 .code-string {
-  color: #b45309;
+  color: var(--color-amber);
 }
 .code-comment {
   color: var(--muted);

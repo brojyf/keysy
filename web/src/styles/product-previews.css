@@ -40,7 +40,7 @@
   border: 0.07em solid var(--line);
   border-radius: 1.4em;
   overflow: hidden;
-  box-shadow: 0 2.77em 5.54em -1.66em #1d4ed829;
+  box-shadow: 0 2.77em 5.54em -1.66em color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 .window-chrome {
   display: flex;
@@ -201,10 +201,10 @@
   color: var(--muted);
 }
 .highlighted {
-  background: #1d4ed805;
+  background: color-mix(in srgb, var(--color-accent) 2%, transparent);
 }
 .expiry {
-  background: #e8eefc;
+  background: var(--color-tint);
   color: var(--accent);
   border-radius: 0.4em;
   padding: 0.25em 0.5em;
@@ -316,15 +316,15 @@
   width: 370px;
   height: 244px;
   border-radius: 8px;
-  box-shadow: 0 12px 30px #101b3030;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--color-dark) 19%, transparent);
   overflow: hidden;
   font-size: 7.2px;
   transform: scale(calc(100cqw / 996px));
   transform-origin: bottom right;
 }
 .terminal-window {
-  background: #101b30;
-  color: #aab8d0;
+  background: var(--color-dark);
+  color: var(--color-dark-text);
   font-weight: 360;
 }
 .terminal-bar {
@@ -422,7 +422,7 @@
 }
 .preview-fields .focused {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px #1d4ed826;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 .preview-expiry-field {
   position: relative;
@@ -436,7 +436,7 @@
   padding: 4px;
   background: var(--surface);
   border-radius: 10px;
-  box-shadow: 0 12px 28px -8px #101b3038;
+  box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--color-dark) 22%, transparent);
   transform-origin: top center;
   font:
     12px "Geist Variable",
@@ -482,13 +482,13 @@
   inset: 0 0 0 auto;
   width: 30%;
   background: var(--bg);
-  box-shadow: -24px 0 48px -24px #101b302e;
+  box-shadow: -24px 0 48px -24px color-mix(in srgb, var(--color-dark) 18%, transparent);
 }
 .preview-scrim {
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: #101b300f;
+  background: color-mix(in srgb, var(--color-dark) 6%, transparent);
   opacity: 0;
   pointer-events: none;
 }
