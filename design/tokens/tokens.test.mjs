@@ -5,8 +5,9 @@ import { test } from 'bun:test';
 const readme = readFileSync(new URL('./README.md', import.meta.url), 'utf8');
 const cssReadme = readFileSync(new URL('../css/README.md', import.meta.url), 'utf8');
 const css = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8');
-function declarations(selector) {
-  const block = css.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`));
+const webCss = readFileSync(new URL('./web.css', import.meta.url), 'utf8');
+function declarations(selector, source = css) {
+  const block = source.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`));
   assert.ok(block, `missing ${selector} block`);
   return Object.fromEntries([...block[1].matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]));
 }
@@ -39,10 +40,10 @@ test('color rows match all CSS colors in both modes', () => {
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(names, Object.keys(lightColors).sort());
   assert.deepEqual(names, Object.keys(darkColors).sort());
-  assert.equal(names.length, 15);
+  assert.equal(names.length, 18);
   for (const [, name, lightValue, darkValue] of rows) {
-    assert.match(lightValue, /^#[0-9a-f]{6}$/);
-    assert.match(darkValue, /^#[0-9a-f]{6}$/);
+    assert.match(lightValue, /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/);
+    assert.match(darkValue, /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/);
     assert.equal(lightColors[name], lightValue, `light ${name}`);
     assert.equal(darkColors[name], darkValue, `dark ${name}`);
   }
@@ -118,6 +119,8 @@ test('radius, shadow, and motion tokens match their documented values', () => {
     '--radius-lg': '20px',
     '--radius-full': '9999px',
     '--shadow-md': '0 1px 2px #0000000a, 0 8px 24px #0f121a1f',
+    '--shadow-knob': '0 1px 2px #00000026',
+    '--shadow-bar': '0 4px 16px #00000014',
     '--ease-spring': 'linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)',
     '--duration-spring': '600ms',
   };
@@ -128,4 +131,30 @@ test('radius, shadow, and motion tokens match their documented values', () => {
   }
   assert.equal(dark['--shadow-md'], '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c');
   assert.ok(readme.includes('`' + dark['--shadow-md'] + '`'));
+  for (const [name, value] of Object.entries({
+    '--shadow-knob': '0 1px 2px #0f121a73',
+    '--shadow-bar': '0 4px 16px #0f121a3d',
+  })) {
+    assert.equal(dark[name], value, name);
+    assert.ok(readme.includes('`' + value + '`'), name);
+  }
+});
+
+test('web tokens are documented and distinct from shared tokens', () => {
+  const web = declarations(':root', webCss);
+  assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, 4);
+  assert.deepEqual(web, {
+    '--color-dark': '#101b30',
+    '--color-dark-text': '#aab8d0',
+    '--color-tint': '#e8eefc',
+    '--color-amber': '#b45309',
+  });
+  for (const [name, value] of Object.entries(web)) {
+    assert.match(value, /^#[0-9a-f]{6}$/);
+    assert.ok(readme.includes('| `' + name + '` | `' + value + '` |'));
+    for (const shared of [light, dark]) {
+      assert.ok(!(name in shared), name);
+      assert.ok(!Object.values(shared).includes(value), value);
+    }
+  }
 });

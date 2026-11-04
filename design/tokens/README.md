@@ -1,6 +1,6 @@
 # Keysy tokens
 
-Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the only code source. Consumers import it or test against it.
+Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the shared file that dashboard and web import. [web.css](web.css) holds only landing page values from the `Keysy / Web` collection in Figma "Keysy — Landing Page". The wiki cannot import them, so its tests read `tokens.css`.
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |
@@ -19,6 +19,16 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Table header background | `table-header` | `#fcfcfc` | `#1e1e1e` |
 | Destructive text, icons, and buttons | `danger` | `#b3261e` | `#ef9a9a` |
 | Destructive background | `danger-bg` | `#fce8e6` | `#392424` |
+| Avatar background | `avatar-bg` | `#dce6ff` | `#dce6ff` |
+| Avatar text | `avatar-text` | `#2f4aa8` | `#2f4aa8` |
+| Glow | `glow` | `#a5b8ff2e` | `#a5b8ff2e` |
+
+| Web token | Value |
+| --- | --- |
+| `--color-dark` | `#101b30` |
+| `--color-dark-text` | `#aab8d0` |
+| `--color-tint` | `#e8eefc` |
+| `--color-amber` | `#b45309` |
 
 | Style | Font | Size / line height | Letter spacing | Weight light | Weight dark |
 | --- | --- | --- | --- | --- | --- |
@@ -70,6 +80,10 @@ Figma has no radius, shadow, or motion variables. `tokens.css` holds these value
 | --- | --- |
 | `--shadow-md` light | `0 1px 2px #0000000a, 0 8px 24px #0f121a1f` |
 | `--shadow-md` dark | `0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c` |
+| `--shadow-knob` light | `0 1px 2px #00000026` |
+| `--shadow-knob` dark | `0 1px 2px #0f121a73` |
+| `--shadow-bar` light | `0 4px 16px #00000014` |
+| `--shadow-bar` dark | `0 4px 16px #0f121a3d` |
 
 | Motion token | Value |
 | --- | --- |
