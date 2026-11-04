@@ -12,8 +12,8 @@ The dashboard lives in [Keysy — Secret management](https://www.figma.com/desig
   services.
 - [Components](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=64-3744): button, badge, logo, and sidebar.
 - The visual style follows the hero web window in the [landing page](../web/README.md).
-- Colors come from the `Keysy · Colors · Light` variables, which match [Theme](../theme/README.md). Success, warning,
-  and danger colors are not defined in Theme yet.
+- Colors come from the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` variables. Text comes from the `Keysy/*`
+  and `Keysy Dark/*` styles. These match [Tokens](../tokens/README.md).
 - Typography: Geist and Geist Mono.
 - Screens use illustrative data.
 - [Local snapshot](keysy-secret-management.fig) of the Figma file. Update it with File → Save local copy.

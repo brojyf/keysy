@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Light theme tokens from design/theme/README.md */
+/* Light theme tokens from design/tokens/README.md */
 @theme {
   --font-sans: "Geist", system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;

@@ -1,20 +1,21 @@
+@import "../../../design/tokens/tokens.css";
 @import "./product-previews.css";
 @import "./feature-cards.css";
 @import "./developer-sections.css";
 
 :root {
-  font-family: "Geist Variable", sans-serif;
-  color: #1b1c1e;
-  background: #fafafa;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
   font-synthesis: none;
-  --bg: #fafafa;
-  --surface: #fff;
-  --text: #1b1c1e;
-  --muted: #64666b;
-  --accent: #1d4ed8;
-  --button: #2f5aba;
-  --soft: #f0f1f3;
-  --line: #e3e4e6;
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --text: var(--color-text);
+  --muted: var(--color-muted);
+  --accent: var(--color-accent);
+  --button: var(--color-button);
+  --soft: var(--color-soft);
+  --line: var(--color-line);
   --gutter: max(24px, calc((100% - 1088px) / 2));
 }
 @media (min-width: 1024px) {
