@@ -146,13 +146,13 @@ test('root favicon fallback provides standard browser icon sizes', async () => {
 });
 
 for (const mode of ['light', 'dark'] as const) {
-  const background = mode === 'light' ? '#fafafa' : '#121212';
+  const background = mode === 'light' ? '#fafafa' : '#141414';
 
   test(`${mode} accent meets WCAG AA on the configured neutral background`, () => {
     const accent = mode === 'light' ? config.theme!.colors!.primary : config.theme!.colors!.light!;
     expect(accent).toBe(mode === 'light' ? '#1d4ed8' : '#7aa2ff');
     expect(contrast(accent, background)).toBeGreaterThanOrEqual(4.5);
-    expect(stylesheet).toContain(`--color-background-${mode}: ${mode === 'light' ? '250 250 250' : '18 18 18'}`);
+    expect(stylesheet).toContain(`--color-background-${mode}: ${mode === 'light' ? '250 250 250' : '20 20 20'}`);
   });
 
   test(`${mode} logo resolves to a visible standalone SVG`, async () => {
@@ -174,7 +174,7 @@ test('favicon adapts the Namespace symbol to the browser color scheme', async ()
   expect(svg).toContain('prefers-color-scheme: dark');
   expect(svg).toContain('#638ce5');
   expect(svg).not.toContain('<text');
-  for (const background of ['#ffffff', '#121212']) {
+  for (const background of ['#ffffff', '#141414']) {
     expect(contrast(background === '#ffffff' ? '#2f5aba' : '#638ce5', background)).toBeGreaterThanOrEqual(3);
   }
 });
