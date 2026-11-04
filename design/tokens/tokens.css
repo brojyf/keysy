@@ -15,8 +15,16 @@
   --color-table-header: #fcfcfc;
   --color-danger: #b3261e;
   --color-danger-bg: #fce8e6;
-  --font-sans: 'Geist', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: 'Geist Variable', 'Geist', sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', monospace;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-md: 0 1px 2px #0000000a, 0 8px 24px #0f121a1f;
+  --ease-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
+    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
+  --duration-spring: 600ms;
   --text-title: 22px;
   --text-title--line-height: 28px;
   --text-title--letter-spacing: -0.015em;
@@ -82,6 +90,7 @@
   --color-table-header: #1e1e1e;
   --color-danger: #ef9a9a;
   --color-danger-bg: #392424;
+  --shadow-md: 0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c;
   --text-title--font-weight: 560;
   --text-section-heading--font-weight: 560;
   --text-page-path--font-weight: 460;

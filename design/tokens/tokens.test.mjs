@@ -58,8 +58,8 @@ test('text style rows match CSS values and dark weights', () => {
   assert.equal(new Set(slugs).size, slugs.length);
   assert.deepEqual([...slugs].sort(), cssSlugs.sort());
   assert.deepEqual(Object.keys(dark).filter(name => name.startsWith('--text-')).sort(), cssSlugs.map(slug => `--text-${slug}--font-weight`).sort());
-  assert.equal(light['--font-sans'], "'Geist', sans-serif");
-  assert.equal(light['--font-mono'], "'Geist Mono', monospace");
+  assert.equal(light['--font-sans'], "'Geist Variable', 'Geist', sans-serif");
+  assert.equal(light['--font-mono'], "'Geist Mono Variable', 'Geist Mono', monospace");
   for (const [, name, , size, lineHeight, spacing, lightWeight, darkWeight] of rows) {
     const prefix = `--text-${name.toLowerCase().replaceAll(' ', '-')}`;
     assert.equal(light[prefix], size, name);
@@ -109,4 +109,23 @@ test('raised layers stand above panels, and selected items stay visible on them'
   assert.ok(luminance(darkColors.bg) < luminance(darkColors.surface));
   assert.ok(luminance(darkColors.surface) < luminance(darkColors.raised));
   assert.ok(luminance(darkColors.raised) < luminance(darkColors.soft));
+});
+
+test('radius, shadow, and motion tokens match their documented values', () => {
+  const expected = {
+    '--radius-sm': '8px',
+    '--radius-md': '14px',
+    '--radius-lg': '20px',
+    '--radius-full': '9999px',
+    '--shadow-md': '0 1px 2px #0000000a, 0 8px 24px #0f121a1f',
+    '--ease-spring': 'linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)',
+    '--duration-spring': '600ms',
+  };
+  for (const [name, value] of Object.entries(expected)) {
+    assert.equal(light[name]?.replace(/\s+/g, ' '), value, name);
+    assert.ok(readme.includes('`' + name + '`'), name);
+    assert.ok(readme.includes('`' + value + '`'), name);
+  }
+  assert.equal(dark['--shadow-md'], '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c');
+  assert.ok(readme.includes('`' + dark['--shadow-md'] + '`'));
 });

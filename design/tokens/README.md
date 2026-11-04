@@ -1,6 +1,6 @@
 # Keysy tokens
 
-Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) holds the values.
+Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the only code source. Consumers import it or test against it.
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |
@@ -56,3 +56,22 @@ unchanged.
 In dark mode, every font weight is 40 lower: 400 becomes 360, 500 becomes 460,
 600 becomes 560, and 700 becomes 660. Geist and Geist Mono are variable fonts,
 so these weights render exactly.
+
+Figma has no radius, shadow, or motion variables. `tokens.css` holds these values.
+
+| Radius token | Value |
+| --- | --- |
+| `--radius-sm` | `8px` |
+| `--radius-md` | `14px` |
+| `--radius-lg` | `20px` |
+| `--radius-full` | `9999px` |
+
+| Shadow | Value |
+| --- | --- |
+| `--shadow-md` light | `0 1px 2px #0000000a, 0 8px 24px #0f121a1f` |
+| `--shadow-md` dark | `0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c` |
+
+| Motion token | Value |
+| --- | --- |
+| `--ease-spring` | `linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)` |
+| `--duration-spring` | `600ms` |

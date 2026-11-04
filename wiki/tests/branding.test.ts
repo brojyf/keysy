@@ -4,6 +4,53 @@ import config from '../sourcey.config';
 
 const docs = new URL('../', import.meta.url);
 const stylesheet = await Bun.file(new URL('style.css', docs)).text();
+const tokens = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text();
+
+function declarations(css: string, selector: string) {
+  const escaped = selector.replace('.', '\\.');
+  const block = css.match(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`));
+  expect(block).not.toBeNull();
+  return Object.fromEntries([...block![1]!.matchAll(/(--[\w-]+):\s*([^;]+);/g)]
+    .map(([, name, value]) => [name!, value!.trim().replace(/\s+/g, ' ')]));
+}
+const tokenLight = declarations(tokens, ':root');
+const tokenDark = declarations(tokens, '.dark');
+const wikiLight = declarations(stylesheet, ':root');
+const wikiDark = declarations(stylesheet, '.dark');
+
+function rgb(hex: string) {
+  return hex.slice(1).match(/../g)!.map((channel) => parseInt(channel, 16)).join(' ');
+}
+
+test('wiki theme values match design tokens', () => {
+  const rootColors: Record<string, [Record<string, string>, string]> = {
+    'background-light': [tokenLight, 'bg'],
+    'background-dark': [tokenDark, 'bg'],
+    'primary-ink': [tokenLight, 'accent'],
+    'gray-50': [tokenLight, 'bg'],
+    'gray-100': [tokenLight, 'soft'],
+    'gray-200': [tokenLight, 'line'],
+    'gray-400': [tokenDark, 'muted'],
+    'gray-500': [tokenLight, 'muted'],
+    'gray-800': [tokenDark, 'soft'],
+    'gray-900': [tokenLight, 'text'],
+    'gray-950': [tokenDark, 'bg'],
+  };
+  for (const [name, [mode, color]] of Object.entries(rootColors)) {
+    expect(wikiLight[`--color-${name}`]).toBe(rgb(mode[`--color-${color}`]!));
+  }
+  expect(wikiDark['--color-gray-200']).toBe(rgb(tokenDark['--color-text']!));
+  for (const [wiki, mode] of [[wikiLight, tokenLight], [wikiDark, tokenDark]]) {
+    for (const color of ['text', 'accent', 'soft', 'raised']) {
+      expect(wiki![`--keysy-${color}`]).toBe(mode![`--color-${color}`]);
+    }
+  }
+  expect(wikiLight['--keysy-spring']).toBe(tokenLight['--ease-spring']);
+  expect(wikiLight['--keysy-spring-duration']).toBe(tokenLight['--duration-spring']);
+  expect(config.theme!.colors!.primary).toBe(tokenLight['--color-accent']);
+  expect(config.theme!.colors!.light).toBe(tokenDark['--color-accent']);
+  expect(config.theme!.colors!.dark).toBe(tokenLight['--color-button']);
+});
 
 function contrast(foreground: string, background: string) {
   function luminance(hex: string) {
@@ -60,12 +107,7 @@ test('search section headings use bold primary text in both themes', () => {
   expect(stylesheet).toMatch(/#sourcey #search-dialog \.search-category\s*\{\s*font-weight: 700;\s*color: var\(--keysy-text\);/);
 });
 
-test('search and drawer menus use the design raised layer color in both themes', async () => {
-  const tokens = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text();
-  const light = tokens.match(/:root\s*\{[^}]*--color-raised:\s*(#[0-9a-f]{6});/i)![1];
-  const dark = tokens.match(/\.dark\s*\{[^}]*--color-raised:\s*(#[0-9a-f]{6});/i)![1];
-  expect(stylesheet).toMatch(new RegExp(`:root\\s*\\{[^}]*--keysy-raised: ${light};`));
-  expect(stylesheet).toMatch(new RegExp(`\\.dark\\s*\\{[^}]*--keysy-raised: ${dark};`));
+test('search and drawer menus use the design raised layer color in both themes', () => {
   for (const selector of ['#sourcey .search-dialog-inner', '#sourcey .drawer-dropdown-list']) {
     for (const mode of ['', '.dark ']) {
       expect(stylesheet).toContain(`${mode}${selector}`);
@@ -146,13 +188,11 @@ test('root favicon fallback provides standard browser icon sizes', async () => {
 });
 
 for (const mode of ['light', 'dark'] as const) {
-  const background = mode === 'light' ? '#fafafa' : '#141414';
+  const background = (mode === 'light' ? tokenLight : tokenDark)['--color-bg']!;
 
   test(`${mode} accent meets WCAG AA on the configured neutral background`, () => {
     const accent = mode === 'light' ? config.theme!.colors!.primary : config.theme!.colors!.light!;
-    expect(accent).toBe(mode === 'light' ? '#1d4ed8' : '#7aa2ff');
     expect(contrast(accent, background)).toBeGreaterThanOrEqual(4.5);
-    expect(stylesheet).toContain(`--color-background-${mode}: ${mode === 'light' ? '250 250 250' : '20 20 20'}`);
   });
 
   test(`${mode} logo resolves to a visible standalone SVG`, async () => {
@@ -174,7 +214,7 @@ test('favicon adapts the Namespace symbol to the browser color scheme', async ()
   expect(svg).toContain('prefers-color-scheme: dark');
   expect(svg).toContain('#638ce5');
   expect(svg).not.toContain('<text');
-  for (const background of ['#ffffff', '#141414']) {
+  for (const background of ['#ffffff', tokenDark['--color-bg']!]) {
     expect(contrast(background === '#ffffff' ? '#2f5aba' : '#638ce5', background)).toBeGreaterThanOrEqual(3);
   }
 });

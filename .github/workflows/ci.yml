@@ -49,6 +49,7 @@ jobs:
               - '.github/**'
             web:
               - 'web/**'
+              - 'design/tokens/**'
               - '.github/**'
             wiki:
               - 'wiki/**'
