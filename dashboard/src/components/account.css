@@ -258,8 +258,11 @@
 }
 
 .account-sessions .account-session-status {
-  color: var(--color-muted);
   text-align: right;
+}
+
+:root.dark .account-sessions .account-session-status {
+  color: var(--color-muted);
 }
 
 .account-name {

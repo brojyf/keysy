@@ -48,3 +48,8 @@ test('account menu keeps its position and stack gaps', () => {
     assert.equal(value(rule(files[1], selector), 'margin'), '2px 0 0')
   }
 })
+
+test('the session status uses text in light mode and muted in dark mode', () => {
+  assert.doesNotMatch(rule(files[2], '.account-sessions .account-session-status'), /\bcolor:/)
+  assert.equal(value(rule(files[2], ':root.dark .account-sessions .account-session-status'), 'color'), 'var(--color-muted)')
+})
