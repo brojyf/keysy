@@ -53,6 +53,7 @@ jobs:
             wiki:
               - 'wiki/**'
               - 'openapi/**'
+              - 'design/tokens/**'
               - '.github/**'
             bun:
               - '**/package.json'
