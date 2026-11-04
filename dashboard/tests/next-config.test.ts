@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import nextConfig from '../next.config.mjs'
+import nextConfig from '../next.config.ts'
 
 const names = ['NEXT_PUBLIC_AUTH_URL', 'NEXT_PUBLIC_API_URL']
 const originals = Object.fromEntries(names.map(name => [name, process.env[name]]))
@@ -22,7 +22,9 @@ for (const phase of ['phase-development-server', 'phase-production-build', 'phas
 
 test('development indicator defaults to the bottom-right corner', () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
-  assert.equal(nextConfig('phase-development-server').devIndicators?.position, 'bottom-right')
+  const indicators = nextConfig('phase-development-server').devIndicators
+  assert.ok(indicators)
+  assert.equal(indicators.position, 'bottom-right')
 })
 
 for (const name of names) {

@@ -27,8 +27,8 @@ bun install --frozen-lockfile
 bun run dev        # http://localhost:5173, Fast Refresh; auth defaults to http://localhost:8080
 bun run lint       # oxlint
 NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net NEXT_PUBLIC_API_URL=https://api.keysy.net bun run build   # tsc --noEmit, then next build
-bun run test       # node --test tests/*.test.mjs, then bun test on the .tsx tests
-node --test tests/next-config.test.mjs                  # one Node test file
+bun run test       # node --test tests/*.test.ts, then bun test on the .tsx tests
+node --test tests/next-config.test.ts                  # one Node test file
 bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 ```
 
@@ -49,7 +49,7 @@ both public service URLs, the tests, and `bun test` in
 - The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
   the browser calls the auth origin directly through credentialed CORS.
-- `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL` are embedded at build time. `next.config.mjs` requires
+- `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL` are embedded at build time. `next.config.ts` requires
   both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.

@@ -1,4 +1,6 @@
-export default function nextConfig(phase) {
+import type { NextConfig } from 'next'
+
+export default function nextConfig(phase: string): NextConfig {
   for (const name of ['NEXT_PUBLIC_AUTH_URL', 'NEXT_PUBLIC_API_URL']) {
     const value = process.env[name]
     if (!value && phase === 'phase-production-build') {
