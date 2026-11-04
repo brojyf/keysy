@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { fileURLToPath } from 'node:url'
 
 export default function nextConfig(phase: string): NextConfig {
   for (const name of ['NEXT_PUBLIC_AUTH_URL', 'NEXT_PUBLIC_API_URL']) {
@@ -20,6 +21,7 @@ export default function nextConfig(phase: string): NextConfig {
     }
   }
   return {
+    turbopack: { root: fileURLToPath(new URL('..', import.meta.url)) },
     devIndicators: {
       position: 'bottom-right',
     },

@@ -190,10 +190,7 @@ test('reduced motion updates both controls without starting a transition', async
   expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(false)
 })
 
-test('both thumb groups use the wiki spring for 600ms without animating their images', () => {
-  expect(stylesheet).toContain('--ease-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,\n    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);')
-  expect(stylesheet.match(/--ease-spring:/g)).toHaveLength(1)
-  expect(stylesheet).toContain('--duration-spring: 600ms;')
+test('both thumb groups use the shared spring without animating their images', () => {
   for (const name of ['keysy-menu-theme-thumb', 'keysy-account-theme-thumb']) {
     const group = stylesheet.match(new RegExp(`::view-transition-group\\(${name}\\)[^{]*\\{([^}]+)\\}`))![1]!
     expect(group).toContain('animation-duration: var(--duration-spring);')

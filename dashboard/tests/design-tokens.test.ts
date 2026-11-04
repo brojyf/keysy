@@ -15,22 +15,23 @@ const value = (block: string, name: string) => {
   return match[1].trim()
 }
 
-test('color tokens match the light and dark palette', () => {
-  const light = rule(files[0], ':root')
-  const dark = rule(files[0], ':root.dark')
-  assert.equal(value(light, '--color-line-strong'), '#e3e4e6')
-  for (const [name, expected] of Object.entries({ bg: '#141414', soft: '#292929', muted: '#acadb1', raised: '#222222', danger: '#ef9a9a', 'line-strong': '#6c6c6c' })) {
-    assert.equal(value(dark, `--color-${name}`), expected)
-  }
+test('globals imports shared tokens without declaring them', () => {
+  assert.match(files[0], /@import\s+['"]\.\.\/\.\.\/\.\.\/design\/tokens\/tokens\.css['"]\s*;/)
+  assert.doesNotMatch(files[0], /--(?:color|font|text|radius|shadow|ease|duration)-[\w-]+\s*:/)
+  assert.doesNotMatch(files[0], /:root\.dark\s*\{/)
 })
 
-test('old text tokens are absent and dark weights are 40 lower', () => {
+test('old text tokens are absent', () => {
   for (const css of files) assert.doesNotMatch(css, /--text-(?:callout|footnote|title-2|title-3)\b/)
-  const light = rule(files[0], ':root')
-  const dark = rule(files[0], ':root.dark')
-  for (const name of ['title', 'section-heading', 'page-path', 'heading', 'body', 'label', 'caption', 'code-small']) {
-    const token = `--text-${name}--font-weight`
-    assert.equal(Number(value(dark, token)), Number(value(light, token)) - 40)
+})
+
+test('all CSS variables used by the dashboard are defined', () => {
+  const tokens = readFileSync(new URL('../../design/tokens/tokens.css', import.meta.url), 'utf8')
+  const defined = new Set([tokens, ...files].flatMap(css => Array.from(css.matchAll(/(--[\w-]+)\s*:/g), match => match[1])))
+  for (const [index, css] of files.entries()) {
+    for (const match of css.matchAll(/var\(\s*(--[\w-]+)/g)) {
+      assert.ok(defined.has(match[1]), `${paths[index]} uses undefined ${match[1]}`)
+    }
   }
 })
 

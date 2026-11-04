@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import nextConfig from '../next.config.ts'
 
 const names = ['NEXT_PUBLIC_AUTH_URL', 'NEXT_PUBLIC_API_URL']
@@ -19,6 +20,10 @@ for (const phase of ['phase-development-server', 'phase-production-build', 'phas
     assert.equal(nextConfig(phase).rewrites, undefined)
   })
 }
+
+test('Turbopack resolves shared files from the repository root', () => {
+  assert.equal(nextConfig('phase-development-server').turbopack?.root, fileURLToPath(new URL('../..', import.meta.url)))
+})
 
 test('development indicator defaults to the bottom-right corner', () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
