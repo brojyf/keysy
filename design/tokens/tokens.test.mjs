@@ -39,7 +39,7 @@ test('color rows match all CSS colors in both modes', () => {
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(names, Object.keys(lightColors).sort());
   assert.deepEqual(names, Object.keys(darkColors).sort());
-  assert.equal(names.length, 13);
+  assert.equal(names.length, 15);
   for (const [, name, lightValue, darkValue] of rows) {
     assert.match(lightValue, /^#[0-9a-f]{6}$/);
     assert.match(darkValue, /^#[0-9a-f]{6}$/);
@@ -99,6 +99,10 @@ for (const [mode, values] of Object.entries({ light: lightColors, dark: darkColo
     for (const background of ['bg', 'surface', 'soft']) assert.ok(contrast(values.button, values[background]) >= 3, `button/${background}`);
   });
 }
+
+test('dark input borders reach 3:1 on every input background', () => {
+  for (const background of ['bg', 'surface', 'raised']) assert.ok(contrast(darkColors['line-strong'], darkColors[background]) >= 3, background);
+});
 
 test('raised layers stand above panels, and selected items stay visible on them', () => {
   assert.ok(luminance(lightColors.raised) >= luminance(lightColors.surface));

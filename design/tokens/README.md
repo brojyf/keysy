@@ -4,16 +4,18 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |
-| Page background | `bg` | `#fafafa` | `#121212` |
+| Page background | `bg` | `#fafafa` | `#141414` |
 | Panel background | `surface` | `#ffffff` | `#1b1b1b` |
 | Menu, popover, and dialog background | `raised` | `#ffffff` | `#222222` |
 | Primary text | `text` | `#1b1c1e` | `#ededee` |
-| Secondary text | `muted` | `#64666b` | `#a3a4a8` |
+| Secondary text | `muted` | `#64666b` | `#acadb1` |
 | Accent text, icons, landing page eyebrow labels, and inline code | `accent` | `#1d4ed8` | `#7aa2ff` |
 | Primary button and logo | `button` | `#2f5aba` | `#638ce5` |
 | Primary button text | `on-button` | `#ffffff` | `#0e1b34` |
-| Selected or subtle background | `soft` | `#f0f1f3` | `#2a2a2a` |
+| Selected or subtle background | `soft` | `#f0f1f3` | `#292929` |
 | Decorative divider | `line` | `#e3e4e6` | `#2e2e2e` |
+| Input border and path separator | `line-strong` | `#e3e4e6` | `#6c6c6c` |
+| Table row hover background | `hover` | `#f7f7fa` | `#222222` |
 | Table header background | `table-header` | `#fcfcfc` | `#1e1e1e` |
 | Destructive text, icons, and buttons | `danger` | `#b3261e` | `#ef9a9a` |
 | Destructive background | `danger-bg` | `#fce8e6` | `#392424` |
@@ -35,6 +37,9 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Code small | Geist Mono | 12px / 18px | 0 | 400 | 360 |
 | Inline code | Geist Mono | 12px / 18px | 0 | 600 | 560 |
 | Display code | Geist Mono | 28px / 36px | 0.12em | 500 | 460 |
+
+Text input borders and `/` separators use `line-strong`. Card and table dividers
+use `line`.
 
 Menus, popovers, and dialogs use `raised` with a shadow. In dark mode, `raised`
 is lighter than `surface`, so the layer reads above the page without the shadow.

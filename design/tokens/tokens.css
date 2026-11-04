@@ -10,6 +10,8 @@
   --color-on-button: #ffffff;
   --color-soft: #f0f1f3;
   --color-line: #e3e4e6;
+  --color-line-strong: #e3e4e6;
+  --color-hover: #f7f7fa;
   --color-table-header: #fcfcfc;
   --color-danger: #b3261e;
   --color-danger-bg: #fce8e6;
@@ -65,16 +67,18 @@
 }
 
 .dark {
-  --color-bg: #121212;
+  --color-bg: #141414;
   --color-surface: #1b1b1b;
   --color-raised: #222222;
   --color-text: #ededee;
-  --color-muted: #a3a4a8;
+  --color-muted: #acadb1;
   --color-accent: #7aa2ff;
   --color-button: #638ce5;
   --color-on-button: #0e1b34;
-  --color-soft: #2a2a2a;
+  --color-soft: #292929;
   --color-line: #2e2e2e;
+  --color-line-strong: #6c6c6c;
+  --color-hover: #222222;
   --color-table-header: #1e1e1e;
   --color-danger: #ef9a9a;
   --color-danger-bg: #392424;
