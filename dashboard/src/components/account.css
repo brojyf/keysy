@@ -198,6 +198,8 @@
 }
 
 .account-theme button {
+  position: relative;
+  isolation: isolate;
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -212,7 +214,6 @@
 
 .account-theme button[aria-pressed='true'] {
   color: var(--color-text);
-  background: var(--color-soft);
 }
 
 .account-delete,

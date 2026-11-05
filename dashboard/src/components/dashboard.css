@@ -291,6 +291,8 @@
 }
 
 .theme-switch button {
+  position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
   width: 26px;
@@ -305,7 +307,15 @@
 
 .theme-switch button[aria-pressed='true'] {
   color: var(--color-text);
+}
+
+.theme-thumb {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
   background: var(--color-soft);
+  pointer-events: none;
 }
 
 .account-menu-item {

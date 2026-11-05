@@ -113,6 +113,7 @@ export default function GeneralPage() {
               <span className="account-theme" role="group" aria-label="Theme">
                 {themes.map(({ label, Icon }) => (
                   <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
+                    {theme === label.toLowerCase() && <span className="theme-thumb" aria-hidden="true" />}
                     <Icon size={14} strokeWidth={2} aria-hidden />
                   </button>
                 ))}

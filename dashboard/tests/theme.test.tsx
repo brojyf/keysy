@@ -203,7 +203,7 @@ test('both thumb groups use the shared spring without animating their images', (
   }
 })
 
-test('thumbs and icons have unique names across both controls, including the closed menu DOM', async () => {
+test('only decorative thumbs and icons are captured so theme buttons remain interactive', async () => {
   await renderThemeControls()
   document.documentElement.classList.add('keysy-theme-transition')
   expect(document.querySelector('#account-menu')?.getAttribute('popover')).toBe('auto')
@@ -211,9 +211,14 @@ test('thumbs and icons have unique names across both controls, including the clo
   expect(namedRules).toHaveLength(8)
   expect(new Set(namedRules.map((rule) => rule[2])).size).toBe(8)
   for (const [, selector, name] of namedRules) {
-    expect(document.querySelectorAll(selector!.trim())).toHaveLength(1)
+    const captured = document.querySelectorAll(selector!.trim())
+    expect(captured).toHaveLength(1)
+    expect(captured[0]!.matches('button')).toBe(false)
+    expect(captured[0]!.querySelector('button')).toBeNull()
     if (name!.endsWith('-thumb')) {
-      expect(selector).toContain("button[aria-pressed='true']")
+      expect(captured[0]!.tagName).toBe('SPAN')
+      expect(captured[0]!.getAttribute('aria-hidden')).toBe('true')
+      expect(captured[0]!.parentElement!.getAttribute('aria-pressed')).toBe('true')
     } else {
       expect(selector!.trim().endsWith(' svg')).toBe(true)
       const group = stylesheet.match(new RegExp(`::view-transition-group\\(${name}\\)[^{]*\\{([^}]+)\\}`))![1]!
@@ -222,6 +227,13 @@ test('thumbs and icons have unique names across both controls, including the clo
     }
   }
   expect(stylesheet).toMatch(/::view-transition-group\(root\)\s*\{ z-index: 0; \}/)
+})
+
+test('every view transition overlay layer lets pointer input reach the theme buttons', () => {
+  for (const pseudo of ['view-transition', 'view-transition-group(*)', 'view-transition-image-pair(*)', 'view-transition-old(*)', 'view-transition-new(*)']) {
+    const escaped = pseudo.replace(/[()*]/g, '\\$&')
+    expect(stylesheet).toMatch(new RegExp(`html\\.keysy-theme-transition::${escaped}[^{}]*\\{\\s*pointer-events: none;`))
+  }
 })
 
 test('all view transition motion stays inside the no-preference media query and preserves the page crossfade', () => {

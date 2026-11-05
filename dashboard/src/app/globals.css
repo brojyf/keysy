@@ -31,7 +31,11 @@ body {
     view-transition-name: none !important;
   }
 
-  html.keysy-theme-transition::view-transition { pointer-events: none; }
+  html.keysy-theme-transition::view-transition,
+  html.keysy-theme-transition::view-transition-group(*),
+  html.keysy-theme-transition::view-transition-image-pair(*),
+  html.keysy-theme-transition::view-transition-old(*),
+  html.keysy-theme-transition::view-transition-new(*) { pointer-events: none; }
   html.keysy-theme-transition::view-transition-image-pair(root) { isolation: isolate; }
   html.keysy-theme-transition::view-transition-old(root),
   html.keysy-theme-transition::view-transition-new(root) { mix-blend-mode: plus-lighter; }
@@ -40,10 +44,10 @@ body {
   @keyframes keysy-theme-fade-out { to { opacity: 0; } }
   @keyframes keysy-theme-fade-in { from { opacity: 0; } }
 
-  html.keysy-theme-transition .theme-switch button[aria-pressed='true'] {
+  html.keysy-theme-transition .theme-switch .theme-thumb {
     view-transition-name: keysy-menu-theme-thumb !important;
   }
-  html.keysy-theme-transition .account-theme button[aria-pressed='true'] {
+  html.keysy-theme-transition .account-theme .theme-thumb {
     view-transition-name: keysy-account-theme-thumb !important;
   }
 
