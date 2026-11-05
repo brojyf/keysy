@@ -251,7 +251,7 @@ jobs:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
       - name: Test
-        run: exit 1
+        run: go test -race ./...
       - name: Vet
         run: go vet ./...
       - name: Build
