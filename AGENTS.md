@@ -19,7 +19,7 @@
 0. Never run destructive Git operations unless explicitly requested.
 1. Branch from the latest `origin/main` and open a draft PR with a `WIP: ` title prefix. Never commit directly to `main`.
 2. Commit on your own when you complete a feature. Use `<type>(<scope>): <description>` for all commit messages (including squash commits) and PR titles, excluding the temporary `WIP: ` prefix.
-3. After review, remove the `WIP: ` prefix and draft status. Squash-merge only after explicit human confirmation, and append the PR number to the squash merge commit message, for example `(#123)`. After squash merge, delete the remote branch and the local branch or worktree.
+3. After review, remove the `WIP: ` prefix and draft status. Squash-merge only after CI passes and explicit human confirmation, and append the PR number to the squash merge commit message, for example `(#123)`. After squash merge, delete the remote branch and the local branch or worktree.
 
 ## CI/CD
 
