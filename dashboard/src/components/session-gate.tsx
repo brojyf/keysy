@@ -46,7 +46,11 @@ function SessionGate({ children }: { children: ReactNode }) {
 
   function requestSignOut() {
     if (logoutStatus === 'error') setLogoutStatus('idle')
-    signOutDialog.current?.showModal()
+    const dialog = signOutDialog.current
+    if (!dialog) return
+    // Safari shows a focus ring on the first button after a mouse click, so focus the dialog itself.
+    dialog.autofocus = true
+    dialog.showModal()
   }
 
   async function logout() {

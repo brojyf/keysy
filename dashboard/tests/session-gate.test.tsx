@@ -144,6 +144,7 @@ test('sign out asks for confirmation and Cancel keeps the session', async () => 
   expect(signOutDialog().open).toBe(false)
   await act(async () => signOutButton()!.click())
   expect(signOutDialog().open).toBe(true)
+  expect(signOutDialog().autofocus).toBe(true)
   expect(signOutDialog().querySelector('h2')?.textContent).toBe('Sign out?')
   expect(signOutDialog().querySelector('p')?.textContent).toBe("You'll need to sign in again on this device.")
   expect(sessionRequest).toHaveBeenCalledTimes(1)
