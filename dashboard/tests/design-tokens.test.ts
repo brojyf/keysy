@@ -69,9 +69,10 @@ test('the sign out dialog follows the Figma Dialog component', () => {
 })
 
 test('auth cards and dialogs share one visual center at 42% of the viewport', () => {
-  assert.equal(value(rule(files[0], ':root'), '--visual-center-offset'), '8svh')
+  assert.equal(value(rule(files[0], ':root'), '--visual-center-offset'), '8dvh')
   assert.equal(value(rule(files[2], '.sign-out-dialog'), 'inset'), 'calc(50% - var(--visual-center-offset)) auto auto 50%')
   const page = rule(files[3], '.auth-page')
+  assert.equal(value(page, 'min-height'), '100dvh')
   assert.equal(value(page, 'padding'), '80px 20px calc(80px + 2 * var(--visual-center-offset))')
   assert.match(page, /ellipse at 50% calc\(50% - var\(--visual-center-offset\)\)/)
 })

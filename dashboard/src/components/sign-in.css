@@ -3,7 +3,7 @@
   isolation: isolate;
   display: grid;
   place-items: center;
-  min-height: 100svh;
+  min-height: 100dvh;
   padding: 80px 20px calc(80px + 2 * var(--visual-center-offset));
   background-image:
     radial-gradient(ellipse at 50% calc(50% - var(--visual-center-offset)), transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
