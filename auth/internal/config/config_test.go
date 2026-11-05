@@ -9,7 +9,7 @@ import (
 func setEnvironment(t *testing.T) {
 	t.Helper()
 	for name, value := range map[string]string{
-		"PORT": "", "AUTH_URL": "https://auth.keysy.test/", "WEB_APP_URL": "https://app.keysy.test/",
+		"COOKIE_DOMAIN": "keysy.test", "PORT": "", "AUTH_URL": "https://auth.keysy.test/", "WEB_APP_URL": "https://app.keysy.test/",
 		"SUPABASE_URL": "https://project.supabase.co/", "SUPABASE_PUBLISHABLE_KEY": "publishable-key",
 		"GOOGLE_CLIENT_ID": "google-client", "GOOGLE_CLIENT_SECRET": "google-secret",
 		"OAUTH_COOKIE_KEY": base64.StdEncoding.EncodeToString([]byte(strings.Repeat("k", 32))),
@@ -51,6 +51,9 @@ func TestAllowsHTTPOnlyForLocalBrowserDevelopment(t *testing.T) {
 			t.Run(name+"/"+address, func(t *testing.T) {
 				setEnvironment(t)
 				t.Setenv(name, address)
+				if name == "AUTH_URL" && address == "http://localhost:5173" {
+					t.Setenv("COOKIE_DOMAIN", "")
+				}
 				_, err := Load()
 				allowed := name != "SUPABASE_URL" && address == "http://localhost:5173"
 				if (err == nil) != allowed {
@@ -66,6 +69,37 @@ func TestAllowsNoncanonicalDashboardURLs(t *testing.T) {
 		t.Run(address, func(t *testing.T) {
 			setEnvironment(t)
 			t.Setenv("WEB_APP_URL", address)
+			if _, err := Load(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestCookieDomain(t *testing.T) {
+	for _, domain := range []string{"", ".keysy.test", "https://keysy.test", "keysy.test:443", "other.test", "uth.keysy.test", "keysy.test/", "keysy..test", "keysy.test "} {
+		t.Run(domain, func(t *testing.T) {
+			setEnvironment(t)
+			t.Setenv("COOKIE_DOMAIN", domain)
+			if _, err := Load(); err == nil {
+				t.Fatal("accepted invalid domain")
+			}
+		})
+	}
+	setEnvironment(t)
+	t.Setenv("AUTH_URL", "http://localhost:8080")
+	if _, err := Load(); err == nil {
+		t.Fatal("accepted local domain")
+	}
+	t.Setenv("COOKIE_DOMAIN", "")
+	if _, err := Load(); err != nil {
+		t.Fatal(err)
+	}
+	for _, domain := range []string{"keysy.test", "auth.keysy.test", "KEYSY.TEST"} {
+		t.Run("valid/"+domain, func(t *testing.T) {
+			setEnvironment(t)
+			t.Setenv("AUTH_URL", "https://AUTH.keysy.test")
+			t.Setenv("COOKIE_DOMAIN", domain)
 			if _, err := Load(); err != nil {
 				t.Fatal(err)
 			}

@@ -2,10 +2,9 @@
 
 import Link from 'next/link'
 import { Monitor, Moon, Sun, UserRound } from 'lucide-react'
-import { useRef } from 'react'
-import { mockProfile } from '../app/account/mock-account'
+import { useRef, useState } from 'react'
+import { setTheme, useTheme, type Theme } from '../lib/theme'
 
-// Theme is not available yet: the dashboard is light-only, so the switch is disabled.
 const themeOptions = [
   { label: 'System', Icon: Monitor },
   { label: 'Light', Icon: Sun },
@@ -13,12 +12,15 @@ const themeOptions = [
 ]
 
 export type AccountMenuProps = {
-  email?: string
-  signOutStatus: 'idle' | 'pending' | 'error'
-  onSignOut: () => void
+  displayName: string
+  avatarUrl?: string
+  email: string
+  onSignOutRequest: () => void
 }
 
-export default function AccountMenu({ email, signOutStatus, onSignOut, selected }: AccountMenuProps & { selected: boolean }) {
+export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRequest, selected }: AccountMenuProps & { selected: boolean }) {
+  const theme = useTheme()
+  const [failedAvatarURL, setFailedAvatarURL] = useState<string>()
   const menu = useRef<HTMLDivElement>(null)
   return (
     <>
@@ -31,13 +33,14 @@ export default function AccountMenu({ email, signOutStatus, onSignOut, selected 
         data-selected={selected || undefined}
       >
         <span className="rail-avatar">
-          <UserRound size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
+          {avatarUrl && failedAvatarURL !== avatarUrl
+            ? <img src={avatarUrl} referrerPolicy="no-referrer" alt="" onError={() => setFailedAvatarURL(avatarUrl)} />
+            : <UserRound size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />}
         </span>
       </button>
       <div id="account-menu" className="account-menu" popover="auto" ref={menu}>
         <div className="account-menu-identity">
-          {/* The session has no name yet; the name is mock data like the Account page. */}
-          <p className="account-menu-name">{mockProfile.name}</p>
+          <p className="account-menu-name">{displayName}</p>
           {email && <p className="account-menu-email">{email}</p>}
         </div>
         <hr className="account-menu-divider" />
@@ -46,19 +49,19 @@ export default function AccountMenu({ email, signOutStatus, onSignOut, selected 
         </Link>
         <div className="account-menu-row">
           Theme
-          <div className="theme-switch" role="group" aria-label="Theme" title="Coming soon">
+          <div className="theme-switch" role="group" aria-label="Theme" data-theme={theme}>
+            <span className="theme-thumb" aria-hidden="true" />
             {themeOptions.map(({ label, Icon }) => (
-              <button key={label} type="button" aria-label={label} aria-pressed={label === 'System'} disabled>
+              <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
                 <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
               </button>
             ))}
           </div>
         </div>
         <hr className="account-menu-divider" />
-        <button className="account-menu-item" type="button" disabled={signOutStatus === 'pending'} onClick={onSignOut}>
-          {signOutStatus === 'pending' ? 'Signing out...' : 'Sign out'}
+        <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => { menu.current?.hidePopover(); onSignOutRequest() }}>
+          Sign out
         </button>
-        {signOutStatus === 'error' && <p className="account-menu-error" role="alert">Could not sign out. Try again.</p>}
       </div>
     </>
   )

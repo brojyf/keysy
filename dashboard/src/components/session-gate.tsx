@@ -1,49 +1,63 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { fetchWithSessionRefresh, logoutSession } from '../lib/session-refresh'
+import { parseSessionUser, type SessionUser } from '../lib/session-user'
+import { serviceURLs } from '../lib/service-urls'
+import { CurrentUserContext } from './current-user'
 import Rail from './rail'
+import SignOutDialog from './sign-out-dialog'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
-  const authURL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'
-  const [user, setUser] = useState<{ id: string; email?: string } | null>()
+  const { apiURL, authURL } = serviceURLs()
+  const [user, setUser] = useState<SessionUser | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
+  const [sessionCheck, setSessionCheck] = useState(0)
+  const signOutDialog = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     const controller = new AbortController()
     async function checkSession() {
       try {
-        const response = await fetch(new URL('/v0/auth/session', authURL).href, {
-          credentials: 'include',
-          signal: controller.signal,
-        })
+        const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, { signal: controller.signal })
         if (response.status === 401) {
           if (!controller.signal.aborted) setUser(null)
           return
         }
         if (!response.ok) throw new Error('Session check failed')
-        const session = await response.json()
-        if (typeof session?.user?.id !== 'string' || !session.user.id || (session.user.email !== undefined && typeof session.user.email !== 'string')) {
-          throw new Error('Invalid session response')
-        }
-        if (!controller.signal.aborted) setUser(session.user)
+        const session = parseSessionUser(await response.json())
+        if (!controller.signal.aborted) setUser(session)
       } catch {
-        if (!controller.signal.aborted) {
-          setUser(null)
-          setSessionError(true)
-        }
+        // Only a 401 means signed out; any other failure must not show sign-in.
+        if (!controller.signal.aborted) setSessionError(true)
       }
     }
     void checkSession()
     return () => controller.abort()
-  }, [authURL])
+  }, [apiURL, authURL, sessionCheck])
+
+  function retrySessionCheck() {
+    setSessionError(false)
+    setUser(undefined)
+    setSessionCheck((count) => count + 1)
+  }
+
+  function requestSignOut() {
+    if (logoutStatus === 'error') setLogoutStatus('idle')
+    const dialog = signOutDialog.current
+    if (!dialog) return
+    // Safari shows a focus ring on the first button after a mouse click, so focus the dialog itself.
+    dialog.autofocus = true
+    dialog.showModal()
+  }
 
   async function logout() {
     if (logoutStatus === 'pending') return
     setLogoutStatus('pending')
     try {
-      const response = await fetch(new URL('/v0/auth/logout', authURL).href, { method: 'POST', credentials: 'include' })
+      const response = await logoutSession(authURL)
       if (!response.ok) throw new Error('Logout failed')
       setUser(null)
       setSessionError(false)
@@ -53,19 +67,37 @@ function SessionGate({ children }: { children: ReactNode }) {
     }
   }
 
+  if (sessionError) {
+    return (
+      <main className="auth-page" aria-labelledby="session-error-title">
+        <section className="sign-in-card">
+          <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
+          <div className="sign-in-copy">
+            <h1 id="session-error-title">Can't reach Keysy</h1>
+            <p role="alert">Your session could not be checked. Try again in a moment.</p>
+          </div>
+          <button type="button" className="auth-button" onClick={retrySessionCheck}>Try again</button>
+        </section>
+      </main>
+    )
+  }
+
   if (user === undefined) {
     return <main className="auth-page"><p role="status">Checking your session...</p></main>
   }
 
   if (user) {
     return (
-      <div className="dashboard">
-        <Topbar />
-        <div className="dashboard-body">
-          <Rail email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
-          <main className="dashboard-content">{children}</main>
+      <CurrentUserContext.Provider value={{ user, onUserChange: (updated) => setUser((current) => current ? updated : current), onSignedOut: () => setUser(null), onSignOutRequest: requestSignOut }}>
+        <div className="dashboard">
+          <Topbar />
+          <div className="dashboard-body">
+            <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} onSignOutRequest={requestSignOut} />
+            <main className="dashboard-content">{children}</main>
+          </div>
+          <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
         </div>
-      </div>
+      </CurrentUserContext.Provider>
     )
   }
 
@@ -75,9 +107,7 @@ function SessionGate({ children }: { children: ReactNode }) {
         <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
         <div className="sign-in-copy">
           <h1 id="sign-in-title">Sign in to Keysy</h1>
-          <p>Use your Google account to continue.</p>
         </div>
-        {sessionError && <p role="alert">Could not check your session. Reload the page to try again.</p>}
         <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>
           <img src="/google-symbol.svg" width="18" height="18" alt="" />
           Continue with Google

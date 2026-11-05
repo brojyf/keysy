@@ -12,6 +12,13 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 do $$
 begin
+  assert (select not agent_auto_apply from public.profiles where id = '00000000-0000-0000-0000-000000000011'),
+    'Agent auto apply must default to false';
+  update public.profiles set agent_auto_apply = true where id = '00000000-0000-0000-0000-000000000011';
+  assert (select agent_auto_apply from public.profiles where id = '00000000-0000-0000-0000-000000000011'),
+    'Agent auto apply must be saved';
+  assert (select not agent_auto_apply from public.profiles where id = '00000000-0000-0000-0000-000000000012'),
+    'Agent auto apply must be independent per user';
   assert (select display_name = 'Ada Lovelace' from public.profiles
     where id = '00000000-0000-0000-0000-000000000011'),
     'New users must get their trimmed Google name';

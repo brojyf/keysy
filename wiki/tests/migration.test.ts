@@ -274,7 +274,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
   expect(api).toContain('This is the v0 draft, not a stable release.');
-  expect(api).toContain("The application API provides Keysy's app features");
+  expect(api).toContain("The implemented application API provides the signed-in user's profile.");
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
     expect(api).toContain(operation);
@@ -387,15 +387,16 @@ test('design links to the dashboard and web Figma files', async () => {
   ]) expect(html).toContain(`href="${href}"`);
 });
 
-test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', () => {
+test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', async () => {
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-700\)\);\s*font-weight: 400;/);
   expect(stylesheet).toMatch(/\.dark #sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-400\)\);/);
   // Sourcey draws the desktop chevron with ::after inside #nav, and the drawer chevron with ::before.
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group\[open\]\[data-closing\] > summary::before,\s*#sourcey #nav \.sourcey-nav-group\[open\]\[data-closing\] > summary::after \{\s*transform: rotate\(-45deg\);/);
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group > summary::before,\s*#sourcey #nav \.sourcey-nav-group > summary::after \{\s*transition: transform var\(--keysy-spring-duration\) var\(--keysy-spring\);/);
   expect(stylesheet).not.toContain('::details-content');
-  expect(stylesheet).toContain('--keysy-spring: linear(0, 0.06, 0.186,');
-  expect(stylesheet).toContain('--keysy-spring-duration: 600ms;');
+  const generatedTheme = await Bun.file(new URL('../tokens.generated.css', import.meta.url)).text();
+  expect(generatedTheme).toContain('--keysy-spring: linear(0, 0.06, 0.186,');
+  expect(generatedTheme).toContain('--keysy-spring-duration: 600ms;');
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {

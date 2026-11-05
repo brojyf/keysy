@@ -22,30 +22,32 @@ import (
 
 const (
 	oauthCookieName     = "__Host-keysy-oauth"
-	accessCookieName    = "__Host-keysy-access"
+	accessCookieName    = "__Secure-keysy-access"
 	refreshCookieName   = "__Host-keysy-refresh"
 	transactionLifetime = 10 * time.Minute
 )
 
 type Options struct {
-	OAuth       oauth2.Config
-	SupabaseURL string
-	SupabaseKey string
-	WebAppURL   string
-	CookieKey   []byte
-	HTTPClient  *http.Client
+	CookieDomain string
+	OAuth        oauth2.Config
+	SupabaseURL  string
+	SupabaseKey  string
+	WebAppURL    string
+	CookieKey    []byte
+	HTTPClient   *http.Client
 }
 
 type Handler struct {
-	oauth       oauth2.Config
-	supabaseURL string
-	supabaseKey string
-	webAppURL   string
-	webOrigin   string
-	cipher      cipher.AEAD
-	httpClient  *http.Client
-	localHTTP   bool
-	now         func() time.Time
+	cookieDomain string
+	oauth        oauth2.Config
+	supabaseURL  string
+	supabaseKey  string
+	webAppURL    string
+	webOrigin    string
+	cipher       cipher.AEAD
+	httpClient   *http.Client
+	localHTTP    bool
+	now          func() time.Time
 }
 
 type transaction struct {
@@ -80,8 +82,9 @@ func New(options Options) (*Handler, error) {
 		webHost = strings.TrimSuffix(webHost, ":"+webURL.Port())
 	}
 	return &Handler{
-		localHTTP: redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
-		oauth:     options.OAuth, supabaseURL: options.SupabaseURL,
+		cookieDomain: options.CookieDomain,
+		localHTTP:    redirectURL.Scheme == "http" && redirectURL.Hostname() == "localhost",
+		oauth:        options.OAuth, supabaseURL: options.SupabaseURL,
 		supabaseKey: options.SupabaseKey, webAppURL: options.WebAppURL,
 		webOrigin: webURL.Scheme + "://" + webHost,
 		cipher:    aead, httpClient: options.HTTPClient, now: time.Now,
@@ -91,10 +94,10 @@ func New(options Options) (*Handler, error) {
 func (h *Handler) Register(router *gin.Engine) {
 	router.GET("/v0/auth/google", h.start)
 	router.GET("/v0/auth/callback", h.callback)
-	router.GET("/v0/auth/session", h.dashboardCORS(http.MethodGet), h.currentSession)
-	router.OPTIONS("/v0/auth/session", h.dashboardCORS(http.MethodGet))
-	router.POST("/v0/auth/logout", h.dashboardCORS(http.MethodPost), h.logout)
-	router.OPTIONS("/v0/auth/logout", h.dashboardCORS(http.MethodPost))
+	router.POST("/v0/auth/logout", h.dashboardCORS(), h.logout)
+	router.OPTIONS("/v0/auth/logout", h.dashboardCORS())
+	router.POST("/v0/auth/refresh", h.dashboardCORS(), h.refresh)
+	router.OPTIONS("/v0/auth/refresh", h.dashboardCORS())
 }
 
 func sensitiveResponse(c *gin.Context) {
@@ -105,7 +108,7 @@ func sensitiveResponse(c *gin.Context) {
 func (h *Handler) start(c *gin.Context) {
 	sensitiveResponse(c)
 	if _, err := loginQuery(c.Request, false); err != nil {
-		respondError(c, 400, "INVALID_REQUEST")
+		respondError(c, 400, "INVALID_REQUEST", "Check your sign-in request and try again.")
 		return
 	}
 	tx := transaction{
@@ -114,7 +117,7 @@ func (h *Handler) start(c *gin.Context) {
 	}
 	plaintext, err := json.Marshal(tx)
 	if err != nil {
-		respondError(c, 500, "INTERNAL_ERROR")
+		respondError(c, 500, "INTERNAL_ERROR", "Sign-in could not start. Try again later.")
 		return
 	}
 	sealed := h.cipher.Seal(nil, nil, plaintext, []byte(oauthCookieName))
@@ -132,16 +135,16 @@ func (h *Handler) callback(c *gin.Context) {
 	http.SetCookie(c.Writer, h.newCookie(oauthCookieName, "", -1))
 	query, err := loginQuery(c.Request, true)
 	if err != nil {
-		respondError(c, 400, "INVALID_REQUEST")
+		respondError(c, 400, "INVALID_REQUEST", "Check your sign-in request and try again.")
 		return
 	}
 	tx, err := h.readTransaction(c.Request)
 	if err != nil || subtle.ConstantTimeCompare([]byte(query.Get("state")), []byte(tx.State)) != 1 {
-		respondError(c, http.StatusBadRequest, "INVALID_LOGIN_TRANSACTION")
+		respondError(c, http.StatusBadRequest, "INVALID_LOGIN_TRANSACTION", "Your sign-in session is invalid or expired. Start sign-in again.")
 		return
 	}
 	if query.Has("error") {
-		respondError(c, 400, "SIGN_IN_FAILED")
+		respondError(c, 400, "SIGN_IN_FAILED", "Sign-in was canceled. Start sign-in again.")
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
@@ -154,33 +157,47 @@ func (h *Handler) callback(c *gin.Context) {
 		if errors.As(err, &rejection) && rejection.Response.StatusCode >= 400 && rejection.Response.StatusCode < 500 && rejection.Response.StatusCode != 429 {
 			status = http.StatusBadRequest
 		}
-		respondError(c, status, "SIGN_IN_FAILED")
+		respondError(c, status, "SIGN_IN_FAILED", "Google sign-in failed. Try again.")
 		return
 	}
 	idToken, _ := googleToken.Extra("id_token").(string)
 	if idToken == "" {
-		respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE")
+		respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE", "Google did not complete sign-in. Try again.")
 		return
 	}
 	session, status := h.exchangeIDToken(ctx, idToken, googleToken.AccessToken, tx.Nonce, c.Request.UserAgent())
 	if status != 0 {
-		respondError(c, status, "SIGN_IN_FAILED")
+		respondError(c, status, "SIGN_IN_FAILED", "Sign-in failed. Try again.")
 		return
 	}
+	if !h.setSessionCookies(c.Writer, session) {
+		respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE", "Sign-in could not be completed. Try again.")
+		return
+	}
+	c.Redirect(http.StatusSeeOther, h.webAppURL)
+}
+
+// setSessionCookies sets both token cookies, or none if either is invalid.
+func (h *Handler) setSessionCookies(w http.ResponseWriter, session session) bool {
 	cookies := []*http.Cookie{
 		h.newTokenCookie(accessCookieName, session.AccessToken, session.ExpiresIn),
 		h.newTokenCookie(refreshCookieName, session.RefreshToken, 0),
 	}
 	for _, cookie := range cookies {
 		if cookie.Valid() != nil || len(cookie.String()) > 4096 {
-			respondError(c, http.StatusBadGateway, "INVALID_PROVIDER_RESPONSE")
-			return
+			return false
 		}
 	}
 	for _, cookie := range cookies {
-		http.SetCookie(c.Writer, cookie)
+		http.SetCookie(w, cookie)
 	}
-	c.Redirect(http.StatusSeeOther, h.webAppURL)
+	return true
+}
+
+func (h *Handler) clearSessionCookies(w http.ResponseWriter) {
+	for _, name := range []string{oauthCookieName, accessCookieName, refreshCookieName} {
+		http.SetCookie(w, h.newCookie(name, "", -1))
+	}
 }
 
 func (h *Handler) readTransaction(r *http.Request) (transaction, error) {
@@ -213,15 +230,19 @@ func randomToken() string {
 
 func (h *Handler) cookieName(name string) string {
 	if h.localHTTP {
-		return strings.TrimPrefix(name, "__Host-")
+		return strings.TrimPrefix(strings.TrimPrefix(name, "__Host-"), "__Secure-")
 	}
 	return name
 }
 
 func (h *Handler) newCookie(name, value string, maxAge int) *http.Cookie {
-	return &http.Cookie{Name: h.cookieName(name), Value: value, Path: "/", Secure: !h.localHTTP, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
+	domain := ""
+	if name == accessCookieName && !h.localHTTP {
+		domain = h.cookieDomain
+	}
+	return &http.Cookie{Domain: domain, Name: h.cookieName(name), Value: value, Path: "/", Secure: !h.localHTTP, HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge}
 }
 
-func respondError(c *gin.Context, status int, code string) {
-	c.AbortWithStatusJSON(status, gin.H{"error": gin.H{"code": code, "message": "Sign-in could not be completed."}})
+func respondError(c *gin.Context, status int, code, message string) {
+	c.AbortWithStatusJSON(status, gin.H{"error": gin.H{"code": code, "message": message}})
 }

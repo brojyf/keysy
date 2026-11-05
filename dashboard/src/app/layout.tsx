@@ -5,6 +5,7 @@ import '../components/sign-in.css'
 import '../components/dashboard.css'
 import '../components/account.css'
 import SessionGate from '../components/session-gate'
+import ThemeSync from '../components/theme-sync'
 
 export const metadata: Metadata = {
   title: 'Sign in — Keysy',
@@ -19,8 +20,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var v;try{v=document.cookie.split('; ').find(function(c){return c.indexOf('keysy-theme=')===0})?.slice(12)}catch(e){}var d=v==='dark'||(v!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'})()` }} />
+      </head>
       <body>
+        <ThemeSync />
         <SessionGate>{children}</SessionGate>
       </body>
     </html>

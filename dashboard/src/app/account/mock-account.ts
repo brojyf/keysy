@@ -1,8 +1,9 @@
 // Mock data from the Figma Account screens (7.2, 7.4, 7.5) until account APIs exist.
 
-export const mockProfile = { name: 'Jordan Lee', email: 'jordan@acme.dev', signInMethod: 'Google' }
-
-export const mockOrganizations = ['platform', 'marketing-site']
+export const mockOrganizations = [
+  { name: 'platform', role: 'Developer', members: 12 },
+  { name: 'marketing-site', role: 'Admin', members: 4 },
+]
 
 export const mockSessions = [
   { id: 'web', client: 'Web', device: 'Chrome on macOS', lastUsed: 'Now', current: true },

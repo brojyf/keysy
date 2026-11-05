@@ -3,12 +3,14 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The application API provides Keysy's app features: orgs and members, secrets and folder versions,
-    access policies, services, AI reorganization, and audit logs.
+    The implemented application API provides the signed-in user's profile. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
     This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
+servers:
+  - url: https://api.keysy.net
+  - url: http://localhost:8081
 tags:
   - name: Orgs
   - name: Members
@@ -24,17 +26,147 @@ paths:
   /v0/me:
     get:
       tags: [Orgs]
+      security:
+        - accessCookie: []
       operationId: getMe
-      summary: Get the signed-in user and their orgs
+      summary: Get the signed-in user
+      description: |
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string or request body is accepted.
       responses:
         '200':
           description: The signed-in user.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    patch:
+      tags: [Orgs]
+      security:
+        - accessCookie: []
+      operationId: updateMe
+      summary: Update the signed-in user's profile
+      description: |
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string is accepted. The UTF-8 JSON body is limited to 1024 bytes.
+        The body must contain exactly one field, displayName or agentAutoApply. For displayName, the service trims whitespace,
+        then accepts 1 to 32 Unicode code points.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              oneOf:
+                - required: [displayName]
+                - required: [agentAutoApply]
+              properties:
+                displayName:
+                  type: string
+                  description: Whitespace is trimmed before the length is checked.
+                agentAutoApply:
+                  type: boolean
+      responses:
+        '200':
+          description: The signed-in user.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/InvalidDisplayNameRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    options:
+      tags: [Orgs]
+      operationId: preflightMe
+      security: []
+      summary: CORS preflight for the profile route
+      description: |
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or PATCH.
+        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [GET, PATCH]
+        - name: Access-Control-Request-Headers
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, PATCH, and Access-Control-Allow-Headers is Content-Type.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                enum: ['GET, PATCH']
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                enum: [Content-Type]
+        '403':
+          $ref: '#/components/responses/InvalidPreflight'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v0/orgs:
     post:
       tags: [Orgs]
@@ -864,6 +996,11 @@ paths:
 
 components:
   securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-keysy-access
+      description: Encrypted access token cookie. On local HTTP the name is keysy-access. The auth service sets HttpOnly, SameSite=Lax, Path=/, Secure and Domain=COOKIE_DOMAIN in HTTPS mode; Max-Age is the access token lifetime.
     bearerAuth:
       type: http
       scheme: bearer
@@ -924,6 +1061,19 @@ components:
         maximum: 100
         default: 50
   headers:
+    RequestID:
+      description: Generated UUID; absent if ID generation fails.
+      schema:
+        type: string
+        format: uuid
+    AllowOrigin:
+      description: Set to the matching dashboard origin after CORS validation.
+      schema:
+        type: string
+    AllowCredentials:
+      description: Set to true after CORS validation.
+      schema:
+        type: string
     NoStore:
       schema:
         type: string
@@ -934,24 +1084,24 @@ components:
       enum: [super_admin, admin, user]
     Me:
       type: object
-      required: [id, email, memberships]
+      required: [id, email, displayName, agentAutoApply, memberships]
       properties:
         id:
           type: string
-          format: uuid
         email:
           type: string
-          format: email
+        displayName:
+          type: string
+        agentAutoApply:
+          type: boolean
+        avatarUrl:
+          type: string
+          description: Present only when the token contains a valid HTTPS avatar URL.
         memberships:
           type: array
+          maxItems: 0
           items:
             type: object
-            required: [org, role]
-            properties:
-              org:
-                $ref: '#/components/schemas/Org'
-              role:
-                $ref: '#/components/schemas/Role'
     Org:
       type: object
       required: [id, name, createdAt]
@@ -1387,6 +1537,118 @@ components:
             message:
               type: string
   responses:
+    InvalidRequest:
+      description: INVALID_REQUEST.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthenticated:
+      description: UNAUTHENTICATED.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidOrigin:
+      description: INVALID_ORIGIN. This response has no CORS allow headers.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: INTERNAL_ERROR. Recovery before CORS can omit CORS headers and Cache-Control.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: KEYS_UNAVAILABLE or REQUEST_TIMEOUT.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidDisplayNameRequest:
+      description: INVALID_REQUEST or INVALID_DISPLAY_NAME.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnsupportedMediaType:
+      description: UNSUPPORTED_MEDIA_TYPE.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidPreflight:
+      description: INVALID_ORIGIN or INVALID_REQUEST. This response has no CORS allow headers.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     BadRequest:
       description: Invalid request.
       content:

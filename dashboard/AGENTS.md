@@ -26,36 +26,36 @@ Run from `dashboard/`:
 bun install --frozen-lockfile
 bun run dev        # http://localhost:5173, Fast Refresh; auth defaults to http://localhost:8080
 bun run lint       # oxlint
-NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net bun run build   # tsc --noEmit, then next build
+bun run build      # tsc --noEmit, then next build; URLs come from .env.production
 bun run test       # node --test tests/*.test.ts, then bun test on the .tsx tests
 node --test tests/next-config.test.ts                  # one Node test file
 bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 ```
 
-CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build with
-`NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net`, the tests, and `bun test` in
-`design/tokens`.
+CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build, the
+tests, and `bun test` in `design/tokens`.
 
 ## Architecture
 
 - `src/app/layout.tsx` wraps every route in `SessionGate`
   (`src/components/session-gate.tsx`), a Client Component. It calls
-  `{NEXT_PUBLIC_AUTH_URL}/v0/auth/session` with `credentials: 'include'`.
-  On 401 it shows the sign-in screen. On success it shows the shell (`Topbar`,
+  `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
+  On 401 it calls `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` once
+  (`src/lib/session-refresh.ts`; concurrent 401s share one refresh) and
+  retries. If refresh returns 401, it shows the sign-in screen. On success it shows the shell (`Topbar`,
   `Rail`, page content). Logout calls `/v0/auth/logout` the same way.
   There is no Next.js middleware or server-side session check.
-- The auth service owns the session. Its cookies stay on the auth host, so
+- The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
   the browser calls the auth origin directly through credentialed CORS.
-- `NEXT_PUBLIC_AUTH_URL` is embedded at build time. `next.config.ts` requires
-  it for production builds and accepts only an HTTPS origin (or HTTP localhost)
+- `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL` are embedded at build time. `.env.production` sets
+  both for `next build`. `next.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`, which renders mock
-  data from `src/app/account/mock-account.ts`. `/` redirects to `/secrets`.
-- Styling is plain CSS. Tokens in `src/app/globals.css` use Tailwind v4
-  namespace names (`--color-*`, `--text-*`, `--radius-*`), but Tailwind is not
-  installed. Color values must match `design/tokens/tokens.css` (light mode only).
+- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data, with local search and sort. `/` redirects to `/secrets`.
+- Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
+  `src/app/globals.css` imports. Tailwind is not installed.
+  Read `design/tokens/` before any UI or styling change.
   The Figma design reference is in `design/dashboard/README.md`.
 - File names are kebab-case. Shared UI lives in `src/components/`.
 - Tests use `bun:test` with happy-dom. They mock `next/navigation` and `fetch`.

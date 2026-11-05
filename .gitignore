@@ -4,6 +4,9 @@ node_modules/
 dist/
 /auth/.env.local
 /auth/tmp/
+/api/.env.local
+/api/tmp/
+/otel/.env.local
 
 # iCloud sync duplicates
 * 2

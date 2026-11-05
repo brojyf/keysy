@@ -36,7 +36,12 @@ func assertClearedCookies(t *testing.T, h *Handler, w *httptest.ResponseRecorder
 	seen := map[string]bool{}
 	for _, c := range cookies {
 		seen[c.Name] = true
-		if c.Value != "" || c.MaxAge >= 0 || c.Path != "/" || c.Domain != "" || !c.HttpOnly || c.Secure == h.localHTTP || c.SameSite != http.SameSiteLaxMode {
+		if c.Value != "" || c.MaxAge >= 0 || c.Path != "/" || c.Domain != func() string {
+			if c.Name == accessCookieName && !h.localHTTP {
+				return h.cookieDomain
+			}
+			return ""
+		}() || !c.HttpOnly || c.Secure == h.localHTTP || c.SameSite != http.SameSiteLaxMode {
 			t.Errorf("unsafe cleared cookie %s", c.Name)
 		}
 	}
@@ -84,6 +89,17 @@ func TestLogoutRejectsCrossOriginAndInvalidRequests(t *testing.T) {
 			if w.Code != want || f.logoutCalls != 0 || len(w.Result().Cookies()) != 0 {
 				t.Fatalf("logout = %d, want %d; upstream calls = %d", w.Code, want, f.logoutCalls)
 			}
+			if want != http.StatusMethodNotAllowed {
+				wantMessage := "This request is not allowed from this website."
+				if name == "unexpected-query" || name == "request-body" {
+					wantMessage = "Check your logout request and try again."
+				} else if name == "duplicate-cookie" {
+					wantMessage = "Your logout request contains duplicate session cookies."
+				}
+				if !strings.Contains(w.Body.String(), `"message":"`+wantMessage+`"`) {
+					t.Fatalf("unexpected error message: %s", w.Body.String())
+				}
+			}
 		})
 	}
 }
@@ -113,6 +129,9 @@ func TestLogoutDoesNotFollowRedirectsOrClearCookiesOnNetworkFailure(t *testing.T
 			f.router.ServeHTTP(w, r)
 			if w.Code != http.StatusServiceUnavailable || followed || len(w.Result().Cookies()) != 0 {
 				t.Fatalf("unsafe upstream failure handling: status %d, followed %v", w.Code, followed)
+			}
+			if !strings.Contains(w.Body.String(), `"message":"Sign-out is temporarily unavailable. Try again later."`) {
+				t.Fatalf("unexpected error message: %s", w.Body.String())
 			}
 		})
 	}
@@ -152,4 +171,91 @@ func TestLogoutHandlesMissingCredentialsAndUpstreamFailures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLogoutWithoutAccessCookieRefreshesBeforeRevoking(t *testing.T) {
+	for _, upstream := range []struct {
+		name                       string
+		refreshStatus, want, calls int
+	}{
+		{"refreshed", 200, http.StatusNoContent, 1},
+		{"refresh-rejected", 400, http.StatusNoContent, 0},
+		{"refresh-unavailable", 503, http.StatusServiceUnavailable, 0},
+	} {
+		t.Run(upstream.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.refreshStatus, f.logoutToken = upstream.refreshStatus, "keysy-access-2"
+			r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+			r.URL.Path = "/v0/auth/logout"
+			w := httptest.NewRecorder()
+			f.router.ServeHTTP(w, r)
+			if w.Code != upstream.want || f.refreshCalls != 1 || f.logoutCalls != upstream.calls {
+				t.Fatalf("logout = %d, want %d; refresh calls = %d, logout calls = %d", w.Code, upstream.want, f.refreshCalls, f.logoutCalls)
+			}
+			if upstream.want == http.StatusNoContent {
+				assertClearedCookies(t, f.handler, w)
+			} else if len(w.Result().Cookies()) != 0 {
+				t.Error("cleared cookies without completing logout")
+			}
+		})
+	}
+}
+
+func TestLogoutRefreshesRejectedAccessToken(t *testing.T) {
+	f := newFixture(t)
+	var tokens []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/token" {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"access_token":"new-access","refresh_token":"new-refresh","token_type":"bearer","expires_in":600}`))
+			return
+		}
+		tokens = append(tokens, r.Header.Get("Authorization"))
+		if len(tokens) == 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	t.Cleanup(server.Close)
+	f.handler.supabaseURL = server.URL
+	r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+	r.URL.Path = "/v0/auth/logout"
+	r.AddCookie(f.handler.newTokenCookie(accessCookieName, "expired-access", 3600))
+	w := httptest.NewRecorder()
+	f.router.ServeHTTP(w, r)
+	if w.Code != http.StatusNoContent || len(tokens) != 2 || tokens[1] != "Bearer new-access" {
+		t.Fatalf("logout = %d, logout attempts = %v", w.Code, tokens)
+	}
+	assertClearedCookies(t, f.handler, w)
+}
+
+func TestLogoutRetainsRotatedSessionWhenRevocationFails(t *testing.T) {
+	f := newFixture(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/token" {
+			w.Write([]byte(`{"access_token":"new-access","refresh_token":"new-refresh","token_type":"bearer","expires_in":600}`))
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	f.handler.supabaseURL = server.URL
+	r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+	r.URL.Path = "/v0/auth/logout"
+	w := httptest.NewRecorder()
+	f.router.ServeHTTP(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("logout = %d, want 503", w.Code)
+	}
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Name == refreshCookieName {
+			token, err := f.handler.openTokenCookie(refreshCookieName, cookie.Value)
+			if err != nil || token != "new-refresh" {
+				t.Fatal("rotated refresh token was not retained")
+			}
+			return
+		}
+	}
+	t.Fatal("missing rotated refresh cookie")
 }

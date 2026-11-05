@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	CookieDomain       string
 	Port               string
 	AuthURL            string
 	WebAppURL          string
@@ -22,7 +23,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	c := Config{
-		Port: os.Getenv("PORT"), AuthURL: os.Getenv("AUTH_URL"), WebAppURL: os.Getenv("WEB_APP_URL"),
+		CookieDomain: os.Getenv("COOKIE_DOMAIN"), Port: os.Getenv("PORT"), AuthURL: os.Getenv("AUTH_URL"), WebAppURL: os.Getenv("WEB_APP_URL"),
 		SupabaseURL: os.Getenv("SUPABASE_URL"), SupabaseKey: os.Getenv("SUPABASE_PUBLISHABLE_KEY"),
 		GoogleClientID: os.Getenv("GOOGLE_CLIENT_ID"), GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 	}
@@ -42,6 +43,18 @@ func Load() (Config, error) {
 		localBrowser := name != "SUPABASE_URL" && u.Scheme == "http" && u.Hostname() == "localhost"
 		if (u.Scheme != "https" && !localBrowser) || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (name != "WEB_APP_URL" && u.Path != "" && u.Path != "/") {
 			return c, fmt.Errorf("%s requires HTTPS, except localhost browser URLs; credentials, query, and fragment are forbidden; service URLs must not have a path", name)
+		}
+	}
+	authURL, _ := url.Parse(c.AuthURL)
+	if authURL.Scheme == "http" && authURL.Hostname() == "localhost" {
+		if c.CookieDomain != "" {
+			return c, fmt.Errorf("COOKIE_DOMAIN must be empty for HTTP localhost")
+		}
+	} else {
+		domain := strings.ToLower(c.CookieDomain)
+		host := strings.ToLower(authURL.Hostname())
+		if domain == "" || strings.HasPrefix(domain, ".") || !(host == domain || strings.HasSuffix(host, "."+domain)) {
+			return c, fmt.Errorf("COOKIE_DOMAIN must be a bare domain containing the AUTH_URL host")
 		}
 	}
 	if c.Port == "" {

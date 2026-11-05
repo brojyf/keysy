@@ -1,38 +1,11 @@
-/* Colors mirror design/tokens/tokens.css. Sourcey cannot import it, so tests/branding.test.ts fails on drift. */
+/* design-tokens.ts generates the token colors and spring. Only values without a token stay here. */
 :root {
-  --color-background-light: 250 250 250;
-  --color-background-dark: 20 20 20;
-  --color-primary-ink: 29 78 216;
-  --color-gray-50: 250 250 250;
-  --color-gray-100: 240 241 243;
-  --color-gray-200: 227 228 230;
   --color-gray-300: 209 210 213;
-  --color-gray-400: 172 173 177;
-  --color-gray-500: 100 102 107;
   --color-gray-600: 82 84 89;
   --color-gray-700: 65 67 72;
-  --color-gray-800: 41 41 41;
-  --color-gray-900: 27 28 30;
-  --color-gray-950: 20 20 20;
-  --keysy-text: #1b1c1e;
-  --keysy-accent: #1d4ed8;
-  --keysy-soft: #f0f1f3;
-  --keysy-raised: #ffffff;
-  /* Critically damped spring (damping 1.0, response 0.4 s), sampled until it settles. */
-  --keysy-spring: linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949,
-    0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1);
-  --keysy-spring-duration: 600ms;
   /* Desktop tab and response status underlines share this standard easing. */
   --keysy-indicator-duration: 360ms;
   --keysy-indicator-easing: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.dark {
-  --keysy-text: #ededee;
-  --keysy-accent: #7aa2ff;
-  --keysy-soft: #292929;
-  --keysy-raised: #222222;
-  --color-gray-200: 237 237 238;
 }
 
 /* Keep native callout and code-block syntax colors. */

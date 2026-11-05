@@ -1,4 +1,4 @@
-/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions. */
+/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions, 7.9 Row menu, 7.12 Filtered, 7.13 No results, 7.15 and 7.16 Sign out. */
 .dashboard-content:has(> .account) {
   padding: 0;
 }
@@ -14,7 +14,7 @@
   gap: 12px;
   flex-shrink: 0;
   width: 240px;
-  padding: 13px 16px 12px 12px;
+  padding: 13px 12px 16px 12px;
   border-right: 1px solid var(--color-line);
   background: var(--color-bg);
 }
@@ -22,9 +22,7 @@
 .account-sidebar-title {
   padding: 6px 0;
   color: var(--color-text);
-  font-size: var(--text-title-3);
-  font-weight: 500;
-  line-height: 20px;
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
 
 .account-nav {
@@ -38,9 +36,9 @@
   align-items: center;
   height: 28px;
   padding: 0 8px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   color: var(--color-text);
-  font-size: var(--text-callout);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
   text-decoration: none;
 }
 
@@ -50,7 +48,7 @@
 }
 
 .account-nav-item[aria-current='page'] {
-  font-weight: 500;
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
 
 .account-nav-item:focus-visible {
@@ -65,6 +63,12 @@
   flex: 1;
   min-width: 0;
   padding: 24px 32px 48px;
+  /* Keeps the save bar's slide from adding page scroll. */
+  overflow-y: clip;
+}
+
+.account-page:has(> .account-table) {
+  gap: 18px;
 }
 
 .account-page-header {
@@ -75,29 +79,26 @@
 }
 
 .account-page-slash {
-  color: var(--color-line);
-  font-size: var(--text-title-2);
+  color: var(--color-line-strong);
+  font: var(--text-page-path--font-weight) var(--text-page-path)/var(--text-page-path--line-height) var(--font-sans);
 }
 
 .account-page-header h1 {
   margin: 0;
-  font-size: var(--text-title-2);
-  font-weight: 600;
+  font: var(--text-section-heading--font-weight) var(--text-section-heading)/var(--text-section-heading--line-height) var(--font-sans);
 }
 
 /* General */
 .account-sections {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
   max-width: 720px;
 }
 
 .account-sections h2 {
-  margin: 0 0 8px;
-  font-size: var(--text-title-2);
-  font-weight: 600;
-  line-height: 22px;
+  margin: 0 0 10px;
+  font: var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans);
 }
 
 .account-sections .account-danger {
@@ -106,7 +107,9 @@
 
 .account-rows {
   margin: 0;
-  border-top: 1px solid var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  overflow: visible;
 }
 
 .account-rows > div {
@@ -114,20 +117,29 @@
   align-items: center;
   gap: 24px;
   min-height: 56px;
-  padding: 12px 0;
+  padding: 12px 14px;
+}
+
+.account-rows > div:not(:last-child) {
+  border-bottom: 1px solid var(--color-line);
 }
 
 .account-rows dt {
   flex-shrink: 0;
   width: 240px;
-  font-size: var(--text-callout);
-  font-weight: 500;
+  color: var(--color-text);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
 
 .account-rows dd {
   flex: 1;
   margin: 0;
   color: var(--color-muted);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.account-rows > div + div > dd:not(.account-control) {
+  padding-left: 10px;
 }
 
 .account-rows .account-control {
@@ -147,7 +159,11 @@
   border: 0;
   border-radius: var(--radius-full);
   background: var(--color-line);
+  transition: background-color 200ms ease;
 }
+
+.account-switch[aria-checked="true"] { background: var(--color-button); }
+.account-switch[aria-checked="true"]::after { transform: translateX(14px); }
 
 .account-switch::after {
   content: '';
@@ -158,17 +174,35 @@
   height: 14px;
   border-radius: var(--radius-full);
   background: var(--color-surface);
+  box-shadow: var(--shadow-knob);
+  transition: transform 200ms var(--ease-spring);
+}
+
+:root.dark .account-switch::after {
+  background: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-switch, .account-switch::after {
+    transition: none;
+  }
 }
 
 .account-theme {
+  position: relative;
+  isolation: isolate;
   display: flex;
   gap: 2px;
   padding: 2px;
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-full);
-  background: var(--color-soft);
+  background: none;
 }
 
 .account-theme button {
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
   display: grid;
   place-items: center;
   width: 26px;
@@ -182,24 +216,128 @@
 
 .account-theme button[aria-pressed='true'] {
   color: var(--color-text);
-  background: var(--color-surface);
 }
 
-.account-delete {
+.account-delete,
+.account-sign-out,
+.sign-out-dialog-cancel,
+.sign-out-dialog-confirm {
   height: 28px;
   padding: 0 10px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-danger);
   background: var(--color-surface);
-  font: 500 var(--text-callout) / 17px var(--font-sans);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+}
+
+.account-sign-out,
+.sign-out-dialog-cancel,
+.sign-out-dialog-confirm {
+  cursor: pointer;
+}
+
+.account-sign-out:focus-visible,
+.sign-out-dialog-cancel:focus-visible,
+.sign-out-dialog-confirm:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+.sign-out-dialog {
+  position: fixed;
+  inset: 40% auto auto 50%;
+  width: min(440px, calc(100vw - 32px));
+  margin: 0;
+  padding: 16px 20px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-dialog);
+  outline: none;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sign-out-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-text) 24%, transparent);
+  transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sign-out-dialog[data-closing] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.sign-out-dialog[data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+@starting-style {
+  .sign-out-dialog[open] {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  .sign-out-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign-out-dialog {
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
+:root.dark .sign-out-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+}
+
+.sign-out-dialog h2 {
+  margin: 0 0 8px;
+  font: var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans);
+}
+
+.sign-out-dialog p {
+  margin: 0;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.sign-out-dialog .sign-out-dialog-error {
+  margin-top: 8px;
+  color: var(--color-danger);
+}
+
+.sign-out-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.sign-out-dialog-cancel {
+  color: var(--color-text);
+}
+
+.sign-out-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Organizations and Sessions */
 .account-table {
+  max-width: 720px;
   overflow: hidden;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: 16px;
 }
 
 .account-table table {
@@ -217,17 +355,53 @@
   padding-block: 10px;
   border-bottom: 1px solid var(--color-line);
   color: var(--color-muted);
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  line-height: 16px;
+  background: var(--color-table-header);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
 
 .account-table td {
-  line-height: 18px;
+  color: var(--color-text);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
 .account-table tbody tr + tr td {
   border-top: 1px solid var(--color-line);
+}
+
+.account-table tbody tr:hover td:not(.account-table-empty) {
+  background: var(--color-hover);
+}
+
+.account-table td.account-table-empty {
+  height: 96px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.account-table td.account-table-actions {
+  padding-block: 6px;
+  text-align: right;
+}
+
+.account-orgs th:is(:nth-child(2), :nth-child(3)) {
+  width: 200px;
+}
+
+.account-orgs th:last-child {
+  width: 56px;
+}
+
+.account-org-row {
+  cursor: pointer;
+}
+
+.account-table-link {
+  color: inherit;
+}
+
+.account-table-link:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
 }
 
 .account-sessions th:is(:first-child, :nth-child(3)) {
@@ -239,6 +413,276 @@
 }
 
 .account-sessions .account-session-status {
+  opacity: 0.5;
+}
+
+:root.dark .account-sessions .account-session-status {
   color: var(--color-muted);
-  text-align: right;
+  opacity: 1;
+}
+
+.account-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 280px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.account-search:focus-within {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+:root.dark .account-search:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.account-search svg {
+  flex-shrink: 0;
+}
+
+.account-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: var(--color-text);
+  background: none;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.account-search input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.account-search button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.account-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.account-sort:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+th[aria-sort='descending'] .account-sort svg {
+  transform: rotate(180deg);
+}
+
+.account-more {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: none;
+  vertical-align: top;
+  cursor: pointer;
+}
+
+.account-more:disabled {
+  cursor: default;
+}
+
+tr:hover .account-more:not(:disabled),
+.account-more:has(+ :popover-open) {
+  color: var(--color-text);
+}
+
+.account-more:has(+ :popover-open) {
+  background: var(--color-soft);
+}
+
+.account-more:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: -2px;
+}
+
+.account-menu.account-row-menu {
+  inset: auto;
+  width: 128px;
+  transform-origin: right top;
+}
+
+@starting-style {
+  .account-menu.account-row-menu:popover-open {
+    transform: scale(0.95);
+  }
+}
+
+.account-name {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.account-name::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+}
+
+.account-name:focus {
+  border-color: transparent;
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+:root.dark .account-name:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.account-sections-editing {
+  flex: 1;
+}
+
+.account-save-bar {
+  position: sticky;
+  bottom: 24px;
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: -24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-bar);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+  transition:
+    transform var(--duration-spring) var(--ease-spring),
+    opacity 200ms ease;
+}
+
+.account-save-bar-leaving {
+  opacity: 0;
+  transform: translateY(calc(100% + 24px));
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@starting-style {
+  .account-save-bar {
+    opacity: 0;
+    transform: translateY(calc(100% + 24px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-save-bar {
+    transform: none !important;
+  }
+}
+
+:root.dark .account-save-bar {
+  background: var(--color-raised);
+}
+
+.account-save-bar [role='status'] {
+  display: grid;
+  margin-right: 24px;
+}
+
+.account-save-bar [role='status'] > span {
+  grid-area: 1 / 1;
+}
+
+.account-save-bar[data-saved] .account-save-count {
+  visibility: hidden;
+}
+
+.account-save-bar button {
+  position: relative;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+}
+
+.account-save-bar button[type='submit'] {
+  border-color: var(--color-button);
+  color: var(--color-on-button);
+  background: var(--color-button);
+}
+
+.account-save-bar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.account-save-bar button[data-feedback] {
+  opacity: 1;
+}
+
+.account-save-bar button[data-feedback] .account-save-label {
+  visibility: hidden;
+}
+
+.account-save-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -7px;
+}
+
+.account-save-spinner {
+  animation: account-save-spin 800ms linear infinite;
+}
+
+.account-save-check {
+  animation: account-save-confirm 120ms ease-out;
+}
+
+@keyframes account-save-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes account-save-confirm {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-save-spinner,
+  .account-save-check {
+    animation: none;
+  }
 }

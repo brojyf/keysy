@@ -42,7 +42,7 @@ func loginQuery(r *http.Request, callback bool) (url.Values, error) {
 	}) >= 0 {
 		return nil, errInvalidRequest
 	}
-	if (query.Get("code") == "") == (query.Get("error") == "") {
+	if query.Has("code") == query.Has("error") || (query.Get("code") == "" && query.Get("error") == "") {
 		return nil, errInvalidRequest
 	}
 	if strings.Contains(query.Get("code"), " ") || strings.Contains(query.Get("error"), " ") {
