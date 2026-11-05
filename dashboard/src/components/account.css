@@ -246,7 +246,7 @@
 
 .sign-out-dialog {
   position: fixed;
-  inset: 40% auto auto 50%;
+  inset: calc(50% - var(--visual-center-offset)) auto auto 50%;
   width: min(440px, calc(100vw - 32px));
   margin: 0;
   padding: 16px 20px 20px;

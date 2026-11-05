@@ -4,9 +4,9 @@
   display: grid;
   place-items: center;
   min-height: 100svh;
-  padding: 80px 20px;
+  padding: 80px 20px calc(80px + 2 * var(--visual-center-offset));
   background-image:
-    radial-gradient(ellipse at center, transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
+    radial-gradient(ellipse at 50% calc(50% - var(--visual-center-offset)), transparent, color-mix(in srgb, var(--color-bg) 60%, transparent) 55%, var(--color-bg) 100%),
     url('./sign-in-dots.png');
   background-size: auto, 25px 25px;
 }
@@ -15,7 +15,7 @@
   content: '';
   position: absolute;
   z-index: -1;
-  top: calc(50% - 60px);
+  top: calc(50% - var(--visual-center-offset) - 60px);
   left: 50%;
   width: min(400px, 100%);
   height: 200px;
