@@ -4,16 +4,51 @@ description: "Keysy's tables in Supabase PostgreSQL and Aiven PostgreSQL."
 ---
 
 Keysy stores business data in Supabase PostgreSQL and audit records in Aiven PostgreSQL.
-The schema follows the [PRD](/prd) and `openapi/api.yaml`.
+The org and membership definitions below describe the minimal schema agreed for the Supabase migration.
+The [PRD](/prd) and `openapi/api.yaml` still need a separate permissions and API contract update.
 
 ## Supabase PostgreSQL
 
 `auth.users` belongs to Supabase Auth, and `vault.secrets` belongs to Supabase Vault.
 All other tables live in the `public` schema.
 
+### Organizations and memberships
+
+`orgs` contains only `id` and `name`:
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. Defaults to `gen_random_uuid()`. |
+| `name` | `varchar(32)` | Required. At most 32 characters, not bytes. |
+
+Names must contain at least one non-whitespace character. Different orgs can use the same name.
+There are no timestamps or org settings columns.
+
+`members` contains only `org_id`, `user_id`, and `role`:
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| `org_id` | `uuid` | Required. References `orgs.id`. |
+| `user_id` | `uuid` | Required. References `auth.users.id`. |
+| `role` | `text` | Required. Accepts only `owner`, `admin`, or `developer`. There is no default role. |
+
+The primary key is `(org_id, user_id)`. A user can join multiple orgs, but only once per org.
+A user's role can differ between orgs. There is no standalone member ID, email, or timestamp.
+Members must reference existing Auth users; pending email invitations are not part of this schema.
+The migration does not define role permissions or restrict the number of owners.
+The foreign keys do not cascade deletes. Remove the membership before deleting its org or Auth user.
+Both tables enable row level security (RLS), with no policies for direct client access.
+
+### Domain model
+
+The diagram uses the agreed `orgs` and `members` columns.
+All other domain tables in this diagram are proposals, not implemented tables.
+The proposed policy assignments and reorganization authors still need their membership references
+aligned with the composite primary key before implementation.
+
 ```mermaid
 erDiagram
-  auth_users |o--o{ members : "signs in as"
+  auth_users ||--o{ members : "signs in as"
   orgs ||--o{ members : has
   orgs ||--o{ folders : owns
   orgs ||--o{ secrets : owns
@@ -44,17 +79,12 @@ erDiagram
   }
   orgs {
     uuid id PK
-    text name
-    int expiration_reminder_days
-    timestamptz created_at
+    varchar(32) name
   }
   members {
-    uuid id PK
-    uuid org_id FK
-    uuid user_id FK
-    text email
+    uuid org_id PK, FK
+    uuid user_id PK, FK
     text role
-    timestamptz created_at
   }
   folders {
     uuid id PK
@@ -148,8 +178,8 @@ erDiagram
 
 | Table | Purpose |
 | --- | --- |
-| `orgs` | Tenants. `expiration_reminder_days` holds the org's reminder lead time and defaults to 7. |
-| `members` | A user's role in an org: `super_admin`, `admin`, or `user`. Admins add members by email, unique per org; `user_id` stays null until the first Google sign-in. |
+| `orgs` | Organizations, identified by UUID and shown by name. |
+| `members` | A user's role in an org: `owner`, `admin`, or `developer`. Each `(org_id, user_id)` pair is unique. |
 | `folders` | A secret path without its last segment, unique per org. Created with its first secret and kept after its last one is gone, so its history stays available. A folder holds either secrets or subfolders, never both; a folder whose secrets are all gone can hold subfolders. `current_version` is the version that reads return. |
 | `secrets` | The current state of each secret. `path` is unique per org; `note` and `expires_at` are optional. `vault_secret_id` references the current value. |
 | `folder_versions` | The current version and up to N previous versions of each folder. One change creates at most one version per affected folder. `rollback_of` is the version a rollback restores. |
