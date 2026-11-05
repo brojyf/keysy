@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserRound } from 'lucide-react'
+import { useCurrentUser } from './current-user'
 import type { ReactNode } from 'react'
 
 const accountPages = [
@@ -13,6 +14,7 @@ const accountPages = [
 
 export default function AccountShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? ''
+  const { organizations } = useCurrentUser()
   const currentPage = accountPages.find((page) => page.href === pathname) ?? accountPages[0]
   return (
     <div className="account">
@@ -31,6 +33,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
           <UserRound size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
           <span className="account-page-slash" aria-hidden>/</span>
           <h1>{currentPage.label}</h1>
+          {pathname === '/account/organizations' && organizations.length === 0 && <Link className="account-new-organization" href="/organizations/new">New organization</Link>}
         </header>
         {children}
       </div>

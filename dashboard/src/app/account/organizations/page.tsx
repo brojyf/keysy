@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, type MouseEvent, type ToggleEvent } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
-import { mockOrganizations } from '../mock-account'
+import { useCurrentUser } from '../../../components/current-user'
 
 const settingsHref = '/settings'
 
@@ -18,10 +18,11 @@ function placeRowMenu(event: ToggleEvent<HTMLDivElement>) {
 
 export default function OrganizationsPage() {
   const router = useRouter()
+  const { organizations: allOrganizations } = useCurrentUser()
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
   const search = query.trim().toLowerCase()
-  const organizations = mockOrganizations
+  const organizations = allOrganizations
     .filter(({ name }) => name.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
@@ -31,35 +32,37 @@ export default function OrganizationsPage() {
 
   return (
     <>
-      <TableSearch label="Search organizations" value={query} onChange={setQuery} />
+      {allOrganizations.length > 0 && <TableSearch label="Search organizations" value={query} onChange={setQuery} />}
       <div className="account-table account-orgs">
         <table>
           <thead>
             <tr>
-              <SortableHeader label="Organization" direction={direction} onToggle={() => setDirection(direction === 'ascending' ? 'descending' : 'ascending')} />
+              {allOrganizations.length > 0 ? (
+                <SortableHeader label="Organization" direction={direction} onToggle={() => setDirection(direction === 'ascending' ? 'descending' : 'ascending')} />
+              ) : <th>Organization</th>}
               <th>Role</th>
               <th>Members</th>
               <th />
             </tr>
           </thead>
           <tbody>
-            {organizations.map(({ name, role, members }) => (
-              <tr key={name} className="account-org-row" onClick={openOrganization}>
+            {organizations.map(({ id, name, role, memberCount }) => (
+              <tr key={id} className="account-org-row" onClick={openOrganization}>
                 <td><Link className="account-table-link" href={settingsHref}>{name}</Link></td>
-                <td>{role}</td>
-                <td>{members}</td>
+                <td>{role[0].toUpperCase() + role.slice(1)}</td>
+                <td>{memberCount}</td>
                 <td className="account-table-actions">
-                  <button className="account-more" type="button" popoverTarget={`organization-menu-${name}`} aria-label={`More actions for ${name}`}>
+                  <button className="account-more" type="button" popoverTarget={`organization-menu-${id}`} aria-label={`More actions for ${name}`}>
                     <MoreIcon />
                   </button>
-                  <div id={`organization-menu-${name}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
+                  <div id={`organization-menu-${id}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
                     <Link className="account-menu-item" href="/secrets">Dashboard</Link>
                     <Link className="account-menu-item" href={settingsHref}>Settings</Link>
                   </div>
                 </td>
               </tr>
             ))}
-            {organizations.length === 0 && <tr><td className="account-table-empty" colSpan={4}>No organizations match “{query.trim()}”</td></tr>}
+            {organizations.length === 0 && <tr><td className="account-table-empty" colSpan={4}>{allOrganizations.length === 0 ? 'No organizations yet' : `No organizations match “${query.trim()}”`}</td></tr>}
           </tbody>
         </table>
       </div>

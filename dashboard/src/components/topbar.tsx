@@ -1,7 +1,7 @@
-import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
+'use client'
 
-// Mock until organizations exist.
-const organizationName = 'platform'
+import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
+import { useCurrentUser } from './current-user'
 
 // Figma icons with no lucide equivalent.
 function QuestionMarkIcon() {
@@ -22,33 +22,43 @@ function AgentSparkIcon() {
 }
 
 export default function Topbar() {
+  const { organizations } = useCurrentUser()
+  const organizationName = organizations[0]?.name
   return (
-    <header className="topbar">
+    <header className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
       <span className="topbar-logo">
         <img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
       </span>
-      <button className="topbar-org" type="button">
-        {organizationName}
-        <ChevronsUpDown size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
-      </button>
-      <button className="topbar-search" type="button" aria-label="Search">
-        <Search size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
-        <span className="topbar-search-placeholder">Search</span>
-        <kbd>⌘K</kbd>
-      </button>
+      {organizationName && (
+        <>
+          <button className="topbar-org" type="button">
+            {organizationName}
+            <ChevronsUpDown size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
+          </button>
+          <button className="topbar-search" type="button" aria-label="Search">
+            <Search size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
+            <span className="topbar-search-placeholder">Search</span>
+            <kbd>⌘K</kbd>
+          </button>
+        </>
+      )}
       <button className="topbar-icon-button" type="button" aria-label="Report issue" title="Report issue">
         <Bug size={15} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
       </button>
       <button className="topbar-icon-button" type="button" aria-label="Support" title="Support">
         <QuestionMarkIcon />
       </button>
-      <button className="topbar-icon-button" type="button" aria-label="Notifications" title="Notifications">
-        <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
-      </button>
-      <hr className="topbar-divider" />
-      <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" title="Open agent">
-        <AgentSparkIcon />
-      </button>
+      {organizationName && (
+        <>
+          <button className="topbar-icon-button" type="button" aria-label="Notifications" title="Notifications">
+            <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
+          </button>
+          <hr className="topbar-divider" />
+          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" title="Open agent">
+            <AgentSparkIcon />
+          </button>
+        </>
+      )}
     </header>
   )
 }
