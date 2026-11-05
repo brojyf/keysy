@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
+import GeneralPage from '../src/app/account/page'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh } from '../src/lib/session-refresh'
 
@@ -137,6 +138,36 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.querySelector('nav')).toBeNull()
 })
+
+for (const setting of ['display name', 'agent auto apply']) {
+  test(`a late ${setting} save cannot restore the session after logout`, async () => {
+    const user = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
+    sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json(user)))
+    await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+    let finishSave!: (response: Response) => void
+    sessionRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSave = resolve }))
+    if (setting === 'display name') {
+      const input = container.querySelector<HTMLInputElement>('#account-name')!
+      await act(() => {
+        input.value = 'Updated Member'
+        input.dispatchEvent(new browser.Event('input', { bubbles: true }))
+      })
+      await act(() => { container.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) })
+    } else {
+      await act(() => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click())
+    }
+    expect(sessionRequest.mock.calls[1]?.[1].method).toBe('PATCH')
+    sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
+    await act(() => signOutButton()!.click())
+    await act(async () => dialogButton('Sign out').click())
+    expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+
+    await act(async () => finishSave(Response.json({ ...user, displayName: 'Updated Member', agentAutoApply: true })))
+    expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+    expect(container.querySelector('nav')).toBeNull()
+    expect(container.querySelector('.account-sections')).toBeNull()
+  })
+}
 
 function holdExitAnimation(element: Element) {
   let finish = () => {}

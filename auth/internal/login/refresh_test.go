@@ -121,6 +121,7 @@ func TestRefreshUpstreamFailureKeepsCookies(t *testing.T) {
 	}{
 		{"unavailable", 503, `{}`, http.StatusServiceUnavailable},
 		{"rate-limited", 429, `{}`, http.StatusServiceUnavailable},
+		{"conflict", 409, `{"code":"conflict"}`, http.StatusServiceUnavailable},
 		{"invalid-response", 200, `{"access_token":"keysy-access-2"}`, http.StatusBadGateway},
 	} {
 		t.Run(upstream.name, func(t *testing.T) {

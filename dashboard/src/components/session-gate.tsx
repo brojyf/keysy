@@ -88,7 +88,7 @@ function SessionGate({ children }: { children: ReactNode }) {
 
   if (user) {
     return (
-      <CurrentUserContext.Provider value={{ user, onUserChange: setUser, onSignedOut: () => setUser(null), onSignOutRequest: requestSignOut }}>
+      <CurrentUserContext.Provider value={{ user, onUserChange: (updated) => setUser((current) => current ? updated : current), onSignedOut: () => setUser(null), onSignOutRequest: requestSignOut }}>
         <div className="dashboard">
           <Topbar />
           <div className="dashboard-body">

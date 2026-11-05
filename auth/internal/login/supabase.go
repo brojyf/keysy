@@ -60,7 +60,7 @@ func (h *Handler) requestSession(ctx context.Context, grantType string, grant ma
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		if response.StatusCode >= 400 && response.StatusCode < 500 && response.StatusCode != 429 {
+		if response.StatusCode >= 400 && response.StatusCode < 500 && response.StatusCode != http.StatusConflict && response.StatusCode != http.StatusTooManyRequests {
 			return session{}, http.StatusBadRequest
 		}
 		return session{}, http.StatusServiceUnavailable
