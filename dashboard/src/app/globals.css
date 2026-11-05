@@ -24,14 +24,23 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :root,
-  .topbar,
-  .rail,
-  .account-rows > div,
-  .theme-switch,
-  .account-theme,
-  .theme-switch button,
-  .account-theme button {
-    transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease;
+  html.keysy-theme-transition::view-transition,
+  html.keysy-theme-transition::view-transition-group(*),
+  html.keysy-theme-transition::view-transition-image-pair(*),
+  html.keysy-theme-transition::view-transition-old(*),
+  html.keysy-theme-transition::view-transition-new(*) {
+    pointer-events: none;
   }
+
+  html.keysy-theme-transition::view-transition-group(root) { animation: none; }
+  html.keysy-theme-transition::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  html.keysy-theme-transition::view-transition-old(root) {
+    z-index: 1;
+    mix-blend-mode: normal;
+    animation: keysy-theme-fade-out 300ms ease-in-out both;
+  }
+  @keyframes keysy-theme-fade-out { to { opacity: 0; } }
 }

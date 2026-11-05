@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react'
 export type Theme = 'system' | 'light' | 'dark'
 
 let selected: Theme | undefined
+let transition: ViewTransition | undefined
 const listeners = new Set<() => void>()
 
 export function readTheme(): Theme {
@@ -34,8 +35,24 @@ export function setTheme(theme: Theme) {
     document.cookie = `keysy-theme=${theme === 'system' ? '' : theme}; Path=/; SameSite=Lax; Max-Age=${theme === 'system' ? 0 : 31536000}${domain}${secure}`
   } catch { /* Cookies may be unavailable. */ }
   selected = theme
-  applyTheme(theme)
   listeners.forEach((listener) => listener())
+  transition?.skipTransition()
+  const root = document.documentElement
+  if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    transition = undefined
+    root.classList.remove('keysy-theme-transition')
+    applyTheme(theme)
+    return
+  }
+  root.classList.add('keysy-theme-transition')
+  const next = document.startViewTransition(() => applyTheme(getTheme()))
+  transition = next
+  const onFinish = () => {
+    if (transition !== next) return
+    root.classList.remove('keysy-theme-transition')
+    transition = undefined
+  }
+  void next.finished.then(onFinish, onFinish)
 }
 
 function subscribe(listener: () => void) {

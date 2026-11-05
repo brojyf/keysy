@@ -94,14 +94,16 @@ test('both controls share their selection and system changes update the page', a
 })
 
 for (const reduceMotion of [false, true]) {
-  test(`theme controls update immediately without taking snapshots when reduced motion is ${reduceMotion}`, async () => {
+  test(`theme controls update immediately while page motion respects reduced motion ${reduceMotion}`, async () => {
     const container = await renderThemeControls()
     reduced = reduceMotion
-    const start = mock(() => ({ finished: Promise.resolve(), skipTransition() {} }))
+    let update!: () => void
+    const start = mock((callback: () => void) => { update = callback; return { finished: Promise.resolve(), skipTransition() {} } })
     Object.assign(document, { startViewTransition: start })
     await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Dark"]')!.click())
-    expect(start).not.toHaveBeenCalled()
+    expect(start).toHaveBeenCalledTimes(reduceMotion ? 0 : 1)
     expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Dark', 'Dark'])
+    if (!reduceMotion) await act(() => update())
     expect(document.documentElement.style.colorScheme).toBe('dark')
     expect(readTheme()).toBe('dark')
   })
@@ -134,9 +136,38 @@ test('theme changes still apply when cookies cannot be written', async () => {
 })
 
 test('live theme motion keeps thumbs decorative and respects reduced motion', () => {
-  expect(stylesheet).not.toMatch(/view-transition|transition: none !important/)
+  expect(stylesheet).not.toMatch(/view-transition-name:|transition: none !important/)
+  expect(stylesheet).toMatch(/::view-transition-new\(root\)\s*\{\s*animation: none;/)
+  expect(stylesheet).toMatch(/::view-transition-old\(root\)\s*\{[^}]*animation: keysy-theme-fade-out 300ms ease-in-out both;/)
   expect(controlsCSS).toMatch(/\.theme-thumb\s*\{[^}]*pointer-events: none;/)
   expect(controlsCSS).toMatch(/transform[^;]*var\(--ease-spring\)/)
   expect(controlsCSS).toMatch(/@media \(prefers-reduced-motion: no-preference\)/)
   expect(stylesheet).toMatch(/@media \(prefers-reduced-motion: no-preference\)/)
+})
+
+test('a new choice interrupts the page fade immediately and stale callbacks keep the latest theme', async () => {
+  const container = await renderThemeControls()
+  const updates: (() => void)[] = []
+  const finishes: (() => void)[] = []
+  const skips: ReturnType<typeof mock>[] = []
+  Object.assign(document, { startViewTransition: (update: () => void) => {
+    updates.push(update)
+    const finished = new Promise<void>((resolve) => { finishes.push(resolve) })
+    const skipTransition = mock(() => {})
+    skips.push(skipTransition)
+    return { finished, skipTransition }
+  } })
+  await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Dark"]')!.click())
+  await act(() => updates[0]!())
+  await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Light"]')!.click())
+  expect(skips[0]).toHaveBeenCalledTimes(1)
+  expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Light', 'Light'])
+  await act(() => { updates[1]!(); updates[0]!() })
+  expect(document.documentElement.style.colorScheme).toBe('light')
+  finishes[0]!()
+  await Promise.resolve()
+  expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(true)
+  finishes[1]!()
+  await Promise.resolve()
+  expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(false)
 })
