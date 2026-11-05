@@ -3,6 +3,7 @@ module github.com/brojyf/keysy/api
 go 1.27.3
 
 require (
+	github.com/MicahParks/jwkset v0.11.3
 	github.com/MicahParks/keyfunc/v3 v3.8.2
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -28,7 +29,6 @@ require (
 require (
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.0 // indirect
-	github.com/MicahParks/jwkset v0.11.3 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/brojyf/keysy/api/internal/jwks"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -63,8 +64,8 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Con
 			c.Abort()
 			return
 		}
-		if errors.Is(err, jwt.ErrTokenUnverifiable) && !keysAvailable() {
-			// The signing key is unknown because JWKS is unreachable, not because the session is invalid.
+		if errors.Is(err, jwt.ErrTokenUnverifiable) && (!keysAvailable() || errors.Is(err, jwks.ErrUnavailable)) {
+			// A failed or rate-limited JWKS lookup does not mean the session is invalid.
 			Error(c, http.StatusServiceUnavailable, "KEYS_UNAVAILABLE", "Your session cannot be verified right now. Try again later.")
 			return
 		}

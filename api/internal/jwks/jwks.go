@@ -3,15 +3,20 @@ package jwks
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"sync/atomic"
 	"time"
 
+	"github.com/MicahParks/jwkset"
 	"github.com/MicahParks/keyfunc/v3"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/time/rate"
 )
+
+// ErrUnavailable means a signing key lookup could not complete.
+var ErrUnavailable = errors.New("signing key lookup unavailable")
 
 type Keys struct {
 	keyfunc.Keyfunc
@@ -38,7 +43,23 @@ func newKeys(ctx context.Context, url string, unknownKIDInterval time.Duration) 
 			}
 		},
 	})
+	if err != nil {
+		return keys, err
+	}
+	keys.Keyfunc, err = keyfunc.New(keyfunc.Options{Ctx: ctx, Storage: keyStorage{keys.Storage()}})
 	return keys, err
+}
+
+type keyStorage struct {
+	jwkset.Storage
+}
+
+func (s keyStorage) KeyRead(ctx context.Context, keyID string) (jwkset.JWK, error) {
+	key, err := s.Storage.KeyRead(ctx, keyID)
+	if err != nil && !errors.Is(err, jwkset.ErrKeyNotFound) {
+		return key, errors.Join(err, ErrUnavailable)
+	}
+	return key, err
 }
 
 // Available reports whether the latest JWKS refresh succeeded.
