@@ -57,6 +57,13 @@ jobs:
               - '.github/**'
             deploy:
               - 'deploy/**'
+              - 'fly.toml'
+              - '.dockerignore'
+              - 'api/**'
+              - 'auth/**'
+              - 'dashboard/**'
+              - 'design/**'
+              - 'otel/**'
               - '.github/**'
             wiki:
               - 'wiki/**'
@@ -266,16 +273,18 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # The same base image and packages as deploy/Dockerfile.
-      - name: Test nginx and supervisor configs
+      - name: Build the image
         run: >-
-          docker run --rm -v "$PWD/deploy:/deploy:ro" node:24-slim sh -c
-          "apt-get update && apt-get install -y --no-install-recommends nginx supervisor && node --test '/deploy/*.test.mjs'"
+          docker build -t keysy-ci -f deploy/Dockerfile
+          --build-arg NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net
+          --build-arg NEXT_PUBLIC_API_URL=https://api.keysy.net .
+      - name: Test nginx and supervisor configs
+        run: docker run --rm -v "$PWD/deploy:/deploy:ro" keysy-ci node --test '/deploy/*.test.mjs'
 
   cli:
     name: CLI

@@ -27,6 +27,7 @@ RUN bun install --frozen-lockfile
 COPY dashboard ./
 COPY design /src/design
 RUN bun run build
+RUN rm -rf node_modules && bun install --frozen-lockfile --production
 
 FROM node:24-slim
 RUN apt-get update \
@@ -36,7 +37,6 @@ COPY --from=otel/opentelemetry-collector:0.162.0 /otelcol /usr/local/bin/otelcol
 COPY otel/config.yaml /etc/otelcol/config.yaml
 COPY --from=api-build /out/api /usr/local/bin/keysy-api
 COPY --from=auth-build /out/auth /usr/local/bin/keysy-auth
-# next.config.ts loads at runtime, so dev dependencies (typescript) stay.
 WORKDIR /app/dashboard
 COPY --from=dashboard-build --chown=node:node /src/dashboard/package.json ./
 COPY --from=dashboard-build --chown=node:node /src/dashboard/next.config.ts ./
