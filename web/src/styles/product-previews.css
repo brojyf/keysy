@@ -141,7 +141,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-button);
-  color: white;
+  color: var(--color-on-button);
   padding: 0.65em 0.85em;
   border-radius: 0.55em;
 }
@@ -230,7 +230,7 @@
 .assistant-prompt {
   padding: 0.75em 0.9em;
   background: var(--color-button);
-  color: white;
+  color: var(--color-on-button);
   border-radius: 0.8em 0.8em 0.2em 0.8em;
   line-height: 1.5;
 }
@@ -304,7 +304,7 @@
 }
 .assistant-input b {
   background: var(--color-button);
-  color: white;
+  color: var(--color-on-button);
   border-radius: 0.4em;
   padding: 0.2em 0.4em;
   align-self: end;

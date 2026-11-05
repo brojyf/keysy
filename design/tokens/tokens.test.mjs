@@ -97,7 +97,7 @@ test('logo symbols use the button color of their mode', () => {
 
 test('web tokens are distinct from shared tokens', () => {
   const web = declarations(':root', webCss);
-  assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, 4);
+  assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, Object.keys(web).length);
   for (const [name, value] of Object.entries(web)) {
     assert.match(value, /^#[0-9a-f]{6}$/);
     for (const shared of [light, dark]) {

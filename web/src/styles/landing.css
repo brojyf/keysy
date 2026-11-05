@@ -322,7 +322,7 @@ h1 {
 }
 .actions .primary {
   min-width: 178px;
-  color: white;
+  color: var(--color-on-button);
   background: var(--color-button);
   border-color: var(--color-button);
 }

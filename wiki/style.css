@@ -1,3 +1,4 @@
+/* Colors mirror design/tokens/tokens.css. Sourcey cannot import it, so tests/branding.test.ts fails on drift. */
 :root {
   --color-background-light: 250 250 250;
   --color-background-dark: 20 20 20;
@@ -120,7 +121,8 @@
   color: var(--color-orange-300);
 }
 
-/* Menus and dialogs use the raised layer from design/tokens. The open drawer trigger joins its list. */
+/* Menus and dialogs use the raised layer from design/tokens. The open drawer trigger joins its list.
+   Sourcey's dark search dialog rule also uses #sourcey, so only that selector needs a dark override. */
 #sourcey .search-dialog-inner,
 #sourcey .drawer-dropdown-list,
 #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
