@@ -19,6 +19,7 @@ type Config struct {
 	GoogleClientID     string
 	GoogleClientSecret string
 	CookieKey          []byte
+	LocalHTTP          bool
 }
 
 func Load() (Config, error) {
@@ -46,7 +47,8 @@ func Load() (Config, error) {
 		}
 	}
 	authURL, _ := url.Parse(c.AuthURL)
-	if authURL.Scheme == "http" && authURL.Hostname() == "localhost" {
+	c.LocalHTTP = authURL.Scheme == "http" && authURL.Hostname() == "localhost"
+	if c.LocalHTTP {
 		if c.CookieDomain != "" {
 			return c, fmt.Errorf("COOKIE_DOMAIN must be empty for HTTP localhost")
 		}
