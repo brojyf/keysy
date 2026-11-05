@@ -16,4 +16,3 @@ The dashboard lives in [Keysy — Secret management](https://www.figma.com/desig
   and `Keysy Dark/*` styles. These match [Tokens](../tokens/README.md).
 - Typography: Geist and Geist Mono.
 - Screens use illustrative data.
-- [Local snapshot](keysy-secret-management.fig) of the Figma file. Update it with File → Save local copy.

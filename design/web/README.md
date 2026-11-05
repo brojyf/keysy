@@ -20,7 +20,6 @@ The landing page lives in [Keysy — Landing Page](https://www.figma.com/design/
 - Typography: Geist and Geist Mono.
 - Product previews use illustrative data. CLI commands, SDK code, and package names are
   illustrative until the CLI and SDKs define them.
-- [Local snapshot](keysy-landing-page.fig) of the Figma file. Update it with File → Save local copy.
 
 ## Motion prototypes
 
