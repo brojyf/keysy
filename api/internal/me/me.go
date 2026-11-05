@@ -16,12 +16,11 @@ type Profiles interface {
 }
 
 type response struct {
-	ID             string     `json:"id"`
-	Email          string     `json:"email"`
-	DisplayName    string     `json:"displayName"`
-	AgentAutoApply bool       `json:"agentAutoApply"`
-	AvatarURL      string     `json:"avatarUrl,omitempty"`
-	Memberships    []struct{} `json:"memberships"`
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	DisplayName    string `json:"displayName"`
+	AgentAutoApply bool   `json:"agentAutoApply"`
+	AvatarURL      string `json:"avatarUrl,omitempty"`
 }
 
 func Get(profiles Profiles) gin.HandlerFunc {
@@ -49,6 +48,6 @@ func Get(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
 			return
 		}
-		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
+		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url")})
 	}
 }
