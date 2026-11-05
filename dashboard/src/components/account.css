@@ -612,12 +612,22 @@ tr:hover .account-more:not(:disabled),
 }
 
 .account-save-bar [role='status'] {
+  display: grid;
   margin-right: 24px;
 }
 
+.account-save-bar [role='status'] > span {
+  grid-area: 1 / 1;
+}
+
+.account-save-bar[data-saved] .account-save-count {
+  visibility: hidden;
+}
+
 .account-save-bar button {
-  height: 32px;
-  padding: 0 12px;
+  position: relative;
+  height: 28px;
+  padding: 0 10px;
   border: 1px solid var(--color-line);
   border-radius: 10px;
   color: var(--color-text);
@@ -634,4 +644,43 @@ tr:hover .account-more:not(:disabled),
 .account-save-bar button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.account-save-bar button[data-feedback] {
+  opacity: 1;
+}
+
+.account-save-bar button[data-feedback] .account-save-label {
+  visibility: hidden;
+}
+
+.account-save-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -7px;
+}
+
+.account-save-spinner {
+  animation: account-save-spin 800ms linear infinite;
+}
+
+.account-save-check {
+  animation: account-save-confirm 120ms ease-out;
+}
+
+@keyframes account-save-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes account-save-confirm {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-save-spinner,
+  .account-save-check {
+    animation: none;
+  }
 }

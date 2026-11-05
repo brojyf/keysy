@@ -83,6 +83,20 @@ test('account rows and the save bar keep the Figma spacing', () => {
   assert.equal(value(rule(files[2], ".account-save-bar [role='status']"), 'margin-right'), '24px')
 })
 
+test('save buttons use the compact Figma size and keep their label space while saving', () => {
+  const css = files[2]
+  const button = rule(css, '.account-save-bar button')
+  assert.equal(value(button, 'height'), '28px')
+  assert.equal(value(button, 'padding'), '0 10px')
+  assert.equal(value(rule(css, '.account-save-bar button[data-feedback] .account-save-label'), 'visibility'), 'hidden')
+  assert.equal(value(rule(css, '.account-save-bar button[data-feedback]'), 'opacity'), '1')
+  const spinner = rule(css, '.account-save-icon')
+  assert.equal(value(spinner, 'position'), 'absolute')
+  assert.equal(value(rule(css, ".account-save-bar [role='status'] > span"), 'grid-area'), '1 / 1')
+  assert.equal(value(rule(css, '.account-save-bar[data-saved] .account-save-count'), 'visibility'), 'hidden')
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.account-save-spinner,\s*\.account-save-check\s*\{\s*animation: none;/)
+})
+
 test('the save bar enters on the shared spring and exits below the viewport', () => {
   const enter = value(rule(files[2], '.account-save-bar'), 'transition')
   assert.match(enter, /transform var\(--duration-spring\) var\(--ease-spring\)/)
