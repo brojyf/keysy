@@ -93,8 +93,8 @@ and the dashboard's Next.js development server on port 5173. The dashboard calls
 the auth port directly with `credentials: 'include'`; there is no auth rewrite.
 
 For production, set `AUTH_URL=https://auth.keysy.net` and
-`WEB_APP_URL=https://dashboard.keysy.net/`. Set the dashboard's build-time
-`NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net`. Route the auth hostname to this
+`WEB_APP_URL=https://dashboard.keysy.net/`. The dashboard's `.env.production`
+sets `NEXT_PUBLIC_AUTH_URL`. Route the auth hostname to this
 service and the dashboard hostname to Next.js. Both can run behind one proxy on
 the same Fly Machine; sharing a Machine does not make their browser origins equal.
 The browser navigates to the auth origin to start login, returns to the auth

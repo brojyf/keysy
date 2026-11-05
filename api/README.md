@@ -16,7 +16,7 @@ allowed for credentialed GET and PATCH requests and OPTIONS preflight. CORS allo
 Never commit secrets.
 
 Production uses `https://api.keysy.net` and `https://dashboard.keysy.net/`.
-Set the dashboard build variable `NEXT_PUBLIC_API_URL=https://api.keysy.net`.
+The dashboard's `.env.production` sets `NEXT_PUBLIC_API_URL`.
 Local development uses `http://localhost:8081` and `http://localhost:5173/`.
 
 The API reads only the sealed `__Secure-keysy-access` cookie, or `keysy-access`
