@@ -121,6 +121,7 @@ test('radius, shadow, and motion tokens match their documented values', () => {
     '--shadow-md': '0 1px 2px #0000000a, 0 8px 24px #0f121a1f',
     '--shadow-knob': '0 1px 2px #00000026',
     '--shadow-bar': '0 4px 16px #00000014',
+    '--shadow-card': '0 1px 2px #101b300a, 0 12px 32px -8px #101b300f',
     '--ease-spring': 'linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)',
     '--duration-spring': '600ms',
   };
@@ -134,6 +135,7 @@ test('radius, shadow, and motion tokens match their documented values', () => {
   for (const [name, value] of Object.entries({
     '--shadow-knob': '0 1px 2px #0f121a73',
     '--shadow-bar': '0 4px 16px #0f121a3d',
+    '--shadow-card': '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c',
   })) {
     assert.equal(dark[name], value, name);
     assert.ok(readme.includes('`' + value + '`'), name);

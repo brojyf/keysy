@@ -84,6 +84,8 @@ Figma has no radius, shadow, or motion variables. `tokens.css` holds these value
 | `--shadow-knob` dark | `0 1px 2px #0f121a73` |
 | `--shadow-bar` light | `0 4px 16px #00000014` |
 | `--shadow-bar` dark | `0 4px 16px #0f121a3d` |
+| `--shadow-card` light | `0 1px 2px #101b300a, 0 12px 32px -8px #101b300f` |
+| `--shadow-card` dark | `0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c` |
 
 | Motion token | Value |
 | --- | --- |
