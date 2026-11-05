@@ -305,7 +305,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
