@@ -37,6 +37,7 @@ tests, and `bun test` in `design/tokens`.
 
 ## Architecture
 
+- `src/lib/api-client.ts` is the entry point for API calls. Each request has a 20 second timeout.
 - `src/app/layout.tsx` wraps every route in `SessionGate`
   (`src/components/session-gate.tsx`), a Client Component. It calls
   `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
