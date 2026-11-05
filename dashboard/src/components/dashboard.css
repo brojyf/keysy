@@ -330,6 +330,10 @@
   cursor: pointer;
 }
 
+.account-menu-sign-out {
+  color: var(--color-danger);
+}
+
 .account-menu-item:hover {
   background: var(--color-soft);
 }

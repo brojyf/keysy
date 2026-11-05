@@ -103,6 +103,7 @@ test('shows the rail and page content only after server verification', async () 
     ['Dark', 'false', false],
   ])
   expect(signOutButton()?.textContent).toBe('Sign out')
+  expect(signOutButton()?.classList.contains('account-menu-sign-out')).toBe(true)
   expect(browser.localStorage.length).toBe(0)
   expect(browser.sessionStorage.length).toBe(0)
 })

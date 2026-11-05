@@ -56,6 +56,10 @@ test('account menu keeps its position and stack gaps', () => {
   }
 })
 
+test('account menu sign out uses the danger color', () => {
+  assert.equal(value(rule(files[1], '.account-menu-sign-out'), 'color'), 'var(--color-danger)')
+})
+
 test('the session status uses text at 50% in light mode and muted in dark mode', () => {
   const light = rule(files[2], '.account-sessions .account-session-status')
   assert.doesNotMatch(light, /\bcolor:/)

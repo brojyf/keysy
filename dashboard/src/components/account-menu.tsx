@@ -59,7 +59,7 @@ export default function AccountMenu({ displayName, avatarUrl, email, signOutStat
           </div>
         </div>
         <hr className="account-menu-divider" />
-        <button className="account-menu-item" type="button" disabled={signOutStatus === 'pending'} onClick={onSignOut}>
+        <button className="account-menu-item account-menu-sign-out" type="button" disabled={signOutStatus === 'pending'} onClick={onSignOut}>
           {signOutStatus === 'pending' ? 'Signing out...' : 'Sign out'}
         </button>
         {signOutStatus === 'error' && <p className="account-menu-error" role="alert">Could not sign out. Try again.</p>}
