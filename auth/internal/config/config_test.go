@@ -24,7 +24,7 @@ func TestLoadValidatesConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Port != "8080" || c.AuthURL != "https://auth.keysy.test" || len(c.CookieKey) != 32 {
+	if c.Port != "8080" || c.AuthURL != "https://auth.keysy.test" || c.LocalHTTP || len(c.CookieKey) != 32 {
 		t.Fatalf("unexpected configuration: %+v", c)
 	}
 	for _, item := range []struct{ name, value string }{
@@ -54,10 +54,13 @@ func TestAllowsHTTPOnlyForLocalBrowserDevelopment(t *testing.T) {
 				if name == "AUTH_URL" && address == "http://localhost:5173" {
 					t.Setenv("COOKIE_DOMAIN", "")
 				}
-				_, err := Load()
+				c, err := Load()
 				allowed := name != "SUPABASE_URL" && address == "http://localhost:5173"
 				if (err == nil) != allowed {
 					t.Fatalf("allowed = %v, error = %v", allowed, err)
+				}
+				if allowed && c.LocalHTTP != (name == "AUTH_URL") {
+					t.Fatalf("LocalHTTP = %v", c.LocalHTTP)
 				}
 			})
 		}
