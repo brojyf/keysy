@@ -1,6 +1,6 @@
 # Keysy tokens
 
-Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the shared file that dashboard and web import. [web.css](web.css) holds only landing page values from the `Keysy / Web` collection in Figma "Keysy — Landing Page". The wiki cannot import them, so its tests read `tokens.css`.
+Tokens are the design variables. The theme is their light and dark values. Figma file keysy-dashboard is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the shared file that dashboard and web import. [web.css](web.css) holds only landing page values from the `Keysy / Web` collection in Figma file keysy-web. The wiki cannot import them, so its tests read `tokens.css`.
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |

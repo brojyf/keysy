@@ -1,6 +1,6 @@
-# Landing page v4 motion
+# Landing page motion page
 
-Plays the two v4 effects that the [Figma design](../README.md) shows as still frames. It has only the
+Plays the two effects that the [Figma design](../README.md) shows as still frames. It has only the
 elements these effects need. The rest of the page lives in Figma.
 
 | Effect | Figma | Components |
