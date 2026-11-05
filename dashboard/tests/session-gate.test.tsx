@@ -79,7 +79,7 @@ test('development calls the separate localhost auth port without a rewrite', asy
 })
 
 test('shows the rail and page content only after server verification', async () => {
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
@@ -108,7 +108,7 @@ test('shows the rail and page content only after server verification', async () 
 })
 
 test('logout waits for the server, prevents duplicate requests, and restores sign-in', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   let finishLogout!: (response: Response) => void
   sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
@@ -127,7 +127,7 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
 })
 
 test('shows the top bar with the mock organization and action buttons', async () => {
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   const topbar = container.querySelector('header.topbar')
   expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
@@ -144,13 +144,13 @@ test('shows the top bar with the mock organization and action buttons', async ()
 
 test('highlights the rail item for nested paths', async () => {
   currentPathname = '/audit-log/2026'
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   expect(container.querySelector('nav a[aria-current="page"]')?.getAttribute('aria-label')).toBe('Audit log')
 })
 
 test('failed logout keeps the signed-in state and allows retry', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => signOutButton()!.click())
@@ -163,7 +163,7 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
 })
 
 test('a reload verifies the session again instead of trusting local state', async () => {
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   await act(() => root.unmount())
   root = createRoot(container)
@@ -182,7 +182,7 @@ function respondByURL(refreshStatus: number) {
     if (url.endsWith('/v0/auth/refresh')) return Promise.resolve(new Response(null, { status: refreshStatus }))
     meCalls += 1
     if (meCalls === 1) return Promise.resolve(new Response(null, { status: 401 }))
-    return Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' }))
+    return Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }))
   })
 }
 
@@ -249,7 +249,7 @@ test('an unavailable or invalid session check shows an error with retry instead 
 test('retry checks the session again', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
   await renderSessionGate()
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
   expect(sessionRequest).toHaveBeenCalledTimes(2)
   expect(sessionRequest.mock.calls[1]?.[0]).toBe('https://api.keysy.net/v0/me')
@@ -257,7 +257,7 @@ test('retry checks the session again', async () => {
 })
 
 test('shows the Google avatar and falls back after an image error', async () => {
- sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member', avatarUrl: 'https://google.test/avatar' })))
+ sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member', avatarUrl: 'https://google.test/avatar' })))
  await renderSessionGate()
  const avatar = container.querySelector<HTMLImageElement>('.rail-avatar img')!
  expect(avatar.getAttribute('src')).toBe('https://google.test/avatar')
@@ -269,8 +269,8 @@ test('shows the Google avatar and falls back after an image error', async () => 
 })
 
 test('rejects malformed me fields', async () => {
- for (const fields of [{ id: 1 }, { email: null }, { displayName: null }, { avatarUrl: 42 }]) {
- sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Member', ...fields })))
+ for (const fields of [{ id: 1 }, { email: null }, { displayName: null }, { avatarUrl: 42 }, { agentAutoApply: null }]) {
+ sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Member', ...fields })))
  await renderSessionGate()
  expect(container.querySelector('nav')).toBeNull()
  expect(container.querySelector('a.auth-button')).toBeNull()
@@ -281,7 +281,7 @@ test('rejects malformed me fields', async () => {
 
 
 test('a context user change updates the account menu name', async () => {
-  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   function ChangeName() {
     const { user, onUserChange } = useCurrentUser()
     return <button onClick={() => onUserChange({ ...user, displayName: 'Updated Member' })}>Change name</button>

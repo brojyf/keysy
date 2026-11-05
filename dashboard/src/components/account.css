@@ -159,6 +159,9 @@
   background: var(--color-line);
 }
 
+.account-switch[aria-checked="true"] { background: var(--color-button); }
+.account-switch[aria-checked="true"]::after { left: 16px; }
+
 .account-switch::after {
   content: '';
   position: absolute;
@@ -171,7 +174,10 @@
   box-shadow: var(--shadow-knob);
 }
 
-:root.dark .account-switch::after {
+:root.dark .account-switch[aria-checked="true"] { background: var(--color-button); }
+.account-switch[aria-checked="true"]::after { left: 16px; }
+
+.account-switch::after {
   background: var(--color-muted);
 }
 

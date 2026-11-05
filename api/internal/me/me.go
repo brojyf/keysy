@@ -11,14 +11,17 @@ import (
 type Profiles interface {
 	DisplayName(context.Context, string) (string, error)
 	UpdateDisplayName(context.Context, string, string) error
+	AgentAutoApply(context.Context, string) (bool, error)
+	UpdateAgentAutoApply(context.Context, string, bool) error
 }
 
 type response struct {
-	ID          string     `json:"id"`
-	Email       string     `json:"email"`
-	DisplayName string     `json:"displayName"`
-	AvatarURL   string     `json:"avatarUrl,omitempty"`
-	Memberships []struct{} `json:"memberships"`
+	ID             string     `json:"id"`
+	Email          string     `json:"email"`
+	DisplayName    string     `json:"displayName"`
+	AgentAutoApply bool       `json:"agentAutoApply"`
+	AvatarURL      string     `json:"avatarUrl,omitempty"`
+	Memberships    []struct{} `json:"memberships"`
 }
 
 func Get(profiles Profiles) gin.HandlerFunc {
@@ -38,6 +41,14 @@ func Get(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
 			return
 		}
-		c.JSON(http.StatusOK, response{ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
+		autoApply, err := profiles.AgentAutoApply(c.Request.Context(), c.GetString("user_id"))
+		if c.Request.Context().Err() != nil {
+			return
+		}
+		if err != nil {
+			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
+			return
+		}
+		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
 	}
 }
