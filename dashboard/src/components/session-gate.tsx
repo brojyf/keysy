@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { fetchWithSessionRefresh } from '../lib/session-refresh'
+import { fetchWithSessionRefresh, logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
@@ -57,7 +57,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     if (logoutStatus === 'pending') return
     setLogoutStatus('pending')
     try {
-      const response = await fetch(new URL('/v0/auth/logout', authURL).href, { method: 'POST', credentials: 'include' })
+      const response = await logoutSession(authURL)
       if (!response.ok) throw new Error('Logout failed')
       setUser(null)
       setSessionError(false)

@@ -169,6 +169,102 @@ for (const setting of ['display name', 'agent auto apply']) {
   })
 }
 
+test('logout clears both cookies after an in-flight refresh and stays signed out on reload', async () => {
+  const user = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
+  const cookies = new Map([['access', 'old-access'], ['refresh', 'old-refresh']])
+  const cookieWrites: string[] = []
+  let finishRefresh!: () => void
+  sessionRequest.mockImplementation((url: string, init: RequestInit) => {
+    if (url.endsWith('/v0/auth/refresh')) {
+      if (!cookies.has('refresh')) return Promise.resolve(new Response(null, { status: 401 }))
+      return new Promise<Response>((resolve) => {
+        finishRefresh = () => {
+          cookies.set('access', 'new-access')
+          cookies.set('refresh', 'new-refresh')
+          cookieWrites.push('refresh')
+          resolve(new Response(null, { status: 204 }))
+        }
+      })
+    }
+    if (url.endsWith('/v0/auth/logout')) {
+      cookies.clear()
+      cookieWrites.push('logout')
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    return Promise.resolve(cookies.has('access') && (init.method !== 'PATCH' || cookies.get('access') === 'new-access')
+      ? Response.json(user) : new Response(null, { status: 401 }))
+  })
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  await act(async () => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click())
+  expect(finishRefresh).toBeFunction()
+  await act(() => signOutButton()!.click())
+  await act(async () => dialogButton('Sign out').click())
+  const loggedOutBeforeRefresh = cookieWrites.includes('logout')
+  await act(async () => finishRefresh())
+  expect([...cookies.keys()]).toEqual([])
+  expect(loggedOutBeforeRefresh).toBe(false)
+  expect(cookieWrites).toEqual(['refresh', 'logout'])
+  expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+  await act(() => root.unmount())
+  root = createRoot(container)
+  await renderSessionGate()
+  expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+})
+
+for (const timing of ['during', 'after']) {
+  test(`a late save 401 cannot start a refresh ${timing} logout`, async () => {
+    const user = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
+    sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json(user)))
+    await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+    let finishSave!: (response: Response) => void
+    let finishLogout!: (response: Response) => void
+    sessionRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSave = resolve }))
+    await act(async () => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click())
+    sessionRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
+    await act(() => signOutButton()!.click())
+    await act(async () => dialogButton('Sign out').click())
+    sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/v0/auth/refresh')
+      ? new Response(null, { status: 204 }) : Response.json(user)))
+    if (timing === 'after') await act(async () => finishLogout(new Response(null, { status: 204 })))
+    await act(async () => finishSave(new Response(null, { status: 401 })))
+    if (timing === 'during') await act(async () => finishLogout(new Response(null, { status: 204 })))
+    expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/refresh'))).toHaveLength(0)
+    expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+  })
+}
+
+test('new expired requests cannot start a refresh while logout is pending', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
+  await renderSessionGate()
+  let finishLogout!: (response: Response) => void
+  sessionRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
+  await act(() => signOutButton()!.click())
+  await act(async () => dialogButton('Sign out').click())
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url.endsWith('/v0/auth/refresh') ? 204 : 401 })))
+  await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/').catch(() => {})
+  await act(async () => finishLogout(new Response(null, { status: 204 })))
+  expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/refresh'))).toHaveLength(0)
+})
+
+test('a failed in-flight refresh does not prevent logout', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  let failRefresh!: (error: Error) => void
+  sessionRequest.mockImplementation((url: string) => {
+    if (url.endsWith('/v0/auth/refresh')) return new Promise<Response>((_, reject) => { failRefresh = reject })
+    return Promise.resolve(new Response(null, { status: url.endsWith('/v0/auth/logout') ? 204 : 401 }))
+  })
+  await act(async () => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click())
+  expect(failRefresh).toBeFunction()
+  await act(() => signOutButton()!.click())
+  await act(async () => dialogButton('Sign out').click())
+  const logoutCallsBeforeFailure = sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/logout')).length
+  await act(async () => failRefresh(new TypeError('Failed to fetch')))
+  expect(logoutCallsBeforeFailure).toBe(0)
+  expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/logout'))).toHaveLength(1)
+  expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+})
+
 function holdExitAnimation(element: Element) {
   let finish = () => {}
   const finished = new Promise<void>((resolve) => { finish = resolve })
@@ -251,6 +347,8 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
   expect(signOutDialog().querySelector('[role="alert"]')?.textContent).toBe('Could not sign out. Try again.')
   expect(dialogButton('Sign out').disabled).toBe(false)
   expect(container.querySelector('nav')).not.toBeNull()
+  respondByURL(204)
+  expect((await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/')).ok).toBe(true)
   await act(async () => dialogButton('Cancel').click())
   await act(async () => signOutButton()!.click())
   expect(signOutDialog().querySelector('[role="alert"]')).toBeNull()
