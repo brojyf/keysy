@@ -68,8 +68,11 @@ func TestMe(t *testing.T) {
 			}
 			var body map[string]any
 			json.Unmarshal(w.Body.Bytes(), &body)
-			if w.Code != 200 || body["id"] != "user-123" || body["email"] != "member@example.test" || body["displayName"] != "Member" || len(body["memberships"].([]any)) != 0 || w.Header().Get("Cache-Control") != "no-store" {
+			if w.Code != 200 || body["id"] != "user-123" || body["email"] != "member@example.test" || body["displayName"] != "Member" || w.Header().Get("Cache-Control") != "no-store" {
 				t.Fatal(body)
+			}
+			if _, ok := body["memberships"]; ok {
+				t.Fatal("profile response must not include memberships")
 			}
 			if scenario == "no-avatar" {
 				if _, ok := body["avatarUrl"]; ok {
@@ -233,7 +236,14 @@ func TestPatchMe(t *testing.T) {
 			if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 				t.Fatal(err)
 			}
-			if !store.called || store.name != tc.wantName || body.ID != "user-123" || body.Email != "member@example.test" || body.AvatarURL != "https://google.test/photo" || body.DisplayName != tc.wantName || body.Memberships == nil || len(body.Memberships) != 0 {
+			var fields map[string]json.RawMessage
+			if err := json.Unmarshal(w.Body.Bytes(), &fields); err != nil {
+				t.Fatal(err)
+			}
+			if _, ok := fields["memberships"]; ok {
+				t.Fatal("profile response must not include memberships")
+			}
+			if !store.called || store.name != tc.wantName || body.ID != "user-123" || body.Email != "member@example.test" || body.AvatarURL != "https://google.test/photo" || body.DisplayName != tc.wantName {
 				t.Fatalf("store=%+v body=%+v", store, body)
 			}
 		})
