@@ -387,15 +387,16 @@ test('design links to the dashboard and web Figma files', async () => {
   ]) expect(html).toContain(`href="${href}"`);
 });
 
-test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', () => {
+test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', async () => {
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-700\)\);\s*font-weight: 400;/);
   expect(stylesheet).toMatch(/\.dark #sourcey \.sourcey-nav-group > summary \.nav-group-label \{\s*color: rgb\(var\(--color-gray-400\)\);/);
   // Sourcey draws the desktop chevron with ::after inside #nav, and the drawer chevron with ::before.
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group\[open\]\[data-closing\] > summary::before,\s*#sourcey #nav \.sourcey-nav-group\[open\]\[data-closing\] > summary::after \{\s*transform: rotate\(-45deg\);/);
   expect(stylesheet).toMatch(/#sourcey \.sourcey-nav-group > summary::before,\s*#sourcey #nav \.sourcey-nav-group > summary::after \{\s*transition: transform var\(--keysy-spring-duration\) var\(--keysy-spring\);/);
   expect(stylesheet).not.toContain('::details-content');
-  expect(stylesheet).toContain('--keysy-spring: linear(0, 0.06, 0.186,');
-  expect(stylesheet).toContain('--keysy-spring-duration: 600ms;');
+  const generatedTheme = await Bun.file(new URL('../tokens.generated.css', import.meta.url)).text();
+  expect(generatedTheme).toContain('--keysy-spring: linear(0, 0.06, 0.186,');
+  expect(generatedTheme).toContain('--keysy-spring-duration: 600ms;');
 });
 
 test('references lists tool and guideline links without project-specific design links', async () => {
