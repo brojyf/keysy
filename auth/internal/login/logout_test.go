@@ -200,3 +200,62 @@ func TestLogoutWithoutAccessCookieRefreshesBeforeRevoking(t *testing.T) {
 		})
 	}
 }
+
+func TestLogoutRefreshesRejectedAccessToken(t *testing.T) {
+	f := newFixture(t)
+	var tokens []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/token" {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"access_token":"new-access","refresh_token":"new-refresh","token_type":"bearer","expires_in":600}`))
+			return
+		}
+		tokens = append(tokens, r.Header.Get("Authorization"))
+		if len(tokens) == 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	t.Cleanup(server.Close)
+	f.handler.supabaseURL = server.URL
+	r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+	r.URL.Path = "/v0/auth/logout"
+	r.AddCookie(f.handler.newTokenCookie(accessCookieName, "expired-access", 3600))
+	w := httptest.NewRecorder()
+	f.router.ServeHTTP(w, r)
+	if w.Code != http.StatusNoContent || len(tokens) != 2 || tokens[1] != "Bearer new-access" {
+		t.Fatalf("logout = %d, logout attempts = %v", w.Code, tokens)
+	}
+	assertClearedCookies(t, f.handler, w)
+}
+
+func TestLogoutRetainsRotatedSessionWhenRevocationFails(t *testing.T) {
+	f := newFixture(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/token" {
+			w.Write([]byte(`{"access_token":"new-access","refresh_token":"new-refresh","token_type":"bearer","expires_in":600}`))
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	f.handler.supabaseURL = server.URL
+	r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+	r.URL.Path = "/v0/auth/logout"
+	w := httptest.NewRecorder()
+	f.router.ServeHTTP(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("logout = %d, want 503", w.Code)
+	}
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Name == refreshCookieName {
+			token, err := f.handler.openTokenCookie(refreshCookieName, cookie.Value)
+			if err != nil || token != "new-refresh" {
+				t.Fatal("rotated refresh token was not retained")
+			}
+			return
+		}
+	}
+	t.Fatal("missing rotated refresh cookie")
+}

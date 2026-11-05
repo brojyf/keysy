@@ -27,23 +27,26 @@ func (h *Handler) logout(c *gin.Context) {
 	if len(cookies) == 1 {
 		accessToken, _ = h.openTokenCookie(accessCookieName, cookies[0].Value)
 	}
-	if accessToken == "" {
-		// The access cookie expires first; use the refresh token to revoke the session.
-		refreshToken, err := h.readRefreshToken(c.Request)
-		if errors.Is(err, errDuplicateCookie) {
-			respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "Your logout request contains duplicate session cookies.")
-			return
-		}
-		if refreshToken != "" {
-			session, status := h.refreshSession(c.Request.Context(), refreshToken, c.Request.UserAgent())
+	refreshToken, err := h.readRefreshToken(c.Request)
+	if errors.Is(err, errDuplicateCookie) {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "Your logout request contains duplicate session cookies.")
+		return
+	}
+	var refreshed session
+	for {
+		if accessToken == "" && refreshToken != "" {
+			var status int
+			refreshed, status = h.refreshSession(c.Request.Context(), refreshToken, c.Request.UserAgent())
+			refreshToken = ""
 			if status != 0 && status != http.StatusBadRequest {
 				respondError(c, http.StatusServiceUnavailable, "LOGOUT_UNAVAILABLE", "Sign-out is temporarily unavailable. Try again later.")
 				return
 			}
-			accessToken = session.AccessToken
+			accessToken = refreshed.AccessToken
 		}
-	}
-	if accessToken != "" {
+		if accessToken == "" {
+			break
+		}
 		r, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, h.supabaseURL+"/auth/v1/logout?scope=local", nil)
 		if err != nil {
 			respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Sign-out could not be completed. Try again later.")
@@ -53,14 +56,25 @@ func (h *Handler) logout(c *gin.Context) {
 		r.Header.Set("Authorization", "Bearer "+accessToken)
 		response, err := h.httpClient.Do(r)
 		if err != nil {
+			if refreshed.RefreshToken != "" {
+				h.setSessionCookies(c.Writer, refreshed)
+			}
 			respondError(c, http.StatusServiceUnavailable, "LOGOUT_UNAVAILABLE", "Sign-out is temporarily unavailable. Try again later.")
 			return
 		}
 		response.Body.Close()
-		if response.StatusCode != http.StatusNoContent && response.StatusCode != http.StatusUnauthorized && response.StatusCode != http.StatusForbidden {
+		if (response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden) && refreshToken != "" {
+			accessToken = ""
+			continue
+		}
+		if response.StatusCode != http.StatusNoContent && (refreshed.RefreshToken != "" || (response.StatusCode != http.StatusUnauthorized && response.StatusCode != http.StatusForbidden)) {
+			if refreshed.RefreshToken != "" {
+				h.setSessionCookies(c.Writer, refreshed)
+			}
 			respondError(c, http.StatusServiceUnavailable, "LOGOUT_UNAVAILABLE", "Sign-out is temporarily unavailable. Try again later.")
 			return
 		}
+		break
 	}
 	h.clearSessionCookies(c.Writer)
 	c.Status(http.StatusNoContent)
