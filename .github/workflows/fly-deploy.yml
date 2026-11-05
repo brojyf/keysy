@@ -1,6 +1,6 @@
 name: Fly Deploy
 
-# Deploys main to Fly after CI passes on a push, when the push changed the image.
+# Deploys main to Fly after CI passes on a push.
 # Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
@@ -19,37 +19,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Pushes are squash merges, so one commit holds every changed file.
-  # If the API call fails, this job fails and nothing deploys.
-  changes:
-    name: Changes
-    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      image: ${{ steps.filter.outputs.image }}
-    steps:
-      - id: filter
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          # Paths that end up in the image: see deploy/Dockerfile and .dockerignore.
-          # The dashboard imports only design/tokens/tokens.css (dashboard/src/app/globals.css).
-          image='^(api|auth|dashboard|otel|deploy)/|^design/tokens/tokens\.css$|^(fly\.toml|\.dockerignore|\.github/workflows/fly-deploy\.yml)$'
-          files=$(gh api --paginate "repos/$REPO/commits/$COMMIT_SHA" --jq '.files[].filename')
-          if grep -Eq "$image" <<< "$files"; then
-            echo "image=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "image=false" >> "$GITHUB_OUTPUT"
-            echo "No deployable path changed. Skipping deploy."
-          fi
-
   deploy:
     name: Deploy
-    needs: changes
-    if: needs.changes.outputs.image == 'true'
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

@@ -28,6 +28,7 @@ jobs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
       wiki: ${{ steps.filter.outputs.wiki }}
+      deploy: ${{ steps.filter.outputs.deploy }}
       bun: ${{ steps.filter.outputs.bun }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,6 +54,9 @@ jobs:
             web:
               - 'web/**'
               - 'design/tokens/**'
+              - '.github/**'
+            deploy:
+              - 'deploy/**'
               - '.github/**'
             wiki:
               - 'wiki/**'
@@ -256,6 +260,22 @@ jobs:
         run: go vet ./...
       - name: Build
         run: go build ./...
+
+  deploy:
+    name: Deploy Config
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The same base image and packages as deploy/Dockerfile.
+      - name: Test nginx and supervisor configs
+        run: >-
+          docker run --rm -v "$PWD/deploy:/deploy:ro" node:24-slim sh -c
+          "apt-get update && apt-get install -y --no-install-recommends nginx supervisor && node --test '/deploy/*.test.mjs'"
 
   cli:
     name: CLI
