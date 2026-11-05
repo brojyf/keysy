@@ -56,6 +56,7 @@ both public service URLs, the tests, and `bun test` in
 - Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
   `src/app/globals.css` imports. Tailwind is not installed.
+  Read `design/tokens/` before any UI or styling change.
   The Figma design reference is in `design/dashboard/README.md`.
 - File names are kebab-case. Shared UI lives in `src/components/`.
 - Tests use `bun:test` with happy-dom. They mock `next/navigation` and `fetch`.
