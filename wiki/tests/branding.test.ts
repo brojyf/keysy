@@ -107,12 +107,8 @@ test('search section headings use bold primary text in both themes', () => {
 });
 
 test('search and drawer menus use the design raised layer color in both themes', () => {
-  for (const selector of ['#sourcey .search-dialog-inner', '#sourcey .drawer-dropdown-list']) {
-    for (const mode of ['', '.dark ']) {
-      expect(stylesheet).toContain(`${mode}${selector}`);
-    }
-  }
-  expect(stylesheet).toMatch(/\.dark #sourcey \.search-dialog-inner,\s*\.dark #sourcey \.drawer-dropdown-list\s*\{\s*background: var\(--keysy-raised\);/);
+  // Sourcey's dark search dialog rule also uses #sourcey, so only that selector needs a dark override.
+  expect(stylesheet).toMatch(/#sourcey \.search-dialog-inner,\s*#sourcey \.drawer-dropdown-list,\s*#sourcey \.drawer-dropdown-trigger\[aria-expanded='true'\],\s*\.dark #sourcey \.search-dialog-inner\s*\{\s*background: var\(--keysy-raised\);/);
 });
 
 test('the documentation logo is 48px tall and preserves its aspect ratio', () => {

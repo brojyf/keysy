@@ -10,7 +10,7 @@ test("landing imports design tokens into the built CSS", () => {
     .map((file) => readFileSync(resolve(assets, file), "utf8")).join("\n");
   for (const name of ["bg", "surface", "text", "muted", "accent", "button", "soft", "line"]) {
     expect(css).toContain(`--color-${name}:`);
-    expect(css).toContain(`--${name}:var(--color-${name})`);
+    expect(css).not.toContain(`var(--${name})`);
   }
   const webTokens = readFileSync(resolve(import.meta.dir, "../../design/tokens/web.css"), "utf8");
   for (const [, name] of webTokens.matchAll(/(--[\w-]+):/g)) expect(css).toContain(`${name}:`);
@@ -34,11 +34,19 @@ test("non-CSS colors match shared tokens", () => {
 });
 
 test("styles do not repeat token color literals", () => {
+  const tokens = ["tokens.css", "web.css"]
+    .map((file) => readFileSync(resolve(import.meta.dir, "../../design/tokens", file), "utf8"))
+    // The landing page has no dark mode, so its dark terminal keeps literal colors. White is not a Keysy color.
+    // A color becomes a token only if it is a Figma variable or a repeated value, so one-off colors stay in place.
+    .map((css) => css.split("\n.dark")[0]).join("\n");
+  const colors = [...tokens.matchAll(/--color-[\w-]+:\s*#([0-9a-f]+);/gi)].map(([, hex]) => hex).filter((hex) => hex !== "ffffff");
+  expect(colors.length).toBeGreaterThan(0);
+  const literal = new RegExp(`#(?:${colors.join("|")})(?:[0-9a-f]{2})?\\b`, "i");
   const styles = resolve(import.meta.dir, "../src/styles");
   for (const file of readdirSync(styles, { recursive: true })) {
     const path = resolve(styles, String(file));
     if (!statSync(path).isFile()) continue;
     const css = readFileSync(path, "utf8");
-    expect(css).not.toMatch(/#(?:101b30|e8eefc|b45309|aab8d0|1d4ed8|2f5aba)(?:[0-9a-f]{2})?\b/i);
+    expect(css).not.toMatch(literal);
   }
 });

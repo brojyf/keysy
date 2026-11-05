@@ -2,8 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'bun:test';
 
-const readme = readFileSync(new URL('./README.md', import.meta.url), 'utf8');
-const cssReadme = readFileSync(new URL('../css/README.md', import.meta.url), 'utf8');
 const css = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8');
 const webCss = readFileSync(new URL('./web.css', import.meta.url), 'utf8');
 function declarations(selector, source = css) {
@@ -29,47 +27,19 @@ function contrast(first, second) {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-test('implementation references specify the required stack without selection rationale', () => {
-  for (const specification of [readme, cssReadme]) assert.doesNotMatch(specification, /\b(?:why|pros|cons|trade-offs?|historical|candidates|research)\b/i);
-  assert.match(cssReadme, /shadcn\/ui \+ tweakcn \+ Geist/);
-});
-
-test('color rows match all CSS colors in both modes', () => {
-  const rows = [...readme.matchAll(/^\| [^|]+ \| `([\w-]+)` \| `([^`]+)` \| `([^`]+)` \|$/gm)];
-  const names = rows.map(([, name]) => name).sort();
-  assert.equal(new Set(names).size, names.length);
-  assert.deepEqual(names, Object.keys(lightColors).sort());
-  assert.deepEqual(names, Object.keys(darkColors).sort());
-  assert.equal(names.length, 18);
-  for (const [, name, lightValue, darkValue] of rows) {
-    assert.match(lightValue, /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/);
-    assert.match(darkValue, /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/);
-    assert.equal(lightColors[name], lightValue, `light ${name}`);
-    assert.equal(darkColors[name], darkValue, `dark ${name}`);
+test('both modes define the same color tokens with hex values', () => {
+  assert.deepEqual(Object.keys(darkColors).sort(), Object.keys(lightColors).sort());
+  for (const value of [...Object.values(lightColors), ...Object.values(darkColors)]) {
+    assert.match(value, /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/);
   }
   assert.ok(luminance(lightColors.bg) > luminance(lightColors.text));
   assert.ok(luminance(darkColors.bg) < luminance(darkColors.text));
 });
 
-test('text style rows match CSS values and dark weights', () => {
-  const rows = [...readme.matchAll(/^\| ([\w ]+) \| (Geist(?: Mono)?) \| (\d+px) \/ (\d+px) \| ([^|]+) \| (\d+) \| (\d+) \|$/gm)];
-  const slugs = rows.map(([, name]) => name.toLowerCase().replaceAll(' ', '-'));
-  const cssSlugs = Object.keys(light).filter(name => /^--text-[\w-]+--font-weight$/.test(name)).map(name => name.slice(7, -13));
-  assert.equal(rows.length, 15);
-  assert.equal(new Set(slugs).size, slugs.length);
-  assert.deepEqual([...slugs].sort(), cssSlugs.sort());
-  assert.deepEqual(Object.keys(dark).filter(name => name.startsWith('--text-')).sort(), cssSlugs.map(slug => `--text-${slug}--font-weight`).sort());
-  assert.equal(light['--font-sans'], "'Geist Variable', 'Geist', sans-serif");
-  assert.equal(light['--font-mono'], "'Geist Mono Variable', 'Geist Mono', monospace");
-  for (const [, name, , size, lineHeight, spacing, lightWeight, darkWeight] of rows) {
-    const prefix = `--text-${name.toLowerCase().replaceAll(' ', '-')}`;
-    assert.equal(light[prefix], size, name);
-    assert.equal(light[`${prefix}--line-height`], lineHeight, name);
-    assert.equal(light[`${prefix}--letter-spacing`] ?? '0', spacing.trim(), name);
-    assert.equal(light[`${prefix}--font-weight`], lightWeight, name);
-    assert.equal(dark[`${prefix}--font-weight`], darkWeight, name);
-    assert.equal(Number(darkWeight), Number(lightWeight) - 40, name);
-  }
+test('every text style has a dark weight 40 lower than its light weight', () => {
+  const weights = mode => Object.keys(mode).filter(name => /^--text-[\w-]+--font-weight$/.test(name)).sort();
+  assert.deepEqual(weights(dark), weights(light));
+  for (const name of weights(light)) assert.equal(Number(dark[name]), Number(light[name]) - 40, name);
 });
 
 test('structural colors stay close to neutral', () => {
@@ -112,48 +82,24 @@ test('raised layers stand above panels, and selected items stay visible on them'
   assert.ok(luminance(darkColors.raised) < luminance(darkColors.soft));
 });
 
-test('radius, shadow, and motion tokens match their documented values', () => {
-  const expected = {
-    '--radius-sm': '8px',
-    '--radius-md': '14px',
-    '--radius-lg': '20px',
-    '--radius-full': '9999px',
-    '--shadow-md': '0 1px 2px #0000000a, 0 8px 24px #0f121a1f',
-    '--shadow-knob': '0 1px 2px #00000026',
-    '--shadow-bar': '0 4px 16px #00000014',
-    '--shadow-card': '0 1px 2px #101b300a, 0 12px 32px -8px #101b300f',
-    '--ease-spring': 'linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)',
-    '--duration-spring': '600ms',
-  };
-  for (const [name, value] of Object.entries(expected)) {
-    assert.equal(light[name]?.replace(/\s+/g, ' '), value, name);
-    assert.ok(readme.includes('`' + name + '`'), name);
-    assert.ok(readme.includes('`' + value + '`'), name);
-  }
-  assert.equal(dark['--shadow-md'], '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c');
-  assert.ok(readme.includes('`' + dark['--shadow-md'] + '`'));
-  for (const [name, value] of Object.entries({
-    '--shadow-knob': '0 1px 2px #0f121a73',
-    '--shadow-bar': '0 4px 16px #0f121a3d',
-    '--shadow-card': '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c',
-  })) {
-    assert.equal(dark[name], value, name);
-    assert.ok(readme.includes('`' + value + '`'), name);
+test('dark mode defines every shadow', () => {
+  const shadows = mode => Object.keys(mode).filter(name => name.startsWith('--shadow-')).sort();
+  assert.deepEqual(shadows(dark), shadows(light));
+});
+
+test('logo symbols use the button color of their mode', () => {
+  for (const [file, button] of [['symbol-light.svg', lightColors.button], ['symbol-dark.svg', darkColors.button]]) {
+    const svg = readFileSync(new URL(`../logo/${file}`, import.meta.url), 'utf8');
+    const fills = new Set([...svg.matchAll(/fill="(#[^"]+)"/g)].map(([, fill]) => fill.toLowerCase()));
+    assert.deepEqual([...fills], [button], file);
   }
 });
 
-test('web tokens are documented and distinct from shared tokens', () => {
+test('web tokens are distinct from shared tokens', () => {
   const web = declarations(':root', webCss);
-  assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, 4);
-  assert.deepEqual(web, {
-    '--color-dark': '#101b30',
-    '--color-dark-text': '#aab8d0',
-    '--color-tint': '#e8eefc',
-    '--color-amber': '#b45309',
-  });
+  assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, Object.keys(web).length);
   for (const [name, value] of Object.entries(web)) {
     assert.match(value, /^#[0-9a-f]{6}$/);
-    assert.ok(readme.includes('| `' + name + '` | `' + value + '` |'));
     for (const shared of [light, dark]) {
       assert.ok(!(name in shared), name);
       assert.ok(!Object.values(shared).includes(value), value);

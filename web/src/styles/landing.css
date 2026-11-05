@@ -9,14 +9,6 @@
   color: var(--color-text);
   background: var(--color-bg);
   font-synthesis: none;
-  --bg: var(--color-bg);
-  --surface: var(--color-surface);
-  --text: var(--color-text);
-  --muted: var(--color-muted);
-  --accent: var(--color-accent);
-  --button: var(--color-button);
-  --soft: var(--color-soft);
-  --line: var(--color-line);
   --gutter: max(24px, calc((100% - 1088px) / 2));
 }
 @media (min-width: 1024px) {
@@ -55,7 +47,7 @@ a {
   text-decoration: none;
 }
 a:hover {
-  color: var(--accent);
+  color: var(--color-accent);
 }
 button {
   font: inherit;
@@ -68,7 +60,7 @@ a {
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--color-accent);
   outline-offset: 4px;
 }
 button:active {
@@ -88,7 +80,7 @@ kbd,
   display: none !important;
 }
 .muted {
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .sr-only {
   position: absolute;
@@ -105,7 +97,7 @@ kbd,
   left: 12px;
   z-index: 10;
   padding: 12px;
-  background: var(--surface);
+  background: var(--color-surface);
   transform: translateY(-200%);
 }
 .skip-link:focus {
@@ -113,8 +105,8 @@ kbd,
 }
 .site-header {
   height: 68px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
 }
 .header-inner {
   height: 100%;
@@ -128,7 +120,7 @@ kbd,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  color: var(--color-text);
 }
 .sign-in {
   padding-inline: 14px;
@@ -204,7 +196,7 @@ main > .section:not(.hero) {
 }
 .eyebrow {
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--color-accent);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -218,7 +210,7 @@ h2 {
   letter-spacing: -0.04em;
 }
 .section-heading > p:last-child:not(.eyebrow) {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 18px;
   line-height: 26px;
   margin-top: 14px;
@@ -282,12 +274,12 @@ h2 {
   gap: 8px;
   padding: 6px 14px;
   height: 31px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--color-surface);
   font-family: "Geist Mono Variable", monospace;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .hero-badge img {
   margin: -6px;
@@ -311,7 +303,7 @@ h1 {
   margin: 24px auto 36px;
   font-size: 20px;
   line-height: 30px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .actions {
   display: flex;
@@ -322,17 +314,17 @@ h1 {
   min-width: 158px;
   height: 50px;
   padding-inline: 18px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--color-surface);
   font-size: 16px;
   font-weight: 500;
 }
 .actions .primary {
   min-width: 178px;
-  color: white;
-  background: var(--button);
-  border-color: var(--button);
+  color: var(--color-on-button);
+  background: var(--color-button);
+  border-color: var(--color-button);
 }
 .access-section {
   padding-block: 72px 120px;
@@ -352,7 +344,7 @@ h1 {
   position: relative;
   overflow: hidden;
   min-height: 475px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 32px;
   background: linear-gradient(#eef3ff, var(--color-surface));
   display: grid;
@@ -369,7 +361,7 @@ h1 {
 }
 .cta-content p {
   font-size: 18px;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-top: 20px;
   margin-bottom: 36px;
 }
@@ -389,7 +381,7 @@ h1 {
 }
 .footer-brand p {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-top: 12px;
 }
 .footer-links {
@@ -408,16 +400,16 @@ h1 {
   display: flex;
   align-items: start;
   font-size: 14px;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-bottom: 12px;
 }
 .footer-links a:hover {
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .copyright {
   margin-top: 48px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .legal-page {
   min-height: 60vh;
@@ -433,19 +425,19 @@ h1 {
 .legal-page p:not(.eyebrow) {
   font-size: 18px;
   line-height: 1.7;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-top: 16px;
 }
 .back-link {
   display: inline-block;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-bottom: 48px;
   font-size: 14px;
 }
 .legal-related {
   display: inline-block;
   margin-top: 32px;
-  color: var(--accent);
+  color: var(--color-accent);
 }
 @media (max-width: 1000px) {
   .footer-row {

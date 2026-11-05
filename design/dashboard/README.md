@@ -1,12 +1,12 @@
 # Dashboard
 
-Figma design for the Keysy dashboard (v0).
+Figma design for the Keysy dashboard.
 
 ## Figma
 
-The dashboard lives in [Keysy — Secret management](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e).
+The dashboard lives in [keysy-dashboard](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e).
 
-- [Web app, 1440 px, light (v0)](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=64-4081) covers the core
+- [Web app, 1440 px, light](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=64-4081) covers the core
   flows from the PRD: Google sign-in (the only sign-in method), secrets, secret details with version history and
   service reads, new secret, AI reorganization, access policies, audit logs, people, revoking Admin access, and
   services.

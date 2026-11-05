@@ -94,13 +94,12 @@
   color: var(--color-orange-300);
 }
 
-/* Menus and dialogs use the raised layer from design/tokens. The open drawer trigger joins its list. */
+/* Menus and dialogs use the raised layer from design/tokens. The open drawer trigger joins its list.
+   Sourcey's dark search dialog rule also uses #sourcey, so only that selector needs a dark override. */
 #sourcey .search-dialog-inner,
 #sourcey .drawer-dropdown-list,
 #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
-.dark #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
-.dark #sourcey .search-dialog-inner,
-.dark #sourcey .drawer-dropdown-list {
+.dark #sourcey .search-dialog-inner {
   background: var(--keysy-raised);
 }
 
