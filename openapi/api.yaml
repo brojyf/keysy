@@ -66,13 +66,13 @@ paths:
       security:
         - accessCookie: []
       operationId: updateMe
-      summary: Update the signed-in user's display name
+      summary: Update the signed-in user's profile
       description: |
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
         A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
         Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
         No query string is accepted. The UTF-8 JSON body is limited to 1024 bytes.
-        The body must contain exactly one field, displayName. The service trims whitespace,
+        The body must contain exactly one field, displayName or agentAutoApply. For displayName, the service trims whitespace,
         then accepts 1 to 32 Unicode code points.
       requestBody:
         required: true
@@ -81,11 +81,15 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [displayName]
+              oneOf:
+                - required: [displayName]
+                - required: [agentAutoApply]
               properties:
                 displayName:
                   type: string
                   description: Whitespace is trimmed before the length is checked.
+                agentAutoApply:
+                  type: boolean
       responses:
         '200':
           description: The signed-in user.
@@ -1080,7 +1084,7 @@ components:
       enum: [super_admin, admin, user]
     Me:
       type: object
-      required: [id, email, displayName, memberships]
+      required: [id, email, displayName, agentAutoApply, memberships]
       properties:
         id:
           type: string
@@ -1088,6 +1092,8 @@ components:
           type: string
         displayName:
           type: string
+        agentAutoApply:
+          type: boolean
         avatarUrl:
           type: string
           description: Present only when the token contains a valid HTTPS avatar URL.

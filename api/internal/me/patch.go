@@ -36,18 +36,30 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
 			return
 		}
-		raw, ok := fields["displayName"]
 		var name string
-		if !ok || bytes.Equal(raw, []byte("null")) || json.Unmarshal(raw, &name) != nil {
+		var autoApply bool
+		if raw, ok := fields["displayName"]; ok {
+			if bytes.Equal(raw, []byte("null")) || json.Unmarshal(raw, &name) != nil {
+				middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
+				return
+			}
+			name = strings.TrimSpace(name)
+			if n := utf8.RuneCountInString(name); n < 1 || n > 32 {
+				middleware.Error(c, http.StatusBadRequest, "INVALID_DISPLAY_NAME", "Enter a name with 1 to 32 characters.")
+				return
+			}
+			err = profiles.UpdateDisplayName(c.Request.Context(), c.GetString("user_id"), name)
+		} else if raw, ok := fields["agentAutoApply"]; ok {
+			if bytes.Equal(raw, []byte("null")) || json.Unmarshal(raw, &autoApply) != nil {
+				middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
+				return
+			}
+			err = profiles.UpdateAgentAutoApply(c.Request.Context(), c.GetString("user_id"), autoApply)
+		} else {
 			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
 			return
 		}
-		name = strings.TrimSpace(name)
-		if n := utf8.RuneCountInString(name); n < 1 || n > 32 {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_DISPLAY_NAME", "Enter a name with 1 to 32 characters.")
-			return
-		}
-		err = profiles.UpdateDisplayName(c.Request.Context(), c.GetString("user_id"), name)
+
 		if c.Request.Context().Err() != nil {
 			return
 		}
@@ -55,6 +67,18 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be updated. Try again later.")
 			return
 		}
-		c.JSON(http.StatusOK, response{ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
+		if _, ok := fields["agentAutoApply"]; ok {
+			name, err = profiles.DisplayName(c.Request.Context(), c.GetString("user_id"))
+		} else {
+			autoApply, err = profiles.AgentAutoApply(c.Request.Context(), c.GetString("user_id"))
+		}
+		if c.Request.Context().Err() != nil {
+			return
+		}
+		if err != nil {
+			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
+			return
+		}
+		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
 	}
 }

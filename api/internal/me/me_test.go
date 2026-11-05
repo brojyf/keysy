@@ -20,6 +20,11 @@ func (f profileLookup) UpdateDisplayName(context.Context, string, string) error 
 	panic("unexpected update")
 }
 
+func (f profileLookup) AgentAutoApply(context.Context, string) (bool, error) { return false, nil }
+func (f profileLookup) UpdateAgentAutoApply(context.Context, string, bool) error {
+	panic("unexpected update")
+}
+
 func TestMe(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, scenario := range []string{"profile", "no-avatar", "missing-profile", "database-error", "timeout"} {
@@ -141,6 +146,15 @@ func (p *profileUpdate) UpdateDisplayName(ctx context.Context, id, name string) 
 	return p.err
 }
 
+func (p *profileUpdate) AgentAutoApply(context.Context, string) (bool, error) { return false, nil }
+func (p *profileUpdate) UpdateAgentAutoApply(_ context.Context, id string, enabled bool) error {
+	p.called = true
+	if id != "user-123" {
+		panic("wrong user ID")
+	}
+	return p.err
+}
+
 func TestPatchMe(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, tc := range []struct {
@@ -221,6 +235,34 @@ func TestPatchMe(t *testing.T) {
 			}
 			if !store.called || store.name != tc.wantName || body.ID != "user-123" || body.Email != "member@example.test" || body.AvatarURL != "https://google.test/photo" || body.DisplayName != tc.wantName || body.Memberships == nil || len(body.Memberships) != 0 {
 				t.Fatalf("store=%+v body=%+v", store, body)
+			}
+		})
+	}
+}
+
+func TestPatchAgentAutoApply(t *testing.T) {
+	for _, tc := range []struct {
+		body   string
+		status int
+		called bool
+	}{
+		{`{"agentAutoApply":true}`, 200, true}, {`{"agentAutoApply":false}`, 200, true},
+		{`{"agentAutoApply":null}`, 400, false}, {`{"agentAutoApply":"true"}`, 400, false},
+	} {
+		t.Run(tc.body, func(t *testing.T) {
+			store := &profileUpdate{}
+			r := gin.New()
+			r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+			r.PATCH("/v0/me", Patch(store))
+			req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tc.status || store.called != tc.called {
+				t.Fatalf("status %d, called %v: %s", w.Code, store.called, w.Body.String())
+			}
+			if tc.called && !strings.Contains(w.Body.String(), tc.body[1:len(tc.body)-1]) {
+				t.Fatal(w.Body.String())
 			}
 		})
 	}

@@ -17,7 +17,7 @@ const { default: SessionsPage } = await import('../src/app/account/sessions/page
 let browser: Window
 let root: Root
 let container: HTMLDivElement
-const user = { id: 'user-id', email: 'member@example.com', displayName: 'Test Member', memberships: [] }
+const user = { id: 'user-id', email: 'member@example.com', displayName: 'Test Member', agentAutoApply: false, memberships: [] }
 const originalFetch = globalThis.fetch
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
 const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
@@ -77,13 +77,13 @@ test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
-  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
+  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically (Agent coming soon)', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['System', 'Light', 'Dark', 'Sign out'])
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out'])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
@@ -334,4 +334,17 @@ test('a rejected refresh signs out after saving', async () => {
   await act(async () => button('Save').click())
   expect(request.mock.calls.map((call) => call[0])).toEqual(['https://api.keysy.net/v0/me', 'https://auth.keysy.net/v0/auth/refresh'])
   expect(onSignedOut).toHaveBeenCalledTimes(1)
+})
+
+test('the agent preference is saved and errors leave the setting unchanged', async () => {
+  await renderAccount('/account', <GeneralPage />)
+  const toggle = container.querySelector<HTMLButtonElement>('[role="switch"]')!
+  request.mockImplementation(() => Promise.resolve(Response.json({ ...user, agentAutoApply: true })))
+  await act(async () => toggle.click())
+  expect(request.mock.calls[0][1].body).toBe(JSON.stringify({ agentAutoApply: true }))
+  expect(onUserChange).toHaveBeenCalledWith({ ...user, agentAutoApply: true })
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status: 500 })))
+  await act(async () => toggle.click())
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
+  expect(toggle.getAttribute('aria-checked')).toBe('false')
 })

@@ -21,6 +21,8 @@ export default function GeneralPage() {
   const [draft, setDraft] = useState(user.displayName)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
+  const [settingSaving, setSettingSaving] = useState(false)
+  const [settingError, setSettingError] = useState(false)
   const trimmed = draft.trim()
   const changed = trimmed !== user.displayName
   const valid = trimmed.length > 0 && [...trimmed].length <= 32
@@ -37,7 +39,7 @@ export default function GeneralPage() {
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!changed || !valid || saving) return
+    if (!changed || !valid || saving || settingSaving) return
     setSaving(true)
     setError(false)
     try {
@@ -62,6 +64,22 @@ export default function GeneralPage() {
     }
   }
 
+  async function toggleAutoApply() {
+    if (settingSaving || saving) return
+    setSettingSaving(true)
+    setSettingError(false)
+    try {
+      const { apiURL, authURL } = serviceURLs()
+      const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentAutoApply: !user.agentAutoApply }),
+      })
+      if (response.status === 401) { onSignedOut(); return }
+      if (!response.ok) throw new Error('Save failed')
+      onUserChange(parseSessionUser(await response.json()))
+    } catch { setSettingError(true) } finally { setSettingSaving(false) }
+  }
+
   return (
     <form className={`account-sections${saveBarMounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <section>
@@ -76,9 +94,10 @@ export default function GeneralPage() {
         <h2>Agent</h2>
         <dl className="account-rows">
           <div>
-            <dt>Apply changes automatically</dt>
+            <dt>Apply changes automatically <small>(Agent coming soon)</small></dt>
             <dd className="account-control">
-              <button className="account-switch" type="button" role="switch" aria-checked="false" aria-label="Apply changes automatically" disabled title="Coming soon" />
+              <button className="account-switch" type="button" role="switch" aria-checked={user.agentAutoApply} aria-label="Apply changes automatically" disabled={settingSaving || saving} onClick={toggleAutoApply} />
+              {settingError && <span role="alert">Could not save. Try again.</span>}
             </dd>
           </div>
         </dl>
@@ -127,7 +146,7 @@ export default function GeneralPage() {
           <span role="status">1 unsaved change</span>
           {error && <span role="alert">Could not save. Try again.</span>}
           <button type="button" disabled={saving} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
-          <button type="submit" disabled={saving || !valid}>{saving ? 'Saving...' : 'Save'}</button>
+          <button type="submit" disabled={saving || settingSaving || !valid}>{saving ? 'Saving...' : 'Save'}</button>
         </div>
       )}
     </form>
