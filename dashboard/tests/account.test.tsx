@@ -24,6 +24,7 @@ const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let request: ReturnType<typeof mock>
 let onUserChange: ReturnType<typeof mock>
 let onSignedOut: ReturnType<typeof mock>
+let onSignOutRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
   process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net'
@@ -31,6 +32,7 @@ beforeEach(() => {
   request = mock(() => Promise.resolve(Response.json(user)))
   onUserChange = mock(() => {})
   onSignedOut = mock(() => {})
+  onSignOutRequest = mock(() => {})
   routerPush.mockClear()
   globalThis.fetch = request
   browser = new Window({ url: 'https://dashboard.keysy.net' })
@@ -52,7 +54,7 @@ afterEach(async () => {
 
 async function renderAccount(pathname: string, page: ReactNode) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user, onUserChange, onSignedOut }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -74,14 +76,14 @@ test('the account sidebar links to each account page and marks the current one',
 test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
-  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Delete account'])
+  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
+  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label'))).toEqual(['System', 'Light', 'Dark'])
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['System', 'Light', 'Dark', 'Sign out'])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
@@ -101,6 +103,17 @@ async function search(value: string) {
 function headerSort(name: string) {
   return [...container.querySelectorAll<HTMLTableCellElement>('th')].find((cell) => cell.textContent === name)!
 }
+
+test('General requests sign out from the Session section above the Danger zone', async () => {
+  await renderAccount('/account', <GeneralPage />)
+  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
+  expect(text('.account-sections section:nth-of-type(4) dt')).toEqual(['Sign out of this device'])
+  const button = container.querySelector<HTMLButtonElement>('.account-sign-out')!
+  expect(button.textContent).toBe('Sign out')
+  await act(async () => button.click())
+  expect(onSignOutRequest).toHaveBeenCalledTimes(1)
+  expect(request).not.toHaveBeenCalled()
+})
 
 test('Organizations lists the mock organizations from A to Z', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)

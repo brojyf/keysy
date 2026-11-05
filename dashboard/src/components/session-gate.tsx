@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { fetchWithSessionRefresh } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
+import SignOutDialog from './sign-out-dialog'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
@@ -14,6 +15,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
   const [sessionCheck, setSessionCheck] = useState(0)
+  const signOutDialog = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -40,6 +42,11 @@ function SessionGate({ children }: { children: ReactNode }) {
     setSessionError(false)
     setUser(undefined)
     setSessionCheck((count) => count + 1)
+  }
+
+  function requestSignOut() {
+    if (logoutStatus === 'error') setLogoutStatus('idle')
+    signOutDialog.current?.showModal()
   }
 
   async function logout() {
@@ -77,13 +84,14 @@ function SessionGate({ children }: { children: ReactNode }) {
 
   if (user) {
     return (
-      <CurrentUserContext.Provider value={{ user, onUserChange: setUser, onSignedOut: () => setUser(null) }}>
+      <CurrentUserContext.Provider value={{ user, onUserChange: setUser, onSignedOut: () => setUser(null), onSignOutRequest: requestSignOut }}>
         <div className="dashboard">
           <Topbar />
           <div className="dashboard-body">
-            <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} signOutStatus={logoutStatus} onSignOut={logout} />
+            <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} onSignOutRequest={requestSignOut} />
             <main className="dashboard-content">{children}</main>
           </div>
+          <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
         </div>
       </CurrentUserContext.Provider>
     )

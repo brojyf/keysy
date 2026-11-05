@@ -22,6 +22,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net/'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
+  Object.assign(browser.HTMLElement.prototype, { hidePopover() {} })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
   Object.assign(globalThis, {
     window: browser,
@@ -49,7 +50,15 @@ async function renderSessionGate() {
 }
 
 function signOutButton() {
-  return [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.startsWith('Sign')) ?? null
+  return container.querySelector<HTMLButtonElement>('.account-menu-sign-out')
+}
+
+function signOutDialog() {
+  return container.querySelector<HTMLDialogElement>('dialog.sign-out-dialog')!
+}
+
+function dialogButton(label: string) {
+  return [...signOutDialog().querySelectorAll('button')].find((button) => button.textContent === label)!
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
@@ -113,10 +122,12 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   await renderSessionGate()
   let finishLogout!: (response: Response) => void
   sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { finishLogout = resolve }))
-  const logout = signOutButton()!
+  await act(async () => signOutButton()!.click())
+  const logout = dialogButton('Sign out')
   await act(async () => logout.click())
   expect(logout.disabled).toBe(true)
   expect(logout.textContent).toBe('Signing out...')
+  expect(dialogButton('Cancel').disabled).toBe(true)
   expect(sessionRequest.mock.calls[1]?.[0]).toBe('https://auth.keysy.net/v0/auth/logout')
   expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'include' })
   logout.click()
@@ -125,6 +136,21 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   await act(async () => finishLogout(new Response(null, { status: 204 })))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.querySelector('nav')).toBeNull()
+})
+
+test('sign out asks for confirmation and Cancel keeps the session', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  await renderSessionGate()
+  expect(signOutDialog().open).toBe(false)
+  await act(async () => signOutButton()!.click())
+  expect(signOutDialog().open).toBe(true)
+  expect(signOutDialog().querySelector('h2')?.textContent).toBe('Sign out?')
+  expect(signOutDialog().querySelector('p')?.textContent).toBe("You'll need to sign in again on this device.")
+  expect(sessionRequest).toHaveBeenCalledTimes(1)
+  await act(async () => dialogButton('Cancel').click())
+  expect(signOutDialog().open).toBe(false)
+  expect(sessionRequest).toHaveBeenCalledTimes(1)
+  expect(container.querySelector('nav')).not.toBeNull()
 })
 
 test('shows the top bar with the mock organization and action buttons', async () => {
@@ -155,11 +181,16 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
   await renderSessionGate()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => signOutButton()!.click())
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not sign out. Try again.')
-  expect(signOutButton()?.disabled).toBe(false)
+  await act(async () => dialogButton('Sign out').click())
+  expect(signOutDialog().open).toBe(true)
+  expect(signOutDialog().querySelector('[role="alert"]')?.textContent).toBe('Could not sign out. Try again.')
+  expect(dialogButton('Sign out').disabled).toBe(false)
   expect(container.querySelector('nav')).not.toBeNull()
-  sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
+  await act(async () => dialogButton('Cancel').click())
   await act(async () => signOutButton()!.click())
+  expect(signOutDialog().querySelector('[role="alert"]')).toBeNull()
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
+  await act(async () => dialogButton('Sign out').click())
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
 })
 

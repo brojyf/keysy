@@ -15,7 +15,7 @@ const themes = [
 ]
 
 export default function GeneralPage() {
-  const { user, onUserChange, onSignedOut } = useCurrentUser()
+  const { user, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
   const theme = useTheme()
   const [draft, setDraft] = useState(user.displayName)
   const [saving, setSaving] = useState(false)
@@ -85,6 +85,17 @@ export default function GeneralPage() {
                   </button>
                 ))}
               </span>
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section>
+        <h2>Session</h2>
+        <dl className="account-rows">
+          <div>
+            <dt>Sign out of this device</dt>
+            <dd className="account-control">
+              <button className="account-sign-out" type="button" onClick={onSignOutRequest}>Sign out</button>
             </dd>
           </div>
         </dl>

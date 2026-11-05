@@ -308,14 +308,6 @@
   background: var(--color-soft);
 }
 
-.account-menu-error {
-  margin: 2px 0 0;
-  padding: 8px;
-  color: var(--color-muted);
-  font: var(--text-caption--font-weight) var(--text-caption)/var(--text-caption--line-height) var(--font-sans);
-  overflow-wrap: anywhere;
-}
-
 .account-menu-item {
   display: block;
   width: 100%;

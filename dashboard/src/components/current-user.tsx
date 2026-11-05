@@ -7,6 +7,7 @@ type CurrentUser = {
   user: SessionUser
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
+  onSignOutRequest: () => void
 }
 
 export const CurrentUserContext = createContext<CurrentUser | null>(null)

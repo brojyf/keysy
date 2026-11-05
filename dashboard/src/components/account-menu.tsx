@@ -15,11 +15,10 @@ export type AccountMenuProps = {
   displayName: string
   avatarUrl?: string
   email: string
-  signOutStatus: 'idle' | 'pending' | 'error'
-  onSignOut: () => void
+  onSignOutRequest: () => void
 }
 
-export default function AccountMenu({ displayName, avatarUrl, email, signOutStatus, onSignOut, selected }: AccountMenuProps & { selected: boolean }) {
+export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRequest, selected }: AccountMenuProps & { selected: boolean }) {
   const theme = useTheme()
   const [failedAvatarURL, setFailedAvatarURL] = useState<string>()
   const menu = useRef<HTMLDivElement>(null)
@@ -59,10 +58,9 @@ export default function AccountMenu({ displayName, avatarUrl, email, signOutStat
           </div>
         </div>
         <hr className="account-menu-divider" />
-        <button className="account-menu-item account-menu-sign-out" type="button" disabled={signOutStatus === 'pending'} onClick={onSignOut}>
-          {signOutStatus === 'pending' ? 'Signing out...' : 'Sign out'}
+        <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => { menu.current?.hidePopover(); onSignOutRequest() }}>
+          Sign out
         </button>
-        {signOutStatus === 'error' && <p className="account-menu-error" role="alert">Could not sign out. Try again.</p>}
       </div>
     </>
   )

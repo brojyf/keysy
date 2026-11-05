@@ -42,7 +42,7 @@ async function renderThemeControls() {
   document.body.append(container)
   root = createRoot(container)
   const user = { id: 'id', email: 'test@example.com', displayName: 'Test', memberships: [] }
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user, onUserChange: () => {}, onSignedOut: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" signOutStatus="idle" onSignOut={() => {}} selected={false} /></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user, onUserChange: () => {}, onSignedOut: () => {}, onSignOutRequest: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" onSignOutRequest={() => {}} selected={false} /></CurrentUserContext.Provider>))
   return container
 }
 

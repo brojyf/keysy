@@ -1,4 +1,4 @@
-/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions, 7.9 Row menu, 7.12 Filtered, 7.13 No results. */
+/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions, 7.9 Row menu, 7.12 Filtered, 7.13 No results, 7.15 and 7.16 Sign out. */
 .dashboard-content:has(> .account) {
   padding: 0;
 }
@@ -202,7 +202,10 @@
   background: var(--color-soft);
 }
 
-.account-delete {
+.account-delete,
+.account-sign-out,
+.sign-out-dialog-cancel,
+.sign-out-dialog-confirm {
   height: 28px;
   padding: 0 10px;
   border: 1px solid var(--color-line);
@@ -210,6 +213,72 @@
   color: var(--color-danger);
   background: var(--color-surface);
   font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+}
+
+.account-sign-out,
+.sign-out-dialog-cancel,
+.sign-out-dialog-confirm {
+  cursor: pointer;
+}
+
+.account-sign-out:focus-visible,
+.sign-out-dialog-cancel:focus-visible,
+.sign-out-dialog-confirm:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+.sign-out-dialog {
+  position: fixed;
+  inset: 40% auto auto 50%;
+  width: min(440px, calc(100vw - 32px));
+  margin: 0;
+  padding: 16px 20px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-dialog);
+  transform: translate(-50%, -50%);
+}
+
+.sign-out-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-text) 24%, transparent);
+}
+
+:root.dark .sign-out-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+}
+
+.sign-out-dialog h2 {
+  margin: 0 0 8px;
+  font: var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans);
+}
+
+.sign-out-dialog p {
+  margin: 0;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.sign-out-dialog .sign-out-dialog-error {
+  margin-top: 8px;
+  color: var(--color-danger);
+}
+
+.sign-out-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.sign-out-dialog-cancel {
+  color: var(--color-text);
+}
+
+.sign-out-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Organizations and Sessions */

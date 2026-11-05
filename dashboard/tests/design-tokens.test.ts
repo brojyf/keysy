@@ -51,13 +51,22 @@ test('theme switches have no track fill or selected shadow', () => {
 
 test('account menu keeps its position and stack gaps', () => {
   assert.equal(value(rule(files[1], '.account-menu'), 'inset'), 'auto auto 10px 60px')
-  for (const selector of ['.account-menu-divider', '.account-menu-error']) {
-    assert.equal(value(rule(files[1], selector), 'margin'), '2px 0 0')
-  }
+  assert.equal(value(rule(files[1], '.account-menu-divider'), 'margin'), '2px 0 0')
 })
 
 test('account menu sign out uses the danger color', () => {
   assert.equal(value(rule(files[1], '.account-menu-sign-out'), 'color'), 'var(--color-danger)')
+})
+
+test('the sign out dialog follows the Figma Dialog component', () => {
+  const dialog = rule(files[2], '.sign-out-dialog')
+  assert.equal(value(dialog, 'width'), 'min(440px, calc(100vw - 32px))')
+  assert.equal(value(dialog, 'inset'), '40% auto auto 50%')
+  assert.equal(value(dialog, 'border-radius'), 'var(--radius-lg)')
+  assert.equal(value(dialog, 'background'), 'var(--color-raised)')
+  assert.equal(value(dialog, 'box-shadow'), 'var(--shadow-dialog)')
+  assert.equal(value(rule(files[2], '.sign-out-dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-text) 24%, transparent)')
+  assert.equal(value(rule(files[2], ':root.dark .sign-out-dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-bg) 72%, transparent)')
 })
 
 test('the session status uses text at 50% in light mode and muted in dark mode', () => {
