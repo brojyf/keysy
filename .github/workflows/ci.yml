@@ -49,10 +49,12 @@ jobs:
               - '.github/**'
             web:
               - 'web/**'
+              - 'design/tokens/**'
               - '.github/**'
             wiki:
               - 'wiki/**'
               - 'openapi/**'
+              - 'design/tokens/**'
               - '.github/**'
             bun:
               - '**/package.json'
@@ -150,8 +152,8 @@ jobs:
         run: bun run build
       - name: Test if configured
         run: npm run --if-present test
-      - name: Verify design theme
-        working-directory: design/theme
+      - name: Verify design tokens
+        working-directory: design/tokens
         run: bun test
 
   web:

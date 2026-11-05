@@ -1,26 +1,25 @@
 # Landing page
 
-Figma links and exports, motion prototypes, and the v4 motion page for the landing page.
+Figma links, motion prototypes, and the motion page for the landing page.
 
 ## Figma
 
-The landing page lives in [Keysy — Landing Page](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao).
+The landing page lives in [keysy-web](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao).
 
-- [Desktop, 1440 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-35999) and
-  [Mobile, 390 px (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-36935) are the
+- [Desktop, 1440 px](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-35999) and
+  [Mobile, 390 px](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-36935) are the
   current design. A dot pattern sits behind the hero and the call-to-action card. An Availability
   section after Security states redundant services, a public status page, and a 99.9% monthly
   uptime commitment. Earlier versions were removed from the file; Figma's version history keeps
   them.
-- [Hero story (v4)](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-37937) shows key
+- [Hero story](https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=64-37937) shows key
   frames of the hero web window. The dots and the hero story play in the
-  [v4 motion page](v4/README.md).
-- The section also holds the components v4 uses: actions, grid marker, nav account, and SDK showcase.
-- Colors come from the `Keysy / Landing` variables, which match [Theme](../theme/README.md).
+  [motion page](motion-page/README.md).
+- The section also holds the components the design uses: actions, grid marker, nav account, and SDK showcase.
+- Colors come from the `Keysy / Web` variables, which match [Tokens](../tokens/README.md).
 - Typography: Geist and Geist Mono.
 - Product previews use illustrative data. CLI commands, SDK code, and package names are
   illustrative until the CLI and SDKs define them.
-- [Local snapshot](keysy-landing-page.fig) of the Figma file. Update it with File → Save local copy.
 
 ## Motion prototypes
 

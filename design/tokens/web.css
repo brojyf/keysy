@@ -1,0 +1,7 @@
+/* Figma: keysy-web; Keysy / Web. Only values that the landing page adds to tokens.css. */
+:root {
+  --color-dark: #101b30;
+  --color-dark-text: #aab8d0;
+  --color-tint: #e8eefc;
+  --color-amber: #b45309;
+}

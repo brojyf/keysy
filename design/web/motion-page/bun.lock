@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "keysy-landing-v4",
+      "name": "keysy-landing-motion",
       "dependencies": {
         "clsx": "^2.1.1",
         "gsap": "^3.13.0",

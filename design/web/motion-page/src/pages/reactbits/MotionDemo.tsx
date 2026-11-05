@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import DotGrid from '@/vendor/reactbits/DotGrid'
 import { HeroStory } from './HeroStory'
 
-// The two v4 effects in Figma: the dot background behind the hero with the hero story window,
+// The two effects in Figma: the dot background behind the hero with the hero story window,
 // and the dot background behind the call-to-action card.
 function DotBackdrop({ className }: { className: string }) {
   return (

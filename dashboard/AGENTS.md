@@ -34,7 +34,7 @@ bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 
 CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build with
 `NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net`, the tests, and `bun test` in
-`design/theme`.
+`design/tokens`.
 
 ## Architecture
 
@@ -55,7 +55,7 @@ CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build with
   data from `src/app/account/mock-account.ts`. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens in `src/app/globals.css` use Tailwind v4
   namespace names (`--color-*`, `--text-*`, `--radius-*`), but Tailwind is not
-  installed. Color values must match `design/theme` (light mode only).
+  installed. Color values must match `design/tokens/tokens.css` (light mode only).
   The Figma design reference is in `design/dashboard/README.md`.
 - File names are kebab-case. Shared UI lives in `src/components/`.
 - Tests use `bun:test` with happy-dom. They mock `next/navigation` and `fetch`.
