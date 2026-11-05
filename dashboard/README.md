@@ -47,17 +47,18 @@ and `WEB_APP_URL=http://localhost:5173/`. Register the callback URL
 ## Production
 
 ```sh
-NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net NEXT_PUBLIC_API_URL=https://api.keysy.net bun run build
+bun run build
 bun run start
 ```
 
-Production builds require `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL`. Each must be an HTTPS origin
+Production builds require `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL`. `.env.production`
+sets both; a build-time environment variable overrides the file. Each must be an HTTPS origin
 (HTTP localhost is allowed for local checks), without credentials, a path, query,
 or fragment. Next.js embeds these public values in the browser bundle at build time;
 changing only the runtime environment will not change the service destinations.
-Set `NEXT_PUBLIC_API_URL=https://api.keysy.net` at build time for production.
-For container builds, provide it during the image build, not only through runtime
-Fly Secrets. Never put a Supabase key or cookie encryption key in this variable.
+For container builds, an override must reach the image build; runtime Fly Secrets
+or `[env]` values do not change the bundle. Never put a Supabase key or cookie
+encryption key in these variables.
 
 The production application requires a Next.js server; `.next/` is not a static
 site export. `bun run start` uses port 5173 and listens on localhost for a proxy in
@@ -71,6 +72,6 @@ Set the auth service's `AUTH_URL=https://auth.keysy.net` and
 
 ```sh
 bun run lint
-NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net NEXT_PUBLIC_API_URL=https://api.keysy.net bun run build
+bun run build
 bun run test
 ```
