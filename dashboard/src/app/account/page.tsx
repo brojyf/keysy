@@ -16,7 +16,7 @@ const themes = [
 ]
 
 export default function GeneralPage() {
-  const { user, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
+  const { user, organizations, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
   const theme = useTheme()
   const [draft, setDraft] = useState(user.displayName)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'leaving'>('idle')
@@ -106,7 +106,7 @@ export default function GeneralPage() {
           <div><dt>Sign-in method</dt><dd>Google</dd></div>
         </dl>
       </section>
-      <section>
+      {organizations.length > 0 && <section>
         <h2>Agent</h2>
         <dl className="account-rows">
           <div>
@@ -117,7 +117,7 @@ export default function GeneralPage() {
             </dd>
           </div>
         </dl>
-      </section>
+      </section>}
       <section>
         <h2>Appearance</h2>
         <dl className="account-rows">

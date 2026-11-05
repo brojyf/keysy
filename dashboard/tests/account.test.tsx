@@ -17,6 +17,7 @@ const { default: SessionsPage } = await import('../src/app/account/sessions/page
 let browser: Window
 let root: Root
 let container: HTMLDivElement
+const organizations = [{ id: 'org-1', name: 'platform', role: 'developer' as const, memberCount: 12 }, { id: 'org-2', name: 'marketing-site', role: 'admin' as const, memberCount: 4 }, { id: 'org-3', name: 'z-owner', role: 'owner' as const, memberCount: 1 }]
 const user = { id: 'user-id', email: 'member@example.com', displayName: 'Test Member', agentAutoApply: false, memberships: [] }
 const originalFetch = globalThis.fetch
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
@@ -54,7 +55,7 @@ afterEach(async () => {
 
 async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -121,6 +122,7 @@ test('Organizations lists the mock organizations from A to Z', async () => {
   expect(tableRows().map((row) => row.slice(0, 3))).toEqual([
     ['marketing-site', 'Admin', '4'],
     ['platform', 'Developer', '12'],
+    ['z-owner', 'Owner', '1'],
   ])
   expect(headerSort('Organization').getAttribute('aria-sort')).toBe('ascending')
 })
@@ -128,10 +130,10 @@ test('Organizations lists the mock organizations from A to Z', async () => {
 test('the Organization header toggles the sort direction', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   await act(() => headerSort('Organization').querySelector('button')!.click())
-  expect(text('tbody a.account-table-link')).toEqual(['platform', 'marketing-site'])
+  expect(text('tbody a.account-table-link')).toEqual(['z-owner', 'platform', 'marketing-site'])
   expect(headerSort('Organization').getAttribute('aria-sort')).toBe('descending')
   await act(() => headerSort('Organization').querySelector('button')!.click())
-  expect(text('tbody a.account-table-link')).toEqual(['marketing-site', 'platform'])
+  expect(text('tbody a.account-table-link')).toEqual(['marketing-site', 'platform', 'z-owner'])
 })
 
 test('Organizations search filters the rows and shows a no results row', async () => {
@@ -152,7 +154,7 @@ test('clearing the search restores the rows and keeps focus in the field', async
   const field = container.querySelector<HTMLInputElement>('input')!
   expect(field.value).toBe('')
   expect(document.activeElement).toBe(field as unknown as Element)
-  expect(tableRows()).toHaveLength(2)
+  expect(tableRows()).toHaveLength(3)
 })
 
 test('an organization row opens the organization settings', async () => {
@@ -306,7 +308,7 @@ test('submits a trimmed name with Enter and updates the session after saving', a
   await act(async () => finish(Response.json(updated)))
   expect(onUserChange).toHaveBeenCalledWith(updated)
   // The provider owns the user, so simulate its state update.
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, onUserChange, onSignedOut }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
   expect(input().value).toBe('New Name')
   const saveBar = container.querySelector('.account-save-bar')!
   const finishExit = holdExitAnimation(saveBar)

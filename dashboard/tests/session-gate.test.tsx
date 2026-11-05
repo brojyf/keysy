@@ -8,7 +8,8 @@ import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh } from '../src/lib/session-refresh'
 
 let currentPathname = '/secrets'
-mock.module('next/navigation', () => ({ usePathname: () => currentPathname }))
+const router = { replace: mock(() => {}), push: mock(() => {}) }
+mock.module('next/navigation', () => ({ usePathname: () => currentPathname, useRouter: () => router }))
 
 let browser: Window
 let root: Root
@@ -17,6 +18,7 @@ const originalFetch = globalThis.fetch
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
 const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
+let organizationsRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
   currentPathname = '/secrets'
@@ -25,10 +27,12 @@ beforeEach(() => {
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   Object.assign(browser.HTMLElement.prototype, { hidePopover() {} })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
+  organizationsRequest = mock(() => Promise.resolve(Response.json([{ id: 'org-id', name: 'platform', role: 'owner', memberCount: 1 }])))
+  router.replace.mockClear()
   Object.assign(globalThis, {
     window: browser,
     document: browser.document,
-    fetch: sessionRequest,
+    fetch: (url: string, init: RequestInit) => url.endsWith('/v0/orgs') ? organizationsRequest(url, init) : sessionRequest(url, init),
     IS_REACT_ACT_ENVIRONMENT: true,
   })
   container = document.createElement('div')
@@ -484,4 +488,154 @@ test('a context user change updates the account menu name', async () => {
   await act(async () => root.render(<SessionGate><ChangeName /></SessionGate>))
   await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Change name')!.click())
   expect(container.querySelector('.account-menu-name')?.textContent).toBe('Updated Member')
+})
+
+const validUser = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
+const { default: NewOrganizationPage } = await import('../src/app/organizations/new/page')
+const { default: AccountLayout } = await import('../src/app/account/layout')
+const { default: OrganizationsPage } = await import('../src/app/account/organizations/page')
+
+async function renderEmpty(path: string, page: React.ReactNode) {
+  currentPathname = path
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([])))
+  await act(async () => root.render(<SessionGate>{page}</SessionGate>))
+}
+
+function setOrganizationName(value: string) {
+  const input = container.querySelector<HTMLInputElement>('#organization-name')!
+  Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input, value)
+  input.dispatchEvent(new browser.Event('input', { bubbles: true }))
+}
+
+function submitOrganization() {
+  container.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+}
+
+test('checks organizations after the user with credentials and the same signal', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementation((url: string, init: RequestInit) => {
+    expect(sessionRequest).toHaveBeenCalledTimes(1)
+    expect(url).toBe('https://api.keysy.net/v0/orgs')
+    expect(init.credentials).toBe('include')
+    expect(init.signal).toBe(sessionRequest.mock.calls[0][1].signal)
+    return Promise.resolve(Response.json([]))
+  })
+  await renderSessionGate()
+  expect(router.replace).toHaveBeenCalledWith('/organizations/new')
+  expect(container.textContent).toContain('Checking your session...')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  expect(container.querySelector('nav')).toBeNull()
+  expect(container.querySelector('header.topbar')).toBeNull()
+})
+
+test('organization check rejects a member count of zero', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([{ id: '1', name: 'Org', role: 'owner', memberCount: 0 }])))
+  await renderSessionGate()
+  expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
+})
+
+for (const response of ['401', '503', 'network', 'malformed']) {
+  test(`organization check handles ${response}`, async () => {
+    sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/refresh') ? new Response(null, { status: 401 }) : Response.json(validUser)))
+    organizationsRequest.mockImplementation(() => response === 'network' ? Promise.reject(new Error('network')) : Promise.resolve(response === 'malformed' ? Response.json({}) : new Response(null, { status: Number(response) })))
+    await renderSessionGate()
+    expect(container.querySelector('h1')?.textContent).toBe(response === '401' ? 'Sign in to Keysy' : "Can't reach Keysy")
+  })
+}
+
+test('refreshes an expired organization request', async () => {
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/refresh') ? new Response(null, { status: 204 }) : Response.json(validUser)))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })))
+  await renderSessionGate()
+  expect(organizationsRequest).toHaveBeenCalledTimes(2)
+  expect(sessionRequest.mock.calls[1][0]).toEndWith('/v0/auth/refresh')
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('platform')
+})
+
+test('create form validates names and submits one trimmed request, then redirects', async () => {
+  await renderEmpty('/organizations/new', <NewOrganizationPage />)
+  expect(container.querySelector('h1')?.textContent).toBe('Create an organization')
+  const main = container.querySelector('main')!
+  expect(main.getAttribute('aria-labelledby')).toBe(container.querySelector('h1')?.id)
+  expect(container.querySelector('h1')?.id).toBeTruthy()
+  expect(container.querySelector('label')?.textContent).toBe('Name')
+  expect(container.querySelector('.sign-in-footer')?.textContent).toContain('© 2026 Keysy')
+  expect(container.querySelector('.account-menu')).not.toBeNull()
+  expect(container.querySelector('.create-organization-card')?.textContent).not.toContain('Cancel')
+  const button = container.querySelector<HTMLButtonElement>('form button')!
+  expect(button.disabled).toBe(true)
+  await act(() => setOrganizationName(' '.repeat(3)))
+  expect(button.disabled).toBe(true)
+  await act(() => setOrganizationName('😀'.repeat(33)))
+  expect(button.disabled).toBe(true)
+  await act(() => setOrganizationName(`  ${'😀'.repeat(32)}  `))
+  expect(button.disabled).toBe(false)
+  let finish!: (response: Response) => void
+  organizationsRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => { submitOrganization(); submitOrganization() })
+  expect(organizationsRequest).toHaveBeenCalledTimes(2)
+  const [url, init] = organizationsRequest.mock.calls[1]
+  expect(url).toBe('https://api.keysy.net/v0/orgs')
+  expect(init.method).toBe('POST')
+  expect(init.headers).toEqual({ 'Content-Type': 'application/json' })
+  expect(init.body).toBe(JSON.stringify({ name: '😀'.repeat(32) }))
+  expect(button.textContent).toBe('Creating...')
+  expect(container.querySelector<HTMLInputElement>('#organization-name')!.disabled).toBe(true)
+  await act(async () => finish(Response.json({ id: 'new-id', name: 'New org' }, { status: 201 })))
+  expect(router.replace).toHaveBeenCalledWith('/secrets')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  currentPathname = '/secrets'
+  await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('New org')
+})
+
+for (const failure of ['500', 'malformed', '401']) {
+  test(`create handles ${failure}`, async () => {
+    await renderEmpty('/organizations/new', <NewOrganizationPage />)
+    sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
+    organizationsRequest.mockImplementation(() => Promise.resolve(failure === 'malformed' ? Response.json({ id: 42 }, { status: 201 }) : new Response(null, { status: Number(failure) })))
+    await act(() => setOrganizationName('Name'))
+    await act(async () => submitOrganization())
+    if (failure === '401') expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+    else {
+      expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
+      expect(container.querySelector<HTMLInputElement>('input')?.value).toBe('Name')
+      await act(() => setOrganizationName('Other'))
+      expect(container.querySelector('[role="alert"]')).toBeNull()
+    }
+  })
+}
+
+test('sign out on create page ignores a late create response', async () => {
+  await renderEmpty('/organizations/new', <NewOrganizationPage />)
+  let finish!: (response: Response) => void
+  organizationsRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => setOrganizationName('Name'))
+  await act(() => submitOrganization())
+  sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
+  await act(() => signOutButton()!.click())
+  await act(async () => dialogButton('Sign out').click())
+  await act(async () => finish(Response.json({ id: '1', name: 'Name' }, { status: 201 })))
+  expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+})
+
+test('empty account shell hides organization controls and shows empty organizations', async () => {
+  await renderEmpty('/account/organizations', <AccountLayout><OrganizationsPage /></AccountLayout>)
+  expect(container.querySelector('.rail-nav')).toBeNull()
+  expect(container.querySelector('.rail-item')?.getAttribute('data-selected')).toBe('true')
+  expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support'])
+  expect(container.querySelector('.account-new-organization')?.getAttribute('href')).toBe('/organizations/new')
+  expect(container.querySelector('.account-table-empty')?.textContent).toBe('No organizations yet')
+  expect(container.querySelector('input')).toBeNull()
+  expect(container.querySelector('th button')).toBeNull()
+  currentPathname = '/account'
+  await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
+  expect(container.querySelector('button.topbar-org')).toBeNull()
+  expect(container.querySelector('[aria-label="Search"]')).toBeNull()
+  expect(container.querySelector('[aria-label="Notifications"]')).toBeNull()
+  expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
+  expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Session', 'Danger zone', 'Sign out?'])
 })

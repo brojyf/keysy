@@ -686,3 +686,6 @@ tr:hover .account-more:not(:disabled),
     animation: none;
   }
 }
+
+.account-page-header:has(.account-new-organization) { max-width: 720px; width: 100%; }
+.account-new-organization { margin-left: auto; padding: 0 10px; text-decoration: none; }

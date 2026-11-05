@@ -37,6 +37,9 @@
   font: var(--text-page-path--font-weight) var(--text-page-path)/var(--text-page-path--line-height) var(--font-sans);
 }
 
+.topbar-account-only .topbar-logo::after { content: none; }
+.topbar-account-only .topbar-logo { margin-right: auto; }
+
 .topbar-org {
   display: flex;
   align-items: center;
@@ -143,6 +146,10 @@
   padding: 10px 8px;
   border-right: 1px solid var(--color-line);
   background: var(--color-bg);
+}
+
+.rail > .rail-item {
+  margin-top: auto;
 }
 
 .rail-nav {

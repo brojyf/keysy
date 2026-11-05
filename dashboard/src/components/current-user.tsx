@@ -1,10 +1,13 @@
 'use client'
 
 import { createContext, useContext } from 'react'
+import type { Organization } from '../lib/organization'
 import type { SessionUser } from '../lib/session-user'
 
 type CurrentUser = {
   user: SessionUser
+  organizations: Organization[]
+  onOrganizationCreated: (organization: Organization) => void
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
   onSignOutRequest: () => void
