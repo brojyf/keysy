@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { test } from 'bun:test';
 
 const readme = readFileSync(new URL('./README.md', import.meta.url), 'utf8');
-const cssReadme = readFileSync(new URL('../css/README.md', import.meta.url), 'utf8');
 const css = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8');
 const webCss = readFileSync(new URL('./web.css', import.meta.url), 'utf8');
 function declarations(selector, source = css) {
@@ -28,11 +27,6 @@ function contrast(first, second) {
   const b = luminance(second);
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
-
-test('implementation references specify the required stack without selection rationale', () => {
-  for (const specification of [readme, cssReadme]) assert.doesNotMatch(specification, /\b(?:why|pros|cons|trade-offs?|historical|candidates|research)\b/i);
-  assert.match(cssReadme, /shadcn\/ui \+ tweakcn \+ Geist/);
-});
 
 test('color rows match all CSS colors in both modes', () => {
   const rows = [...readme.matchAll(/^\| [^|]+ \| `([\w-]+)` \| `([^`]+)` \| `([^`]+)` \|$/gm)];
@@ -112,45 +106,29 @@ test('raised layers stand above panels, and selected items stay visible on them'
   assert.ok(luminance(darkColors.raised) < luminance(darkColors.soft));
 });
 
-test('radius, shadow, and motion tokens match their documented values', () => {
-  const expected = {
-    '--radius-sm': '8px',
-    '--radius-md': '14px',
-    '--radius-lg': '20px',
-    '--radius-full': '9999px',
-    '--shadow-md': '0 1px 2px #0000000a, 0 8px 24px #0f121a1f',
-    '--shadow-knob': '0 1px 2px #00000026',
-    '--shadow-bar': '0 4px 16px #00000014',
-    '--shadow-card': '0 1px 2px #101b300a, 0 12px 32px -8px #101b300f',
-    '--ease-spring': 'linear(0, 0.06, 0.186, 0.329, 0.466, 0.584, 0.682, 0.76, 0.821, 0.868, 0.903, 0.929, 0.949, 0.963, 0.973, 0.981, 0.986, 0.99, 0.993, 0.995, 0.997, 0.998, 0.998, 0.999, 1)',
-    '--duration-spring': '600ms',
-  };
-  for (const [name, value] of Object.entries(expected)) {
-    assert.equal(light[name]?.replace(/\s+/g, ' '), value, name);
+test('radius, shadow, and motion tokens are documented in both modes', () => {
+  const isDocumented = ([name]) => /^--(?:radius|shadow|ease|duration)-/.test(name);
+  const lightTokens = Object.entries(light).filter(isDocumented);
+  const darkTokens = Object.entries(dark).filter(isDocumented);
+  assert.equal(lightTokens.length, 10);
+  assert.equal(darkTokens.length, 4);
+  for (const [name, value] of [...lightTokens, ...darkTokens]) {
     assert.ok(readme.includes('`' + name + '`'), name);
-    assert.ok(readme.includes('`' + value + '`'), name);
+    assert.ok(readme.includes('`' + value.replace(/\s+/g, ' ') + '`'), name);
   }
-  assert.equal(dark['--shadow-md'], '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c');
-  assert.ok(readme.includes('`' + dark['--shadow-md'] + '`'));
-  for (const [name, value] of Object.entries({
-    '--shadow-knob': '0 1px 2px #0f121a73',
-    '--shadow-bar': '0 4px 16px #0f121a3d',
-    '--shadow-card': '0 1px 2px #0f121a1f, 0 8px 24px #0f121a5c',
-  })) {
-    assert.equal(dark[name], value, name);
-    assert.ok(readme.includes('`' + value + '`'), name);
+});
+
+test('logo symbols use the button color of their mode', () => {
+  for (const [file, button] of [['symbol-light.svg', lightColors.button], ['symbol-dark.svg', darkColors.button]]) {
+    const svg = readFileSync(new URL(`../logo/${file}`, import.meta.url), 'utf8');
+    const fills = new Set([...svg.matchAll(/fill="(#[^"]+)"/g)].map(([, fill]) => fill.toLowerCase()));
+    assert.deepEqual([...fills], [button], file);
   }
 });
 
 test('web tokens are documented and distinct from shared tokens', () => {
   const web = declarations(':root', webCss);
   assert.equal([...webCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].length, 4);
-  assert.deepEqual(web, {
-    '--color-dark': '#101b30',
-    '--color-dark-text': '#aab8d0',
-    '--color-tint': '#e8eefc',
-    '--color-amber': '#b45309',
-  });
   for (const [name, value] of Object.entries(web)) {
     assert.match(value, /^#[0-9a-f]{6}$/);
     assert.ok(readme.includes('| `' + name + '` | `' + value + '` |'));

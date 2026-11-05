@@ -124,9 +124,7 @@
 #sourcey .search-dialog-inner,
 #sourcey .drawer-dropdown-list,
 #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
-.dark #sourcey .drawer-dropdown-trigger[aria-expanded='true'],
-.dark #sourcey .search-dialog-inner,
-.dark #sourcey .drawer-dropdown-list {
+.dark #sourcey .search-dialog-inner {
   background: var(--keysy-raised);
 }
 

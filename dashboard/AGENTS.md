@@ -34,7 +34,7 @@ bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 
 CI (`.github/workflows/ci.yml`, job `Dashboard`) runs lint, the build with
 `NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net`, the tests, and `bun test` in
-`design/theme`.
+`design/tokens`.
 
 ## Architecture
 
