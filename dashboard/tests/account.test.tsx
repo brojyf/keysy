@@ -293,7 +293,9 @@ test('submits a trimmed name with Enter and updates the session after saving', a
   await edit('  New Name  ')
   await act(() => input().form!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })))
   expect(request).toHaveBeenCalledTimes(1)
-  expect(request.mock.calls[0]).toEqual(['https://api.keysy.net/v0/me', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: 'New Name' }) }])
+  expect(request.mock.calls[0]?.[0]).toBe('https://api.keysy.net/v0/me')
+  expect(request.mock.calls[0]?.[1]).toMatchObject({ method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: 'New Name' }) })
+  expect(request.mock.calls[0]?.[1].signal).toBeInstanceOf(AbortSignal)
   expect(input().disabled).toBe(true)
   expect(button('Discard').disabled).toBe(true)
   const savingButton = container.querySelector<HTMLButtonElement>('button[type="submit"]')!

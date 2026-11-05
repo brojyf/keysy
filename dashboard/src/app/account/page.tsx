@@ -4,9 +4,8 @@ import { Check, LoaderCircle, Monitor, Moon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useCurrentUser } from '../../components/current-user'
 import { exitAnimationFinished } from '../../lib/exit-animation'
-import { fetchWithSessionRefresh } from '../../lib/session-refresh'
+import { apiFetch } from '../../lib/api-client'
 import { parseSessionUser } from '../../lib/session-user'
-import { serviceURLs } from '../../lib/service-urls'
 import { setTheme, useTheme, type Theme } from '../../lib/theme'
 
 const themes = [
@@ -57,8 +56,7 @@ export default function GeneralPage() {
     setSaveState('saving')
     setError(false)
     try {
-      const { apiURL, authURL } = serviceURLs()
-      const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, {
+      const response = await apiFetch('/v0/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName: trimmed }),
@@ -85,8 +83,7 @@ export default function GeneralPage() {
     setPendingAutoApply(agentAutoApply)
     setSettingError(false)
     try {
-      const { apiURL, authURL } = serviceURLs()
-      const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, {
+      const response = await apiFetch('/v0/me', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentAutoApply }),
       })
