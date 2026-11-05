@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -63,13 +63,9 @@ func main() {
 		ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second,
 		MaxHeaderBytes: 16 << 10,
 	}
-	listener, err := net.Listen("tcp", server.Addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	requestLogger.Info("server running", "service", "keysy-auth", "port", c.Port)
+	fmt.Printf("- Local:         http://localhost:%s\n", c.Port)
 	go func() {
-		if err := server.Serve(listener); err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
