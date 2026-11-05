@@ -21,7 +21,8 @@ export default function GeneralPage() {
   const [draft, setDraft] = useState(user.displayName)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
-  const [settingSaving, setSettingSaving] = useState(false)
+  const [pendingAutoApply, setPendingAutoApply] = useState<boolean | null>(null)
+  const settingSaving = pendingAutoApply !== null
   const [settingError, setSettingError] = useState(false)
   const trimmed = draft.trim()
   const changed = trimmed !== user.displayName
@@ -66,18 +67,19 @@ export default function GeneralPage() {
 
   async function toggleAutoApply() {
     if (settingSaving || saving) return
-    setSettingSaving(true)
+    const agentAutoApply = !user.agentAutoApply
+    setPendingAutoApply(agentAutoApply)
     setSettingError(false)
     try {
       const { apiURL, authURL } = serviceURLs()
       const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentAutoApply: !user.agentAutoApply }),
+        body: JSON.stringify({ agentAutoApply }),
       })
       if (response.status === 401) { onSignedOut(); return }
       if (!response.ok) throw new Error('Save failed')
       onUserChange(parseSessionUser(await response.json()))
-    } catch { setSettingError(true) } finally { setSettingSaving(false) }
+    } catch { setSettingError(true) } finally { setPendingAutoApply(null) }
   }
 
   return (
@@ -94,9 +96,9 @@ export default function GeneralPage() {
         <h2>Agent</h2>
         <dl className="account-rows">
           <div>
-            <dt>Apply changes automatically <small>(Agent coming soon)</small></dt>
+            <dt>Apply changes automatically</dt>
             <dd className="account-control">
-              <button className="account-switch" type="button" role="switch" aria-checked={user.agentAutoApply} aria-label="Apply changes automatically" disabled={settingSaving || saving} onClick={toggleAutoApply} />
+              <button className="account-switch" type="button" role="switch" aria-checked={pendingAutoApply ?? user.agentAutoApply} aria-label="Apply changes automatically" disabled={settingSaving || saving} onClick={toggleAutoApply} />
               {settingError && <span role="alert">Could not save. Try again.</span>}
             </dd>
           </div>

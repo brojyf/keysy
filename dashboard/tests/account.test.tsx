@@ -52,9 +52,9 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderAccount(pathname: string, page: ReactNode) {
+async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -77,7 +77,7 @@ test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
-  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically (Agent coming soon)', 'Theme', 'Sign out of this device', 'Delete account'])
+  expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
@@ -348,3 +348,48 @@ test('the agent preference is saved and errors leave the setting unchanged', asy
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
   expect(toggle.getAttribute('aria-checked')).toBe('false')
 })
+
+for (const agentAutoApply of [false, true]) {
+  test(`the agent switch responds before saving from ${agentAutoApply}`, async () => {
+    const sessionUser = { ...user, agentAutoApply }
+    let finish!: (response: Response) => void
+    request.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+    await renderAccount('/account', <GeneralPage />, sessionUser)
+    await edit('Draft Name')
+    const toggle = container.querySelector<HTMLButtonElement>('[role="switch"]')!
+    await act(() => toggle.click())
+    expect(toggle.getAttribute('aria-checked')).toBe(String(!agentAutoApply))
+    expect(request.mock.calls[0][1].body).toBe(JSON.stringify({ agentAutoApply: !agentAutoApply }))
+    expect(onUserChange).not.toHaveBeenCalled()
+    expect(toggle.disabled).toBe(true)
+    await act(() => toggle.click())
+    await act(() => input().form!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })))
+    expect(request).toHaveBeenCalledTimes(1)
+    const updated = { ...sessionUser, agentAutoApply: !agentAutoApply }
+    await act(async () => finish(Response.json(updated)))
+    expect(onUserChange).toHaveBeenCalledWith(updated)
+    await renderAccount('/account', <GeneralPage />, updated)
+    expect(toggle.getAttribute('aria-checked')).toBe(String(!agentAutoApply))
+    expect(toggle.disabled).toBe(false)
+    expect(input().value).toBe('Draft Name')
+  })
+
+  test(`the agent switch restores ${agentAutoApply} after a failed save and allows retry`, async () => {
+    let finish!: (response: Response) => void
+    request.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+    await renderAccount('/account', <GeneralPage />, { ...user, agentAutoApply })
+    const toggle = container.querySelector<HTMLButtonElement>('[role="switch"]')!
+    await act(() => toggle.click())
+    expect(toggle.getAttribute('aria-checked')).toBe(String(!agentAutoApply))
+    await act(async () => finish(new Response(null, { status: 503 })))
+    expect(toggle.getAttribute('aria-checked')).toBe(String(agentAutoApply))
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
+    expect(onUserChange).not.toHaveBeenCalled()
+    expect(toggle.disabled).toBe(false)
+    await act(() => toggle.click())
+    expect(toggle.getAttribute('aria-checked')).toBe(String(!agentAutoApply))
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+    expect(request).toHaveBeenCalledTimes(2)
+    await act(async () => finish(new Response(null, { status: 503 })))
+  })
+}
