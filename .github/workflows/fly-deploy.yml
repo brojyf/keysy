@@ -36,7 +36,8 @@ jobs:
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           # Paths that end up in the image: see deploy/Dockerfile and .dockerignore.
-          image='^(api|auth|dashboard|otel|deploy)/|^design/tokens/|^(fly\.toml|\.dockerignore|\.github/workflows/fly-deploy\.yml)$'
+          # The dashboard imports only design/tokens/tokens.css (dashboard/src/app/globals.css).
+          image='^(api|auth|dashboard|otel|deploy)/|^design/tokens/tokens\.css$|^(fly\.toml|\.dockerignore|\.github/workflows/fly-deploy\.yml)$'
           files=$(gh api --paginate "repos/$REPO/commits/$COMMIT_SHA" --jq '.files[].filename')
           if grep -Eq "$image" <<< "$files"; then
             echo "image=true" >> "$GITHUB_OUTPUT"
