@@ -56,7 +56,20 @@ test('account menu keeps its position and stack gaps', () => {
   }
 })
 
-test('the session status uses text in light mode and muted in dark mode', () => {
-  assert.doesNotMatch(rule(files[2], '.account-sessions .account-session-status'), /\bcolor:/)
-  assert.equal(value(rule(files[2], ':root.dark .account-sessions .account-session-status'), 'color'), 'var(--color-muted)')
+test('the session status uses text at 50% in light mode and muted in dark mode', () => {
+  const light = rule(files[2], '.account-sessions .account-session-status')
+  assert.doesNotMatch(light, /\bcolor:/)
+  assert.equal(value(light, 'opacity'), '0.5')
+  const dark = rule(files[2], ':root.dark .account-sessions .account-session-status')
+  assert.equal(value(dark, 'color'), 'var(--color-muted)')
+  assert.equal(value(dark, 'opacity'), '1')
+})
+
+test('account rows and the save bar keep the Figma spacing', () => {
+  assert.equal(value(rule(files[2], '.account-rows > div:not(:last-child)'), 'border-bottom'), '1px solid var(--color-line)')
+  assert.equal(value(rule(files[2], ".account-save-bar [role='status']"), 'margin-right'), '24px')
+})
+
+test('table rows use the hover token', () => {
+  assert.equal(value(rule(files[2], '.account-table tbody tr:hover td:not(.account-table-empty)'), 'background'), 'var(--color-hover)')
 })

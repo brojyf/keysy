@@ -52,7 +52,7 @@ tests, and `bun test` in `design/tokens`.
   both for `next build`. `next.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data. `/` redirects to `/secrets`.
+- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data, with local search and sort. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
   `src/app/globals.css` imports. Tailwind is not installed.
   Read `design/tokens/` before any UI or styling change.

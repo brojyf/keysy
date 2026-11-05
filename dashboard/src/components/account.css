@@ -1,4 +1,4 @@
-/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions. */
+/* Figma 7.2 Account, 7.4 Organizations, 7.5 Sessions, 7.9 Row menu, 7.12 Filtered, 7.13 No results. */
 .dashboard-content:has(> .account) {
   padding: 0;
 }
@@ -118,8 +118,8 @@
   padding: 12px 14px;
 }
 
-.account-rows > div + div {
-  border-top: 1px solid var(--color-line);
+.account-rows > div:not(:last-child) {
+  border-bottom: 1px solid var(--color-line);
 }
 
 .account-rows dt {
@@ -248,6 +248,42 @@
   border-top: 1px solid var(--color-line);
 }
 
+.account-table tbody tr:hover td:not(.account-table-empty) {
+  background: var(--color-hover);
+}
+
+.account-table td.account-table-empty {
+  height: 96px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.account-table td.account-table-actions {
+  padding-block: 6px;
+  text-align: right;
+}
+
+.account-orgs th:is(:nth-child(2), :nth-child(3)) {
+  width: 200px;
+}
+
+.account-orgs th:last-child {
+  width: 56px;
+}
+
+.account-org-row {
+  cursor: pointer;
+}
+
+.account-table-link {
+  color: inherit;
+}
+
+.account-table-link:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
 .account-sessions th:is(:first-child, :nth-child(3)) {
   width: 200px;
 }
@@ -257,11 +293,129 @@
 }
 
 .account-sessions .account-session-status {
-  text-align: right;
+  opacity: 0.5;
 }
 
 :root.dark .account-sessions .account-session-status {
   color: var(--color-muted);
+  opacity: 1;
+}
+
+.account-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 280px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.account-search:focus-within {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+:root.dark .account-search:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.account-search svg {
+  flex-shrink: 0;
+}
+
+.account-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: var(--color-text);
+  background: none;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.account-search input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.account-search button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.account-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.account-sort:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+th[aria-sort='descending'] .account-sort svg {
+  transform: rotate(180deg);
+}
+
+.account-more {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: none;
+  vertical-align: top;
+  cursor: pointer;
+}
+
+.account-more:disabled {
+  cursor: default;
+}
+
+tr:hover .account-more:not(:disabled),
+.account-more:has(+ :popover-open) {
+  color: var(--color-text);
+}
+
+.account-more:has(+ :popover-open) {
+  background: var(--color-soft);
+}
+
+.account-more:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: -2px;
+}
+
+.account-menu.account-row-menu {
+  inset: auto;
+  width: 128px;
+  transform-origin: right top;
+}
+
+@starting-style {
+  .account-menu.account-row-menu:popover-open {
+    transform: scale(0.95);
+  }
 }
 
 .account-name {
@@ -313,7 +467,7 @@
 }
 
 .account-save-bar [role='status'] {
-  margin-right: 16px;
+  margin-right: 24px;
 }
 
 .account-save-bar button {

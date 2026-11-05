@@ -4,7 +4,8 @@ import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
 let currentPathname = '/account'
-mock.module('next/navigation', () => ({ usePathname: () => currentPathname }))
+const routerPush = mock(() => {})
+mock.module('next/navigation', () => ({ usePathname: () => currentPathname, useRouter: () => ({ push: routerPush }) }))
 
 const { CurrentUserContext } = await import('../src/components/current-user')
 
@@ -30,6 +31,7 @@ beforeEach(() => {
   request = mock(() => Promise.resolve(Response.json(user)))
   onUserChange = mock(() => {})
   onSignedOut = mock(() => {})
+  routerPush.mockClear()
   globalThis.fetch = request
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
@@ -84,22 +86,115 @@ test('General shows the session profile', async () => {
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
 
-test('Organizations lists the mock organizations', async () => {
+function tableRows() {
+  return [...container.querySelectorAll('tbody tr')].map((row) => [...row.querySelectorAll('td')].map((cell) => cell.textContent))
+}
+
+async function search(value: string) {
+  const field = container.querySelector<HTMLInputElement>('input')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(field, value)
+    field.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+}
+
+function headerSort(name: string) {
+  return [...container.querySelectorAll<HTMLTableCellElement>('th')].find((cell) => cell.textContent === name)!
+}
+
+test('Organizations lists the mock organizations from A to Z', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
-  expect(text('th')).toEqual(['Organization'])
-  expect(text('tbody td')).toEqual(['platform', 'marketing-site'])
+  expect(text('th')).toEqual(['Organization', 'Role', 'Members', ''])
+  expect(tableRows().map((row) => row.slice(0, 3))).toEqual([
+    ['marketing-site', 'Admin', '4'],
+    ['platform', 'Developer', '12'],
+  ])
+  expect(headerSort('Organization').getAttribute('aria-sort')).toBe('ascending')
 })
 
-test('Sessions lists the mock sessions without a revoke action', async () => {
+test('the Organization header toggles the sort direction', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  await act(() => headerSort('Organization').querySelector('button')!.click())
+  expect(text('tbody a.account-table-link')).toEqual(['platform', 'marketing-site'])
+  expect(headerSort('Organization').getAttribute('aria-sort')).toBe('descending')
+  await act(() => headerSort('Organization').querySelector('button')!.click())
+  expect(text('tbody a.account-table-link')).toEqual(['marketing-site', 'platform'])
+})
+
+test('Organizations search filters the rows and shows a no results row', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  expect(container.querySelector('[aria-label="Clear search"]')).toBeNull()
+  await search('PLAT')
+  expect(text('tbody a.account-table-link')).toEqual(['platform'])
+  await search('acme')
+  expect(tableRows()).toEqual([['No organizations match “acme”']])
+  expect(text('th')).toEqual(['Organization', 'Role', 'Members', ''])
+  expect(container.querySelector('tbody td')?.getAttribute('colspan')).toBe('4')
+})
+
+test('clearing the search restores the rows and keeps focus in the field', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  await search('acme')
+  await act(() => container.querySelector<HTMLButtonElement>('[aria-label="Clear search"]')!.click())
+  const field = container.querySelector<HTMLInputElement>('input')!
+  expect(field.value).toBe('')
+  expect(document.activeElement).toBe(field as unknown as Element)
+  expect(tableRows()).toHaveLength(2)
+})
+
+test('an organization row opens the organization settings', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  expect(container.querySelector('tbody a.account-table-link')?.getAttribute('href')).toBe('/settings')
+  await act(() => container.querySelector<HTMLTableCellElement>('tbody td:nth-child(2)')!.click())
+  expect(routerPush).toHaveBeenCalledWith('/settings')
+})
+
+test('the organization row menu links to the dashboard and settings without opening the row', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  const more = container.querySelector<HTMLButtonElement>('[aria-label="More actions for marketing-site"]')!
+  const menu = document.getElementById(more.getAttribute('popovertarget')!)!
+  expect([...menu.querySelectorAll('a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+    ['Dashboard', '/secrets'],
+    ['Settings', '/settings'],
+  ])
+  await act(() => menu.click())
+  await act(() => more.click())
+  expect(routerPush).not.toHaveBeenCalled()
+})
+
+test('Sessions lists the mock sessions newest first with disabled row actions', async () => {
   await renderAccount('/account/sessions', <SessionsPage />)
   expect(text('th')).toEqual(['Client', 'Device', 'Last used', ''])
-  expect([...container.querySelectorAll('tbody tr')].map((row) => [...row.querySelectorAll('td')].map((cell) => cell.textContent))).toEqual([
+  expect(tableRows()).toEqual([
     ['Web', 'Chrome on macOS', 'Now', 'This session'],
     ['CLI', 'jordan-mbp', '2 hours ago', ''],
     ['Browser extension', 'Chrome on macOS', 'Yesterday', ''],
     ['CLI', 'work-desktop', 'Oct 12', ''],
   ])
-  expect(container.querySelector('button')).toBeNull()
+  expect(headerSort('Last used').getAttribute('aria-sort')).toBe('descending')
+  const more = [...container.querySelectorAll<HTMLButtonElement>('tbody button')]
+  expect(more.map((button) => [button.getAttribute('aria-label'), button.disabled])).toEqual([
+    ['More actions for jordan-mbp', true],
+    ['More actions for Chrome on macOS', true],
+    ['More actions for work-desktop', true],
+  ])
+})
+
+test('the Last used header reverses the sessions', async () => {
+  await renderAccount('/account/sessions', <SessionsPage />)
+  await act(() => headerSort('Last used').querySelector('button')!.click())
+  expect(tableRows().map((row) => row[2])).toEqual(['Oct 12', 'Yesterday', '2 hours ago', 'Now'])
+  expect(headerSort('Last used').getAttribute('aria-sort')).toBe('ascending')
+})
+
+test('Sessions search matches the client or the device', async () => {
+  await renderAccount('/account/sessions', <SessionsPage />)
+  await search('cli')
+  expect(tableRows().map((row) => row[1])).toEqual(['jordan-mbp', 'work-desktop'])
+  await search('chrome')
+  expect(tableRows().map((row) => row[0])).toEqual(['Web', 'Browser extension'])
+  await search('acme')
+  expect(tableRows()).toEqual([['No sessions match “acme”']])
 })
 
 function input() { return container.querySelector<HTMLInputElement>('input')! }
