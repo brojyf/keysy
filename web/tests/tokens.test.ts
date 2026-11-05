@@ -36,7 +36,8 @@ test("non-CSS colors match shared tokens", () => {
 test("styles do not repeat token color literals", () => {
   const tokens = ["tokens.css", "web.css"]
     .map((file) => readFileSync(resolve(import.meta.dir, "../../design/tokens", file), "utf8"))
-    // The landing page has no dark mode. White is not a Keysy color.
+    // The landing page has no dark mode, so its dark terminal keeps literal colors. White is not a Keysy color.
+    // A color becomes a token only if it is a Figma variable or a repeated value, so one-off colors stay in place.
     .map((css) => css.split("\n.dark")[0]).join("\n");
   const colors = [...tokens.matchAll(/--color-[\w-]+:\s*#([0-9a-f]+);/gi)].map(([, hex]) => hex).filter((hex) => hex !== "ffffff");
   expect(colors.length).toBeGreaterThan(0);
