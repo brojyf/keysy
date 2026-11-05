@@ -282,6 +282,8 @@
 }
 
 .theme-switch {
+  position: relative;
+  isolation: isolate;
   display: flex;
   gap: 2px;
   padding: 2px;
@@ -292,7 +294,7 @@
 
 .theme-switch button {
   position: relative;
-  isolation: isolate;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 26px;
@@ -311,11 +313,22 @@
 
 .theme-thumb {
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
+  top: 2px;
+  left: 2px;
+  width: 26px;
+  height: 24px;
+  border-radius: var(--radius-full);
   background: var(--color-soft);
   pointer-events: none;
+}
+
+:is(.theme-switch, .account-theme)[data-theme='light'] > .theme-thumb { transform: translateX(28px); }
+:is(.theme-switch, .account-theme)[data-theme='dark'] > .theme-thumb { transform: translateX(56px); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .theme-thumb {
+    transition: transform 300ms var(--ease-spring), background-color 200ms ease;
+  }
 }
 
 .account-menu-item {

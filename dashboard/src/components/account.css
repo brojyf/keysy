@@ -189,6 +189,8 @@
 }
 
 .account-theme {
+  position: relative;
+  isolation: isolate;
   display: flex;
   gap: 2px;
   padding: 2px;
@@ -199,7 +201,7 @@
 
 .account-theme button {
   position: relative;
-  isolation: isolate;
+  z-index: 1;
   cursor: pointer;
   display: grid;
   place-items: center;

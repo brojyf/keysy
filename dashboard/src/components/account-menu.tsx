@@ -49,10 +49,10 @@ export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRe
         </Link>
         <div className="account-menu-row">
           Theme
-          <div className="theme-switch" role="group" aria-label="Theme">
+          <div className="theme-switch" role="group" aria-label="Theme" data-theme={theme}>
+            <span className="theme-thumb" aria-hidden="true" />
             {themeOptions.map(({ label, Icon }) => (
               <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
-                {theme === label.toLowerCase() && <span className="theme-thumb" aria-hidden="true" />}
                 <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
               </button>
             ))}

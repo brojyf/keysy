@@ -24,65 +24,14 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html.keysy-theme-transition *,
-  html.keysy-theme-transition *::before,
-  html.keysy-theme-transition *::after {
-    transition: none !important;
-    view-transition-name: none !important;
-  }
-
-  html.keysy-theme-transition::view-transition,
-  html.keysy-theme-transition::view-transition-group(*),
-  html.keysy-theme-transition::view-transition-image-pair(*),
-  html.keysy-theme-transition::view-transition-old(*),
-  html.keysy-theme-transition::view-transition-new(*) { pointer-events: none; }
-  html.keysy-theme-transition::view-transition-image-pair(root) { isolation: isolate; }
-  html.keysy-theme-transition::view-transition-old(root),
-  html.keysy-theme-transition::view-transition-new(root) { mix-blend-mode: plus-lighter; }
-  html.keysy-theme-transition::view-transition-old(root) { animation: keysy-theme-fade-out 300ms ease-in-out both; }
-  html.keysy-theme-transition::view-transition-new(root) { animation: keysy-theme-fade-in 300ms ease-in-out both; }
-  @keyframes keysy-theme-fade-out { to { opacity: 0; } }
-  @keyframes keysy-theme-fade-in { from { opacity: 0; } }
-
-  html.keysy-theme-transition .theme-switch .theme-thumb {
-    view-transition-name: keysy-menu-theme-thumb !important;
-  }
-  html.keysy-theme-transition .account-theme .theme-thumb {
-    view-transition-name: keysy-account-theme-thumb !important;
-  }
-
-  /* Capture icons separately so the moving thumb stays below them in the overlay. */
-  html.keysy-theme-transition .theme-switch button[aria-label='System'] svg { view-transition-name: keysy-menu-theme-system !important; }
-  html.keysy-theme-transition .theme-switch button[aria-label='Light'] svg { view-transition-name: keysy-menu-theme-light !important; }
-  html.keysy-theme-transition .theme-switch button[aria-label='Dark'] svg { view-transition-name: keysy-menu-theme-dark !important; }
-  html.keysy-theme-transition .account-theme button[aria-label='System'] svg { view-transition-name: keysy-account-theme-system !important; }
-  html.keysy-theme-transition .account-theme button[aria-label='Light'] svg { view-transition-name: keysy-account-theme-light !important; }
-  html.keysy-theme-transition .account-theme button[aria-label='Dark'] svg { view-transition-name: keysy-account-theme-dark !important; }
-
-  html.keysy-theme-transition::view-transition-group(root) { z-index: 0; }
-  html.keysy-theme-transition::view-transition-group(keysy-menu-theme-thumb),
-  html.keysy-theme-transition::view-transition-group(keysy-account-theme-thumb) {
-    z-index: 1;
-    animation-duration: var(--duration-spring);
-    animation-timing-function: var(--ease-spring);
-  }
-  html.keysy-theme-transition::view-transition-old(keysy-menu-theme-thumb),
-  html.keysy-theme-transition::view-transition-new(keysy-menu-theme-thumb),
-  html.keysy-theme-transition::view-transition-old(keysy-account-theme-thumb),
-  html.keysy-theme-transition::view-transition-new(keysy-account-theme-thumb) {
-    animation: none;
-  }
-  html.keysy-theme-transition::view-transition-group(keysy-menu-theme-system),
-  html.keysy-theme-transition::view-transition-group(keysy-menu-theme-light),
-  html.keysy-theme-transition::view-transition-group(keysy-menu-theme-dark),
-  html.keysy-theme-transition::view-transition-group(keysy-account-theme-system),
-  html.keysy-theme-transition::view-transition-group(keysy-account-theme-light),
-  html.keysy-theme-transition::view-transition-group(keysy-account-theme-dark) {
-    z-index: 2;
-    animation-duration: 0s;
-  }
-  html.keysy-theme-transition::view-transition-old(keysy-menu-theme-thumb),
-  html.keysy-theme-transition::view-transition-old(keysy-account-theme-thumb) {
-    display: none;
+  :root,
+  .topbar,
+  .rail,
+  .account-rows > div,
+  .theme-switch,
+  .account-theme,
+  .theme-switch button,
+  .account-theme button {
+    transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease;
   }
 }

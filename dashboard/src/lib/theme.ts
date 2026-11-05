@@ -1,13 +1,10 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
-import { flushSync } from 'react-dom'
 
 export type Theme = 'system' | 'light' | 'dark'
 
 let selected: Theme | undefined
-let requested: Theme = 'system'
-let transition: ViewTransition | undefined
 const listeners = new Set<() => void>()
 
 export function readTheme(): Theme {
@@ -30,37 +27,15 @@ export function applyTheme(theme: Theme) {
 }
 
 export function setTheme(theme: Theme) {
-  getTheme()
-  requested = theme
   try {
     const { hostname, protocol } = window.location
     const domain = hostname === 'keysy.net' || hostname.endsWith('.keysy.net') ? '; Domain=keysy.net' : ''
     const secure = protocol === 'https:' ? '; Secure' : ''
     document.cookie = `keysy-theme=${theme === 'system' ? '' : theme}; Path=/; SameSite=Lax; Max-Age=${theme === 'system' ? 0 : 31536000}${domain}${secure}`
   } catch { /* Cookies may be unavailable. */ }
-  const update = () => {
-    selected = requested
-    listeners.forEach((listener) => listener())
-    applyTheme(requested)
-  }
-  const root = document.documentElement
-  transition?.skipTransition()
-  if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    transition = undefined
-    root.classList.remove('keysy-theme-transition')
-    update()
-    return
-  }
-  root.classList.add('keysy-theme-transition')
-  const next = document.startViewTransition(() => flushSync(update))
-  transition = next
-  const onFinish = () => {
-    if (transition === next) {
-      root.classList.remove('keysy-theme-transition')
-      transition = undefined
-    }
-  }
-  void next.finished.then(onFinish, onFinish)
+  selected = theme
+  applyTheme(theme)
+  listeners.forEach((listener) => listener())
 }
 
 function subscribe(listener: () => void) {

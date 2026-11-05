@@ -124,10 +124,10 @@ export default function GeneralPage() {
           <div>
             <dt>Theme</dt>
             <dd className="account-control">
-              <span className="account-theme" role="group" aria-label="Theme">
+              <span className="account-theme" role="group" aria-label="Theme" data-theme={theme}>
+                <span className="theme-thumb" aria-hidden="true" />
                 {themes.map(({ label, Icon }) => (
                   <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
-                    {theme === label.toLowerCase() && <span className="theme-thumb" aria-hidden="true" />}
                     <Icon size={14} strokeWidth={2} aria-hidden />
                   </button>
                 ))}
