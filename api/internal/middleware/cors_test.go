@@ -42,11 +42,45 @@ func TestCORS(t *testing.T) {
 		if w.Code != item.status || len(w.Header().Values("Vary")) != 0 || w.Header().Get("Cache-Control") != "no-store" {
 			t.Fatalf("%+v: %d", item, w.Code)
 		}
-		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, PATCH" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {
+		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {
 			t.Fatal("missing preflight headers")
 		}
 		if item.origin == "https://dashboard.keysy.net" && item.status < 400 && (w.Header().Get("Access-Control-Allow-Origin") != item.origin || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
 			t.Fatal("missing credentialed CORS")
 		}
+	}
+}
+
+func TestOrganizationPreflight(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tc := range []struct {
+		path, method string
+		status       int
+	}{
+		{"/v0/orgs", "GET", 204},
+		{"/v0/orgs", "POST", 204},
+		{"/v0/orgs", "PATCH", 403},
+		{"/v0/orgs", "DELETE", 403},
+		{"/v0/me", "POST", 403},
+		{"/v0/me", "PATCH", 204},
+	} {
+		t.Run(tc.path+" "+tc.method, func(t *testing.T) {
+			r := gin.New()
+			r.Use(CORS("https://dashboard.keysy.net"))
+			r.OPTIONS("/v0/me")
+			r.OPTIONS("/v0/orgs")
+			req := httptest.NewRequest("OPTIONS", tc.path, nil)
+			req.Header.Set("Origin", "https://dashboard.keysy.net")
+			req.Header.Set("Access-Control-Request-Method", tc.method)
+			req.Header.Set("Access-Control-Request-Headers", "Content-Type")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tc.status {
+				t.Fatalf("%d %s", w.Code, w.Body.String())
+			}
+			if tc.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH" || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
+				t.Fatal("missing credentialed preflight headers")
+			}
+		})
 	}
 }

@@ -3,6 +3,7 @@ module github.com/brojyf/keysy/api
 go 1.27.3
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/MicahParks/jwkset v0.11.3
 	github.com/MicahParks/keyfunc/v3 v3.8.2
 	github.com/gin-gonic/gin v1.12.0

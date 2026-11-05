@@ -1,10 +1,15 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, the me handler, and profile lookup and update. `PATCH /v0/me` updates the display name or agent auto-apply preference.
-`DATABASE_URL` needs SELECT and UPDATE on `public.profiles`. CORS allows GET
+configuration, middleware, profile lookup and update, and org list/create.
+`PATCH /v0/me` updates the display name or agent auto-apply preference.
+`GET /v0/orgs` lists only the current user's orgs and roles. `POST /v0/orgs`
+creates the org and its owner membership in one transaction.
+`DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
+INSERT on `public.orgs` and `public.members`. The backend database role must
+bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 and PATCH with only the `Content-Type` request header. Use English for
-all repository content. Keep `../openapi/api.yaml` in sync with `/v0/me`.
+all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
 
 Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and
 `go build ./...`. Air loads ignored `.env.local` and serves on port 8081.
@@ -17,4 +22,4 @@ Never log raw paths, queries, headers, cookies, bodies, or JWT errors. Trust no
 incoming request ID or proxy. Authenticate only sealed access cookies with the
 same key and full-name AAD as auth. Verify JWTs locally with cached JWKS and
 strict ES256, issuer, audience, and expiration checks. Sensitive responses use
-no-store. Use request contexts for GORM queries. Do not add refresh or org logic.
+no-store. Use request contexts for GORM queries. Do not add session refresh logic.

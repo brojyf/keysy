@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, and creates an org with the signed-in user as its owner. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -125,6 +125,7 @@ paths:
       summary: CORS preflight for the profile route
       description: |
         Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or PATCH.
+        The response advertises every method the shared CORS configuration allows: GET, POST, and PATCH.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
       parameters:
@@ -145,7 +146,7 @@ paths:
             type: string
       responses:
         '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, PATCH, and Access-Control-Allow-Headers is Content-Type.
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, and Access-Control-Allow-Headers is Content-Type.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -158,7 +159,7 @@ paths:
             Access-Control-Allow-Methods:
               schema:
                 type: string
-                enum: ['GET, PATCH']
+                enum: ['GET, POST, PATCH']
             Access-Control-Allow-Headers:
               schema:
                 type: string
@@ -168,32 +169,151 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
   /v0/orgs:
+    get:
+      tags: [Orgs]
+      security:
+        - accessCookie: []
+      operationId: listOrgs
+      summary: List the signed-in user's orgs
+      description: |
+        Returns every org the signed-in user belongs to, and no other org. The list is sorted by name ascending,
+        then by id ascending. The response is an empty array when the user has no membership. There is no pagination.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string or request body is accepted.
+      responses:
+        '200':
+          description: The orgs the signed-in user belongs to.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrgMembership'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     post:
       tags: [Orgs]
+      security:
+        - accessCookie: []
       operationId: createOrg
       summary: Create an org
-      description: Any signed-in user can create an org and becomes its Super Admin.
+      description: |
+        Creates the org and the signed-in user's owner membership in one transaction. The new org has no other members.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string is accepted. The body must be UTF-8 JSON of at most 1024 bytes.
+        The body must contain exactly one field, name. The service trims whitespace, then accepts 1 to 32 Unicode code points.
+        Names must not contain null characters because PostgreSQL text cannot store them.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [name]
               properties:
                 name:
                   type: string
+                  description: Whitespace is trimmed before the length is checked.
       responses:
         '201':
-          description: Org created.
+          description: The new org.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Org'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/InvalidOrgNameRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    options:
+      tags: [Orgs]
+      operationId: preflightOrgs
+      security: []
+      summary: CORS preflight for the orgs route
+      description: |
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or POST.
+        The response advertises every method the shared CORS configuration allows: GET, POST, and PATCH.
+        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [GET, POST]
+        - name: Access-Control-Request-Headers
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, and Access-Control-Allow-Headers is Content-Type.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                enum: ['GET, POST, PATCH']
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                enum: [Content-Type]
+        '403':
+          $ref: '#/components/responses/InvalidPreflight'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v0/orgs/{orgId}/settings:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -1084,7 +1204,7 @@ components:
       enum: [super_admin, admin, user]
     Me:
       type: object
-      required: [id, email, displayName, agentAutoApply, memberships]
+      required: [id, email, displayName, agentAutoApply]
       properties:
         id:
           type: string
@@ -1097,23 +1217,29 @@ components:
         avatarUrl:
           type: string
           description: Present only when the token contains a valid HTTPS avatar URL.
-        memberships:
-          type: array
-          maxItems: 0
-          items:
-            type: object
     Org:
       type: object
-      required: [id, name, createdAt]
+      required: [id, name]
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-        createdAt:
+    OrgMembership:
+      type: object
+      description: An org the signed-in user belongs to, and the user's role in that org.
+      required: [id, name, role]
+      properties:
+        id:
           type: string
-          format: date-time
+          format: uuid
+        name:
+          type: string
+        role:
+          type: string
+          enum: [owner, admin, developer]
+          description: The database role. This draft does not define the permissions of each role.
     OrgSettings:
       type: object
       required: [expirationReminderDays]
@@ -1610,6 +1736,21 @@ components:
             $ref: '#/components/schemas/Error'
     InvalidDisplayNameRequest:
       description: INVALID_REQUEST or INVALID_DISPLAY_NAME.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidOrgNameRequest:
+      description: INVALID_REQUEST or INVALID_ORG_NAME.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'

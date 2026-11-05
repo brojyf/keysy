@@ -79,6 +79,6 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
 			return
 		}
-		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url"), Memberships: []struct{}{}})
+		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url")})
 	}
 }
