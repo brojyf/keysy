@@ -11,7 +11,7 @@
   justify-items: start;
   min-width: 0;
   padding: 24px;
-  border-left: 1px solid var(--line);
+  border-left: 1px solid var(--color-line);
 }
 .channels .channel-preview {
   justify-self: stretch;
@@ -34,7 +34,7 @@
 .channels article > p {
   font-size: 14px;
   line-height: 21px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .channel-preview {
   container-type: inline-size;
@@ -53,14 +53,14 @@
   overflow: hidden;
 }
 .mini-window {
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: 12px;
   box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--color-dark) 8%, transparent);
 }
 .mini-window small {
   display: block;
-  color: var(--muted);
+  color: var(--color-muted);
   font:
     9.5px "Geist Mono Variable",
     monospace;
@@ -78,12 +78,12 @@
   display: flex;
   gap: calc(4 * var(--u));
   padding: calc(9 * var(--u)) calc(10 * var(--u));
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--color-line);
 }
 .web-app-chrome i,
 .web-app-nav i {
   display: block;
-  background: var(--line);
+  background: var(--color-line);
   border-radius: calc(3 * var(--u));
 }
 .web-app-chrome i {
@@ -95,7 +95,7 @@
   flex-direction: column;
   gap: calc(8 * var(--u));
   padding: calc(11 * var(--u)) calc(10 * var(--u));
-  background: var(--bg);
+  background: var(--color-bg);
 }
 .web-app-nav i {
   width: calc(30 * var(--u));
@@ -103,7 +103,7 @@
 }
 .web-app-nav i:first-child {
   width: calc(38 * var(--u));
-  background: var(--text);
+  background: var(--color-text);
 }
 .web-app-paths {
   display: flex;
@@ -115,7 +115,7 @@
 .web-app-paths code {
   padding: 0 calc(8 * var(--u));
   border-radius: calc(5 * var(--u));
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: calc(8.5 * var(--u));
   line-height: calc(20 * var(--u));
   white-space: nowrap;
@@ -124,7 +124,7 @@
 }
 .web-app-paths .selected {
   background: var(--color-tint);
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .tiny-terminal {
   padding: 12px;
@@ -136,11 +136,11 @@
   font-size: 8px;
 }
 .tiny-terminal span {
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 8px;
 }
 .tiny-terminal b {
-  color: var(--accent);
+  color: var(--color-accent);
   font-size: 7px;
   font-weight: 400;
 }
@@ -154,17 +154,17 @@
 }
 .extension-preview code {
   padding: 8px 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
   border-radius: 7px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .extension-preview > span {
   display: flex;
   align-items: center;
   gap: 5px;
   align-self: end;
-  background: var(--surface);
+  background: var(--color-surface);
   padding: 6px;
   border-radius: 7px;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-dark) 8%, transparent);
@@ -184,9 +184,9 @@
 .coding-agent-channel .channel-icon {
   padding: 9px;
   margin-bottom: 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--color-surface);
   box-shadow: 0 1px 1px color-mix(in srgb, var(--color-dark) 5%, transparent);
 }
 .agent-transcript {
@@ -198,11 +198,11 @@
 }
 .agent-call-dot,
 .agent-status b {
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .agent-result {
   white-space: pre;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .agent-command {
   position: absolute;
@@ -213,13 +213,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border-block: 1px solid var(--line);
+  border-block: 1px solid var(--color-line);
   line-height: 16px;
 }
 .agent-command i {
   width: 6px;
   height: 13px;
-  background: var(--accent);
+  background: var(--color-accent);
   opacity: 0.6;
 }
 .agent-status {
@@ -229,7 +229,7 @@
   line-height: 16px;
 }
 .agent-status span {
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .platform-grid {
   display: grid;
@@ -240,8 +240,8 @@
 .feature-card {
   grid-column: span 2;
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--color-dark) 4%, transparent);
@@ -286,7 +286,7 @@
 .feature-copy p {
   font-size: 14px;
   line-height: 21px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .three-cards {
   display: grid;
@@ -325,12 +325,12 @@
   text-overflow: ellipsis;
 }
 .diff-lines s {
-  color: var(--muted);
+  color: var(--color-muted);
   text-decoration: none;
-  background: var(--soft);
+  background: var(--color-soft);
 }
 .diff-lines b {
-  color: var(--accent);
+  color: var(--color-accent);
   background: var(--color-tint);
   font-weight: 400;
 }
@@ -344,11 +344,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .verified {
   margin-top: 15px;
-  color: var(--accent);
+  color: var(--color-accent);
   font-size: 12px;
 }
 .access-graph {
@@ -365,8 +365,8 @@
   gap: 7px;
   height: 32px;
   padding: 7px 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: 10px;
   box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--color-dark) 8%, transparent);
   font-size: 12px;
@@ -391,7 +391,7 @@
 }
 .graph-person.worker {
   left: 270px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .access-graph .graph-denied {
   left: 268px;
@@ -403,14 +403,14 @@
   justify-content: center;
   border-radius: 999px;
   box-shadow: none;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 10px;
   line-height: 13px;
 }
 .access-graph .graph-policy {
   left: 112px;
   top: 146px;
-  background: var(--button);
+  background: var(--color-button);
   color: white;
 }
 .graph-secret {
@@ -433,7 +433,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--color-line);
   margin-top: 7px;
   padding-top: 7px;
 }
@@ -441,13 +441,13 @@
   font:
     10px "Geist Mono Variable",
     monospace;
-  background: var(--soft);
+  background: var(--color-soft);
   border-radius: 5px;
   padding: 4px 8px;
 }
 .version-list .active-version {
   background: var(--color-tint);
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .service-versions strong {
   display: flex;
@@ -465,7 +465,7 @@
 }
 .service-versions p span {
   margin-left: auto;
-  background: var(--soft);
+  background: var(--color-soft);
   padding: 4px;
   border-radius: 4px;
 }
@@ -506,7 +506,7 @@
   aspect-ratio: 1;
   padding: 0;
   height: 100%;
-  background: var(--button);
+  background: var(--color-button);
   color: white;
   border-radius: 50%;
 }
@@ -514,7 +514,7 @@
   white-space: nowrap;
   font-size: 8px;
   margin-top: 10px;
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .card-glow {
   position: absolute;
@@ -533,14 +533,14 @@
 }
 .key-stores code {
   display: block;
-  background: var(--soft);
+  background: var(--color-soft);
   border-radius: 6px;
   margin-top: 8px;
   padding: 5px 8px;
   font-size: 10px;
 }
 .visual-caption {
-  color: var(--muted);
+  color: var(--color-muted);
   margin-top: 26px;
   position: relative;
   font-size: 10px;
@@ -569,7 +569,7 @@
 .encrypted-values p span {
   display: flex;
   gap: 5px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .chat-preview {
   width: 285px;
@@ -579,7 +579,7 @@
   padding: 9px;
   margin-left: auto;
   width: fit-content;
-  background: var(--soft);
+  background: var(--color-soft);
   border-radius: 8px;
   font-size: 10px;
   margin-bottom: 12px;
@@ -599,7 +599,7 @@
   gap: 16px;
   margin-top: 7px;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .chat-preview dl > div:last-child {
   align-items: center;
@@ -618,7 +618,7 @@
 }
 .chat-preview code {
   font-size: 9px;
-  color: var(--text);
+  color: var(--color-text);
   white-space: nowrap;
 }
 .chat-preview span {
@@ -629,7 +629,7 @@
   background: var(--color-tint);
   border-radius: 999px;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--color-accent);
   font-size: 9px;
 }
 .availability-instances {
@@ -646,10 +646,10 @@
 }
 .availability-instances p span,
 .system-health p span {
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .availability-instances p .muted {
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .system-health {
   position: relative;
@@ -667,7 +667,7 @@
 .uptime > .unavailable {
   position: relative;
   margin-top: 14px;
-  color: var(--accent);
+  color: var(--color-accent);
   font-size: 11px;
 }
 @media (max-width: 1000px) {

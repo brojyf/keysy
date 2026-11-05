@@ -32,8 +32,8 @@
   font:
     12px "Geist Mono Variable",
     monospace;
-  background: var(--soft);
-  border: 1px solid var(--line);
+  background: var(--color-soft);
+  border: 1px solid var(--color-line);
   border-radius: 7px;
 }
 .workflow-steps h3 {
@@ -43,7 +43,7 @@
 }
 .workflow-steps p {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--color-muted);
   margin-top: 2px;
   line-height: 19px;
 }
@@ -67,19 +67,19 @@
   line-height: 26px;
 }
 .code-keyword {
-  color: var(--accent);
+  color: var(--color-accent);
 }
 .code-string {
   color: var(--color-amber);
 }
 .code-comment {
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .sdk-card {
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 16px;
-  background: var(--surface);
+  background: var(--color-surface);
 }
 .sdk-tabs {
   display: grid;
@@ -89,16 +89,16 @@
   display: grid;
   place-items: center;
   height: 72px;
-  background: var(--bg);
+  background: var(--color-bg);
   border: 0;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
 }
 .sdk-tabs button:last-child {
   border-right: 0;
 }
 .sdk-tabs button[aria-selected="true"] {
-  background: var(--surface);
+  background: var(--color-surface);
   border-bottom-color: transparent;
 }
 .sdk-tabs button[aria-selected="false"] img {
@@ -125,10 +125,10 @@
   font:
     11px "Geist Mono Variable",
     monospace;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 .sdk-footer .unavailable {
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-line);
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 12px;
