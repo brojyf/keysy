@@ -35,6 +35,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   if (root) { await act(() => root.unmount()); root = undefined as unknown as Root }
+  setTheme('system')
   await browser.happyDOM.close()
 })
 
