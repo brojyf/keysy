@@ -138,6 +138,39 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('nav')).toBeNull()
 })
 
+function holdExitAnimation(element: Element) {
+  let finish = () => {}
+  const finished = new Promise<void>((resolve) => { finish = resolve })
+  element.getAnimations = () => [{ finished } as unknown as Animation]
+  return finish
+}
+
+test('Cancel keeps the sign out dialog open until its exit animation finishes', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  await renderSessionGate()
+  await act(async () => signOutButton()!.click())
+  const finishExit = holdExitAnimation(signOutDialog())
+  await act(async () => dialogButton('Cancel').click())
+  expect(signOutDialog().open).toBe(true)
+  expect(signOutDialog().dataset.closing).toBe('')
+  await act(async () => finishExit())
+  expect(signOutDialog().open).toBe(false)
+  expect(signOutDialog().dataset.closing).toBeUndefined()
+})
+
+test('Escape closes the sign out dialog through the same exit animation', async () => {
+  sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
+  await renderSessionGate()
+  await act(async () => signOutButton()!.click())
+  const finishExit = holdExitAnimation(signOutDialog())
+  const escape = new browser.Event('cancel', { cancelable: true })
+  await act(async () => { signOutDialog().dispatchEvent(escape) })
+  expect(escape.defaultPrevented).toBe(true)
+  expect(signOutDialog().open).toBe(true)
+  await act(async () => finishExit())
+  expect(signOutDialog().open).toBe(false)
+})
+
 test('sign out asks for confirmation and Cancel keeps the session', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', displayName: 'Test Member' })))
   await renderSessionGate()

@@ -63,6 +63,8 @@
   flex: 1;
   min-width: 0;
   padding: 24px 32px 48px;
+  /* Keeps the save bar's slide from adding page scroll. */
+  overflow-y: clip;
 }
 
 .account-page:has(> .account-table) {
@@ -241,10 +243,44 @@
   box-shadow: var(--shadow-dialog);
   outline: none;
   transform: translate(-50%, -50%);
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sign-out-dialog::backdrop {
   background: color-mix(in srgb, var(--color-text) 24%, transparent);
+  transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sign-out-dialog[data-closing] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.sign-out-dialog[data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+@starting-style {
+  .sign-out-dialog[open] {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  .sign-out-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign-out-dialog {
+    transform: translate(-50%, -50%) !important;
+  }
 }
 
 :root.dark .sign-out-dialog::backdrop {
@@ -499,6 +535,10 @@ tr:hover .account-more:not(:disabled),
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
+.account-name::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+}
+
 .account-name:focus {
   border-color: transparent;
   outline: none;
@@ -530,6 +570,29 @@ tr:hover .account-more:not(:disabled),
   background: var(--color-bg);
   box-shadow: var(--shadow-bar);
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+  transition:
+    transform var(--duration-spring) var(--ease-spring),
+    opacity 200ms ease;
+}
+
+.account-save-bar-leaving {
+  opacity: 0;
+  transform: translateY(calc(100% + 24px));
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@starting-style {
+  .account-save-bar {
+    opacity: 0;
+    transform: translateY(calc(100% + 24px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-save-bar {
+    transform: none !important;
+  }
 }
 
 :root.dark .account-save-bar {

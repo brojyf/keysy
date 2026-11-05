@@ -83,6 +83,22 @@ test('account rows and the save bar keep the Figma spacing', () => {
   assert.equal(value(rule(files[2], ".account-save-bar [role='status']"), 'margin-right'), '24px')
 })
 
+test('the save bar enters on the shared spring and exits below the viewport', () => {
+  const enter = value(rule(files[2], '.account-save-bar'), 'transition')
+  assert.match(enter, /transform var\(--duration-spring\) var\(--ease-spring\)/)
+  assert.equal(value(rule(files[2], '.account-save-bar-leaving'), 'transform'), 'translateY(calc(100% + 24px))')
+  assert.equal(value(rule(files[2], '.account-save-bar-leaving'), 'opacity'), '0')
+})
+
+test('the sign out dialog keeps its centering transform through the exit', () => {
+  assert.equal(value(rule(files[2], '.sign-out-dialog[data-closing]'), 'transform'), 'translate(-50%, -50%) scale(0.95)')
+  assert.equal(value(rule(files[2], '.sign-out-dialog[data-closing]::backdrop'), 'opacity'), '0')
+})
+
+test('Safari credential autofill button stays hidden in the name input', () => {
+  assert.equal(value(rule(files[2], '.account-name::-webkit-credentials-auto-fill-button'), 'visibility'), 'hidden')
+})
+
 test('table rows use the hover token', () => {
   assert.equal(value(rule(files[2], '.account-table tbody tr:hover td:not(.account-table-empty)'), 'background'), 'var(--color-hover)')
 })

@@ -234,6 +234,44 @@ test('editing, discarding, and restoring the name controls the save bar', async 
   expect(container.querySelector('[role="status"]')).toBeNull()
 })
 
+function holdExitAnimation(element: Element) {
+  let finish = () => {}
+  const finished = new Promise<void>((resolve) => { finish = resolve })
+  element.getAnimations = () => [{ finished } as unknown as Animation]
+  return finish
+}
+
+test('the save bar stays mounted until its exit animation finishes', async () => {
+  await renderAccount('/account', <GeneralPage />)
+  await edit('New Name')
+  const saveBar = container.querySelector('.account-save-bar')!
+  expect(saveBar.classList.contains('account-save-bar-leaving')).toBe(false)
+  const finishExit = holdExitAnimation(saveBar)
+  await act(async () => button('Discard').click())
+  expect(saveBar.classList.contains('account-save-bar-leaving')).toBe(true)
+  expect(container.querySelector('.account-sections-editing')).not.toBeNull()
+  await act(async () => finishExit())
+  expect(container.querySelector('.account-save-bar')).toBeNull()
+  expect(container.querySelector('.account-sections-editing')).toBeNull()
+})
+
+test('editing again interrupts the save bar exit', async () => {
+  await renderAccount('/account', <GeneralPage />)
+  await edit('New Name')
+  const saveBar = container.querySelector('.account-save-bar')!
+  const finishExit = holdExitAnimation(saveBar)
+  await act(async () => button('Discard').click())
+  await edit('Another Name')
+  await act(async () => finishExit())
+  expect(container.querySelector('.account-save-bar')).toBe(saveBar)
+  expect(saveBar.classList.contains('account-save-bar-leaving')).toBe(false)
+})
+
+test('the name input opts out of browser autofill', async () => {
+  await renderAccount('/account', <GeneralPage />)
+  expect(input().getAttribute('autocomplete')).toBe('off')
+})
+
 test('validates names by Unicode code points', async () => {
   await renderAccount('/account', <GeneralPage />)
   for (const value of ['   ', '界'.repeat(33), '😀'.repeat(33)]) {

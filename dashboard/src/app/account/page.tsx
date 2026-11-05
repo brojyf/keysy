@@ -1,8 +1,9 @@
 'use client'
 
 import { Monitor, Moon, Sun } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useCurrentUser } from '../../components/current-user'
+import { exitAnimationFinished } from '../../lib/exit-animation'
 import { fetchWithSessionRefresh } from '../../lib/session-refresh'
 import { parseSessionUser } from '../../lib/session-user'
 import { serviceURLs } from '../../lib/service-urls'
@@ -23,6 +24,16 @@ export default function GeneralPage() {
   const trimmed = draft.trim()
   const changed = trimmed !== user.displayName
   const valid = trimmed.length > 0 && [...trimmed].length <= 32
+  const saveBar = useRef<HTMLDivElement>(null)
+  const [saveBarMounted, setSaveBarMounted] = useState(false)
+  if (changed && !saveBarMounted) setSaveBarMounted(true)
+
+  useEffect(() => {
+    if (changed || !saveBar.current) return
+    let interrupted = false
+    void exitAnimationFinished(saveBar.current).then(() => { if (!interrupted) setSaveBarMounted(false) })
+    return () => { interrupted = true }
+  }, [changed])
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,11 +63,11 @@ export default function GeneralPage() {
   }
 
   return (
-    <form className={`account-sections${changed ? ' account-sections-editing' : ''}`} onSubmit={save}>
+    <form className={`account-sections${saveBarMounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <section>
         <h2>Profile</h2>
         <dl className="account-rows">
-          <div><dt><label htmlFor="account-name">Name</label></dt><dd><input id="account-name" className="account-name" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false) }} /></dd></div>
+          <div><dt><label htmlFor="account-name">Name</label></dt><dd><input id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false) }} /></dd></div>
           <div><dt>Email</dt><dd>{user.email}</dd></div>
           <div><dt>Sign-in method</dt><dd>Google</dd></div>
         </dl>
@@ -111,8 +122,8 @@ export default function GeneralPage() {
           </div>
         </dl>
       </section>
-      {changed && (
-        <div className="account-save-bar">
+      {saveBarMounted && (
+        <div ref={saveBar} className={`account-save-bar${changed ? '' : ' account-save-bar-leaving'}`}>
           <span role="status">1 unsaved change</span>
           {error && <span role="alert">Could not save. Try again.</span>}
           <button type="button" disabled={saving} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
