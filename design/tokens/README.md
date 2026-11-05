@@ -1,6 +1,6 @@
 # Keysy tokens
 
-Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the shared file that dashboard and web import. [web.css](web.css) holds only landing page values from the `Keysy / Web` collection in Figma "Keysy — Landing Page". The wiki cannot import them, so its tests read `tokens.css`.
+Tokens are the design variables. The theme is their light and dark values. Figma "Keysy — Secret management" is the source: the `Keysy · Dashboard` and `Keysy · Dashboard · Dark` collections and the `Keysy/*` and `Keysy Dark/*` text styles. [tokens.css](tokens.css) is the shared file that dashboard and web import. [web.css](web.css) holds only landing page values from the `Keysy / Web` collection in Figma "Keysy — Landing Page". The wiki generates its theme from `tokens.css` in `wiki/design-tokens.ts`.
 
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |
@@ -8,16 +8,16 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Panel background | `surface` | `#ffffff` | `#1b1b1b` |
 | Menu, popover, and dialog background | `raised` | `#ffffff` | `#222222` |
 | Primary text | `text` | `#1b1c1e` | `#ededee` |
-| Secondary text | `muted` | `#64666b` | `#acadb1` |
-| Accent text, icons, landing page eyebrow labels, and inline code | `accent` | `#1d4ed8` | `#7aa2ff` |
-| Primary button and logo | `button` | `#2f5aba` | `#638ce5` |
-| Primary button text | `on-button` | `#ffffff` | `#0e1b34` |
+| Secondary text | `muted` | `#64666b` | `#c4c5c9` |
+| Accent text, icons, landing page eyebrow labels, and inline code | `accent` | `#1d4ed8` | `#9dbbff` |
+| Primary button and logo | `button` | `#2f5aba` | `#426ed2` |
+| Primary button text | `on-button` | `#ffffff` | `#ffffff` |
 | Selected or subtle background | `soft` | `#f0f1f3` | `#292929` |
 | Decorative divider | `line` | `#e3e4e6` | `#2e2e2e` |
 | Input border and path separator | `line-strong` | `#e3e4e6` | `#6c6c6c` |
 | Table row hover background | `hover` | `#f7f7fa` | `#222222` |
-| Table header background | `table-header` | `#fcfcfc` | `#1e1e1e` |
-| Destructive text, icons, and buttons | `danger` | `#b3261e` | `#ef9a9a` |
+| Table header background | `table-header` | `#f3f4f6` | `#262626` |
+| Destructive text, icons, and buttons | `danger` | `#b3261e` | `#f4aeae` |
 | Destructive background | `danger-bg` | `#fce8e6` | `#392424` |
 | Avatar background | `avatar-bg` | `#dce6ff` | `#dce6ff` |
 | Avatar text | `avatar-text` | `#2f4aa8` | `#2f4aa8` |

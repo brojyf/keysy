@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig, markdown, openapi } from 'sourcey';
 import { architectureDiagram } from './components/architecture-diagram';
+import { tokenDark, tokenLight, writeWikiTheme } from './design-tokens';
 
 // Lists each operation by its path, in spec order, from the `paths` block's fixed indentation.
 // Specs with several tags get one collapsed group per tag. OPTIONS preflights are left out.
@@ -36,10 +37,10 @@ export default defineConfig({
   components: { ArchitectureDiagram: architectureDiagram },
   theme: {
     name: 'default',
-    colors: { primary: '#1d4ed8', light: '#7aa2ff', dark: '#2f5aba' },
+    colors: { primary: tokenLight['--color-accent']!, light: tokenDark['--color-accent']!, dark: tokenLight['--color-button']! },
     fonts: { sans: 'Geist', mono: 'Geist Mono' },
     layout: { sidebar: '16rem' },
-    css: ['./style.css'],
+    css: [writeWikiTheme(), './style.css'],
   },
   navbar: {
     links: [{ type: 'github', label: 'GitHub', href: 'https://github.com/brojyf/keysy' }],

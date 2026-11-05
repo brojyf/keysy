@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import config from '../sourcey.config';
+import { tokenDark, tokenLight } from '../design-tokens';
 
 const docs = new URL('../', import.meta.url);
 const stylesheet = await Bun.file(new URL('style.css', docs)).text();
-const tokens = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text();
+const theme = await Bun.file(new URL('tokens.generated.css', docs)).text();
 
 function declarations(css: string, selector: string) {
   const escaped = selector.replace('.', '\\.');
@@ -13,10 +14,8 @@ function declarations(css: string, selector: string) {
   return Object.fromEntries([...block![1]!.matchAll(/(--[\w-]+):\s*([^;]+);/g)]
     .map(([, name, value]) => [name!, value!.trim().replace(/\s+/g, ' ')]));
 }
-const tokenLight = declarations(tokens, ':root');
-const tokenDark = declarations(tokens, '.dark');
-const wikiLight = declarations(stylesheet, ':root');
-const wikiDark = declarations(stylesheet, '.dark');
+const wikiLight = declarations(theme, ':root');
+const wikiDark = declarations(theme, '.dark');
 
 function rgb(hex: string) {
   return hex.slice(1).match(/../g)!.map((channel) => parseInt(channel, 16)).join(' ');
@@ -74,7 +73,7 @@ test('navbar uses the native GitHub brand icon with an accessible label', () => 
 
 test('native theme loads both Geist families and the brand stylesheet', () => {
   expect(config.theme?.fonts).toEqual({ sans: 'Geist', mono: 'Geist Mono' });
-  expect(config.theme?.css).toEqual(['./style.css']);
+  expect(config.theme?.css).toEqual(['./tokens.generated.css', './style.css']);
   expect(stylesheet).not.toContain('mintlify');
 });
 
@@ -212,9 +211,9 @@ for (const mode of ['light', 'dark'] as const) {
 test('favicon adapts the Namespace symbol to the browser color scheme', async () => {
   const svg = await Bun.file(new URL(config.favicon!, docs)).text();
   expect(svg).toContain('prefers-color-scheme: dark');
-  expect(svg).toContain('#638ce5');
+  expect(svg).toContain(tokenDark['--color-button']!);
   expect(svg).not.toContain('<text');
   for (const background of ['#ffffff', tokenDark['--color-bg']!]) {
-    expect(contrast(background === '#ffffff' ? '#2f5aba' : '#638ce5', background)).toBeGreaterThanOrEqual(3);
+    expect(contrast(background === '#ffffff' ? tokenLight['--color-button']! : tokenDark['--color-button']!, background)).toBeGreaterThanOrEqual(3);
   }
 });
