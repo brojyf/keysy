@@ -102,3 +102,13 @@ test('Safari credential autofill button stays hidden in the name input', () => {
 test('table rows use the hover token', () => {
   assert.equal(value(rule(files[2], '.account-table tbody tr:hover td:not(.account-table-empty)'), 'background'), 'var(--color-hover)')
 })
+
+
+test('agent switch uses the shared spring and respects reduced motion', () => {
+  const css = files[2]
+  assert.equal(value(rule(css, '.account-switch::after'), 'background'), 'var(--color-surface)')
+  assert.equal(value(rule(css, ':root.dark .account-switch::after'), 'background'), 'var(--color-muted)')
+  assert.match(value(rule(css, '.account-switch::after'), 'transition'), /transform var\(--duration-spring\) var\(--ease-spring\)/)
+  assert.match(value(rule(css, '.account-switch[aria-checked="true"]::after'), 'transform'), /translateX\(14px\)/)
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.account-switch,\s*\.account-switch::after\s*\{\s*transition: none;/)
+})
