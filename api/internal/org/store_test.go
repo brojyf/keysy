@@ -76,16 +76,16 @@ func TestStoreList(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			// The user filter enforces isolation. A second order key stabilizes duplicate names.
-			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
+			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
 			want := []Membership{}
 			failure := errors.New("database unavailable")
 			if scenario == "database error" {
 				query.WillReturnError(failure)
 			} else {
-				rows := sqlmock.NewRows([]string{"id", "name", "role"})
+				rows := sqlmock.NewRows([]string{"id", "name", "role", "member_count"})
 				if scenario == "memberships" {
-					rows.AddRow("org-1", "Platform", "owner").AddRow("org-2", "Platform", "developer").AddRow("org-3", "Services", "admin")
-					want = []Membership{{ID: "org-1", Name: "Platform", Role: "owner"}, {ID: "org-2", Name: "Platform", Role: "developer"}, {ID: "org-3", Name: "Services", Role: "admin"}}
+					rows.AddRow("org-1", "Platform", "owner", 2).AddRow("org-2", "Platform", "developer", 3).AddRow("org-3", "Services", "admin", 1)
+					want = []Membership{{ID: "org-1", Name: "Platform", Role: "owner", MemberCount: 2}, {ID: "org-2", Name: "Platform", Role: "developer", MemberCount: 3}, {ID: "org-3", Name: "Services", Role: "admin", MemberCount: 1}}
 				}
 				query.WillReturnRows(rows)
 			}

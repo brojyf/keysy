@@ -124,9 +124,9 @@ func TestCreate(t *testing.T) {
 func TestList(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	memberships := []Membership{
-		{ID: "org-1", Name: "Alpha", Role: "owner"},
-		{ID: "org-2", Name: "Beta", Role: "developer"},
-		{ID: "org-3", Name: "Gamma", Role: "admin"},
+		{ID: "org-1", Name: "Alpha", Role: "owner", MemberCount: 1},
+		{ID: "org-2", Name: "Beta", Role: "developer", MemberCount: 3},
+		{ID: "org-3", Name: "Gamma", Role: "admin", MemberCount: 8},
 	}
 	for _, scenario := range []string{"memberships", "empty", "store error", "canceled"} {
 		t.Run(scenario, func(t *testing.T) {
@@ -169,6 +169,9 @@ func TestList(t *testing.T) {
 					t.Fatalf("%d %s", w.Code, w.Body.String())
 				}
 			default:
+				if !strings.Contains(w.Body.String(), `"memberCount":`) {
+					t.Fatalf("missing memberCount: %s", w.Body.String())
+				}
 				var body []Membership
 				if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 					t.Fatal(err)

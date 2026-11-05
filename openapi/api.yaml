@@ -176,8 +176,9 @@ paths:
       operationId: listOrgs
       summary: List the signed-in user's orgs
       description: |
-        Returns every org the signed-in user belongs to, and no other org. The list is sorted by name ascending,
-        then by id ascending. The response is an empty array when the user has no membership. There is no pagination.
+        Returns every org the signed-in user belongs to, and no other org. Each memberCount is the total number of
+        rows in public.members for that org. The list is sorted by name ascending, then by id ascending. The response
+        is an empty array when the user has no membership. There is no pagination.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
         A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
         Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
@@ -1229,7 +1230,7 @@ components:
     OrgMembership:
       type: object
       description: An org the signed-in user belongs to, and the user's role in that org.
-      required: [id, name, role]
+      required: [id, name, role, memberCount]
       properties:
         id:
           type: string
@@ -1240,6 +1241,10 @@ components:
           type: string
           enum: [owner, admin, developer]
           description: The database role. This draft does not define the permissions of each role.
+        memberCount:
+          type: integer
+          minimum: 1
+          description: Total number of members in this org.
     OrgSettings:
       type: object
       required: [expirationReminderDays]

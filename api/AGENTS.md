@@ -3,8 +3,8 @@
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
 configuration, middleware, profile lookup and update, and org list/create.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
-`GET /v0/orgs` lists only the current user's orgs and roles. `POST /v0/orgs`
-creates the org and its owner membership in one transaction.
+`GET /v0/orgs` lists the current user's orgs, roles, and total member counts.
+`POST /v0/orgs` creates the org and its owner membership in one transaction.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
 INSERT on `public.orgs` and `public.members`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
