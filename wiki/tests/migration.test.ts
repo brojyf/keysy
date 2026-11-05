@@ -383,6 +383,10 @@ test('design points to the design directory for all design assets', async () => 
   const html = await Bun.file(new URL('design.html', output)).text();
   expect(html).toContain('<code>design/</code>');
   for (const asset of ['Figma', 'logo', 'CSS', 'theme']) expect(html).toContain(asset);
+  for (const href of [
+    'https://www.figma.com/design/i1pA349chi1nTE88kWTR1e/Keysy-%E2%80%94-Secret-management?node-id=82-821',
+    'https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao/Keysy-%E2%80%94-Landing-Page?node-id=0-1',
+  ]) expect(html).toContain(`href="${href}"`);
 });
 
 test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', () => {
