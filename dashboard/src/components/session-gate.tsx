@@ -55,6 +55,10 @@ function SessionGate({ children }: { children: ReactNode }) {
   const redirect = route === '/organizations/new' || route === '/secrets' ? route : null
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
+  const route = user ? organizationRoute(organizations.length, pathname) : null
+  const redirect = route === '/organizations/new' || route === '/secrets' ? route : null
+  useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
+
   function retrySessionCheck() {
     setSessionError(false)
     setUser(undefined)
