@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { fetchWithSessionRefresh, logoutSession } from '../lib/session-refresh'
+import { apiFetch } from '../lib/api-client'
+import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationRoute } from '../lib/organization-route'
 import { parseOrganizations, type Organization } from '../lib/organization'
@@ -15,7 +16,7 @@ import SignOutDialog from './sign-out-dialog'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
-  const { apiURL, authURL } = serviceURLs()
+  const { authURL } = serviceURLs()
   const pathname = usePathname() ?? ''
   const router = useRouter()
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -29,14 +30,14 @@ function SessionGate({ children }: { children: ReactNode }) {
     const controller = new AbortController()
     async function checkSession() {
       try {
-        const response = await fetchWithSessionRefresh(new URL('/v0/me', apiURL).href, authURL, { signal: controller.signal })
+        const response = await apiFetch('/v0/me', { signal: controller.signal })
         if (response.status === 401) {
           if (!controller.signal.aborted) setUser(null)
           return
         }
         if (!response.ok) throw new Error('Session check failed')
         const session = parseSessionUser(await response.json())
-        const orgResponse = await fetchWithSessionRefresh(new URL('/v0/orgs', apiURL).href, authURL, { signal: controller.signal })
+        const orgResponse = await apiFetch('/v0/orgs', { signal: controller.signal })
         if (orgResponse.status === 401) { if (!controller.signal.aborted) setUser(null); return }
         if (!orgResponse.ok) throw new Error('Organizations check failed')
         const orgs = parseOrganizations(await orgResponse.json())
@@ -48,7 +49,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     }
     void checkSession()
     return () => controller.abort()
-  }, [apiURL, authURL, sessionCheck])
+  }, [authURL, sessionCheck])
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
   const redirect = route === '/organizations/new' || route === '/secrets' ? route : null

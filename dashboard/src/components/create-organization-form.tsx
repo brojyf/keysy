@@ -2,8 +2,7 @@
 
 import { useRef, useState, type FormEvent } from 'react'
 import { parseCreatedOrganization } from '../lib/organization'
-import { fetchWithSessionRefresh } from '../lib/session-refresh'
-import { serviceURLs } from '../lib/service-urls'
+import { apiFetch } from '../lib/api-client'
 import { useCurrentUser } from './current-user'
 
 export default function CreateOrganizationForm() {
@@ -22,8 +21,7 @@ export default function CreateOrganizationForm() {
     setPending(true)
     setError(false)
     try {
-      const { apiURL, authURL } = serviceURLs()
-      const response = await fetchWithSessionRefresh(new URL('/v0/orgs', apiURL).href, authURL, {
+      const response = await apiFetch('/v0/orgs', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }),
       })
       if (response.status === 401) { onSignedOut(); return }

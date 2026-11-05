@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
 import GeneralPage from '../src/app/account/page'
 import { useCurrentUser } from '../src/components/current-user'
-import { fetchWithSessionRefresh } from '../src/lib/session-refresh'
+import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
 
 let currentPathname = '/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
@@ -15,10 +15,34 @@ let browser: Window
 let root: Root
 let container: HTMLDivElement
 const originalFetch = globalThis.fetch
+const originalTimeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout')!
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
 const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
 let organizationsRequest: ReturnType<typeof mock>
+let restoreTimeout: (() => void) | undefined
+
+function controlledTimeouts() {
+  const controllers: AbortController[] = []
+  const durations: number[] = []
+  Object.defineProperty(AbortSignal, 'timeout', {
+    configurable: true,
+    value: (milliseconds: number) => {
+      durations.push(milliseconds)
+      const controller = new AbortController()
+      controllers.push(controller)
+      return controller.signal
+    },
+  })
+  restoreTimeout = () => Object.defineProperty(AbortSignal, 'timeout', originalTimeoutDescriptor)
+  return { controllers, durations }
+}
+
+function rejectWhenAborted(_url: string, init: RequestInit) {
+  return new Promise<Response>((_resolve, reject) => {
+    init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true })
+  })
+}
 
 beforeEach(() => {
   currentPathname = '/secrets'
@@ -43,11 +67,82 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
+  restoreTimeout?.()
+  restoreTimeout = undefined
   if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
   else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
   if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
   else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
+})
+
+test('each API attempt, refresh, retry, and logout gets a 20 second timeout', async () => {
+  const { durations } = controlledTimeouts()
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url.endsWith('/v0/me') ? 401 : 204 })))
+  await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/')
+  await logoutSession('https://auth.keysy.net/')
+  expect(durations).toEqual([20_000, 20_000, 20_000, 20_000])
+})
+
+test('a caller abort cancels the fetch signal', async () => {
+  controlledTimeouts()
+  const caller = new AbortController()
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) => {
+    caller.abort()
+    return Promise.resolve(new Response(null, { status: 204, headers: { 'x-signal-aborted': String(init.signal?.aborted) } }))
+  })
+  const response = await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/', { signal: caller.signal })
+  expect(response.headers.get('x-signal-aborted')).toBe('true')
+})
+
+test('a signal already aborted before the call cancels the fetch signal', async () => {
+  controlledTimeouts()
+  const caller = new AbortController()
+  caller.abort()
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) =>
+    Promise.resolve(new Response(null, { status: 204, headers: { 'x-signal-aborted': String(init.signal?.aborted) } })))
+  const response = await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/', { signal: caller.signal })
+  expect(response.headers.get('x-signal-aborted')).toBe('true')
+})
+
+test('caller abort and timeout still abort fetch signals after the response resolves', async () => {
+  const { controllers, durations } = controlledTimeouts()
+  const caller = new AbortController()
+  const signals: (AbortSignal | null | undefined)[] = []
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) => {
+    signals.push(init.signal)
+    return Promise.resolve(new Response(null, { status: 204 }))
+  })
+
+  await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/', { signal: caller.signal })
+  caller.abort()
+  expect(signals[0]?.aborted).toBe(true)
+
+  await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/', { signal: new AbortController().signal })
+  controllers[1].abort()
+  expect(signals[1]?.aborted).toBe(true)
+  expect(durations).toEqual([20_000, 20_000])
+})
+
+test('/v0/me timeout shows the session reachability error', async () => {
+  const { controllers, durations } = controlledTimeouts()
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) => rejectWhenAborted('', init))
+  await renderSessionGate()
+  controllers[0].abort(new DOMException('Timed out', 'TimeoutError'))
+  await act(async () => Promise.resolve())
+  expect(durations).toEqual([20_000])
+  expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
+})
+
+test('/v0/orgs timeout shows the session reachability error', async () => {
+  const { controllers, durations } = controlledTimeouts()
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementation((url: string, init: RequestInit) => rejectWhenAborted(url, init))
+  await renderSessionGate()
+  controllers[1].abort(new DOMException('Timed out', 'TimeoutError'))
+  await act(async () => Promise.resolve())
+  expect(durations).toEqual([20_000, 20_000])
+  expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
 })
 
 async function renderSessionGate() {
@@ -134,7 +229,8 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(logout.textContent).toBe('Signing out...')
   expect(dialogButton('Cancel').disabled).toBe(true)
   expect(sessionRequest.mock.calls[1]?.[0]).toBe('https://auth.keysy.net/v0/auth/logout')
-  expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'include' })
+  expect(sessionRequest.mock.calls[1]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' })
+  expect(sessionRequest.mock.calls[1]?.[1].signal).toBeInstanceOf(AbortSignal)
   logout.click()
   expect(sessionRequest).toHaveBeenCalledTimes(2)
   expect(container.querySelector('h1')).toBeNull()
@@ -393,7 +489,8 @@ test('an expired access token is refreshed once, then the session check is retri
     'https://auth.keysy.net/v0/auth/refresh',
     'https://api.keysy.net/v0/me',
   ])
-  expect(sessionRequest.mock.calls[1]?.[1]).toEqual({ method: 'POST', credentials: 'include' })
+  expect(sessionRequest.mock.calls[1]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' })
+  expect(sessionRequest.mock.calls[1]?.[1].signal).toBeInstanceOf(AbortSignal)
   expect(sessionRequest.mock.calls[2]?.[1].credentials).toBe('include')
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
 })
@@ -512,16 +609,18 @@ function submitOrganization() {
   container.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
 }
 
-test('checks organizations after the user with credentials and the same signal', async () => {
+test('checks organizations after the user with credentials and a combined signal', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
   organizationsRequest.mockImplementation((url: string, init: RequestInit) => {
     expect(sessionRequest).toHaveBeenCalledTimes(1)
     expect(url).toBe('https://api.keysy.net/v0/orgs')
     expect(init.credentials).toBe('include')
-    expect(init.signal).toBe(sessionRequest.mock.calls[0][1].signal)
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+    expect(init.signal).not.toBe(sessionRequest.mock.calls[0][1].signal)
     return Promise.resolve(Response.json([]))
   })
   await renderSessionGate()
+  await act(async () => Promise.resolve())
   expect(router.replace).toHaveBeenCalledWith('/organizations/new')
   expect(container.textContent).toContain('Checking your session...')
   expect(container.querySelector('.dashboard')).toBeNull()
@@ -589,6 +688,21 @@ test('create form validates names and submits one trimmed request, then redirect
   currentPathname = '/secrets'
   await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
   expect(container.querySelector('.topbar-org')?.textContent).toBe('New org')
+})
+
+test('a create timeout shows the form error and sends one POST', async () => {
+  const { controllers, durations } = controlledTimeouts()
+  await renderEmpty('/organizations/new', <NewOrganizationPage />)
+  organizationsRequest.mockImplementation((url: string, init: RequestInit) =>
+    init.method === 'POST' ? rejectWhenAborted(url, init) : Promise.resolve(Response.json([])))
+  await act(() => setOrganizationName('Keep this name'))
+  await act(() => submitOrganization())
+  controllers[2].abort(new DOMException('Timed out', 'TimeoutError'))
+  await act(async () => Promise.resolve())
+  expect(durations).toEqual([20_000, 20_000, 20_000])
+  expect(organizationsRequest.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
+  expect(container.querySelector<HTMLInputElement>('#organization-name')?.value).toBe('Keep this name')
 })
 
 for (const failure of ['500', 'malformed', '401']) {
