@@ -154,7 +154,7 @@ function signOutButton() {
 }
 
 function signOutDialog() {
-  return container.querySelector<HTMLDialogElement>('dialog.sign-out-dialog')!
+  return container.querySelector<HTMLDialogElement>('dialog.dialog')!
 }
 
 function dialogButton(label: string) {
