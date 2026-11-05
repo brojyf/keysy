@@ -1,8 +1,13 @@
 'use client'
 
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { fetchWithSessionRefresh, logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
+import { organizationRoute } from '../lib/organization-route'
+import { parseOrganizations, type Organization } from '../lib/organization'
+import AccountMenu from './account-menu'
+import AuthFooter from './auth-footer'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
@@ -11,6 +16,9 @@ import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
   const { apiURL, authURL } = serviceURLs()
+  const pathname = usePathname() ?? ''
+  const router = useRouter()
+  const [organizations, setOrganizations] = useState<Organization[]>([])
   const [user, setUser] = useState<SessionUser | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
@@ -28,7 +36,11 @@ function SessionGate({ children }: { children: ReactNode }) {
         }
         if (!response.ok) throw new Error('Session check failed')
         const session = parseSessionUser(await response.json())
-        if (!controller.signal.aborted) setUser(session)
+        const orgResponse = await fetchWithSessionRefresh(new URL('/v0/orgs', apiURL).href, authURL, { signal: controller.signal })
+        if (orgResponse.status === 401) { if (!controller.signal.aborted) setUser(null); return }
+        if (!orgResponse.ok) throw new Error('Organizations check failed')
+        const orgs = parseOrganizations(await orgResponse.json())
+        if (!controller.signal.aborted) { setOrganizations(orgs); setUser(session) }
       } catch {
         // Only a 401 means signed out; any other failure must not show sign-in.
         if (!controller.signal.aborted) setSessionError(true)
@@ -37,6 +49,10 @@ function SessionGate({ children }: { children: ReactNode }) {
     void checkSession()
     return () => controller.abort()
   }, [apiURL, authURL, sessionCheck])
+
+  const route = user ? organizationRoute(organizations.length, pathname) : null
+  const redirect = route === '/organizations/new' || route === '/secrets' ? route : null
+  useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
     setSessionError(false)
@@ -82,21 +98,36 @@ function SessionGate({ children }: { children: ReactNode }) {
     )
   }
 
-  if (user === undefined) {
+  if (user === undefined || redirect) {
     return <main className="auth-page"><p role="status">Checking your session...</p></main>
   }
 
   if (user) {
+    const accountMenu = { displayName: user.displayName, avatarUrl: user.avatarUrl, email: user.email, onSignOutRequest: requestSignOut }
     return (
-      <CurrentUserContext.Provider value={{ user, onUserChange: (updated) => setUser((current) => current ? updated : current), onSignedOut: () => setUser(null), onSignOutRequest: requestSignOut }}>
-        <div className="dashboard">
-          <Topbar />
-          <div className="dashboard-body">
-            <Rail displayName={user.displayName} avatarUrl={user.avatarUrl} email={user.email} onSignOutRequest={requestSignOut} />
-            <main className="dashboard-content">{children}</main>
+      <CurrentUserContext.Provider value={{
+        user,
+        organizations,
+        onOrganizationCreated: (organization) => setOrganizations((current) => [...current, organization]),
+        onUserChange: (updated) => setUser((current) => current ? updated : current),
+        onSignedOut: () => setUser(null),
+        onSignOutRequest: requestSignOut,
+      }}>
+        {route === 'create' ? (
+          <>
+            {children}
+            <div className="create-account-menu"><AccountMenu {...accountMenu} selected={false} /></div>
+          </>
+        ) : (
+          <div className="dashboard">
+            <Topbar />
+            <div className="dashboard-body">
+              <Rail {...accountMenu} />
+              <main className="dashboard-content">{children}</main>
+            </div>
           </div>
-          <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
-        </div>
+        )}
+        <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
       </CurrentUserContext.Provider>
     )
   }
@@ -118,12 +149,7 @@ function SessionGate({ children }: { children: ReactNode }) {
           <span aria-disabled="true" title="Coming soon">Privacy Policy</span>.
         </p>
       </section>
-      <footer className="sign-in-footer">
-        <span>© 2026 Keysy</span>
-        <span aria-disabled="true" title="Coming soon">Status</span>
-        <span aria-disabled="true" title="Coming soon">Privacy</span>
-        <span aria-disabled="true" title="Coming soon">Terms</span>
-      </footer>
+      <AuthFooter />
     </main>
   )
 }

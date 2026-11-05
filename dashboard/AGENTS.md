@@ -42,8 +42,7 @@ tests, and `bun test` in `design/tokens`.
   `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
   On 401 it calls `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` once
   (`src/lib/session-refresh.ts`; concurrent 401s share one refresh) and
-  retries. If refresh returns 401, it shows the sign-in screen. On success it shows the shell (`Topbar`,
-  `Rail`, page content). Logout calls `/v0/auth/logout` the same way.
+  retries. If refresh returns 401, it shows the sign-in screen. After `/v0/me`, it checks `/v0/orgs` with the same signal. On success it stores organizations. With none, `/organizations/new` shows the bare create page, `/account` and its descendants show the account-only shell, and other paths redirect to `/organizations/new`. With organizations, `/organizations/new` redirects to `/secrets` and other paths show the full shell (`Topbar`, `Rail`, page content). Logout calls `/v0/auth/logout` the same way.
   There is no Next.js middleware or server-side session check.
 - The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
@@ -52,7 +51,7 @@ tests, and `bun test` in `design/tokens`.
   both for `next build`. `next.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations and Sessions use mock data, with local search and sort. `/` redirects to `/secrets`.
+- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations uses `/v0/orgs` data; Sessions uses mock data. Both use local search and sort. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
   `src/app/globals.css` imports. Tailwind is not installed.
   Read `design/tokens/` before any UI or styling change.
