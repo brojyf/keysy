@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
-import LoginPage, { metadata as loginMetadata } from '../src/app/login/page'
+import SignInPage, { metadata as signInMetadata } from '../src/app/signin/page'
 import { metadata as rootMetadata } from '../src/app/layout'
 import GeneralPage from '../src/app/account/page'
 import * as secretsPage from '../src/app/secrets/page'
@@ -158,29 +158,29 @@ async function renderSessionGate() {
   await act(async () => root.render(<SessionGate><p>This is the Secrets page.</p></SessionGate>))
 }
 
-test('signed-out protected routes replace with login and hide their children', async () => {
+test('signed-out protected routes replace with /signin and hide their children', async () => {
   await renderSessionGate()
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(container.textContent).not.toContain('This is the Secrets page.')
   expect(container.querySelector('a.auth-button')).toBeNull()
-  currentPathname = '/login'
-  await act(async () => root.render(<SessionGate><LoginPage /></SessionGate>))
+  currentPathname = '/signin'
+  await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(router.replace).toHaveBeenCalledTimes(1)
 })
 
-test('pending login hides the sign-in page until the session resolves', async () => {
-  currentPathname = '/login'
+test('pending /signin hides the sign-in page until the session resolves', async () => {
+  currentPathname = '/signin'
   sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
-  await act(async () => root.render(<SessionGate><LoginPage /></SessionGate>))
+  await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
   expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
   expect(container.querySelector('a.auth-button')).toBeNull()
   expect(router.replace).not.toHaveBeenCalled()
 })
 
 for (const hasOrganizations of [true, false]) {
-  test(`signed-in login redirects with organizations: ${hasOrganizations}`, async () => {
-    currentPathname = '/login'
+  test(`signed-in users on /signin redirect with organizations: ${hasOrganizations}`, async () => {
+    currentPathname = '/signin'
     sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
     if (!hasOrganizations) organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([])))
     await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
@@ -190,16 +190,16 @@ for (const hasOrganizations of [true, false]) {
   })
 }
 
-test('signed-out login renders its children without redirect', async () => {
-  currentPathname = '/login'
+test('signed-out users on /signin see its children without redirect', async () => {
+  currentPathname = '/signin'
   await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
   expect(container.textContent).toContain('Login content')
   expect(container.querySelector('.dashboard')).toBeNull()
   expect(router.replace).not.toHaveBeenCalled()
 })
 
-test('login session errors stay on login and retry can resolve signed out', async () => {
-  currentPathname = '/login'
+test('session errors stay on /signin and retry can resolve signed out', async () => {
+  currentPathname = '/signin'
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
   expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
@@ -209,8 +209,8 @@ test('login session errors stay on login and retry can resolve signed out', asyn
   expect(router.replace).not.toHaveBeenCalled()
 })
 
-test('login session retry redirects a verified user', async () => {
-  currentPathname = '/login'
+test('session retry on /signin redirects a verified user', async () => {
+  currentPathname = '/signin'
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503 })))
   await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
   expect(router.replace).not.toHaveBeenCalled()
@@ -225,7 +225,7 @@ test('protected session retry redirects after a confirmed signed-out response', 
   await renderSessionGate()
   expect(router.replace).not.toHaveBeenCalled()
   await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(container.textContent).not.toContain('This is the Secrets page.')
 })
 
@@ -242,9 +242,9 @@ function dialogButton(label: string) {
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
-  currentPathname = '/login'
-  await act(async () => root.render(<SessionGate><LoginPage /></SessionGate>))
-  expect(loginMetadata.title).toBe('Sign in')
+  currentPathname = '/signin'
+  await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
+  expect(signInMetadata.title).toBe('Sign in')
   expect(rootMetadata.title).toEqual({ template: '%s | Keysy', default: 'Keysy' })
   expect(router.replace).not.toHaveBeenCalled()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
@@ -265,8 +265,8 @@ test('shows the sign-in design and links directly to the auth origin', async () 
 test('development calls the separate localhost auth port without a rewrite', async () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
   delete process.env.NEXT_PUBLIC_API_URL
-  currentPathname = '/login'
-  await act(async () => root.render(<SessionGate><LoginPage /></SessionGate>))
+  currentPathname = '/signin'
+  await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
   expect(container.querySelector('a.auth-button')?.getAttribute('href')).toBe('http://localhost:8080/v0/auth/google')
   expect(sessionRequest.mock.calls[0]?.[0]).toBe('http://localhost:8081/v0/me')
   expect(sessionRequest.mock.calls[0]?.[1].credentials).toBe('include')
@@ -312,7 +312,7 @@ test('shows the rail and page content only after server verification', async () 
   expect(browser.sessionStorage.length).toBe(0)
 })
 
-test('logout waits for the server, prevents duplicate requests, and redirects to login', async () => {
+test('logout waits for the server, prevents duplicate requests, and redirects to sign-in', async () => {
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   let finishLogout!: (response: Response) => void
@@ -330,11 +330,11 @@ test('logout waits for the server, prevents duplicate requests, and redirects to
   expect(sessionRequest).toHaveBeenCalledTimes(2)
   expect(container.querySelector('h1')).toBeNull()
   await act(async () => finishLogout(new Response(null, { status: 204 })))
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(container.querySelector('nav')).toBeNull()
   expect(container.textContent).not.toContain('This is the Secrets page.')
-  currentPathname = '/login'
-  await act(async () => root.render(<SessionGate><LoginPage /></SessionGate>))
+  currentPathname = '/signin'
+  await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(router.replace).toHaveBeenCalledTimes(1)
 })
@@ -360,10 +360,10 @@ for (const setting of ['display name', 'agent auto apply']) {
     sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
     await act(() => signOutButton()!.click())
     await act(async () => dialogButton('Sign out').click())
-    expect(router.replace).toHaveBeenCalledWith('/login')
+    expect(router.replace).toHaveBeenCalledWith('/signin')
 
     await act(async () => finishSave(Response.json({ ...user, displayName: 'Updated Member', agentAutoApply: true })))
-    expect(router.replace).toHaveBeenCalledWith('/login')
+    expect(router.replace).toHaveBeenCalledWith('/signin')
     expect(container.querySelector('nav')).toBeNull()
     expect(container.querySelector('.dashboard')).toBeNull()
     expect(container.querySelector('.account-sections')).toBeNull()
@@ -405,11 +405,11 @@ test('logout clears both cookies after an in-flight refresh and stays signed out
   expect([...cookies.keys()]).toEqual([])
   expect(loggedOutBeforeRefresh).toBe(false)
   expect(cookieWrites).toEqual(['refresh', 'logout'])
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
   await act(() => root.unmount())
   root = createRoot(container)
   await renderSessionGate()
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 for (const timing of ['during', 'after']) {
@@ -430,7 +430,7 @@ for (const timing of ['during', 'after']) {
     await act(async () => finishSave(new Response(null, { status: 401 })))
     if (timing === 'during') await act(async () => finishLogout(new Response(null, { status: 204 })))
     expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/refresh'))).toHaveLength(0)
-    expect(router.replace).toHaveBeenCalledWith('/login')
+    expect(router.replace).toHaveBeenCalledWith('/signin')
     expect(container.querySelector('.dashboard')).toBeNull()
     expect(container.querySelector('.account-sections')).toBeNull()
   })
@@ -465,7 +465,7 @@ test('a failed in-flight refresh does not prevent logout', async () => {
   await act(async () => failRefresh(new TypeError('Failed to fetch')))
   expect(logoutCallsBeforeFailure).toBe(0)
   expect(sessionRequest.mock.calls.filter((call) => call[0].endsWith('/v0/auth/logout'))).toHaveLength(1)
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 function holdExitAnimation(element: Element) {
@@ -575,7 +575,7 @@ test('failed logout keeps the signed-in state and allows retry', async () => {
   expect(signOutDialog().querySelector('[role="alert"]')).toBeNull()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(async () => dialogButton('Sign out').click())
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 test('a reload verifies the session again instead of trusting local state', async () => {
@@ -584,7 +584,7 @@ test('a reload verifies the session again instead of trusting local state', asyn
   await act(() => root.unmount())
   root = createRoot(container)
   await renderSessionGate()
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(sessionRequest.mock.calls.map((call) => call[0])).toEqual([
     'https://api.keysy.net/v0/me',
     'https://api.keysy.net/v0/me',
@@ -616,11 +616,11 @@ test('an expired access token is refreshed once, then the session check is retri
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
 })
 
-test('a rejected refresh redirects to login without retrying the session check', async () => {
+test('a rejected refresh redirects to sign-in without retrying the session check', async () => {
   respondByURL(401)
   await renderSessionGate()
   expect(sessionRequest).toHaveBeenCalledTimes(2)
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 test('an unavailable refresh shows an error with retry instead of sign-in', async () => {
@@ -764,7 +764,7 @@ for (const response of ['401', '503', 'network', 'malformed']) {
     sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/refresh') ? new Response(null, { status: 401 }) : Response.json(validUser)))
     organizationsRequest.mockImplementation(() => response === 'network' ? Promise.reject(new Error('network')) : Promise.resolve(response === 'malformed' ? Response.json({}) : new Response(null, { status: Number(response) })))
     await renderSessionGate()
-    if (response === '401') expect(router.replace).toHaveBeenCalledWith('/login')
+    if (response === '401') expect(router.replace).toHaveBeenCalledWith('/signin')
     else {
       expect(container.querySelector('h1')?.textContent).toBe("Can't reach Keysy")
       expect(router.replace).not.toHaveBeenCalled()
@@ -841,7 +841,7 @@ for (const failure of ['500', 'malformed', '401']) {
     organizationsRequest.mockImplementation(() => Promise.resolve(failure === 'malformed' ? Response.json({ id: 42 }, { status: 201 }) : new Response(null, { status: Number(failure) })))
     await act(() => setOrganizationName('Name'))
     await act(async () => submitOrganization())
-    if (failure === '401') expect(router.replace).toHaveBeenCalledWith('/login')
+    if (failure === '401') expect(router.replace).toHaveBeenCalledWith('/signin')
     else {
       expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
       expect(container.querySelector<HTMLInputElement>('input')?.value).toBe('Name')
@@ -865,7 +865,7 @@ test('sign out on create page ignores a late create response', async () => {
   await act(async () => dialogButton('Sign out').click())
   await act(async () => finish(Response.json({ id: '1', name: 'Name' }, { status: 201 })))
   expect(router.push).not.toHaveBeenCalled()
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 test('empty account shell hides organization controls and shows empty organizations', async () => {
@@ -896,7 +896,7 @@ test('empty account shell hides organization controls and shows empty organizati
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
   await act(async () => dialogButton('Sign out').click())
-  expect(router.replace).toHaveBeenCalledWith('/login')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
 for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', 'account']) {

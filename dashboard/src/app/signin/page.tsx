@@ -4,7 +4,7 @@ import { serviceURLs } from '../../lib/service-urls'
 
 export const metadata: Metadata = { title: 'Sign in' }
 
-export default function LoginPage() {
+export default function SignInPage() {
   const { authURL } = serviceURLs()
   return (
     <main className="auth-page" aria-labelledby="sign-in-title">
