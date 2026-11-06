@@ -65,13 +65,13 @@ while :; do sleep 0.1; done
   try {
     const deadline = Date.now() + 10_000;
     let startup = "";
-    while (!startup.includes("\n") && Date.now() < deadline) {
+    while (!startup.includes("build-kept") && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       startup = await readFile(startupFile, "utf8").catch(() => "");
     }
     assert.equal(startup, "route-cache-cleared\nbuild-kept\n");
 
-    // Supervisor signals its direct child. Without exec, that child is the shell, not Next.
+    // Supervisor signals its direct child, so that child must be Next.
     supervisord.kill("SIGTERM");
     await exited;
     assert.equal(await readFile(stoppedFile, "utf8"), "stopped\n");
