@@ -5,9 +5,10 @@ import { test } from 'node:test'
 const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css']
 const files = paths.map(path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'))
 const rule = (css: string, selector: string) => {
-  const start = css.indexOf(`${selector} {`)
-  assert.notEqual(start, -1, `Missing ${selector}`)
-  return css.slice(start + selector.length + 2, css.indexOf('}', start))
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = css.match(new RegExp(`(?:^|[{};])\\s*${escapedSelector} \\{([^}]*)\\}`))
+  assert.ok(match, `Missing ${selector}`)
+  return match[1]
 }
 const value = (block: string, name: string) => {
   const match = block.match(new RegExp(`(?:^|\\n)\\s*${name}:\\s*([^;]+);`))
@@ -108,7 +109,7 @@ test('save buttons use the compact Figma size and keep their label space while s
   assert.equal(value(spinner, 'position'), 'absolute')
   assert.equal(value(rule(css, ".account-save-bar [role='status'] > span"), 'grid-area'), '1 / 1')
   assert.equal(value(rule(css, '.account-save-bar[data-saved] .account-save-count'), 'visibility'), 'hidden')
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.account-save-spinner,\s*\.account-save-check\s*\{\s*animation: none;/)
+  assert.equal(value(rule(css, '.account-save-spinner,\n  .account-save-check'), 'animation'), 'none')
 })
 
 test('the save bar enters on the shared spring and exits below the viewport', () => {

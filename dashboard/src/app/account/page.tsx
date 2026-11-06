@@ -163,10 +163,10 @@ export default function GeneralPage() {
           </span>
           {error && <span role="alert">Could not save. Try again.</span>}
           <button type="button" disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
-          <button type="submit" data-feedback={saving || saved || undefined} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
+          <button type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
             <span className="account-save-label">Save</span>
-            {saving && <LoaderCircle className="account-save-icon account-save-spinner" size={14} strokeWidth={2} aria-hidden />}
-            {saved && <Check className="account-save-icon account-save-check" size={14} strokeWidth={2} aria-hidden />}
+            <LoaderCircle className="account-save-icon account-save-spinner" size={14} strokeWidth={2} aria-hidden />
+            <Check className="account-save-icon account-save-check" size={14} strokeWidth={2} aria-hidden />
           </button>
         </div>
       )}
