@@ -49,6 +49,25 @@ test('theme switches have no track fill or selected shadow', () => {
   }
 })
 
+test('account resize handle keeps a wide hit area but only shows a thin interaction line', () => {
+  const css = files[2]
+  const handle = rule(css, '.account-sidebar-resize')
+  assert.equal(value(handle, 'width'), '8px')
+  assert.equal(value(handle, 'cursor'), 'col-resize')
+  assert.equal(value(handle, 'background'), 'transparent')
+  const line = rule(css, '.account-sidebar-resize::before')
+  assert.equal(value(line, 'width'), '2px')
+  assert.equal(value(line, 'left'), '3px')
+  assert.equal(value(line, 'background'), 'transparent')
+  assert.equal(value(line, 'pointer-events'), 'none')
+  assert.equal(value(rule(css, '.account-sidebar-resize:hover::before,\n.account-resizing .account-sidebar-resize::before'), 'background'), 'var(--color-line-strong)')
+  assert.equal(value(rule(css, '.account-sidebar-resize:focus-visible'), 'outline'), 'none')
+  const focus = rule(css, '.account-sidebar-resize:focus-visible::before')
+  assert.equal(value(focus, 'background'), 'var(--color-button)')
+  assert.equal(value(focus, 'box-shadow'), '0 0 0 1px var(--color-button)')
+  assert.doesNotMatch(css, /\.account-sidebar-resize:(?:hover|focus-visible)\s*\{[^}]*background\s*:/)
+})
+
 test('account menu keeps its position and stack gaps', () => {
   assert.equal(value(rule(files[1], '.account-menu'), 'inset'), 'auto auto 10px 60px')
   assert.equal(value(rule(files[1], '.account-menu-divider'), 'margin'), '2px 0 0')

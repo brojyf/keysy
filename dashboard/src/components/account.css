@@ -32,16 +32,32 @@
   width: 8px;
   cursor: col-resize;
   touch-action: none;
+  background: transparent;
 }
 
-.account-sidebar-resize:hover,
-.account-sidebar-resize:focus-visible {
+.account-sidebar-resize::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.account-sidebar-resize:hover::before,
+.account-resizing .account-sidebar-resize::before {
   background: var(--color-line-strong);
 }
 
 .account-sidebar-resize:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: -2px;
+  outline: none;
+}
+
+.account-sidebar-resize:focus-visible::before {
+  background: var(--color-button);
+  box-shadow: 0 0 0 1px var(--color-button);
 }
 
 .account-sidebar-title {
