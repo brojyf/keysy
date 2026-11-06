@@ -53,3 +53,14 @@ jobs:
           for url in https://api.keysy.net/health https://auth.keysy.net/health https://dashboard.keysy.net/; do
             curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 12 --retry-delay 5 --retry-all-errors "$url"
           done
+      # A stale page can return 200 while its CSS is gone from the origin.
+      # The unique query string skips the Cloudflare cache, so the origin answers.
+      - name: Check the dashboard stylesheets
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        run: |
+          origin=https://dashboard.keysy.net
+          stylesheets=$(curl --fail --silent --show-error --max-time 10 "$origin/" | grep --only-matching '/_next/static/[^"\\]*\.css' | sort --unique)
+          test -n "$stylesheets"
+          for path in $stylesheets; do
+            curl --fail --silent --show-error --output /dev/null --max-time 10 "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+          done
