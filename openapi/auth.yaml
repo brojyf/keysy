@@ -6,11 +6,13 @@ info:
     The authentication API signs users in to Keysy with Google and manages their sessions.
 
     The dashboard is the only client today. The CLI and the browser extension are planned.
+    The dashboard serves its sign-in page at `/signin`. Its Google sign-in button navigates to `GET /v0/auth/google` on this service.
 
     Sign-in is a server-side flow. The browser visits only Keysy and Google. Only the auth service calls Supabase.
     Session tokens stay in encrypted `HttpOnly` cookies. They never reach browser JavaScript or a response body.
 
-    The access cookie lives as long as the access token. When it expires, the dashboard calls `POST /v0/auth/refresh` once and retries.
+    The access cookie lives as long as the access token. When an API request returns 401, the dashboard calls `POST /v0/auth/refresh` once and retries after a successful refresh.
+    After a successful sign-out or a session check that still returns 401 after the refresh attempt, the dashboard navigates to `/signin`.
 
     This is the v0 draft, not a stable release.
 

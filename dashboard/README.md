@@ -1,7 +1,7 @@
 # Keysy dashboard
 
 Next.js App Router application with React, TypeScript 7, and Bun.
-The sign-in screen is a Client Component. The Go auth service remains responsible for authentication.
+The sign-in screen is the `/signin` route. The Go auth service remains responsible for authentication.
 
 ## Sign-in
 
@@ -15,7 +15,7 @@ as its design reference.
 - Account General edits the display name with `PATCH /v0/me`.
 - Logout revokes the current session and clears the auth cookies through `{NEXT_PUBLIC_AUTH_URL}/v0/auth/logout`.
 - Logout shows a pending state and allows retry after a failure.
-- A 401 from the API triggers one `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh shows sign-in; an unavailable one shows retry.
+- A 401 from the API triggers one `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh redirects to `/signin`; an unavailable one shows retry.
 
 Session, refresh, and logout requests use `credentials: 'include'`. The API and auth services allow
 credentialed CORS only from the configured dashboard origin, including on errors.

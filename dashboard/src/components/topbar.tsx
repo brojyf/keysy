@@ -2,6 +2,7 @@
 
 import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
+import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
 // Figma icons with no lucide equivalent.
 function QuestionMarkIcon() {
@@ -22,10 +23,11 @@ function AgentSparkIcon() {
 }
 
 export default function Topbar() {
+  const tooltipRef = useTooltipDismissal()
   const { organizations } = useCurrentUser()
   const organizationName = organizations[0]?.name
   return (
-    <header className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
+    <header ref={tooltipRef} className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
       <span className="topbar-logo">
         <img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
       </span>
@@ -42,19 +44,19 @@ export default function Topbar() {
           </button>
         </>
       )}
-      <button className="topbar-icon-button" type="button" aria-label="Report issue" title="Report issue">
+      <button className="topbar-icon-button" type="button" aria-label="Report issue" data-tooltip="Report issue">
         <Bug size={15} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
       </button>
-      <button className="topbar-icon-button" type="button" aria-label="Support" title="Support">
+      <button className="topbar-icon-button" type="button" aria-label="Support" data-tooltip="Support">
         <QuestionMarkIcon />
+      </button>
+      <button className="topbar-icon-button" type="button" aria-label="Notifications" data-tooltip="Notifications">
+        <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
       </button>
       {organizationName && (
         <>
-          <button className="topbar-icon-button" type="button" aria-label="Notifications" title="Notifications">
-            <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
-          </button>
           <hr className="topbar-divider" />
-          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" title="Open agent">
+          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" data-tooltip="Open agent">
             <AgentSparkIcon />
           </button>
         </>

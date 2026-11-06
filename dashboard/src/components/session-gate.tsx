@@ -7,14 +7,13 @@ import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationRoute } from '../lib/organization-route'
 import { parseOrganizations, type Organization } from '../lib/organization'
-import AccountMenu from './account-menu'
-import AuthFooter from './auth-footer'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
 import SignOutDialog from './sign-out-dialog'
 import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
+import LoadingSkeleton from './loading-skeleton'
 
 function SessionGate({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
@@ -53,7 +52,10 @@ function SessionGate({ children }: { children: ReactNode }) {
   }, [authURL, sessionCheck])
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
-  const redirect = route === '/organizations/new' || route === '/secrets' ? route : null
+  let redirect: string | null = null
+  if (user === null && pathname !== '/signin') redirect = '/signin'
+  else if (user && pathname === '/signin') redirect = organizations.length ? '/secrets' : '/account/organizations'
+  else if (route === '/account/organizations') redirect = route
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
@@ -99,7 +101,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   }
 
   if (user === undefined || redirect) {
-    return <main className="auth-page"><p role="status">Checking your session...</p></main>
+    return <LoadingSkeleton pathname={pathname} />
   }
 
   if (user) {
@@ -113,45 +115,19 @@ function SessionGate({ children }: { children: ReactNode }) {
         onSignedOut: () => setUser(null),
         onSignOutRequest: requestSignOut,
       }}>
-        {route === 'create' ? (
-          <>
-            {children}
-            <div className="create-account-menu"><AccountMenu {...accountMenu} selected={false} /></div>
-          </>
-        ) : (
-          <div className="dashboard">
-            <Topbar />
-            <div className="dashboard-body">
-              <Rail {...accountMenu} />
-              <main className="dashboard-content">{children}</main>
-            </div>
+        <div className="dashboard">
+          <Topbar />
+          <div className="dashboard-body">
+            {route === 'full' && <Rail {...accountMenu} />}
+            <main className="dashboard-content">{children}</main>
           </div>
-        )}
+        </div>
         <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
       </CurrentUserContext.Provider>
     )
   }
 
-  return (
-    <main className="auth-page" aria-labelledby="sign-in-title">
-      <section className="sign-in-card">
-        <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
-        <div className="sign-in-copy">
-          <h1 id="sign-in-title">Sign in to Keysy</h1>
-        </div>
-        <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>
-          <img src="/google-symbol.svg" width="18" height="18" alt="" />
-          Continue with Google
-        </a>
-        <p className="sign-in-terms">
-          By continuing, you agree to the{' '}
-          <span aria-disabled="true" title="Coming soon">Terms</span> and{' '}
-          <span aria-disabled="true" title="Coming soon">Privacy Policy</span>.
-        </p>
-      </section>
-      <AuthFooter />
-    </main>
-  )
+  return children
 }
 
 export default SessionGate

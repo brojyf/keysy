@@ -29,7 +29,6 @@ export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRe
         type="button"
         popoverTarget="account-menu"
         aria-label="Account menu"
-        title="Account"
         data-selected={selected || undefined}
       >
         <span className="rail-avatar">

@@ -1,4 +1,5 @@
 import { Window } from 'happy-dom'
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -72,6 +73,29 @@ test('the account sidebar links to each account page and marks the current one',
   ])
   expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.textContent)).toEqual(['Sessions'])
   expect(container.querySelector('h1')?.textContent).toBe('Sessions')
+})
+
+for (const width of [320, 375, 700]) test(`account uses stacked navigation and compact organization spacing at ${width}px`, async () => {
+  browser.happyDOM.setWindowSize({ width, height: 812 })
+  const style = document.createElement('style')
+  style.textContent = readFileSync(new URL('../src/components/account.css', import.meta.url), 'utf8')
+  document.head.append(style)
+  currentPathname = '/account/organizations'
+  await act(async () => root.render(
+    <CurrentUserContext.Provider value={{ user, organizations: [], onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}>
+      <AccountLayout><OrganizationsPage /></AccountLayout>
+    </CurrentUserContext.Provider>,
+  ))
+  const css = (selector: string) => window.getComputedStyle(container.querySelector(selector)!)
+  expect(css('.account').flexDirection).toBe('column')
+  expect(css('.account-sidebar').width).toBe('auto')
+  expect(css('.account-nav').flexDirection).toBe('row')
+  expect(css('.account-nav').flexWrap).toBe('wrap')
+  expect(css('.account-page').paddingLeft).toBe('16px')
+  expect(css('.account-page').paddingRight).toBe('16px')
+  expect(css('.account-organizations-empty').paddingLeft).toBe('16px')
+  expect(css('.account-organizations-empty').paddingRight).toBe('16px')
+  expect(container.querySelector('.account-new-organization')?.textContent).toBe('New organization')
 })
 
 test('General shows the session profile', async () => {
