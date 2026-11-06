@@ -170,7 +170,7 @@ function dialogButton(label: string) {
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
   await renderSessionGate()
-  expect(document.title).toBe('Sign in — Keysy')
+  expect(document.title).toBe('Sign in | Keysy')
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.textContent).not.toContain('Use your Google account to continue.')
   const login = container.querySelector<HTMLAnchorElement>('a.auth-button')
@@ -198,7 +198,7 @@ test('development calls the separate localhost auth port without a rewrite', asy
 test('shows the rail and page content only after server verification', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
-  expect(document.title).not.toBe('Sign in — Keysy')
+  expect(document.title).not.toBe('Sign in | Keysy')
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
@@ -255,7 +255,7 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('h1')).toBeNull()
   await act(async () => finishLogout(new Response(null, { status: 204 })))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
-  expect(document.title).toBe('Sign in — Keysy')
+  expect(document.title).toBe('Sign in | Keysy')
   expect(container.querySelector('nav')).toBeNull()
 })
 

@@ -8,7 +8,7 @@ import SessionGate from '../components/session-gate'
 import ThemeSync from '../components/theme-sync'
 
 export const metadata: Metadata = {
-  title: { template: '%s — Keysy', default: 'Keysy' },
+  title: { template: '%s | Keysy', default: 'Keysy' },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
