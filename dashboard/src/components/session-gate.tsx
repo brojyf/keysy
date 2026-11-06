@@ -7,7 +7,6 @@ import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationRoute } from '../lib/organization-route'
 import { parseOrganizations, type Organization } from '../lib/organization'
-import AuthFooter from './auth-footer'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
@@ -26,10 +25,6 @@ function SessionGate({ children }: { children: ReactNode }) {
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
   const [sessionCheck, setSessionCheck] = useState(0)
   const signOutDialog = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    if (user === null) document.title = 'Sign in | Keysy'
-  }, [user, pathname])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -57,7 +52,10 @@ function SessionGate({ children }: { children: ReactNode }) {
   }, [authURL, sessionCheck])
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
-  const redirect = route === '/account/organizations' ? route : null
+  let redirect: string | null = null
+  if (user === null && pathname !== '/login') redirect = '/login'
+  else if (user && pathname === '/login') redirect = organizations.length ? '/secrets' : '/account/organizations'
+  else if (route === '/account/organizations') redirect = route
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
@@ -129,26 +127,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     )
   }
 
-  return (
-    <main className="auth-page" aria-labelledby="sign-in-title">
-      <section className="sign-in-card">
-        <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
-        <div className="sign-in-copy">
-          <h1 id="sign-in-title">Sign in to Keysy</h1>
-        </div>
-        <a className="auth-button" href={new URL('/v0/auth/google', authURL).href}>
-          <img src="/google-symbol.svg" width="18" height="18" alt="" />
-          Continue with Google
-        </a>
-        <p className="sign-in-terms">
-          By continuing, you agree to the{' '}
-          <span aria-disabled="true" title="Coming soon">Terms</span> and{' '}
-          <span aria-disabled="true" title="Coming soon">Privacy Policy</span>.
-        </p>
-      </section>
-      <AuthFooter />
-    </main>
-  )
+  return children
 }
 
 export default SessionGate
