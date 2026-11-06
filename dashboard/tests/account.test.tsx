@@ -54,14 +54,96 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
+async function renderAccount(pathname: string, page: ReactNode, sessionUser = user, sessionOrganizations = organizations) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations: sessionOrganizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
   return [...container.querySelectorAll(selector)].map((node) => node.textContent)
 }
+
+test('only an account without organizations can resize its sidebar', async () => {
+  await renderAccount('/account', <div />)
+  expect(container.querySelector('[role="separator"]')).toBeNull()
+  expect(container.querySelector<HTMLElement>('.account-sidebar')!.style.width).toBe('')
+  await renderAccount('/account', <div />, user, [])
+  const handle = container.querySelector<HTMLElement>('[role="separator"]')!
+  expect(handle.getAttribute('aria-label')).toBe('Account')
+  expect(handle.getAttribute('aria-controls')).toBe(container.querySelector('.account-sidebar')!.id)
+  expect(handle.getAttribute('aria-valuemin')).toBe('200')
+  expect(handle.getAttribute('aria-valuemax')).toBe('320')
+  expect(handle.getAttribute('aria-valuenow')).toBe('240')
+  expect(handle.tabIndex).toBe(0)
+})
+
+test('sidebar drag follows the pointer, clamps width, and stops on release or cancellation', async () => {
+  const style = document.createElement('style')
+  style.textContent = readFileSync(new URL('../src/components/account.css', import.meta.url), 'utf8')
+  document.head.append(style)
+  await renderAccount('/account', <div />, user, [])
+  const handle = container.querySelector<HTMLElement>('[role="separator"]')!
+  handle.setPointerCapture = () => {}
+  const pointer = async (type: string, x: number, options: PointerEventInit = {}) => {
+    await act(() => handle.dispatchEvent(new browser.PointerEvent(type, { bubbles: true, pointerId: 1, isPrimary: true, button: 0, clientX: x, ...options })))
+  }
+  const width = () => handle.getAttribute('aria-valuenow')
+  await pointer('pointerdown', 245, { button: 2 })
+  await pointer('pointermove', 300)
+  expect(width()).toBe('240')
+  await pointer('pointerdown', 245, { isPrimary: false })
+  await pointer('pointermove', 300)
+  expect(width()).toBe('240')
+  await pointer('pointerdown', 245)
+  await pointer('pointermove', 265)
+  expect(width()).toBe('260')
+  expect(window.getComputedStyle(container.querySelector('.account-sidebar')!).width).toBe('260px')
+  await pointer('pointermove', 1000)
+  expect(width()).toBe('320')
+  await pointer('pointermove', -1000)
+  expect(width()).toBe('200')
+  await pointer('pointerup', -1000)
+  await pointer('pointermove', 300)
+  expect(width()).toBe('200')
+  for (const stop of ['pointercancel', 'lostpointercapture']) {
+    await pointer('pointerdown', 200)
+    await pointer(stop, 200)
+    await pointer('pointermove', 300)
+    expect(width()).toBe('200')
+  }
+})
+
+test('sidebar width persists across account pages and resets when organizations are present', async () => {
+  const style = document.createElement('style')
+  style.textContent = readFileSync(new URL('../src/components/account.css', import.meta.url), 'utf8')
+  document.head.append(style)
+  await renderAccount('/account', <div />, user, [])
+  const handle = container.querySelector<HTMLElement>('[role="separator"]')!
+  await act(() => handle.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'End', bubbles: true })))
+  await renderAccount('/account/sessions', <div />, user, [])
+  expect(container.querySelector('[role="separator"]')!.getAttribute('aria-valuenow')).toBe('320')
+  expect(window.getComputedStyle(container.querySelector('.account-sidebar')!).width).toBe('320px')
+  await renderAccount('/account/sessions', <div />, user, organizations)
+  expect(container.querySelector('[role="separator"]')).toBeNull()
+  expect(container.querySelector<HTMLElement>('.account-sidebar')!.style.getPropertyValue('--account-sidebar-width')).toBe('')
+  expect(window.getComputedStyle(container.querySelector('.account-sidebar')!).width).toBe('240px')
+})
+
+test('sidebar keyboard resizing respects the bounds', async () => {
+  await renderAccount('/account', <div />, user, [])
+  const handle = container.querySelector<HTMLElement>('[role="separator"]')!
+  const key = async (key: string) => act(() => handle.dispatchEvent(new browser.KeyboardEvent('keydown', { key, bubbles: true })))
+  await key('ArrowRight')
+  expect(handle.getAttribute('aria-valuenow')).toBe('248')
+  await key('ArrowLeft')
+  expect(handle.getAttribute('aria-valuenow')).toBe('240')
+  await key('Home')
+  await key('ArrowLeft')
+  expect(handle.getAttribute('aria-valuenow')).toBe('200')
+  await key('End')
+  await key('ArrowRight')
+  expect(handle.getAttribute('aria-valuenow')).toBe('320')
+})
 
 test('the account sidebar links to each account page and marks the current one', async () => {
   await renderAccount('/account/sessions', <SessionsPage />)
@@ -86,9 +168,12 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
       <AccountLayout><OrganizationsPage /></AccountLayout>
     </CurrentUserContext.Provider>,
   ))
+  const handle = container.querySelector<HTMLElement>('[role="separator"]')!
+  await act(() => handle.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'End', bubbles: true })))
   const css = (selector: string) => window.getComputedStyle(container.querySelector(selector)!)
   expect(css('.account').flexDirection).toBe('column')
   expect(css('.account-sidebar').width).toBe('auto')
+  expect(css('.account-sidebar-resize').display).toBe('none')
   expect(css('.account-nav').flexDirection).toBe('row')
   expect(css('.account-nav').flexWrap).toBe('wrap')
   expect(css('.account-page').paddingLeft).toBe('16px')

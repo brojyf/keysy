@@ -9,14 +9,39 @@
 }
 
 .account-sidebar {
+  --account-sidebar-width: 240px;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex-shrink: 0;
-  width: 240px;
+  width: var(--account-sidebar-width);
   padding: 13px 12px 16px 12px;
   border-right: 1px solid var(--color-line);
   background: var(--color-bg);
+}
+
+.account-resizing { user-select: none; }
+
+.account-sidebar-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.account-sidebar-resize:hover,
+.account-sidebar-resize:focus-visible {
+  background: var(--color-line-strong);
+}
+
+.account-sidebar-resize:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: -2px;
 }
 
 .account-sidebar-title {
@@ -656,6 +681,7 @@ tr:hover .account-more:not(:disabled),
     border-bottom: 1px solid var(--color-line);
   }
   .account-nav { flex-direction: row; flex-wrap: wrap; }
+  .account-sidebar-resize { display: none; }
   .account-page { padding: 20px 16px 32px; }
   .account-organizations-empty { padding: 32px 16px; }
 }
