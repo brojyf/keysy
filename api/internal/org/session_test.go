@@ -35,7 +35,7 @@ func TestOrganizationSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, method := range []string{http.MethodGet, http.MethodPost} {
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodDelete} {
 		for _, scenario := range []string{"valid", "another user", "missing cookie", "bearer only", "expired", "invalid seal", "invalid origin", "keys unavailable"} {
 			t.Run(method+"/"+scenario, func(t *testing.T) {
 				userID := "user-123"
@@ -59,6 +59,13 @@ func TestOrganizationSession(t *testing.T) {
 				}
 				called := false
 				store := organizationStore{
+					delete: func(_ context.Context, gotUserID, orgID string) (bool, error) {
+						called = true
+						if gotUserID != userID || orgID != "20000000-0000-0000-0000-000000000001" {
+							t.Fatal("delete did not use authenticated user or target org")
+						}
+						return true, nil
+					},
 					create: func(_ context.Context, gotUserID, name string) (Organization, error) {
 						called = true
 						if gotUserID != userID {
@@ -86,9 +93,12 @@ func TestOrganizationSession(t *testing.T) {
 				}, func() bool { return scenario != "keys unavailable" })
 				r.GET("/v0/orgs", session, List(store))
 				r.POST("/v0/orgs", session, Create(store))
+				r.DELETE("/v0/orgs/:orgId", session, Delete(store))
 				var req *http.Request
 				if method == http.MethodGet {
 					req = httptest.NewRequest(method, "/v0/orgs", nil)
+				} else if method == http.MethodDelete {
+					req = httptest.NewRequest(method, "/v0/orgs/20000000-0000-0000-0000-000000000001", nil)
 				} else {
 					req = httptest.NewRequest(method, "/v0/orgs", strings.NewReader(`{"name":"Platform"}`))
 					req.Header.Set("Content-Type", "application/json")
@@ -112,6 +122,8 @@ func TestOrganizationSession(t *testing.T) {
 					wantStatus = http.StatusOK
 					if method == http.MethodPost {
 						wantStatus = http.StatusCreated
+					} else if method == http.MethodDelete {
+						wantStatus = http.StatusNoContent
 					}
 				} else if scenario == "invalid origin" {
 					wantStatus = http.StatusForbidden

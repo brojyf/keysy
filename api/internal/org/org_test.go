@@ -17,6 +17,7 @@ import (
 type organizationStore struct {
 	create func(context.Context, string, string) (Organization, error)
 	list   func(context.Context, string) ([]Membership, error)
+	delete func(context.Context, string, string) (bool, error)
 }
 
 func (s organizationStore) Create(ctx context.Context, userID, name string) (Organization, error) {
@@ -25,6 +26,10 @@ func (s organizationStore) Create(ctx context.Context, userID, name string) (Org
 
 func (s organizationStore) List(ctx context.Context, userID string) ([]Membership, error) {
 	return s.list(ctx, userID)
+}
+
+func (s organizationStore) Delete(ctx context.Context, userID, orgID string) (bool, error) {
+	return s.delete(ctx, userID, orgID)
 }
 
 func TestCreate(t *testing.T) {

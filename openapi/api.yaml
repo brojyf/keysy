@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, and creates an org with the signed-in user as its owner. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -125,7 +125,7 @@ paths:
       summary: CORS preflight for the profile route
       description: |
         Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or PATCH.
-        The response advertises every method the shared CORS configuration allows: GET, POST, and PATCH.
+        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
       parameters:
@@ -146,7 +146,7 @@ paths:
             type: string
       responses:
         '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, and Access-Control-Allow-Headers is Content-Type.
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -159,7 +159,7 @@ paths:
             Access-Control-Allow-Methods:
               schema:
                 type: string
-                enum: ['GET, POST, PATCH']
+                enum: ['GET, POST, PATCH, DELETE']
             Access-Control-Allow-Headers:
               schema:
                 type: string
@@ -176,7 +176,7 @@ paths:
       operationId: listOrgs
       summary: List the signed-in user's orgs
       description: |
-        Returns every org the signed-in user belongs to, and no other org. Each memberCount is the total number of
+        Returns every active org the signed-in user belongs to, and no other org. Soft-deleted orgs are excluded. Each memberCount is the total number of
         rows in public.members for that org. The list is sorted by name ascending, then by id ascending. The response
         is an empty array when the user has no membership. There is no pagination.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -272,7 +272,7 @@ paths:
       summary: CORS preflight for the orgs route
       description: |
         Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or POST.
-        The response advertises every method the shared CORS configuration allows: GET, POST, and PATCH.
+        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
       parameters:
@@ -293,7 +293,7 @@ paths:
             type: string
       responses:
         '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, and Access-Control-Allow-Headers is Content-Type.
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -306,7 +306,98 @@ paths:
             Access-Control-Allow-Methods:
               schema:
                 type: string
-                enum: ['GET, POST, PATCH']
+                enum: ['GET, POST, PATCH, DELETE']
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                enum: [Content-Type]
+        '403':
+          $ref: '#/components/responses/InvalidPreflight'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v0/orgs/{orgId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    delete:
+      tags: [Orgs]
+      security:
+        - accessCookie: []
+      operationId: deleteOrg
+      summary: Soft-delete an org
+      description: |
+        Only an owner of the target org can delete it. Sets deleted_at once and preserves memberships and user accounts.
+        Deleted orgs are excluded from GET /v0/orgs. Permanent resource cleanup, including secrets, is tracked in issue #120.
+        Missing orgs, deleted orgs, and requests from non-owners all return ORG_NOT_FOUND.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        orgId must be a UUID. No query string or request body is accepted.
+      responses:
+        '204':
+          description: The org was soft-deleted. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          $ref: '#/components/responses/OrgNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    options:
+      tags: [Orgs]
+      operationId: preflightOrg
+      security: []
+      summary: CORS preflight for the org deletion route
+      description: |
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of DELETE.
+        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
+        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [DELETE]
+        - name: Access-Control-Request-Headers
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                enum: ['GET, POST, PATCH, DELETE']
             Access-Control-Allow-Headers:
               schema:
                 type: string
@@ -1668,6 +1759,21 @@ components:
             message:
               type: string
   responses:
+    OrgNotFound:
+      description: ORG_NOT_FOUND. The org is missing, is deleted, or the caller is not an owner.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     InvalidRequest:
       description: INVALID_REQUEST.
       headers:

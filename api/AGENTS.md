@@ -1,14 +1,16 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, profile lookup and update, and org list/create.
+configuration, middleware, profile lookup and update, and org list/create/delete.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
-`GET /v0/orgs` lists the current user's orgs, roles, and total member counts.
+`GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
+`DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
+Memberships and user accounts remain. Missing, deleted, and non-owner targets return 404.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
-INSERT on `public.orgs` and `public.members`. The backend database role must
+INSERT on `public.orgs` and `public.members`, and UPDATE on `public.orgs`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
-and PATCH with only the `Content-Type` request header. Use English for
+PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
 
 Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and

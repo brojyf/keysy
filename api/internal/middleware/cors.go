@@ -29,14 +29,15 @@ func CORS(webAppURL string) gin.HandlerFunc {
 		if c.Request.Method == http.MethodOptions {
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
 			headers := c.Request.Header.Values("Access-Control-Request-Headers")
-			allowedMethod := len(methods) == 1 && (methods[0] == http.MethodGet ||
+			allowedMethod := len(methods) == 1 && ((methods[0] == http.MethodGet && c.FullPath() != "/v0/orgs/:orgId") ||
 				(methods[0] == http.MethodPatch && c.FullPath() == "/v0/me") ||
-				(methods[0] == http.MethodPost && c.FullPath() == "/v0/orgs"))
+				(methods[0] == http.MethodPost && c.FullPath() == "/v0/orgs") ||
+				(methods[0] == http.MethodDelete && c.FullPath() == "/v0/orgs/:orgId"))
 			if !allowedMethod || len(headers) > 1 || (len(headers) == 1 && !strings.EqualFold(strings.TrimSpace(headers[0]), "content-type")) {
 				Error(c, http.StatusForbidden, "INVALID_REQUEST", "This request uses an unsupported method or header.")
 				return
 			}
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PATCH")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE")
 			c.Header("Access-Control-Allow-Headers", "Content-Type")
 		}
 		c.Header("Access-Control-Allow-Origin", origins[0])

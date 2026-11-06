@@ -17,6 +17,7 @@ import (
 type Organizations interface {
 	Create(context.Context, string, string) (Organization, error)
 	List(context.Context, string) ([]Membership, error)
+	Delete(context.Context, string, string) (bool, error)
 }
 
 func Create(organizations Organizations) gin.HandlerFunc {

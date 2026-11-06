@@ -5,9 +5,11 @@ const schema = await Bun.file(new URL('../database-schema.mdx', import.meta.url)
 const orgColumns = schema.match(/^  orgs \{\n([\s\S]*?)^  \}/m)?.[1]?.trim().split('\n').map((line) => line.trim());
 const memberColumns = schema.match(/^  members \{\n([\s\S]*?)^  \}/m)?.[1]?.trim().split('\n').map((line) => line.trim());
 
-test('the org schema documents only a UUID and a 32-character name', () => {
-  expect(orgColumns).toEqual(['uuid id PK', 'varchar(32) name']);
+test('the org schema documents its identity, name, and soft deletion timestamp', () => {
+  expect(orgColumns).toEqual(['uuid id PK', 'varchar(32) name', 'timestamptz deleted_at']);
   expect(schema).toContain('`gen_random_uuid()`');
+  expect(schema).toContain('`DELETE /v0/orgs/{orgId}`');
+  expect(schema).toContain('excludes the org from `GET /v0/orgs`');
   expect(schema).toContain('Names must contain at least one non-whitespace character. Different orgs can use the same name.');
 });
 
@@ -31,6 +33,6 @@ test('the schema separates the minimal tables from proposed features and documen
   expect(schema).toContain('### Domain model');
   expect(schema).toContain('All other domain tables in this diagram are proposals, not implemented tables.');
   expect(schema).toContain('Both tables enable row level security (RLS), with no policies for direct client access.');
-  expect(schema).toContain('Deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.');
+  expect(schema).toContain('Physically deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.');
   expect(schema).toContain("The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.");
 });

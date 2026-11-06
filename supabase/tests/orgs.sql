@@ -23,9 +23,9 @@ declare
   invalid_name text;
   invalid_role text;
 begin
-  assert (select array_agg(attname::text order by attnum) = array['id', 'name']
+  assert (select array_agg(attname::text order by attnum) = array['id', 'name', 'deleted_at']
     from pg_attribute where attrelid = 'public.orgs'::regclass and attnum > 0 and not attisdropped),
-    'Orgs must contain only id and name';
+    'Orgs must contain only id, name, and deleted_at';
   assert (select array_agg(attname::text order by attnum) = array['org_id', 'user_id', 'role']
     from pg_attribute where attrelid = 'public.members'::regclass and attnum > 0 and not attisdropped),
     'Members must contain only org_id, user_id, and role';
