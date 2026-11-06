@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, type MouseEvent, type ToggleEvent } from 'react'
+import { useRef, useState, type MouseEvent, type ToggleEvent } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import CreateOrganizationDialog from '../../../components/create-organization-dialog'
+import { openDialog } from '../../../lib/dialog-controls'
 import { useCurrentUser } from '../../../components/current-user'
 
 const settingsHref = '/settings'
@@ -18,6 +20,7 @@ function placeRowMenu(event: ToggleEvent<HTMLDivElement>) {
 
 export default function OrganizationsPage() {
   const router = useRouter()
+  const dialog = useRef<HTMLDialogElement>(null)
   const { organizations: allOrganizations } = useCurrentUser()
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
@@ -30,16 +33,28 @@ export default function OrganizationsPage() {
     if (!(event.target as Element).closest('a, button, [popover]')) router.push(settingsHref)
   }
 
+  if (allOrganizations.length === 0) return (
+    <>
+      <div className="account-organizations-empty">
+        <div><h2>No organizations yet</h2><p>Create one, or ask an Admin to add you.</p></div>
+        <button className="account-new-organization" type="button" onClick={() => {
+          if (!dialog.current) return
+          openDialog(dialog.current)
+          dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()
+        }}>New organization</button>
+      </div>
+      <CreateOrganizationDialog ref={dialog} />
+    </>
+  )
+
   return (
     <>
-      {allOrganizations.length > 0 && <TableSearch label="Search organizations" value={query} onChange={setQuery} />}
+      <TableSearch label="Search organizations" value={query} onChange={setQuery} />
       <div className="account-table account-orgs">
         <table>
           <thead>
             <tr>
-              {allOrganizations.length > 0 ? (
-                <SortableHeader label="Organization" direction={direction} onToggle={() => setDirection(direction === 'ascending' ? 'descending' : 'ascending')} />
-              ) : <th>Organization</th>}
+              <SortableHeader label="Organization" direction={direction} onToggle={() => setDirection(direction === 'ascending' ? 'descending' : 'ascending')} />
               <th>Role</th>
               <th>Members</th>
               <th />
@@ -62,7 +77,7 @@ export default function OrganizationsPage() {
                 </td>
               </tr>
             ))}
-            {organizations.length === 0 && <tr><td className="account-table-empty" colSpan={4}>{allOrganizations.length === 0 ? 'No organizations yet' : `No organizations match “${query.trim()}”`}</td></tr>}
+            {organizations.length === 0 && <tr><td className="account-table-empty" colSpan={4}>{`No organizations match “${query.trim()}”`}</td></tr>}
           </tbody>
         </table>
       </div>

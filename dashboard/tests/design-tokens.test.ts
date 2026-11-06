@@ -142,7 +142,13 @@ test('agent switch uses the shared spring and respects reduced motion', () => {
 })
 
 
-test('rail avatar stays at the bottom and create errors use body text', () => {
+test('rail avatar stays at the bottom and dialog text uses body text', () => {
   assert.equal(value(rule(files[1], '.rail > .rail-item'), 'margin-top'), 'auto')
-  assert.equal(value(rule(files[3], '.create-organization-card [role="alert"]'), 'font'), 'var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans)')
+  assert.equal(value(rule(files[4], '.dialog p'), 'font'), 'var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans)')
+})
+
+test('create dialog primary button uses button tokens', () => {
+  const primary = rule(files[4], '.dialog-primary')
+  assert.equal(value(primary, 'background'), 'var(--color-button)')
+  assert.equal(value(primary, 'color'), 'var(--color-on-button)')
 })

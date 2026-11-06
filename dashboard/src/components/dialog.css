@@ -1,3 +1,4 @@
+.dialog-primary,
 .dialog-cancel,
 .dialog-danger {
   height: 28px;
@@ -11,7 +12,8 @@
 }
 
 .dialog-cancel:focus-visible,
-.dialog-danger:focus-visible {
+.dialog-danger:focus-visible,
+.dialog-primary:focus-visible {
   outline: 2px solid var(--color-button);
   outline-offset: 2px;
 }
@@ -110,4 +112,22 @@
 .dialog button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.dialog-primary {
+  border-color: var(--color-button);
+  color: var(--color-on-button);
+  background: var(--color-button);
+}
+
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.dialog-field label {
+  color: var(--color-text);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }

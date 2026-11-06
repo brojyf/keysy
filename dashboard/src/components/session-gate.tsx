@@ -7,7 +7,6 @@ import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationRoute } from '../lib/organization-route'
 import { parseOrganizations, type Organization } from '../lib/organization'
-import AccountMenu from './account-menu'
 import AuthFooter from './auth-footer'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
@@ -57,7 +56,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   }, [authURL, sessionCheck])
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
-  const redirect = route === '/organizations/new' || route === '/secrets' ? route : null
+  const redirect = route === '/account/organizations' ? route : null
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
@@ -117,20 +116,13 @@ function SessionGate({ children }: { children: ReactNode }) {
         onSignedOut: () => setUser(null),
         onSignOutRequest: requestSignOut,
       }}>
-        {route === 'create' ? (
-          <>
-            {children}
-            <div className="create-account-menu"><AccountMenu {...accountMenu} selected={false} /></div>
-          </>
-        ) : (
-          <div className="dashboard">
-            <Topbar />
-            <div className="dashboard-body">
-              <Rail {...accountMenu} />
-              <main className="dashboard-content">{children}</main>
-            </div>
+        <div className="dashboard">
+          <Topbar />
+          <div className="dashboard-body">
+            {route === 'full' && <Rail {...accountMenu} />}
+            <main className="dashboard-content">{children}</main>
           </div>
-        )}
+        </div>
         <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />
       </CurrentUserContext.Provider>
     )

@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { KeyRound, ScrollText, Server, Settings, Users, type LucideIcon } from 'lucide-react'
 import { Fragment } from 'react'
-import { useCurrentUser } from './current-user'
 import AccountMenu, { type AccountMenuProps } from './account-menu'
 
 const railGroups: { href: string; label: string; Icon: LucideIcon }[][] = [
@@ -23,10 +22,9 @@ function isCurrentPath(pathname: string, href: string) {
 
 export default function Rail(accountMenu: AccountMenuProps) {
   const pathname = usePathname() ?? ''
-  const { organizations } = useCurrentUser()
   return (
     <aside className="rail">
-      {organizations.length > 0 && <nav className="rail-nav" aria-label="Main">
+      <nav className="rail-nav" aria-label="Main">
         {railGroups.map((group, index) => (
           <Fragment key={group[0].href}>
             {index > 0 && <hr className="rail-divider" />}
@@ -44,7 +42,7 @@ export default function Rail(accountMenu: AccountMenuProps) {
             ))}
           </Fragment>
         ))}
-      </nav>}
+      </nav>
       <AccountMenu {...accountMenu} selected={isCurrentPath(pathname, '/account')} />
     </aside>
   )
