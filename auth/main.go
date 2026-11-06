@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/brojyf/keysy/auth/internal/config"
+	"github.com/brojyf/keysy/auth/internal/health"
 	"github.com/brojyf/keysy/auth/internal/login"
 	"github.com/brojyf/keysy/auth/internal/middleware"
 	"github.com/brojyf/keysy/auth/internal/telemetry"
@@ -53,6 +54,8 @@ func main() {
 	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
+	// Registered before the middleware so probes add no spans, metrics, or logs.
+	router.GET("/health", health.Get)
 	router.Use(middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()), middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger))
 	router.HandleMethodNotAllowed = true
 	if err := router.SetTrustedProxies(nil); err != nil {

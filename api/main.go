@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/brojyf/keysy/api/internal/config"
+	"github.com/brojyf/keysy/api/internal/health"
 	"github.com/brojyf/keysy/api/internal/jwks"
 	"github.com/brojyf/keysy/api/internal/me"
 	"github.com/brojyf/keysy/api/internal/middleware"
@@ -57,6 +58,8 @@ func main() {
 	if err := router.SetTrustedProxies(nil); err != nil {
 		log.Fatal(err)
 	}
+	// Registered before the middleware so probes add no spans, metrics, or logs.
+	router.GET("/health", health.Get)
 	router.Use(middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()), middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger), middleware.Timeout(), middleware.CORS(c.WebAppURL))
 	router.OPTIONS("/v0/me")
 	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Get(profile.Store{DB: db}))
