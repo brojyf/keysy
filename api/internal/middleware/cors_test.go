@@ -42,7 +42,7 @@ func TestCORS(t *testing.T) {
 		if w.Code != item.status || len(w.Header().Values("Vary")) != 0 || w.Header().Get("Cache-Control") != "no-store" {
 			t.Fatalf("%+v: %d", item, w.Code)
 		}
-		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {
+		if item.method == "OPTIONS" && item.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" || w.Header().Get("Access-Control-Allow-Headers") != "Content-Type") {
 			t.Fatal("missing preflight headers")
 		}
 		if item.origin == "https://dashboard.keysy.net" && item.status < 400 && (w.Header().Get("Access-Control-Allow-Origin") != item.origin || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
@@ -61,6 +61,10 @@ func TestOrganizationPreflight(t *testing.T) {
 		{"/v0/orgs", "POST", 204},
 		{"/v0/orgs", "PATCH", 403},
 		{"/v0/orgs", "DELETE", 403},
+		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "DELETE", 204},
+		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "GET", 403},
+		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "POST", 403},
+		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "PATCH", 403},
 		{"/v0/me", "POST", 403},
 		{"/v0/me", "PATCH", 204},
 	} {
@@ -69,6 +73,7 @@ func TestOrganizationPreflight(t *testing.T) {
 			r.Use(CORS("https://dashboard.keysy.net"))
 			r.OPTIONS("/v0/me")
 			r.OPTIONS("/v0/orgs")
+			r.OPTIONS("/v0/orgs/:orgId")
 			req := httptest.NewRequest("OPTIONS", tc.path, nil)
 			req.Header.Set("Origin", "https://dashboard.keysy.net")
 			req.Header.Set("Access-Control-Request-Method", tc.method)
@@ -78,7 +83,7 @@ func TestOrganizationPreflight(t *testing.T) {
 			if w.Code != tc.status {
 				t.Fatalf("%d %s", w.Code, w.Body.String())
 			}
-			if tc.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH" || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
+			if tc.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
 				t.Fatal("missing credentialed preflight headers")
 			}
 		})

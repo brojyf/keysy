@@ -7,27 +7,32 @@ Neither profile response includes memberships. A missing profile row is an
 internal error. This service does not refresh sessions.
 
 `GET /v0/orgs` returns an array of `{id, name, role, memberCount}` for the
-current user's memberships. `memberCount` counts all members in each org.
+current user's memberships in active orgs. `memberCount` counts all members in each org.
 Results are sorted by name and then ID ascending. No memberships returns `[]`.
 `POST /v0/orgs` accepts only `{name}` in a UTF-8 JSON body of at most 1024 bytes.
 Names are trimmed, then must contain 1 to 32 Unicode code points without null
 characters. Duplicate names are allowed. The org and the current user's `owner` membership are
 created in one transaction; success returns `201` with `{id, name}`.
-Both org routes reject query strings; GET also rejects request bodies.
+`DELETE /v0/orgs/{orgId}` accepts only an org UUID in the path. Only an owner of that org can delete it.
+It sets `orgs.deleted_at` and returns `204` without a response body. Memberships and user accounts remain.
+Missing, already deleted, and non-owner targets all return `404 ORG_NOT_FOUND`.
+Deleted orgs are excluded from `GET /v0/orgs`. Permanent resource cleanup is tracked in
+[issue #120](https://github.com/brojyf/keysy/issues/120).
+All org routes reject query strings; GET and DELETE also reject request bodies.
 
 ## Configuration
 
 Copy `.env.example` to ignored `.env.local` for Air. Direct runs require exported
 variables. `PORT` defaults to 8081. `DATABASE_URL` must be a PostgreSQL URL with
-permission to SELECT and UPDATE `public.profiles`, plus SELECT and INSERT on
-`public.orgs` and `public.members`. The backend role must bypass RLS because
+permission to SELECT and UPDATE `public.profiles`, plus SELECT, INSERT, and UPDATE on
+`public.orgs`, and SELECT and INSERT on `public.members`. The backend role must bypass RLS because
 these org tables have RLS enabled without direct-client policies. Keep this
 connection server-side; org queries enforce the authenticated user ID.
 Use Supabase's direct or session pooler
 connection (port 5432); the transaction pooler (port 6543) breaks prepared statements. `SUPABASE_URL` requires HTTPS.
 `WEB_APP_URL` requires HTTPS except `http://localhost`; its exact origin is
-allowed for credentialed GET, POST, and PATCH requests and OPTIONS preflight.
-Preflight accepts GET/PATCH for `/v0/me` and GET/POST for `/v0/orgs`.
+allowed for credentialed GET, POST, PATCH, and DELETE requests and OPTIONS preflight.
+Preflight accepts GET/PATCH for `/v0/me`, GET/POST for `/v0/orgs`, and DELETE for `/v0/orgs/{orgId}`.
 CORS allows only the `Content-Type` request header.
 `OAUTH_COOKIE_KEY` must decode from Base64 to 32 bytes and match auth's key.
 Never commit secrets.

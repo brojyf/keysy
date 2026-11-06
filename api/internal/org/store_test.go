@@ -76,7 +76,7 @@ func TestStoreList(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			// The user filter enforces isolation. A second order key stabilizes duplicate names.
-			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
+			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 AND orgs.deleted_at IS NULL ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
 			want := []Membership{}
 			failure := errors.New("database unavailable")
 			if scenario == "database error" {
@@ -102,7 +102,7 @@ func TestStoreList(t *testing.T) {
 }
 
 func TestStoreCanceledContext(t *testing.T) {
-	for _, operation := range []string{"create", "list"} {
+	for _, operation := range []string{"create", "list", "delete"} {
 		t.Run(operation, func(t *testing.T) {
 			store, _ := testStore(t)
 			ctx, cancel := context.WithCancel(context.Background())
@@ -110,11 +110,40 @@ func TestStoreCanceledContext(t *testing.T) {
 			var err error
 			if operation == "create" {
 				_, err = store.Create(ctx, "user-123", "Platform")
-			} else {
+			} else if operation == "list" {
 				_, err = store.List(ctx, "user-123")
+			} else {
+				_, err = store.Delete(ctx, "user-123", "org-123")
 			}
 			if !errors.Is(err, context.Canceled) {
 				t.Fatalf("canceled request did not reach database context: %v", err)
+			}
+		})
+	}
+}
+
+func TestStoreDelete(t *testing.T) {
+	for _, scenario := range []string{"owner", "not owner or missing or deleted", "database error"} {
+		t.Run(scenario, func(t *testing.T) {
+			store, mock := testStore(t)
+			failure := errors.New("database unavailable")
+			query := mock.ExpectExec(`UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP WHERE orgs.id = $1 AND orgs.deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members WHERE members.org_id = orgs.id AND members.user_id = $2 AND members.role = 'owner')`).WithArgs("org-123", "user-123")
+			if scenario == "database error" {
+				query.WillReturnError(failure)
+			} else {
+				var affected int64
+				if scenario == "owner" {
+					affected = 1
+				}
+				query.WillReturnResult(sqlmock.NewResult(0, affected))
+			}
+			deleted, err := store.Delete(context.Background(), "user-123", "org-123")
+			if scenario == "database error" {
+				if !errors.Is(err, failure) || deleted {
+					t.Fatalf("deleted=%v err=%v", deleted, err)
+				}
+			} else if err != nil || deleted != (scenario == "owner") {
+				t.Fatalf("deleted=%v err=%v", deleted, err)
 			}
 		})
 	}
