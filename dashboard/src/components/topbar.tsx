@@ -48,11 +48,11 @@ export default function Topbar() {
       <button className="topbar-icon-button" type="button" aria-label="Support" data-tooltip="Support">
         <QuestionMarkIcon />
       </button>
+      <button className="topbar-icon-button" type="button" aria-label="Notifications" data-tooltip="Notifications">
+        <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
+      </button>
       {organizationName && (
         <>
-          <button className="topbar-icon-button" type="button" aria-label="Notifications" data-tooltip="Notifications">
-            <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
-          </button>
           <hr className="topbar-divider" />
           <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" data-tooltip="Open agent">
             <AgentSparkIcon />
