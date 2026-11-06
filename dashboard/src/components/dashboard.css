@@ -464,3 +464,70 @@
   outline: 2px solid var(--color-button);
   outline-offset: -2px;
 }
+
+#account-menu {
+  padding: 6px;
+  border: 0;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    overlay 160ms allow-discrete,
+    display 160ms allow-discrete;
+}
+
+#account-menu:popover-open {
+  transition-duration: 200ms;
+}
+
+#account-menu:not(:popover-open) {
+  transform: translateX(-8px) scale(0.95);
+}
+
+#account-menu :is(.account-menu-item, .theme-switch button) {
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+#account-menu :is(.account-menu-item, .theme-switch button):active {
+  scale: 0.97;
+}
+
+#account-menu .theme-switch button:hover {
+  color: var(--color-text);
+}
+
+#account-menu :is(.account-menu-item, .theme-switch button):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #account-menu .theme-thumb {
+    transition: transform 200ms ease-in-out, background-color 200ms ease-in-out;
+  }
+
+  #account-menu:popover-open > :is(.account-menu-identity, .account-menu-item, .account-menu-row) {
+    animation: account-menu-row-enter 150ms ease-out backwards;
+  }
+
+  #account-menu:popover-open > .account-menu-item { animation-delay: 30ms; }
+  #account-menu:popover-open > .account-menu-row { animation-delay: 60ms; }
+  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 90ms; }
+}
+
+@keyframes account-menu-row-enter {
+  from { opacity: 0; translate: -4px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #account-menu,
+  #account-menu :is(.account-menu-item, .theme-switch button) {
+    transition: none;
+  }
+
+  #account-menu :is(.account-menu-item, .theme-switch button):active {
+    scale: 1;
+  }
+}
