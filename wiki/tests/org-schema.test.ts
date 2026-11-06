@@ -31,5 +31,6 @@ test('the schema separates the minimal tables from proposed features and documen
   expect(schema).toContain('### Domain model');
   expect(schema).toContain('All other domain tables in this diagram are proposals, not implemented tables.');
   expect(schema).toContain('Both tables enable row level security (RLS), with no policies for direct client access.');
-  expect(schema).toContain('The foreign keys do not cascade deletes.');
+  expect(schema).toContain('Deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.');
+  expect(schema).toContain("The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.");
 });
