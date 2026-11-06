@@ -7,3 +7,13 @@ description: "Notification service in the Keysy monorepo."
 placeholder; there is no service implementation or startup command yet.
 
 See [API endpoints](/notify/endpoints) for the current interface status.
+
+## Planned integration
+
+Use Novu Cloud for your in-app notification center and email, with Resend as the
+email provider. `notify` consumes Kafka domain events and triggers Novu workflows.
+Novu manages your notification list, unread count, and read status. Keep in-app
+notifications for the most recent 30 days; do not build a separate inbox store.
+
+This integration is not implemented yet. See [Novu Inbox](https://novu.co/inbox/)
+and [retention limits](https://docs.novu.co/platform/additional-resources/security).
