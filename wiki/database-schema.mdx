@@ -36,7 +36,8 @@ The primary key is `(org_id, user_id)`. A user can join multiple orgs, but only 
 A user's role can differ between orgs. There is no standalone member ID, email, or timestamp.
 Members must reference existing Auth users; pending email invitations are not part of this schema.
 The migration does not define role permissions or restrict the number of owners.
-The foreign keys do not cascade deletes. Remove the membership before deleting its org or Auth user.
+Deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.
+The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.
 Both tables enable row level security (RLS), with no policies for direct client access.
 
 ### Domain model
