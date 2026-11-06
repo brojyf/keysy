@@ -27,6 +27,10 @@ function SessionGate({ children }: { children: ReactNode }) {
   const signOutDialog = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
+    if (user === null) document.title = 'Sign in — Keysy'
+  }, [user, pathname])
+
+  useEffect(() => {
     const controller = new AbortController()
     async function checkSession() {
       try {

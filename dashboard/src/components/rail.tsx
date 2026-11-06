@@ -36,7 +36,7 @@ export default function Rail(accountMenu: AccountMenuProps) {
                 className="rail-item"
                 href={href}
                 aria-label={label}
-                title={label}
+                data-tooltip={label}
                 aria-current={isCurrentPath(pathname, href) ? 'page' : undefined}
               >
                 <Icon size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />

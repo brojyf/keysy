@@ -4,6 +4,13 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
 import GeneralPage from '../src/app/account/page'
+import * as secretsPage from '../src/app/secrets/page'
+import * as servicesPage from '../src/app/services/page'
+import * as membersPage from '../src/app/members/page'
+import * as auditLogPage from '../src/app/audit-log/page'
+import * as settingsPage from '../src/app/settings/page'
+import * as newOrganizationPage from '../src/app/organizations/new/page'
+import * as accountLayout from '../src/app/account/layout'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
 
@@ -163,6 +170,7 @@ function dialogButton(label: string) {
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
   await renderSessionGate()
+  expect(document.title).toBe('Sign in — Keysy')
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.textContent).not.toContain('Use your Google account to continue.')
   const login = container.querySelector<HTMLAnchorElement>('a.auth-button')
@@ -190,6 +198,7 @@ test('development calls the separate localhost auth port without a rewrite', asy
 test('shows the rail and page content only after server verification', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
+  expect(document.title).not.toBe('Sign in — Keysy')
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
@@ -202,6 +211,16 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.getAttribute('aria-label'))).toEqual(['Secrets'])
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
   expect(container.querySelector('button[aria-label="Account menu"]')).not.toBeNull()
+  const accountButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account menu"]')!
+  expect(accountButton.hasAttribute('data-tooltip')).toBe(false)
+  expect(accountButton.hasAttribute('title')).toBe(false)
+  expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('data-tooltip'), link.hasAttribute('title')])).toEqual([
+    ['Secrets', 'Secrets', false],
+    ['Services', 'Services', false],
+    ['Members', 'Members', false],
+    ['Audit log', 'Audit log', false],
+    ['Settings', 'Settings', false],
+  ])
   expect(container.querySelector('.account-menu-name')?.textContent).toBe('Test Member')
   expect(container.querySelector('.account-menu-email')?.textContent).toBe('member@example.com')
   expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
@@ -236,6 +255,7 @@ test('logout waits for the server, prevents duplicate requests, and restores sig
   expect(container.querySelector('h1')).toBeNull()
   await act(async () => finishLogout(new Response(null, { status: 204 })))
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
+  expect(document.title).toBe('Sign in — Keysy')
   expect(container.querySelector('nav')).toBeNull()
 })
 
@@ -428,6 +448,25 @@ test('shows the top bar with the mock organization and action buttons', async ()
     'Notifications',
     'Open agent',
   ])
+  const iconButtons = [...topbar!.querySelectorAll<HTMLButtonElement>('.topbar-icon-button')]
+  expect(iconButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('data-tooltip'), button.hasAttribute('title')])).toEqual([
+    ['Report issue', 'Report issue', false],
+    ['Support', 'Support', false],
+    ['Notifications', 'Notifications', false],
+    ['Open agent', 'Open agent', false],
+  ])
+})
+
+test('exports page titles for dashboard routes', () => {
+  expect([
+    secretsPage.metadata.title,
+    servicesPage.metadata.title,
+    membersPage.metadata.title,
+    auditLogPage.metadata.title,
+    settingsPage.metadata.title,
+    newOrganizationPage.metadata.title,
+    accountLayout.metadata.title,
+  ]).toEqual(['Secrets', 'Services', 'Members', 'Audit log', 'Settings', 'New organization', 'Account'])
 })
 
 test('highlights the rail item for nested paths', async () => {

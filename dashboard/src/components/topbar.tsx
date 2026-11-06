@@ -42,19 +42,19 @@ export default function Topbar() {
           </button>
         </>
       )}
-      <button className="topbar-icon-button" type="button" aria-label="Report issue" title="Report issue">
+      <button className="topbar-icon-button" type="button" aria-label="Report issue" data-tooltip="Report issue">
         <Bug size={15} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
       </button>
-      <button className="topbar-icon-button" type="button" aria-label="Support" title="Support">
+      <button className="topbar-icon-button" type="button" aria-label="Support" data-tooltip="Support">
         <QuestionMarkIcon />
       </button>
       {organizationName && (
         <>
-          <button className="topbar-icon-button" type="button" aria-label="Notifications" title="Notifications">
+          <button className="topbar-icon-button" type="button" aria-label="Notifications" data-tooltip="Notifications">
             <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
           </button>
           <hr className="topbar-divider" />
-          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" title="Open agent">
+          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" data-tooltip="Open agent">
             <AgentSparkIcon />
           </button>
         </>
