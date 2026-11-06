@@ -14,8 +14,8 @@
 .dialog-cancel:focus-visible,
 .dialog-danger:focus-visible,
 .dialog-primary:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
 .dialog {
@@ -91,6 +91,7 @@
 .dialog p {
   margin: 0;
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+  text-wrap: pretty;
 }
 
 .dialog .dialog-error {
@@ -112,6 +113,16 @@
 .dialog button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.dialog button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog button:not(:disabled):active {
+    transform: scale(1);
+  }
 }
 
 .dialog-primary {
