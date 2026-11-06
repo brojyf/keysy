@@ -434,7 +434,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .theme-thumb {
-    transition: transform 200ms ease-in-out, background-color 200ms ease-in-out;
+    transition: transform 300ms var(--ease-spring), background-color 200ms ease;
   }
 }
 
@@ -503,6 +503,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  #account-menu .theme-thumb {
+    transition: transform 200ms ease-in-out, background-color 200ms ease-in-out;
+  }
+
   #account-menu:popover-open > :is(.account-menu-identity, .account-menu-item, .account-menu-row) {
     animation: account-menu-row-enter 120ms ease-out backwards;
   }

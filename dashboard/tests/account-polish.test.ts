@@ -25,6 +25,7 @@ for (const dark of [false, true]) {
         document.head.append(style)
         document.body.innerHTML = `
           <span class="account-theme"><span class="theme-thumb"></span><button data-focus-visible data-active>Theme</button></span>
+          <div id="account-menu"><span class="theme-switch"><span class="theme-thumb"></span></span></div>
           <button class="account-more" data-focus-visible data-active>More</button>
           <div class="account-menu account-row-menu" data-popover-open>
             <a class="account-menu-item" data-focus-visible data-active>Dashboard with a label that wraps onto multiple lines</a>
@@ -53,12 +54,13 @@ for (const dark of [false, true]) {
           assert.equal(css('.account-row-menu').transition, 'none')
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'none')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animation, 'none')
-          assert.equal(css('.theme-thumb').transition, '')
+          assert.equal(css('.account-theme .theme-thumb').transition, '')
         } else {
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'account-menu-row-enter 120ms ease-out backwards')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animationDelay, '20ms')
-          assert.equal(css('.theme-thumb').transition, 'transform 200ms ease-in-out, background-color 200ms ease-in-out')
+          assert.equal(css('.account-theme .theme-thumb').transition, `transform 300ms ${tokens.getPropertyValue('--ease-spring')}, background-color 200ms ease`)
         }
+        assert.equal(css('#account-menu .theme-thumb').transition, motion === 'reduce' ? '' : 'transform 200ms ease-in-out, background-color 200ms ease-in-out')
 
         const button = document.querySelector<HTMLButtonElement>('.account-save-bar button')!
         for (const state of ['idle', 'saving', 'saved']) {
