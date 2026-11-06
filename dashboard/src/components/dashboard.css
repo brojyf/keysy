@@ -478,7 +478,7 @@
 }
 
 #account-menu:popover-open {
-  transition-duration: 200ms;
+  transition-duration: 160ms;
 }
 
 #account-menu:not(:popover-open) {
@@ -508,12 +508,12 @@
   }
 
   #account-menu:popover-open > :is(.account-menu-identity, .account-menu-item, .account-menu-row) {
-    animation: account-menu-row-enter 150ms ease-out backwards;
+    animation: account-menu-row-enter 120ms ease-out backwards;
   }
 
-  #account-menu:popover-open > .account-menu-item { animation-delay: 30ms; }
-  #account-menu:popover-open > .account-menu-row { animation-delay: 60ms; }
-  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 90ms; }
+  #account-menu:popover-open > .account-menu-item { animation-delay: 20ms; }
+  #account-menu:popover-open > .account-menu-row { animation-delay: 40ms; }
+  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 60ms; }
 }
 
 @keyframes account-menu-row-enter {
