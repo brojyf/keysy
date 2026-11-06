@@ -13,6 +13,7 @@ import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
 import SignOutDialog from './sign-out-dialog'
+import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
 
 function SessionGate({ children }: { children: ReactNode }) {
@@ -69,9 +70,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     if (logoutStatus === 'error') setLogoutStatus('idle')
     const dialog = signOutDialog.current
     if (!dialog) return
-    // Safari shows a focus ring on the first button after a mouse click, so focus the dialog itself.
-    dialog.autofocus = true
-    dialog.showModal()
+    openDialog(dialog)
   }
 
   async function logout() {

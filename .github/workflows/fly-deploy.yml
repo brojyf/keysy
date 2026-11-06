@@ -1,0 +1,66 @@
+name: Fly Deploy
+
+# Deploys main to Fly after CI passes on a push.
+# Pull requests never deploy.
+# Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
+# deploy token: fly tokens create deploy -a keysy
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Never cancel a running deploy. A newer run waits its turn.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Deploy the commit CI tested, not whatever main points to now.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # v1.5
+      # CI runs can finish out of order or be re-run. Only the tip of main deploys,
+      # so an older commit never replaces a newer one.
+      - name: Read the tip of main
+        id: main
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "sha=$tip" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Deploy
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        # fly.toml has no machine count. Without this flag, a deploy to zero machines creates two.
+        run: flyctl deploy --remote-only --ha=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # flyctl only waits for supervisord to start, so a service that fails still looks deployed.
+      - name: Check the public hosts
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        run: |
+          for url in https://api.keysy.net/health https://auth.keysy.net/health https://dashboard.keysy.net/; do
+            curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 12 --retry-delay 5 --retry-all-errors "$url"
+          done
+      # A stale page can return 200 while its CSS or JS is gone from the origin.
+      # The unique query string skips the Cloudflare cache, so the origin answers.
+      - name: Check the dashboard assets
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        run: |
+          origin=https://dashboard.keysy.net
+          assets=$(curl --fail --silent --show-error --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin/" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
+          test -n "$assets"
+          for path in $assets; do
+            curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+          done

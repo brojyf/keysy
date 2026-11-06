@@ -4,6 +4,7 @@ import './globals.css'
 import '../components/sign-in.css'
 import '../components/dashboard.css'
 import '../components/account.css'
+import '../components/dialog.css'
 import SessionGate from '../components/session-gate'
 import ThemeSync from '../components/theme-sync'
 

@@ -1,0 +1,32 @@
+app = "keysy"
+primary_region = "sjc"
+kill_signal = "SIGTERM"
+kill_timeout = "15s"
+
+[build]
+  dockerfile = "deploy/Dockerfile"
+
+  # Public origins are baked into the dashboard bundle at build time.
+  [build.args]
+    NEXT_PUBLIC_AUTH_URL = "https://auth.keysy.net"
+    NEXT_PUBLIC_API_URL = "https://api.keysy.net"
+
+# Secrets (fly secrets set): DATABASE_URL, OAUTH_COOKIE_KEY, SUPABASE_PUBLISHABLE_KEY,
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GRAFANA_CLOUD_OTLP_ENDPOINT, GRAFANA_CLOUD_OTLP_AUTH.
+[env]
+  AUTH_URL = "https://auth.keysy.net"
+  WEB_APP_URL = "https://dashboard.keysy.net/"
+  COOKIE_DOMAIN = "keysy.net"
+  SUPABASE_URL = "https://fwlaxjslfaqarfxiuskd.supabase.co"
+  OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

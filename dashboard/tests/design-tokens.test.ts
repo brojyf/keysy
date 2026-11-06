@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css']
+const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css']
 const files = paths.map(path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'))
 const rule = (css: string, selector: string) => {
   const start = css.indexOf(`${selector} {`)
@@ -59,14 +59,28 @@ test('account menu sign out uses the danger color', () => {
 })
 
 test('the sign out dialog follows the Figma Dialog component', () => {
-  const dialog = rule(files[2], '.sign-out-dialog')
+  const dialog = rule(files[4], '.dialog')
   assert.equal(value(dialog, 'width'), 'min(440px, calc(100vw - 32px))')
-  assert.equal(value(dialog, 'inset'), '40% auto auto 50%')
   assert.equal(value(dialog, 'border-radius'), 'var(--radius-lg)')
   assert.equal(value(dialog, 'background'), 'var(--color-raised)')
   assert.equal(value(dialog, 'box-shadow'), 'var(--shadow-dialog)')
-  assert.equal(value(rule(files[2], '.sign-out-dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-text) 24%, transparent)')
-  assert.equal(value(rule(files[2], ':root.dark .sign-out-dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-bg) 72%, transparent)')
+  assert.equal(value(rule(files[4], '.dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-text) 24%, transparent)')
+  assert.equal(value(rule(files[4], ':root.dark .dialog::backdrop'), 'background'), 'color-mix(in srgb, var(--color-bg) 72%, transparent)')
+})
+
+test('auth cards and dialogs share one visual center at 42% of the viewport', () => {
+  assert.equal(value(rule(files[0], ':root'), '--visual-center-offset'), '8dvh')
+  assert.equal(value(rule(files[4], '.dialog'), 'inset'), 'calc(50% - var(--visual-center-offset)) auto auto 50%')
+  const page = rule(files[3], '.auth-page')
+  assert.equal(value(page, 'min-height'), '100dvh')
+  assert.equal(value(page, 'padding'), '80px 20px calc(80px + 2 * var(--visual-center-offset))')
+  assert.match(page, /ellipse at 50% calc\(50% - var\(--visual-center-offset\)\)/)
+})
+
+test('the auth glow stays 40px below the card center', () => {
+  const glow = rule(files[3], '.auth-page::before')
+  assert.equal(value(glow, 'top'), 'calc(50% - var(--visual-center-offset) - 60px)')
+  assert.equal(value(glow, 'height'), '200px')
 })
 
 test('the session status uses text at 50% in light mode and muted in dark mode', () => {
@@ -105,8 +119,8 @@ test('the save bar enters on the shared spring and exits below the viewport', ()
 })
 
 test('the sign out dialog keeps its centering transform through the exit', () => {
-  assert.equal(value(rule(files[2], '.sign-out-dialog[data-closing]'), 'transform'), 'translate(-50%, -50%) scale(0.95)')
-  assert.equal(value(rule(files[2], '.sign-out-dialog[data-closing]::backdrop'), 'opacity'), '0')
+  assert.equal(value(rule(files[4], '.dialog[data-closing]'), 'transform'), 'translate(-50%, -50%) scale(0.95)')
+  assert.equal(value(rule(files[4], '.dialog[data-closing]::backdrop'), 'opacity'), '0')
 })
 
 test('Safari credential autofill button stays hidden in the name input', () => {

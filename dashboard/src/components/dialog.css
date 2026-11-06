@@ -1,0 +1,113 @@
+.dialog-cancel,
+.dialog-danger {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  background: var(--color-surface);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+  cursor: pointer;
+}
+
+.dialog-cancel:focus-visible,
+.dialog-danger:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+.dialog {
+  position: fixed;
+  inset: calc(50% - var(--visual-center-offset)) auto auto 50%;
+  width: min(440px, calc(100vw - 32px));
+  margin: 0;
+  padding: 16px 20px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-dialog);
+  outline: none;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--color-text) 24%, transparent);
+  transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dialog[data-closing] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.dialog[data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog {
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
+:root.dark .dialog::backdrop {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+}
+
+.dialog h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font: var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans);
+}
+
+.dialog-alert {
+  flex-shrink: 0;
+  color: var(--color-danger);
+}
+
+.dialog p {
+  margin: 0;
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.dialog .dialog-error {
+  margin-top: 8px;
+  color: var(--color-danger);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.dialog-cancel {
+  color: var(--color-text);
+}
+
+.dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
