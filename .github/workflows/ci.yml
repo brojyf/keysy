@@ -28,6 +28,7 @@ jobs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
       wiki: ${{ steps.filter.outputs.wiki }}
+      deploy: ${{ steps.filter.outputs.deploy }}
       bun: ${{ steps.filter.outputs.bun }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,6 +54,16 @@ jobs:
             web:
               - 'web/**'
               - 'design/tokens/**'
+              - '.github/**'
+            deploy:
+              - 'deploy/**'
+              - 'fly.toml'
+              - '.dockerignore'
+              - 'api/**'
+              - 'auth/**'
+              - 'dashboard/**'
+              - 'design/**'
+              - 'otel/**'
               - '.github/**'
             wiki:
               - 'wiki/**'
@@ -257,6 +268,24 @@ jobs:
       - name: Build
         run: go build ./...
 
+  deploy:
+    name: Deploy Config
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the image
+        run: >-
+          docker build -t keysy-ci -f deploy/Dockerfile
+          --build-arg NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net
+          --build-arg NEXT_PUBLIC_API_URL=https://api.keysy.net .
+      - name: Test nginx and supervisor configs
+        run: docker run --rm -v "$PWD/deploy:/deploy:ro" keysy-ci node --test '/deploy/*.test.mjs'
+
   cli:
     name: CLI
     needs: changes
@@ -285,7 +314,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
