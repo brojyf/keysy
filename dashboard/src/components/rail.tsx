@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { KeyRound, ScrollText, Server, Settings, Users, type LucideIcon } from 'lucide-react'
 import { Fragment } from 'react'
 import AccountMenu, { type AccountMenuProps } from './account-menu'
+import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
 const railGroups: { href: string; label: string; Icon: LucideIcon }[][] = [
   [{ href: '/secrets', label: 'Secrets', Icon: KeyRound }],
@@ -21,9 +22,10 @@ function isCurrentPath(pathname: string, href: string) {
 }
 
 export default function Rail(accountMenu: AccountMenuProps) {
+  const tooltipRef = useTooltipDismissal()
   const pathname = usePathname() ?? ''
   return (
-    <aside className="rail">
+    <aside ref={tooltipRef} className="rail">
       <nav className="rail-nav" aria-label="Main">
         {railGroups.map((group, index) => (
           <Fragment key={group[0].href}>

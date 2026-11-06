@@ -2,6 +2,7 @@
 
 import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
+import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
 // Figma icons with no lucide equivalent.
 function QuestionMarkIcon() {
@@ -22,10 +23,11 @@ function AgentSparkIcon() {
 }
 
 export default function Topbar() {
+  const tooltipRef = useTooltipDismissal()
   const { organizations } = useCurrentUser()
   const organizationName = organizations[0]?.name
   return (
-    <header className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
+    <header ref={tooltipRef} className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
       <span className="topbar-logo">
         <img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
       </span>

@@ -189,15 +189,17 @@ export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const page = (Object.keys(pages) as (keyof typeof pages)[]).find((name) => pathname === `/${name}` || pathname.startsWith(`/${name}/`))
   const Page = page ? pages[page] : null
   return (
-    <div className="skeleton-page" aria-busy="true">
+    <>
       <p role="status" className="skeleton-status">Checking your session...</p>
-      <SkeletonTopbar />
-      <div className="skeleton-body">
-        <SkeletonRail />
-        <main className="skeleton-main">
-          {Page && <div className="skeleton-route" data-skeleton-page={page}><Page /></div>}
-        </main>
+      <div className="skeleton-page" aria-busy="true">
+        <SkeletonTopbar />
+        <div className="skeleton-body">
+          <SkeletonRail />
+          <main className="skeleton-main">
+            {Page && <div className="skeleton-route" data-skeleton-page={page}><Page /></div>}
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   )
 }

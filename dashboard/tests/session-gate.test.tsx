@@ -916,6 +916,7 @@ test('pending session shows an accessible shell without page content for an unma
   expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
   expect(container.querySelectorAll('[role="status"]')).toHaveLength(1)
   expect(container.querySelector('[role="status"]')?.textContent).toBe('Checking your session...')
+  expect(container.querySelector('[role="status"]')?.closest('[aria-busy="true"]') === null).toBe(true)
   expect(container.querySelector('a, button, nav')).toBeNull()
 })
 
@@ -928,3 +929,33 @@ test('session skeleton disappears after the session resolves', async () => {
   await act(async () => Promise.resolve())
   expect(container.querySelector('[aria-busy="true"]')).toBeNull()
 })
+
+for (const selector of ['.topbar-icon-button', '.rail-item[data-tooltip]']) {
+  test(`${selector} tooltip dismisses on Escape without moving focus and resets on re-entry`, async () => {
+    sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+    await renderSessionGate()
+    const trigger = container.querySelector<HTMLElement>(selector)!
+    await act(() => trigger.focus())
+    document.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(document.activeElement).toBe(trigger)
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(true)
+    trigger.querySelector('svg')!.dispatchEvent(new browser.PointerEvent('pointerover', { bubbles: true, relatedTarget: trigger }))
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(true)
+    trigger.blur()
+    await act(() => trigger.focus())
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(false)
+  })
+
+  test(`${selector} hovered tooltip dismisses when focus is elsewhere`, async () => {
+    sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+    await renderSessionGate()
+    const trigger = container.querySelector<HTMLElement>(selector)!
+    trigger.dispatchEvent(new browser.PointerEvent('pointerover', { bubbles: true }))
+    document.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(true)
+    trigger.dispatchEvent(new browser.PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body }))
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(false)
+    document.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(false)
+  })
+}
