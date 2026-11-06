@@ -9,6 +9,8 @@ import { applyTheme, readTheme, setTheme } from '../src/lib/theme'
 
 const stylesheet = await Bun.file(new URL('../src/app/globals.css', import.meta.url)).text()
 const controlsCSS = await Bun.file(new URL('../src/components/dashboard.css', import.meta.url)).text()
+const tokensCSS = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text()
+const layout = await Bun.file(new URL('../src/app/layout.tsx', import.meta.url)).text()
 
 let browser: Window
 let cookie: string
@@ -26,6 +28,12 @@ beforeEach(() => {
   reduced = false
   change = undefined
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
+  const style = document.createElement('style')
+  style.textContent = tokensCSS
+  document.head.append(style)
+  const themeColor = document.createElement('meta')
+  themeColor.name = 'theme-color'
+  document.head.append(themeColor)
   Object.defineProperty(document, 'cookie', { configurable: true, get: () => cookie, set: (value: string) => { written = value; cookie = value.split(';')[0]! } })
   window.matchMedia = ((query: string) => ({ matches: query.includes('reduced-motion') ? reduced : dark, addEventListener: (_: string, fn: () => void) => { change = fn }, removeEventListener: () => {} })) as typeof window.matchMedia
   setTheme('system')
@@ -80,6 +88,38 @@ test('applies dark and follows the system', () => {
   expect(document.documentElement.classList.contains('dark')).toBe(true)
 })
 
+for (const preference of ['light', 'dark', 'system', 'unknown'] as const) {
+  for (const systemDark of [false, true]) {
+    test(`initial browser theme color follows ${preference} with system dark ${systemDark}`, () => {
+      document.querySelector('meta[name="theme-color"]')!.remove()
+      cookie = preference === 'system' ? '' : `keysy-theme=${preference}`
+      dark = systemDark
+      const script = layout.match(/__html: `([^`]+)`/)![1]!
+      const initialize = new Function('document', 'matchMedia', 'getComputedStyle', script)
+      initialize(document, window.matchMedia, window.getComputedStyle.bind(window))
+      const expectedDark = preference === 'dark' || (preference !== 'light' && systemDark)
+      expect(document.documentElement.style.colorScheme).toBe(expectedDark ? 'dark' : 'light')
+      expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(expectedDark ? '#141414' : '#fafafa')
+    })
+  }
+}
+
+test('browser theme color follows explicit choices instead of the system', () => {
+  dark = false
+  setTheme('dark')
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#141414')
+  dark = true
+  setTheme('light')
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#fafafa')
+  expect(document.querySelectorAll('meta[name="theme-color"]').length).toBe(1)
+})
+
+test('browser theme color reads the background token', () => {
+  document.documentElement.style.setProperty('--color-bg', '#123456')
+  applyTheme('dark')
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#123456')
+})
+
 test('both controls share their selection and system changes update the page', async () => {
   const container = await renderThemeControls()
   const buttons = (label: string) => [...container.querySelectorAll<HTMLButtonElement>(`[aria-label="Theme"] button[aria-label="${label}"]`)]
@@ -92,6 +132,13 @@ test('both controls share their selection and system changes update the page', a
   dark = true
   change?.()
   expect(document.documentElement.classList.contains('dark')).toBe(true)
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#141414')
+  dark = false
+  change?.()
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#fafafa')
+  await act(() => buttons('Dark')[0]!.click())
+  change?.()
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#141414')
 })
 
 for (const reduceMotion of [false, true]) {
@@ -106,6 +153,7 @@ for (const reduceMotion of [false, true]) {
     expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Dark', 'Dark'])
     if (!reduceMotion) await act(() => update())
     expect(document.documentElement.style.colorScheme).toBe('dark')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#141414')
     expect(readTheme()).toBe('dark')
   })
 }
@@ -165,6 +213,7 @@ test('a new choice interrupts the page fade immediately and stale callbacks keep
   expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Light', 'Light'])
   await act(() => { updates[1]!(); updates[0]!() })
   expect(document.documentElement.style.colorScheme).toBe('light')
+  expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#fafafa')
   finishes[0]!()
   await Promise.resolve()
   expect(document.documentElement.classList.contains('keysy-theme-transition')).toBe(true)
