@@ -811,3 +811,33 @@ test('empty account shell hides organization controls and shows empty organizati
   await act(async () => dialogButton('Sign out').click())
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
 })
+
+for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', 'account']) {
+  for (const suffix of ['', '/nested']) test(`pending session shows the ${page} skeleton for /${page}${suffix}`, async () => {
+    currentPathname = `/${page}${suffix}`
+    sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+    await renderSessionGate()
+    expect(container.querySelector(`[data-skeleton-page="${page}"]`)).not.toBeNull()
+  })
+}
+
+test('pending session shows an accessible shell without page content for an unmapped path', async () => {
+  currentPathname = '/unknown'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  expect(container.querySelector('[data-skeleton-page]')).toBeNull()
+  expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+  expect(container.querySelectorAll('[role="status"]')).toHaveLength(1)
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('Checking your session...')
+  expect(container.querySelector('a, button, nav')).toBeNull()
+})
+
+test('session skeleton disappears after the session resolves', async () => {
+  let resolveSession!: (response: Response) => void
+  sessionRequest.mockImplementation(() => new Promise<Response>((resolve) => { resolveSession = resolve }))
+  await renderSessionGate()
+  expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+  await act(async () => { resolveSession(Response.json(validUser)); await Promise.resolve() })
+  await act(async () => Promise.resolve())
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull()
+})

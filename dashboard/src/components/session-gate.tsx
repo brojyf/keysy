@@ -14,6 +14,7 @@ import Rail from './rail'
 import SignOutDialog from './sign-out-dialog'
 import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
+import LoadingSkeleton from './loading-skeleton'
 
 function SessionGate({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
@@ -102,7 +103,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   }
 
   if (user === undefined || redirect) {
-    return <main className="auth-page"><p role="status">Checking your session...</p></main>
+    return <LoadingSkeleton pathname={pathname} />
   }
 
   if (user) {
