@@ -25,6 +25,8 @@ export function applyTheme(theme: Theme) {
   const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', dark)
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',
+    window.getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim())
 }
 
 export function setTheme(theme: Theme) {
