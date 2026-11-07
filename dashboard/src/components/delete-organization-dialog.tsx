@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import { apiFetch } from '../lib/api-client'
 import { closeDialog } from '../lib/dialog-controls'
-import type { Organization } from '../lib/organization'
+import { parseOrganizations, type Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'
 import Dialog from './dialog'
 
@@ -12,7 +12,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   const router = useRouter()
   const formID = useId()
   const confirmationID = useId()
-  const { organizations, onOrganizationDeleted, onSignedOut } = useCurrentUser()
+  const { organizations, onOrganizationDeleted, onOrganizationsChange, onSignedOut } = useCurrentUser()
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -23,7 +23,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
 
   async function remove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!valid || submitting.current || organization.role !== 'owner') return
+    if (!valid || submitting.current || organization.role !== 'owner' || event.currentTarget.closest('dialog')?.hasAttribute('data-closing')) return
     const controller = new AbortController()
     request.current = controller
     submitting.current = true
@@ -34,6 +34,17 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
       if (controller.signal.aborted) return
       if (response.status === 401) { onSignedOut(); return }
       if (response.status === 404) {
+        const orgResponse = await apiFetch('/v0/orgs', { signal: controller.signal })
+        if (controller.signal.aborted) return
+        if (orgResponse.status === 401) { onSignedOut(); return }
+        if (!orgResponse.ok) throw new Error('Organizations check failed')
+        const updated = parseOrganizations(await orgResponse.json())
+        if (controller.signal.aborted) return
+        onOrganizationsChange(updated)
+        if (!updated.some((item) => item.id === organization.id)) {
+          router.replace(updated.length ? '/secrets' : '/account/organizations')
+          return
+        }
         setError('The organization was not found, or you no longer have permission to delete it.')
         return
       }

@@ -9,6 +9,7 @@ type CurrentUser = {
   organizations: Organization[]
   onOrganizationCreated: (organization: Organization) => void
   onOrganizationDeleted: (organizationID: string) => void
+  onOrganizationsChange: (organizations: Organization[]) => void
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
   onSignOutRequest: () => void
