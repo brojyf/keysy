@@ -1,0 +1,54 @@
+.organization-settings .account-nav button {
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.organization-settings .account-nav button:disabled {
+  cursor: default;
+}
+
+.organization-settings .account-rows dd {
+  min-width: 0;
+}
+
+.organization-id {
+  overflow-wrap: anywhere;
+  font: var(--text-code--font-weight) var(--text-code)/var(--text-code--line-height) var(--font-mono);
+}
+
+.organization-settings .organization-settings-note {
+  margin: 0 0 10px;
+  color: var(--color-muted);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+  text-wrap: pretty;
+}
+
+.organization-settings .account-delete:not(:disabled) {
+  cursor: pointer;
+}
+
+.organization-settings .account-delete:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
+}
+
+.organization-delete-form {
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .organization-settings .account-rows > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .organization-settings .account-rows dt {
+    width: auto;
+  }
+
+  .organization-settings .account-rows > div + div > dd:not(.account-control) {
+    padding-left: 0;
+  }
+}

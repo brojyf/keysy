@@ -7,7 +7,10 @@ import type { SessionUser } from '../lib/session-user'
 type CurrentUser = {
   user: SessionUser
   organizations: Organization[]
+  organization: Organization | undefined
   onOrganizationCreated: (organization: Organization) => void
+  onOrganizationDeleted: (organizationID: string) => void
+  onOrganizationsChange: (organizations: Organization[]) => void
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
   onSignOutRequest: () => void

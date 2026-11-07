@@ -1,11 +1,12 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { apiFetch } from '../lib/api-client'
 import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
-import { organizationRoute } from '../lib/organization-route'
+import { organizationForPath, organizationPath, organizationRoute } from '../lib/organization-route'
 import { parseOrganizations, type Organization } from '../lib/organization'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
@@ -52,10 +53,13 @@ function SessionGate({ children }: { children: ReactNode }) {
   }, [authURL, sessionCheck])
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
+  const organization = organizationForPath(organizations, pathname)
+  const organizationScoped = pathname === '/orgs' || pathname.startsWith('/orgs/')
   let redirect: string | null = null
   if (user === null && pathname !== '/signin') redirect = '/signin'
-  else if (user && pathname === '/signin') redirect = organizations.length ? '/secrets' : '/account/organizations'
-  else if (route === '/account/organizations') redirect = route
+  else if (user && pathname === '/signin') redirect = organizations[0] ? organizationPath(organizations[0].id, '/secrets') : '/account/organizations'
+  else if (user && /^\/(secrets|services|members|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = organizations[0] ? organizationPath(organizations[0].id, pathname) : '/account/organizations'
+  else if (route === '/account/organizations' && !organizationScoped) redirect = route
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
@@ -110,7 +114,10 @@ function SessionGate({ children }: { children: ReactNode }) {
       <CurrentUserContext.Provider value={{
         user,
         organizations,
+        organization,
         onOrganizationCreated: (organization) => setOrganizations((current) => [...current, organization]),
+        onOrganizationDeleted: (organizationID) => setOrganizations((current) => current.filter((organization) => organization.id !== organizationID)),
+        onOrganizationsChange: setOrganizations,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
         onSignedOut: () => setUser(null),
         onSignOutRequest: requestSignOut,
@@ -118,8 +125,16 @@ function SessionGate({ children }: { children: ReactNode }) {
         <div className="dashboard">
           <Topbar />
           <div className="dashboard-body">
-            {route === 'full' && <Rail {...accountMenu} />}
-            <main className="dashboard-content">{children}</main>
+            {route === 'full' && organization && <Rail {...accountMenu} />}
+            <main className="dashboard-content">
+              {organizationScoped && !organization ? (
+                <section aria-labelledby="organization-unavailable-title">
+                  <h1 id="organization-unavailable-title">Organization unavailable</h1>
+                  <p>This organization does not exist, was deleted, or you no longer have access.</p>
+                  <Link href="/account/organizations">View your organizations</Link>
+                </section>
+              ) : children}
+            </main>
           </div>
         </div>
         <SignOutDialog ref={signOutDialog} status={logoutStatus} onConfirm={logout} />

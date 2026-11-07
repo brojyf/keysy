@@ -186,7 +186,8 @@ function SkeletonRail() {
 const pages = { secrets: Secrets, services: Services, members: Members, 'audit-log': AuditLog, settings: Settings, account: Account }
 
 export default function LoadingSkeleton({ pathname }: { pathname: string }) {
-  const page = (Object.keys(pages) as (keyof typeof pages)[]).find((name) => pathname === `/${name}` || pathname.startsWith(`/${name}/`))
+  const pagePath = pathname.replace(/^\/orgs\/[^/]+(?=\/|$)/, '')
+  const page = (Object.keys(pages) as (keyof typeof pages)[]).find((name) => pagePath === `/${name}` || pagePath.startsWith(`/${name}/`))
   const Page = page ? pages[page] : null
   return (
     <>

@@ -24,8 +24,8 @@ function AgentSparkIcon() {
 
 export default function Topbar() {
   const tooltipRef = useTooltipDismissal()
-  const { organizations } = useCurrentUser()
-  const organizationName = organizations[0]?.name
+  const { organization } = useCurrentUser()
+  const organizationName = organization?.name
   return (
     <header ref={tooltipRef} className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
       <span className="topbar-logo">
