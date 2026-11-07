@@ -7,9 +7,58 @@ const stylesheet = [
   '../../design/tokens/tokens.css',
   '../src/components/dashboard.css',
   '../src/components/account.css',
+  '../src/components/dialog.css',
+  '../src/components/sign-in.css',
 ].map(path => readFileSync(new URL(path, import.meta.url), 'utf8')).join('\n')
 
 for (const dark of [false, true]) {
+  test(`polished controls retain an outline for forced-colors mode in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      // Happy DOM cannot render forced colors. Check the transparent outline that browsers recolor.
+      style.textContent = stylesheet
+        .replaceAll(':focus-visible', '[data-focus-visible]')
+        // Happy DOM cannot match the descendant selector inside this :is() group.
+        .replaceAll(
+          '#account-menu :is(.account-menu-item, .theme-switch button)[data-focus-visible]',
+          '#account-menu .account-menu-item[data-focus-visible], #account-menu .theme-switch button[data-focus-visible]',
+        )
+      document.head.append(style)
+      document.body.innerHTML = `
+        <div class="dialog">
+          <button class="dialog-cancel" data-focus-visible>Cancel</button>
+          <button class="dialog-danger" data-focus-visible>Delete</button>
+          <button class="dialog-primary" data-focus-visible>Confirm</button>
+        </div>
+        <div id="account-menu">
+          <a class="account-menu-item" href="/account" data-focus-visible>Account</a>
+          <span class="theme-switch"><button data-focus-visible>Theme</button></span>
+        </div>
+        <span class="account-theme"><button data-focus-visible>Theme</button></span>
+        <button class="account-more" data-focus-visible>More</button>
+        <div class="account-menu account-row-menu">
+          <a class="account-menu-item" href="/account" data-focus-visible>Settings</a>
+        </div>
+        <div class="account-save-bar">
+          <button data-focus-visible>Cancel</button>
+          <button type="submit" data-focus-visible>Save</button>
+        </div>
+        <a class="auth-button" href="/signin" data-focus-visible>Continue with Google</a>`
+      for (const control of document.querySelectorAll('[data-focus-visible]')) {
+        const css = window.getComputedStyle(control)
+        assert.equal(css.outlineWidth, '2px', control.outerHTML)
+        assert.equal(css.outlineStyle, 'solid', control.outerHTML)
+        assert.equal(css.outlineColor, 'transparent', control.outerHTML)
+        assert.equal(css.outlineOffset, '2px', control.outerHTML)
+      }
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+
   for (const motion of ['no-preference', 'reduce']) {
     test(`account polish preserves focus, content sizing, and feedback in ${dark ? 'dark' : 'light'} mode with ${motion} motion`, async () => {
       const window = new Window({ settings: { device: { prefersReducedMotion: motion } } })

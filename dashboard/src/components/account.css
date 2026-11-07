@@ -225,7 +225,8 @@
 }
 
 .account-theme button:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
@@ -445,7 +446,8 @@ tr:hover .account-more:not(:disabled),
 }
 
 .account-more:focus-visible:not(:disabled) {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
@@ -478,7 +480,8 @@ tr:hover .account-more:not(:disabled),
 }
 
 .account-menu.account-row-menu .account-menu-item:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
@@ -637,7 +640,8 @@ tr:hover .account-more:not(:disabled),
 }
 
 .account-save-bar button:focus-visible:not(:disabled) {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
