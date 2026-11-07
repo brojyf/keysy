@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -20,6 +20,7 @@ tags:
   - name: Services
   - name: Reorganizations
   - name: Audit logs
+  - name: Health
 security:
   - bearerAuth: []
 paths:
@@ -1205,6 +1206,27 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      security: []
+      summary: Check process liveness
+      description: |
+        Reports that the process accepts requests. Does not check the database, JWKS, or other dependencies.
+        Runs before request middleware, without authentication, request IDs, CORS allow headers, or telemetry.
+      responses:
+        '200':
+          description: The process accepts requests.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [ok]
 
 components:
   securitySchemes:
