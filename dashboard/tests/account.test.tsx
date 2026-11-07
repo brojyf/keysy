@@ -56,7 +56,7 @@ afterEach(async () => {
 
 async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, onOrganizationCreated: () => {}, onOrganizationDeleted: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -82,7 +82,7 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
   document.head.append(style)
   currentPathname = '/account/organizations'
   await act(async () => root.render(
-    <CurrentUserContext.Provider value={{ user, organizations: [], onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}>
+    <CurrentUserContext.Provider value={{ user, organizations: [], onOrganizationCreated: () => {}, onOrganizationDeleted: () => {}, onUserChange, onSignedOut, onSignOutRequest }}>
       <AccountLayout><OrganizationsPage /></AccountLayout>
     </CurrentUserContext.Provider>,
   ))
@@ -338,7 +338,7 @@ test('submits a trimmed name with Enter and updates the session after saving', a
   await act(async () => finish(Response.json(updated)))
   expect(onUserChange).toHaveBeenCalledWith(updated)
   // The provider owns the user, so simulate its state update.
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, onOrganizationCreated: () => {}, onOrganizationDeleted: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
   expect(input().value).toBe('New Name')
   const saveBar = container.querySelector('.account-save-bar')!
   const finishExit = holdExitAnimation(saveBar)

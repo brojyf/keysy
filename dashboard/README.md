@@ -25,6 +25,16 @@ The browser does not call Supabase directly.
 Status, Privacy, and Terms remain non-interactive placeholders until their public URLs are available.
 The symbols in `public/` and the dot tile `src/components/sign-in-dots.png` were exported from this Figma screen.
 
+## Organization settings
+
+`/settings` follows Figma screens 6.7 and 6.8. It shows the same organization as the top bar
+(currently the first organization in the session list). Only its owner can open the delete dialog.
+An exact organization name confirmation enables `DELETE /v0/orgs/{orgId}`.
+Success removes the organization from session state and opens `/secrets` when another organization
+remains, or `/account/organizations` otherwise. Failed requests retain the confirmation for retry.
+The API soft-deletes the organization and preserves memberships and user accounts.
+Rename, leave, notifications, and scope controls remain unavailable.
+
 ## Development
 
 ```sh
