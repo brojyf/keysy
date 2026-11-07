@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var v;try{v=document.cookie.split('; ').find(function(c){return c.indexOf('keysy-theme=')===0})?.slice(12)}catch(e){}var d=v==='dark'||(v!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var v;try{v=document.cookie.split('; ').find(function(c){return c.indexOf('keysy-theme=')===0})?.slice(12)}catch(e){}var d=v==='dark'||(v!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';var m=document.createElement('meta');m.name='theme-color';m.content=getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();document.head.appendChild(m)})()` }} />
       </head>
       <body>
         <ThemeSync />
