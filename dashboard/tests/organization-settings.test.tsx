@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
-let pathname = '/settings'
+let pathname = ''
 const router = { replace: mock(() => {}), push: mock(() => {}) }
 mock.module('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => router }))
 const { default: SessionGate } = await import('../src/components/session-gate')
@@ -25,7 +25,7 @@ let deleteRequest: ReturnType<typeof mock>
 let listOrganizations: ReturnType<typeof mock>
 
 beforeEach(() => {
-  pathname = '/settings'
+  pathname = `/orgs/${organization.id}/settings`
   organizations = [organization]
   deleteRequest = mock(() => Promise.resolve(new Response(null, { status: 204 })))
   listOrganizations = mock(() => Promise.resolve(Response.json(organizations)))
@@ -81,7 +81,7 @@ test('settings shows the current organization and disables unavailable features'
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
   expect(container.querySelector('code')?.textContent).toBe(organization.id)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
-  expect(container.querySelector('[aria-current="page"][href="/settings"]')).not.toBeNull()
+  expect(container.querySelector(`[aria-current="page"][href="/orgs/${organization.id}/settings"]`)).not.toBeNull()
   expect(container.querySelector<HTMLButtonElement>('nav[aria-label="Settings"] button')?.disabled).toBe(true)
 })
 
@@ -176,8 +176,10 @@ for (const remaining of [false, true]) test(`successful deletion updates the she
   expect(dialog().open).toBe(true)
   await act(async () => finish(new Response(null, { status: 204 })))
   if (remaining) {
+    expect(router.replace).toHaveBeenCalledWith(`/orgs/${otherOrganization.id}/secrets`)
+    pathname = `/orgs/${otherOrganization.id}/secrets`
+    await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
     expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
-    expect(router.replace).toHaveBeenCalledWith('/secrets')
   } else {
     expect(router.replace).toHaveBeenCalledWith('/account/organizations')
     expect(container.querySelector('.rail')).toBeNull()
@@ -216,8 +218,12 @@ for (const remaining of [false, true]) test(`retry after a lost delete response 
   await act(async () => submit())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).not.toBe(organization.name)
-  expect(router.replace).toHaveBeenCalledWith(remaining ? '/secrets' : '/account/organizations')
-  if (remaining) expect(container.querySelector('.topbar-org')?.textContent).toBe('Updated')
+  expect(router.replace).toHaveBeenCalledWith(remaining ? `/orgs/${otherOrganization.id}/secrets` : '/account/organizations')
+  if (remaining) {
+    pathname = `/orgs/${otherOrganization.id}/secrets`
+    await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
+    expect(container.querySelector('.topbar-org')?.textContent).toBe('Updated')
+  }
 })
 
 test('a 404 refreshes changed permissions without treating it as deletion', async () => {
@@ -316,4 +322,62 @@ test('signing out ignores a late delete response and aborts the request', async 
   expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(router.replace).not.toHaveBeenCalledWith('/secrets')
   expect(router.replace).not.toHaveBeenCalledWith('/account/organizations')
+})
+
+test('a direct link selects the second organization for the header, navigation, and delete request', async () => {
+  organizations = [organization, otherOrganization]
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
+  expect(container.querySelector('code')?.textContent).toBe(otherOrganization.id)
+  expect([...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Main"] a')].map((link) => link.getAttribute('href'))).toEqual([
+    `/orgs/${otherOrganization.id}/secrets`, `/orgs/${otherOrganization.id}/services`, `/orgs/${otherOrganization.id}/members`,
+    `/orgs/${otherOrganization.id}/audit-log`, `/orgs/${otherOrganization.id}/settings`,
+  ])
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(async () => submit())
+  expect(deleteRequest.mock.calls[0][0]).toBe(`https://api.keysy.net/v0/orgs/${otherOrganization.id}`)
+  expect(router.replace).toHaveBeenCalledWith(`/orgs/${organization.id}/secrets`)
+})
+
+test('permissions come from the organization in the URL', async () => {
+  organizations = [organization, { ...otherOrganization, role: 'developer' }]
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
+  expect(container.querySelector('.organization-settings dialog')).toBeNull()
+})
+
+for (const available of [false, true]) test(`an unavailable organization never falls back to another organization: ${available}`, async () => {
+  organizations = available ? [organization] : []
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(container.querySelector('.organization-settings')).toBeNull()
+  expect(container.querySelector('.topbar-org')).toBeNull()
+  expect(container.querySelector('a[href="/account/organizations"]')).not.toBeNull()
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(deleteRequest).not.toHaveBeenCalled()
+})
+
+test('switching organization paths discards confirmation and ignores a late deletion', async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finish!: (response: Response) => void
+  deleteRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => submit())
+  const signal = deleteRequest.mock.calls[0][1].signal as AbortSignal
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  expect(signal.aborted).toBe(true)
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
+  await openDelete()
+  expect(dialog().querySelector('input')?.value).toBe('')
+  await act(async () => finish(new Response(null, { status: 204 })))
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(container.querySelector('code')?.textContent).toBe(otherOrganization.id)
 })

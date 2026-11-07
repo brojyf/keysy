@@ -52,7 +52,7 @@ async function renderThemeControls() {
   document.body.append(container)
   root = createRoot(container)
   const user = { id: 'id', email: 'test@example.com', displayName: 'Test', agentAutoApply: false, memberships: [] }
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user, organizations: [{ id: '1', name: 'platform', role: 'owner', memberCount: 1 }], onOrganizationCreated: () => {}, onOrganizationDeleted: () => {}, onOrganizationsChange: () => {}, onUserChange: () => {}, onSignedOut: () => {}, onSignOutRequest: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" onSignOutRequest={() => {}} selected={false} /></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user, organizations: [{ id: '1', name: 'platform', role: 'owner', memberCount: 1 }], organization: undefined, onOrganizationCreated: () => {}, onOrganizationDeleted: () => {}, onOrganizationsChange: () => {}, onUserChange: () => {}, onSignedOut: () => {}, onSignOutRequest: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" onSignOutRequest={() => {}} selected={false} /></CurrentUserContext.Provider>))
   return container
 }
 

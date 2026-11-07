@@ -6,10 +6,10 @@ import { useRef } from 'react'
 import { openDialog } from '../lib/dialog-controls'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
+import { organizationPath } from '../lib/organization-route'
 
 export default function OrganizationSettings() {
-  const { organizations } = useCurrentUser()
-  const organization = organizations[0]
+  const { organization } = useCurrentUser()
   const deleteDialog = useRef<HTMLDialogElement>(null)
   if (!organization) return null
   const owner = organization.role === 'owner'
@@ -19,7 +19,7 @@ export default function OrganizationSettings() {
       <aside className="account-sidebar">
         <p className="account-sidebar-title">Settings</p>
         <nav className="account-nav" aria-label="Settings">
-          <Link className="account-nav-item" href="/settings" aria-current="page">General</Link>
+          <Link className="account-nav-item" href={organizationPath(organization.id, '/settings')} aria-current="page">General</Link>
           <button className="account-nav-item" type="button" disabled title="Coming soon">Notifications</button>
           {!owner && <button className="account-nav-item" type="button" disabled title="Coming soon">My scope</button>}
         </nav>

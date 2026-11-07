@@ -7,6 +7,7 @@ import { closeDialog } from '../lib/dialog-controls'
 import { parseOrganizations, type Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'
 import Dialog from './dialog'
+import { organizationPath } from '../lib/organization-route'
 
 export default function DeleteOrganizationDialog({ ref, organization }: { ref: Ref<HTMLDialogElement>; organization: Organization }) {
   const router = useRouter()
@@ -42,7 +43,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
         if (controller.signal.aborted) return
         onOrganizationsChange(updated)
         if (!updated.some((item) => item.id === organization.id)) {
-          router.replace(updated.length ? '/secrets' : '/account/organizations')
+          router.replace(updated[0] ? organizationPath(updated[0].id, '/secrets') : '/account/organizations')
           return
         }
         setError('The organization was not found, or you no longer have permission to delete it.')
@@ -50,7 +51,8 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
       }
       if (response.status !== 204) throw new Error('Delete failed')
       onOrganizationDeleted(organization.id)
-      router.replace(organizations.length > 1 ? '/secrets' : '/account/organizations')
+      const remaining = organizations.find((item) => item.id !== organization.id)
+      router.replace(remaining ? organizationPath(remaining.id, '/secrets') : '/account/organizations')
     } catch {
       if (!controller.signal.aborted) setError('Could not delete the organization. Try again.')
     } finally {

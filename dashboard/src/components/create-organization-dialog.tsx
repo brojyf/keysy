@@ -7,6 +7,7 @@ import Dialog from './dialog'
 import { parseCreatedOrganization } from '../lib/organization'
 import { apiFetch } from '../lib/api-client'
 import { useCurrentUser } from './current-user'
+import { organizationPath } from '../lib/organization-route'
 
 export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
   const router = useRouter()
@@ -37,7 +38,7 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
       const organization = parseCreatedOrganization(await response.json())
       if (!mounted.current) return
       onOrganizationCreated({ ...organization, role: 'owner', memberCount: 1 })
-      router.push('/secrets')
+      router.push(organizationPath(organization.id, '/secrets'))
     } catch { if (mounted.current) setError(true) } finally { submitting.current = false; if (mounted.current) setPending(false) }
   }
 

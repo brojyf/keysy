@@ -15,7 +15,7 @@ import * as accountLayout from '../src/app/account/layout'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
 
-let currentPathname = '/secrets'
+let currentPathname = '/orgs/org-id/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
 mock.module('next/navigation', () => ({ usePathname: () => currentPathname, useRouter: () => router }))
 
@@ -53,7 +53,7 @@ function rejectWhenAborted(_url: string, init: RequestInit) {
 }
 
 beforeEach(() => {
-  currentPathname = '/secrets'
+  currentPathname = '/orgs/org-id/secrets'
   process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net/'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
@@ -184,7 +184,7 @@ for (const hasOrganizations of [true, false]) {
     sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
     if (!hasOrganizations) organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([])))
     await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
-    expect(router.replace).toHaveBeenCalledWith(hasOrganizations ? '/secrets' : '/account/organizations')
+    expect(router.replace).toHaveBeenCalledWith(hasOrganizations ? '/orgs/org-id/secrets' : '/account/organizations')
     expect(container.textContent).not.toContain('Login content')
     expect(container.querySelector('.dashboard')).toBeNull()
   })
@@ -216,7 +216,7 @@ test('session retry on /signin redirects a verified user', async () => {
   expect(router.replace).not.toHaveBeenCalled()
   sessionRequest.mockImplementationOnce(() => Promise.resolve(Response.json(validUser)))
   await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
-  expect(router.replace).toHaveBeenCalledWith('/secrets')
+  expect(router.replace).toHaveBeenCalledWith('/orgs/org-id/secrets')
   expect(container.textContent).not.toContain('Login content')
 })
 
@@ -278,11 +278,11 @@ test('shows the rail and page content only after server verification', async () 
   expect(container.querySelector('a.auth-button')).toBeNull()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav a')]
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
-    ['Secrets', '/secrets'],
-    ['Services', '/services'],
-    ['Members', '/members'],
-    ['Audit log', '/audit-log'],
-    ['Settings', '/settings'],
+    ['Secrets', '/orgs/org-id/secrets'],
+    ['Services', '/orgs/org-id/services'],
+    ['Members', '/orgs/org-id/members'],
+    ['Audit log', '/orgs/org-id/audit-log'],
+    ['Settings', '/orgs/org-id/settings'],
   ])
   expect(links.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.getAttribute('aria-label'))).toEqual(['Secrets'])
   expect(container.querySelector('main')?.textContent).toBe('This is the Secrets page.')
@@ -552,7 +552,7 @@ test('exports page titles for dashboard routes', () => {
 })
 
 test('highlights the rail item for nested paths', async () => {
-  currentPathname = '/audit-log/2026'
+  currentPathname = '/orgs/org-id/audit-log/2026'
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   expect(container.querySelector('nav a[aria-current="page"]')?.getAttribute('aria-label')).toBe('Audit log')
@@ -734,6 +734,7 @@ function submitOrganization() {
 }
 
 test('checks organizations after the user with credentials and a combined signal', async () => {
+  currentPathname = '/secrets'
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
   organizationsRequest.mockImplementation((url: string, init: RequestInit) => {
     expect(sessionRequest).toHaveBeenCalledTimes(1)
@@ -810,9 +811,9 @@ test('create form validates names and submits one trimmed request, then redirect
   await act(() => createDialog.dispatchEvent(new browser.Event('cancel', { cancelable: true })))
   expect(createDialog.open).toBe(true)
   await act(async () => finish(Response.json({ id: 'new-id', name: 'New org' }, { status: 201 })))
-  expect(router.push).toHaveBeenCalledWith('/secrets')
+  expect(router.push).toHaveBeenCalledWith('/orgs/new-id/secrets')
   expect(container.querySelector('.rail')).not.toBeNull()
-  currentPathname = '/secrets'
+  currentPathname = '/orgs/new-id/secrets'
   await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
   expect(container.querySelector('.topbar-org')?.textContent).toBe('New org')
 })
@@ -957,5 +958,21 @@ for (const selector of ['.topbar-icon-button', '.rail-item[data-tooltip]']) {
     expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(false)
     document.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     expect(trigger.hasAttribute('data-tooltip-dismissed')).toBe(false)
+  })
+}
+
+for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings']) {
+  test(`the legacy /${page} entry redirects to a specific organization`, async () => {
+    currentPathname = `/${page}`
+    sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+    await renderSessionGate()
+    expect(router.replace).toHaveBeenCalledWith(`/orgs/org-id/${page}`)
+    expect(container.querySelector('.dashboard')).toBeNull()
+  })
+  test(`the scoped ${page} route shows its own pending skeleton`, async () => {
+    currentPathname = `/orgs/org-id/${page}`
+    sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+    await renderSessionGate()
+    expect(container.querySelector(`[data-skeleton-page="${page}"]`)).not.toBeNull()
   })
 }
