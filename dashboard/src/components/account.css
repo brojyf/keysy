@@ -212,6 +212,22 @@
   border-radius: var(--radius-full);
   color: var(--color-muted);
   background: none;
+  transition: color 150ms ease-out;
+}
+
+.account-theme button:hover,
+.account-theme button:focus-visible {
+  color: var(--color-text);
+}
+
+.account-theme button:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.account-theme button:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
 .account-theme button[aria-pressed='true'] {
@@ -268,6 +284,11 @@
 .account-table td {
   color: var(--color-text);
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
+.account-orgs tbody td:nth-child(3):not(.account-table-empty),
+.account-sessions tbody td:nth-child(3):not(.account-table-empty) {
+  font-variant-numeric: tabular-nums;
 }
 
 .account-table tbody tr + tr td {
@@ -342,11 +363,7 @@
 
 .account-search:focus-within {
   border-color: transparent;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
-}
-
-:root.dark .account-search:focus-within {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
 .account-search svg {
@@ -412,6 +429,7 @@ th[aria-sort='descending'] .account-sort svg {
   background: none;
   vertical-align: top;
   cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
 .account-more:disabled {
@@ -427,20 +445,80 @@ tr:hover .account-more:not(:disabled),
   background: var(--color-soft);
 }
 
-.account-more:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: -2px;
+.account-more:focus-visible:not(:disabled) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+}
+
+.account-more:active:not(:disabled) {
+  scale: 0.97;
 }
 
 .account-menu.account-row-menu {
   inset: auto;
   width: 128px;
+  padding: 6px;
+  border: 0;
   transform-origin: right top;
+  transition-duration: 128ms;
+  transition-timing-function: ease-out;
+}
+
+.account-menu.account-row-menu:popover-open {
+  transition-duration: 160ms;
+  transition-timing-function: ease-out;
+}
+
+.account-menu.account-row-menu:not(:popover-open) {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.account-menu.account-row-menu .account-menu-item {
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.account-menu.account-row-menu .account-menu-item:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+}
+
+.account-menu.account-row-menu .account-menu-item:active {
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .account-menu.account-row-menu:popover-open > .account-menu-item {
+    animation: account-menu-row-enter 120ms ease-out backwards;
+  }
+
+  .account-menu.account-row-menu:popover-open > .account-menu-item:nth-child(2) {
+    animation-delay: 20ms;
+  }
 }
 
 @starting-style {
   .account-menu.account-row-menu:popover-open {
+    opacity: 0;
     transform: scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-theme button,
+  .account-more,
+  .account-menu.account-row-menu,
+  .account-menu.account-row-menu .account-menu-item {
+    transition: none;
+    animation: none;
+  }
+
+  .account-theme button:active:not(:disabled),
+  .account-more:active:not(:disabled),
+  .account-menu.account-row-menu .account-menu-item:active {
+    scale: 1;
   }
 }
 
@@ -462,11 +540,7 @@ tr:hover .account-more:not(:disabled),
 .account-name:focus {
   border-color: transparent;
   outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
-}
-
-:root.dark .account-name:focus {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
 .account-sections-editing {
@@ -541,6 +615,7 @@ tr:hover .account-more:not(:disabled),
   color: var(--color-text);
   background: var(--color-surface);
   font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
 .account-save-bar button[type='submit'] {
@@ -560,6 +635,26 @@ tr:hover .account-more:not(:disabled),
 
 .account-save-bar button[data-feedback] .account-save-label {
   visibility: hidden;
+  opacity: 0;
+  filter: blur(6px);
+}
+
+.account-save-bar button:focus-visible:not(:disabled) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+}
+
+.account-save-bar button:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.account-save-label,
+.account-save-icon {
+  visibility: visible;
+  opacity: 1;
+  filter: blur(0);
+  transition: visibility 120ms ease-out, opacity 120ms ease-out, filter 120ms ease-out;
 }
 
 .account-save-icon {
@@ -567,26 +662,42 @@ tr:hover .account-more:not(:disabled),
   top: 50%;
   left: 50%;
   margin: -7px 0 0 -7px;
+  visibility: hidden;
+  opacity: 0;
+  filter: blur(6px);
+}
+
+.account-save-bar button[data-save-state='saving'] .account-save-spinner,
+.account-save-bar button[data-save-state='saved'] .account-save-check {
+  visibility: visible;
+  opacity: 1;
+  filter: blur(0);
 }
 
 .account-save-spinner {
   animation: account-save-spin 800ms linear infinite;
+  animation-play-state: paused;
 }
 
-.account-save-check {
-  animation: account-save-confirm 120ms ease-out;
+.account-save-bar button[data-save-state='saving'] .account-save-spinner {
+  animation-play-state: running;
 }
 
 @keyframes account-save-spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes account-save-confirm {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .account-save-bar button,
+  .account-save-label,
+  .account-save-icon {
+    transition: none;
+  }
+
+  .account-save-bar button:active:not(:disabled) {
+    scale: 1;
+  }
+
   .account-save-spinner,
   .account-save-check {
     animation: none;
