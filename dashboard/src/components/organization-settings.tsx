@@ -11,6 +11,7 @@ import { organizationPath } from '../lib/organization-route'
 export default function OrganizationSettings() {
   const { organization } = useCurrentUser()
   const deleteDialog = useRef<HTMLDialogElement>(null)
+  const copyOperation = useRef(0)
   const [copyFeedback, setCopyFeedback] = useState<{ id: string; status: 'copied' | 'error' } | null>(null)
   useEffect(() => {
     if (copyFeedback?.status !== 'copied') return
@@ -24,11 +25,12 @@ export default function OrganizationSettings() {
   const copyLabel = copied ? 'Organization ID copied' : copyFailed ? 'Copy failed. Try again.' : 'Copy organization ID'
 
   async function copyOrganizationID(id: string) {
+    const operation = ++copyOperation.current
     try {
       await window.navigator.clipboard.writeText(id)
-      setCopyFeedback({ id, status: 'copied' })
+      if (operation === copyOperation.current) setCopyFeedback({ id, status: 'copied' })
     } catch {
-      setCopyFeedback({ id, status: 'error' })
+      if (operation === copyOperation.current) setCopyFeedback({ id, status: 'error' })
     }
   }
 

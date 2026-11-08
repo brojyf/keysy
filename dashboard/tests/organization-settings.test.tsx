@@ -129,6 +129,29 @@ test('a clipboard failure shows feedback and permits retry', async () => {
   expect(copyButton.getAttribute('aria-label')).toBe('Organization ID copied')
 })
 
+for (const olderFails of [true, false]) test(`only the latest clipboard result updates feedback when the older operation fails: ${olderFails}`, async () => {
+  await renderSettings()
+  let finishOlder!: () => void
+  let finishLatest!: () => void
+  writeClipboard.mockImplementationOnce(() => new Promise<void>((resolve, reject) => {
+    finishOlder = () => olderFails ? reject(new Error('Clipboard denied')) : resolve()
+  }))
+  writeClipboard.mockImplementationOnce(() => new Promise<void>((resolve, reject) => {
+    finishLatest = () => olderFails ? resolve() : reject(new Error('Clipboard denied'))
+  }))
+  const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
+  await act(() => { copyButton.click(); copyButton.click() })
+  expect(writeClipboard).toHaveBeenCalledTimes(2)
+  await act(async () => finishLatest())
+  const expectedLabel = olderFails ? 'Organization ID copied' : 'Copy failed. Try again.'
+  const expectedFeedback = olderFails ? 'Organization ID copied.' : 'Could not copy. Try again.'
+  expect(copyButton.getAttribute('aria-label')).toBe(expectedLabel)
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(expectedFeedback)
+  await act(async () => finishOlder())
+  expect(copyButton.getAttribute('aria-label')).toBe(expectedLabel)
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(expectedFeedback)
+})
+
 test('an unavailable clipboard reports failure without claiming success', async () => {
   Object.defineProperty(browser.navigator, 'clipboard', { configurable: true, value: undefined })
   await renderSettings()
