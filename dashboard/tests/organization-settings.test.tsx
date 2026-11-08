@@ -390,6 +390,40 @@ test('404 reconciliation stays pending and updates organizations after leaving s
   expect(router.replace).not.toHaveBeenCalled()
 })
 
+for (const outcome of ['404', 'network'] as const) test(`a late ${outcome} reconciliation cannot restore a subsequently deleted organization`, async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finishDelete!: () => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve, reject) => {
+    finishDelete = () => outcome === '404'
+      ? resolve(new Response(null, { status: 404 }))
+      : reject(new Error('Response lost'))
+  }))
+  let finishRefresh!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishRefresh = resolve }))
+  await act(() => submit())
+  if (outcome === '404') await act(async () => finishDelete())
+
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  if (outcome === 'network') await act(async () => finishDelete())
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(async () => submit())
+  expect(deleteRequest).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  router.replace.mockClear()
+
+  await act(async () => finishRefresh(Response.json([otherOrganization])))
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(container.querySelector('.organization-settings')).toBeNull()
+  expect(container.querySelector('.topbar-org')).toBeNull()
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
 test('an expired delete session redirects to sign-in', async () => {
   await renderSettings()
   await openDelete()

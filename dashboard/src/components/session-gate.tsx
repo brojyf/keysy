@@ -117,7 +117,8 @@ function SessionGate({ children }: { children: ReactNode }) {
         organization,
         onOrganizationCreated: (organization) => setOrganizations((current) => [...current, organization]),
         onOrganizationDeleted: (organizationID) => setOrganizations((current) => current.filter((organization) => organization.id !== organizationID)),
-        onOrganizationsChange: setOrganizations,
+        // Ignore snapshots from a render before a newer organization change.
+        onOrganizationsChange: (updated) => setOrganizations((current) => current === organizations ? updated : current),
         onUserChange: (updated) => setUser((current) => current ? updated : current),
         onSignedOut: () => setUser(null),
         onSignOutRequest: requestSignOut,
