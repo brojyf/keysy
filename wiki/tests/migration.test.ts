@@ -292,8 +292,8 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 8],
-    ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 2],
+    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 9],
+    ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?</nav>`))![0];
@@ -301,7 +301,8 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
     const endpointLinks = (await matches(sidebar, 'a[href]')).map(({ href }) => href!).filter((href) => href.startsWith(`/${route}/operations/`));
     expect(labels.slice(0, 3 + firstEntries.length)).toEqual(['General', 'Introduction', 'API endpoints', ...firstEntries]);
     // Sourcey publishes OPTIONS pages but omits them from sidebar navigation.
-    expect(labels.filter((entry) => entry.startsWith('/v0/'))).toHaveLength(await operationCount(route, false));
+    expect(labels.filter((entry) => entry.startsWith('/'))).toHaveLength(await operationCount(route, false));
+    expect(labels).toContain('/health');
     expect(endpointLinks).toHaveLength(await operationCount(route, false));
     expect(await matches(sidebar, 'details.sourcey-nav-group')).toHaveLength(groupCount);
     expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);

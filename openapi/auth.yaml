@@ -16,7 +16,7 @@ info:
 
     This is the v0 draft, not a stable release.
 
-    Responses include a generated X-Request-ID, Cache-Control: no-store, and Referrer-Policy: no-referrer.
+    Except for `/health`, responses include a generated X-Request-ID, Cache-Control: no-store, and Referrer-Policy: no-referrer.
     Recovery can return a 500 INTERNAL_ERROR. If request ID generation itself fails, X-Request-ID is absent.
     For logout and refresh, after a valid Origin, POST requests
     receive Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
@@ -35,6 +35,7 @@ servers:
 tags:
   - name: Sign-in
   - name: Session
+  - name: Health
 paths:
   /v0/auth/google:
     get:
@@ -271,7 +272,9 @@ paths:
 
         Without a valid access cookie, the service uses the refresh cookie to get an access token, then revokes the session.
         A missing, invalid, or rejected credential still clears the cookies. The User-Agent must be printable ASCII and at most 2048 bytes.
-        If Supabase is unavailable, the service keeps the cookies so the user can retry.
+        If Supabase is unavailable, the service keeps the session so the user can retry.
+        If the service refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
+        Otherwise, it leaves the existing cookies unchanged.
       security:
         - {}
         - accessCookie: []
@@ -318,8 +321,15 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
         '503':
-          description: Supabase is unavailable. The service keeps the cookies. The `code` is `LOGOUT_UNAVAILABLE`.
+          description: |
+            Supabase is unavailable. The service keeps the session. The `code` is `LOGOUT_UNAVAILABLE`.
+            If the service refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
+            Otherwise, it leaves the existing cookies unchanged.
           headers:
+            Set-Cookie:
+              description: If the service refreshed the session before revocation failed, the two rotated encrypted session cookies. Otherwise, this header is absent.
+              schema:
+                type: string
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
             Access-Control-Allow-Origin:
@@ -508,6 +518,27 @@ paths:
           $ref: '#/components/responses/PreflightRejected'
         '500':
           $ref: '#/components/responses/InternalError'
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      security: []
+      summary: Check process liveness
+      description: |
+        Reports that the process accepts requests. Does not check Google, Supabase, or other dependencies.
+        Runs before request middleware, without authentication, request IDs, CORS allow headers, Referrer-Policy, or telemetry.
+      responses:
+        '200':
+          description: The process accepts requests.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [ok]
+
 components:
   securitySchemes:
     accessCookie:
