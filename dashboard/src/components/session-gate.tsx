@@ -149,7 +149,12 @@ function SessionGate({ children }: { children: ReactNode }) {
         organizations,
         organization,
         onOrganizationCreated: (organization) => { if (currentSession && !currentSession.signal.aborted) updateOrganizations([...organizationSnapshot.current, organization]) },
-        onOrganizationDeleted: (organizationID) => { if (currentSession && !currentSession.signal.aborted) updateOrganizations(organizationSnapshot.current.filter((organization) => organization.id !== organizationID)) },
+        onOrganizationDeleted: (organizationID) => {
+          if (!currentSession || currentSession.signal.aborted) return null
+          const remaining = organizationSnapshot.current.filter((organization) => organization.id !== organizationID)
+          updateOrganizations(remaining)
+          return remaining
+        },
         refreshOrganizations,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
         onSignedOut: signedOut,

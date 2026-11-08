@@ -13,7 +13,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   const router = useRouter()
   const formID = useId()
   const confirmationID = useId()
-  const { organizations, onOrganizationDeleted, refreshOrganizations, onSignedOut } = useCurrentUser()
+  const { onOrganizationDeleted, refreshOrganizations, onSignedOut } = useCurrentUser()
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -42,10 +42,9 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
         return
       }
       if (response.status !== 204) throw new Error('Delete failed')
-      onOrganizationDeleted(organization.id)
-      if (!mounted.current) return
-      const remaining = organizations.find((item) => item.id !== organization.id)
-      router.replace(remaining ? organizationPath(remaining.id, '/secrets') : '/account/organizations')
+      const remaining = onOrganizationDeleted(organization.id)
+      if (!remaining || !mounted.current) return
+      router.replace(remaining[0] ? organizationPath(remaining[0].id, '/secrets') : '/account/organizations')
     } catch {
       if (!mounted.current) {
         await refreshOrganizations().catch(() => {})

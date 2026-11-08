@@ -9,7 +9,7 @@ type CurrentUser = {
   organizations: Organization[]
   organization: Organization | undefined
   onOrganizationCreated: (organization: Organization) => void
-  onOrganizationDeleted: (organizationID: string) => void
+  onOrganizationDeleted: (organizationID: string) => Organization[] | null
   refreshOrganizations: () => Promise<Organization[] | null>
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
