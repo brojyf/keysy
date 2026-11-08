@@ -26,9 +26,17 @@ function SessionGate({ children }: { children: ReactNode }) {
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
   const [sessionCheck, setSessionCheck] = useState(0)
   const signOutDialog = useRef<HTMLDialogElement>(null)
+  const organizationSnapshot = useRef(organizations)
+  const sessionController = useRef<AbortController | null>(null)
+
+  function updateOrganizations(updated: Organization[]) {
+    organizationSnapshot.current = updated
+    setOrganizations(updated)
+  }
 
   useEffect(() => {
     const controller = new AbortController()
+    sessionController.current = controller
     async function checkSession() {
       try {
         const response = await apiFetch('/v0/me', { signal: controller.signal })
@@ -42,7 +50,7 @@ function SessionGate({ children }: { children: ReactNode }) {
         if (orgResponse.status === 401) { if (!controller.signal.aborted) setUser(null); return }
         if (!orgResponse.ok) throw new Error('Organizations check failed')
         const orgs = parseOrganizations(await orgResponse.json())
-        if (!controller.signal.aborted) { setOrganizations(orgs); setUser(session) }
+        if (!controller.signal.aborted) { updateOrganizations(orgs); setUser(session) }
       } catch {
         // Only a 401 means signed out; any other failure must not show sign-in.
         if (!controller.signal.aborted) setSessionError(true)
@@ -51,6 +59,31 @@ function SessionGate({ children }: { children: ReactNode }) {
     void checkSession()
     return () => controller.abort()
   }, [authURL, sessionCheck])
+
+  const currentSession = sessionController.current
+
+  function signedOut() {
+    if (!currentSession || currentSession.signal.aborted) return
+    currentSession.abort()
+    setUser(null)
+  }
+
+  async function refreshOrganizations() {
+    while (currentSession && !currentSession.signal.aborted) {
+      const startedWith = organizationSnapshot.current
+      const response = await apiFetch('/v0/orgs', { signal: currentSession.signal })
+      if (currentSession.signal.aborted) return null
+      if (response.status === 401) { signedOut(); return null }
+      if (!response.ok) throw new Error('Organizations check failed')
+      const updated = parseOrganizations(await response.json())
+      if (currentSession.signal.aborted) return null
+      // Re-read when a creation, deletion, or another accepted refresh overlaps this GET.
+      if (organizationSnapshot.current !== startedWith) continue
+      updateOrganizations(updated)
+      return updated
+    }
+    return null
+  }
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
   const organization = organizationForPath(organizations, pathname)
@@ -81,7 +114,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     try {
       const response = await logoutSession(authURL)
       if (!response.ok) throw new Error('Logout failed')
-      setUser(null)
+      signedOut()
       setSessionError(false)
       setLogoutStatus('idle')
     } catch {
@@ -115,12 +148,11 @@ function SessionGate({ children }: { children: ReactNode }) {
         user,
         organizations,
         organization,
-        onOrganizationCreated: (organization) => setOrganizations((current) => [...current, organization]),
-        onOrganizationDeleted: (organizationID) => setOrganizations((current) => current.filter((organization) => organization.id !== organizationID)),
-        // Ignore snapshots from a render before a newer organization change.
-        onOrganizationsChange: (updated) => setOrganizations((current) => current === organizations ? updated : current),
+        onOrganizationCreated: (organization) => { if (currentSession && !currentSession.signal.aborted) updateOrganizations([...organizationSnapshot.current, organization]) },
+        onOrganizationDeleted: (organizationID) => { if (currentSession && !currentSession.signal.aborted) updateOrganizations(organizationSnapshot.current.filter((organization) => organization.id !== organizationID)) },
+        refreshOrganizations,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
-        onSignedOut: () => setUser(null),
+        onSignedOut: signedOut,
         onSignOutRequest: requestSignOut,
       }}>
         <div className="dashboard">

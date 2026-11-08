@@ -10,6 +10,7 @@ mock.module('next/navigation', () => ({ usePathname: () => pathname, useRouter: 
 const { default: SessionGate } = await import('../src/components/session-gate')
 const { default: SettingsPage } = await import('../src/app/settings/page')
 const { default: GeneralPage } = await import('../src/app/account/page')
+const { useCurrentUser } = await import('../src/components/current-user')
 
 const organization = { id: '20000000-0000-0000-0000-000000000001', name: 'Platform', role: 'owner', memberCount: 2 }
 const otherOrganization = { ...organization, id: '20000000-0000-0000-0000-000000000002', name: 'Other' }
@@ -417,7 +418,9 @@ for (const outcome of ['404', 'network'] as const) test(`a late ${outcome} recon
   expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
   router.replace.mockClear()
 
+  organizations = []
   await act(async () => finishRefresh(Response.json([otherOrganization])))
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
   expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
   expect(container.querySelector('.organization-settings')).toBeNull()
   expect(container.querySelector('.topbar-org')).toBeNull()
@@ -554,4 +557,150 @@ test('an uncertain deletion after leaving settings keeps an organization that st
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
   expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
+})
+
+for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation after another deletion removes the unavailable organization: ${outcome}`, async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finishDelete!: () => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve, reject) => {
+    finishDelete = () => outcome === '404'
+      ? resolve(new Response(null, { status: 404 }))
+      : reject(new Error('Response lost'))
+  }))
+  await act(() => submit())
+
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(async () => submit())
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(listOrganizations).toHaveBeenCalledTimes(1)
+  organizations = []
+  await act(async () => finishDelete())
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(container.querySelector('.organization-settings')).toBeNull()
+})
+
+function OrganizationChanges() {
+  const { onOrganizationCreated } = useCurrentUser()
+  return <button onClick={() => onOrganizationCreated({ ...otherOrganization, id: 'created-id', name: 'Created' })}>Create another organization</button>
+}
+
+test('a mounted delete dialog navigates only with the accepted reconciliation result', async () => {
+  await act(async () => root.render(<SessionGate><SettingsPage /><OrganizationChanges /></SessionGate>))
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
+  let finish!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => submit())
+  await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Create another organization')!.click())
+  organizations = [{ ...otherOrganization, id: 'created-id', name: 'Created' }]
+  await act(async () => finish(Response.json([])))
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
+  expect(router.replace).toHaveBeenCalledTimes(1)
+  expect(router.replace).toHaveBeenCalledWith('/orgs/created-id/secrets')
+})
+
+test('each organization change during reconciliation triggers another read before accepting a snapshot', async () => {
+  organizations = [organization, otherOrganization]
+  await act(async () => root.render(<SessionGate><SettingsPage /><OrganizationChanges /></SessionGate>))
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 404 })))
+  let finishFirst!: (response: Response) => void
+  let finishSecond!: (response: Response) => void
+  let finishThird!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishFirst = resolve }))
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSecond = resolve }))
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishThird = resolve }))
+  await act(() => submit())
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Create another organization')!.click())
+  await act(async () => finishFirst(Response.json([])))
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
+  expect(confirmButton().disabled).toBe(true)
+  expect(router.replace).not.toHaveBeenCalled()
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(async () => submit())
+  router.replace.mockClear()
+  await act(async () => finishSecond(Response.json([otherOrganization])))
+  expect(listOrganizations).toHaveBeenCalledTimes(4)
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  const created = { ...otherOrganization, id: 'created-id', name: 'Created' }
+  await act(async () => finishThird(Response.json([created])))
+  expect(router.replace).not.toHaveBeenCalled()
+  pathname = `/orgs/${created.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('Created')
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+})
+
+test('an older concurrent reconciliation revalidates after a newer snapshot was accepted', async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
+  let finishOlder!: (response: Response) => void
+  let finishNewer!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishOlder = resolve }))
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishNewer = resolve }))
+  await act(() => submit())
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(() => submit())
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
+  await act(async () => finishNewer(Response.json([{ ...otherOrganization, role: 'developer' }])))
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  organizations = [{ ...otherOrganization, role: 'developer' }]
+  await act(async () => finishOlder(Response.json([organization, otherOrganization])))
+  expect(listOrganizations).toHaveBeenCalledTimes(4)
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  expect(router.replace).not.toHaveBeenCalled()
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+})
+
+for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconciliation is cancelled after ${outcome}`, async () => {
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
+  let finish!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => submit())
+  const signal = listOrganizations.mock.calls[1][1].signal as AbortSignal
+  if (outcome === 'signout') {
+    pathname = '/account'
+    await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+    globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
+    await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
+    await act(async () => container.querySelector<HTMLButtonElement>('.dialog-danger')!.click())
+  } else {
+    await act(() => root.unmount())
+    root = createRoot(container)
+  }
+  expect(signal.aborted).toBe(true)
+  router.replace.mockClear()
+  await act(async () => finish(Response.json([])))
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(container.querySelector('.dashboard')).toBeNull()
 })

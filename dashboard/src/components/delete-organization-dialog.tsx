@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import { apiFetch } from '../lib/api-client'
 import { closeDialog } from '../lib/dialog-controls'
-import { parseOrganizations, type Organization } from '../lib/organization'
+import type { Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'
 import Dialog from './dialog'
 import { organizationPath } from '../lib/organization-route'
@@ -13,7 +13,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   const router = useRouter()
   const formID = useId()
   const confirmationID = useId()
-  const { organizations, onOrganizationDeleted, onOrganizationsChange, onSignedOut } = useCurrentUser()
+  const { organizations, onOrganizationDeleted, refreshOrganizations, onSignedOut } = useCurrentUser()
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -21,15 +21,6 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const valid = confirmation === organization.name
-
-  async function refreshOrganizations() {
-    const response = await apiFetch('/v0/orgs')
-    if (response.status === 401) { onSignedOut(); return null }
-    if (!response.ok) throw new Error('Organizations check failed')
-    const updated = parseOrganizations(await response.json())
-    onOrganizationsChange(updated)
-    return updated
-  }
 
   async function remove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
