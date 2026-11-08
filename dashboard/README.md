@@ -27,7 +27,9 @@ The symbols in `public/` and the dot tile `src/components/sign-in-dots.png` were
 
 ## Organization settings
 
-`/orgs/{orgId}/settings` follows Figma screens 6.7 and 6.8. The URL selects the organization
+`/orgs/{orgId}/settings` follows Figma screens 6.1, 6.7, and 6.8. General displays the user's role
+in that organization (Owner, Admin, or Developer). The ID copy button shows a check for 2.5 seconds
+after a successful clipboard write and reports failures for retry. The URL selects the organization
 from the verified membership list. The top bar, navigation, settings, and delete request use that same
 organization. Unknown, deleted, or inaccessible organization IDs show an unavailable page without
 falling back to another organization. Only its owner can open the delete dialog.

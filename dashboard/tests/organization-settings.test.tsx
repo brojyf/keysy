@@ -23,6 +23,7 @@ let container: HTMLDivElement
 let organizations: typeof organization[]
 let deleteRequest: ReturnType<typeof mock>
 let listOrganizations: ReturnType<typeof mock>
+let writeClipboard: ReturnType<typeof mock>
 
 beforeEach(() => {
   pathname = `/orgs/${organization.id}/settings`
@@ -34,6 +35,8 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
+  writeClipboard = mock(() => Promise.resolve())
+  Object.defineProperty(browser.navigator, 'clipboard', { configurable: true, value: { writeText: writeClipboard } })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   globalThis.fetch = mock((url: string | URL | Request, init?: RequestInit) => {
     if (init?.method === 'DELETE') return deleteRequest(url, init)
@@ -83,6 +86,75 @@ test('settings shows the current organization and disables unavailable features'
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(container.querySelector(`[aria-current="page"][href="/orgs/${organization.id}/settings"]`)).not.toBeNull()
   expect(container.querySelector<HTMLButtonElement>('nav[aria-label="Settings"] button')?.disabled).toBe(true)
+})
+
+for (const [role, label] of [['owner', 'Owner'], ['admin', 'Admin'], ['developer', 'Developer']]) test(`settings shows the current organization's ${role} role as read-only text`, async () => {
+  organizations = [{ ...organization, role: 'owner' }, { ...otherOrganization, role }]
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  const roleTerm = [...container.querySelectorAll('dt')].find((term) => term.textContent === 'Role')
+  expect(roleTerm).toBeDefined()
+  const roleValue = roleTerm!.nextElementSibling!
+  expect(roleValue.tagName).toBe('DD')
+  expect(roleValue.textContent).toBe(label)
+  expect(roleValue.querySelector('input, select, button')).toBeNull()
+})
+
+test('copies the organization ID from the URL and clears success feedback after 2.5 seconds', async () => {
+  organizations = [organization, otherOrganization]
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
+  expect(copyButton).not.toBeNull()
+  await act(async () => copyButton.click())
+  expect(writeClipboard).toHaveBeenCalledTimes(1)
+  expect(writeClipboard).toHaveBeenCalledWith(otherOrganization.id)
+  expect(copyButton.getAttribute('aria-label')).toBe('Organization ID copied')
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('Organization ID copied.')
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 2550)) })
+  expect(copyButton.getAttribute('aria-label')).toBe('Copy organization ID')
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+})
+
+test('a clipboard failure shows feedback and permits retry', async () => {
+  await renderSettings()
+  writeClipboard.mockImplementationOnce(() => Promise.reject(new Error('Clipboard denied')))
+  const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
+  expect(copyButton).not.toBeNull()
+  await act(async () => copyButton.click())
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('Could not copy. Try again.')
+  expect(copyButton.getAttribute('aria-label')).not.toBe('Organization ID copied')
+  await act(async () => copyButton.click())
+  expect(writeClipboard).toHaveBeenCalledTimes(2)
+  expect(copyButton.getAttribute('aria-label')).toBe('Organization ID copied')
+})
+
+test('an unavailable clipboard reports failure without claiming success', async () => {
+  Object.defineProperty(browser.navigator, 'clipboard', { configurable: true, value: undefined })
+  await renderSettings()
+  const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
+  expect(copyButton).not.toBeNull()
+  await act(async () => copyButton.click())
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('Could not copy. Try again.')
+  expect(copyButton.getAttribute('aria-label')).not.toBe('Organization ID copied')
+})
+
+test('a late clipboard result cannot show success for a different organization', async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  let finish!: () => void
+  writeClipboard.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve }))
+  const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
+  expect(copyButton).not.toBeNull()
+  await act(() => copyButton.click())
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await act(async () => finish())
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+  expect(container.querySelector('button[aria-label="Organization ID copied"]')).toBeNull()
+  await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!.click())
+  expect(writeClipboard).toHaveBeenLastCalledWith(otherOrganization.id)
+  expect(container.querySelector('button[aria-label="Organization ID copied"]')).not.toBeNull()
 })
 
 for (const width of [360, 700]) test(`settings stacks organization fields at ${width}px`, async () => {

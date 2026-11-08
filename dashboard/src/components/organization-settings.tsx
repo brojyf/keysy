@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Settings } from 'lucide-react'
-import { useRef } from 'react'
+import { Check, Copy, Settings } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { openDialog } from '../lib/dialog-controls'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
@@ -11,8 +11,26 @@ import { organizationPath } from '../lib/organization-route'
 export default function OrganizationSettings() {
   const { organization } = useCurrentUser()
   const deleteDialog = useRef<HTMLDialogElement>(null)
+  const [copyFeedback, setCopyFeedback] = useState<{ id: string; status: 'copied' | 'error' } | null>(null)
+  useEffect(() => {
+    if (copyFeedback?.status !== 'copied') return
+    const timer = setTimeout(() => setCopyFeedback(null), 2500)
+    return () => clearTimeout(timer)
+  }, [copyFeedback])
   if (!organization) return null
   const owner = organization.role === 'owner'
+  const copied = copyFeedback?.id === organization.id && copyFeedback.status === 'copied'
+  const copyFailed = copyFeedback?.id === organization.id && copyFeedback.status === 'error'
+  const copyLabel = copied ? 'Organization ID copied' : copyFailed ? 'Copy failed. Try again.' : 'Copy organization ID'
+
+  async function copyOrganizationID(id: string) {
+    try {
+      await window.navigator.clipboard.writeText(id)
+      setCopyFeedback({ id, status: 'copied' })
+    } catch {
+      setCopyFeedback({ id, status: 'error' })
+    }
+  }
 
   return (
     <div className="account organization-settings">
@@ -35,7 +53,14 @@ export default function OrganizationSettings() {
             <h2>Organization</h2>
             <dl className="account-rows">
               <div><dt><label htmlFor="organization-settings-name">Name</label></dt><dd><input id="organization-settings-name" className="account-name" value={organization.name} readOnly title="Renaming is coming soon" /></dd></div>
-              <div><dt>Organization ID</dt><dd><code className="organization-id">{organization.id}</code></dd></div>
+              <div><dt>Organization ID</dt><dd>
+                <button className="organization-copy" type="button" aria-label={copyLabel} title={copyLabel} onClick={() => void copyOrganizationID(organization.id)}>
+                  <code className="organization-id">{organization.id}</code>
+                  {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
+                </button>
+                <span className="organization-copy-status" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
+              </dd></div>
+              <div><dt>Role</dt><dd>{organization.role[0].toUpperCase() + organization.role.slice(1)}</dd></div>
             </dl>
           </section>
           <section>

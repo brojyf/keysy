@@ -33,9 +33,52 @@
 }
 
 .organization-settings .organization-id {
+  min-width: 0;
   overflow-wrap: anywhere;
   font: var(--text-code--font-weight) var(--text-code)/var(--text-code--line-height) var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.organization-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, scale 120ms ease-out;
+}
+
+.organization-copy:hover {
+  background: var(--color-soft);
+}
+
+.organization-copy:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
+}
+
+.organization-copy:active {
+  scale: 0.97;
+}
+
+.organization-copy svg {
+  flex-shrink: 0;
+}
+
+.organization-copy-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .organization-settings .account-name:focus {
@@ -73,11 +116,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .organization-copy,
   .organization-settings .account-nav-item,
   .organization-settings .account-delete:not(:disabled) {
     transition: none;
   }
 
+  .organization-copy:active,
   .organization-settings .account-delete:not(:disabled):active {
     scale: 1;
   }
