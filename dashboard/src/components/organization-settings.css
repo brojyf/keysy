@@ -44,13 +44,6 @@
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
 }
 
-.organization-settings .organization-settings-note {
-  margin: 0 0 10px;
-  color: var(--color-muted);
-  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
-  text-wrap: pretty;
-}
-
 .organization-settings .account-delete:not(:disabled) {
   cursor: pointer;
   transition: background-color 150ms ease-out, scale 120ms ease-out;

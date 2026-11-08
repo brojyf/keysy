@@ -40,7 +40,6 @@ export default function OrganizationSettings() {
           </section>
           <section>
             <h2 className="account-danger">Danger zone</h2>
-            {owner && <p className="organization-settings-note">To leave instead, transfer ownership on the Members page.</p>}
             <dl className="account-rows">
               <div>
                 <dt>{owner ? 'Delete organization' : 'Leave organization'}</dt>
