@@ -18,30 +18,31 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const submitting = useRef(false)
-  const request = useRef<AbortController | null>(null)
-  useEffect(() => () => request.current?.abort(), [])
+  const mounted = useRef(false)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const valid = confirmation === organization.name
+
+  async function refreshOrganizations() {
+    const response = await apiFetch('/v0/orgs')
+    if (response.status === 401) { onSignedOut(); return null }
+    if (!response.ok) throw new Error('Organizations check failed')
+    const updated = parseOrganizations(await response.json())
+    onOrganizationsChange(updated)
+    return updated
+  }
 
   async function remove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!valid || submitting.current || organization.role !== 'owner' || event.currentTarget.closest('dialog')?.hasAttribute('data-closing')) return
-    const controller = new AbortController()
-    request.current = controller
     submitting.current = true
     setPending(true)
     setError('')
     try {
-      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organization.id)}`, { method: 'DELETE', signal: controller.signal })
-      if (controller.signal.aborted) return
+      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organization.id)}`, { method: 'DELETE' })
       if (response.status === 401) { onSignedOut(); return }
       if (response.status === 404) {
-        const orgResponse = await apiFetch('/v0/orgs', { signal: controller.signal })
-        if (controller.signal.aborted) return
-        if (orgResponse.status === 401) { onSignedOut(); return }
-        if (!orgResponse.ok) throw new Error('Organizations check failed')
-        const updated = parseOrganizations(await orgResponse.json())
-        if (controller.signal.aborted) return
-        onOrganizationsChange(updated)
+        const updated = await refreshOrganizations()
+        if (!updated || !mounted.current) return
         if (!updated.some((item) => item.id === organization.id)) {
           router.replace(updated[0] ? organizationPath(updated[0].id, '/secrets') : '/account/organizations')
           return
@@ -51,13 +52,18 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
       }
       if (response.status !== 204) throw new Error('Delete failed')
       onOrganizationDeleted(organization.id)
+      if (!mounted.current) return
       const remaining = organizations.find((item) => item.id !== organization.id)
       router.replace(remaining ? organizationPath(remaining.id, '/secrets') : '/account/organizations')
     } catch {
-      if (!controller.signal.aborted) setError('Could not delete the organization. Try again.')
+      if (!mounted.current) {
+        await refreshOrganizations().catch(() => {})
+        return
+      }
+      setError('Could not delete the organization. Try again.')
     } finally {
       submitting.current = false
-      if (!controller.signal.aborted) setPending(false)
+      if (mounted.current) setPending(false)
     }
   }
 

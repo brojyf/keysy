@@ -365,7 +365,7 @@ test('an expired session during 404 reconciliation redirects to sign-in', async 
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
-test('404 reconciliation stays pending and ignores its response after unmount', async () => {
+test('404 reconciliation stays pending and updates organizations after leaving settings', async () => {
   await renderSettings()
   await openDelete()
   await enterName(organization.name)
@@ -384,9 +384,9 @@ test('404 reconciliation stays pending and ignores its response after unmount', 
   expect(deleteRequest).toHaveBeenCalledTimes(1)
   pathname = '/account'
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
-  expect(signal.aborted).toBe(true)
+  expect(signal.aborted).toBe(false)
   await act(async () => finish(Response.json([])))
-  expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
+  expect(container.querySelector('.topbar-org')).toBeNull()
   expect(router.replace).not.toHaveBeenCalled()
 })
 
@@ -399,17 +399,15 @@ test('an expired delete session redirects to sign-in', async () => {
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
-test('signing out ignores a late delete response and aborts the request', async () => {
+test('signing out cannot be undone by a late delete response', async () => {
   await renderSettings()
   await openDelete()
   await enterName(organization.name)
   let finish!: (response: Response) => void
   deleteRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
   await act(() => submit())
-  const signal = deleteRequest.mock.calls[0][1].signal as AbortSignal
   pathname = '/account'
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
-  expect(signal.aborted).toBe(true)
   globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
   await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
   await act(async () => container.querySelector<HTMLButtonElement>('.dialog-danger')!.click())
@@ -457,7 +455,7 @@ for (const available of [false, true]) test(`an unavailable organization never f
   expect(deleteRequest).not.toHaveBeenCalled()
 })
 
-test('switching organization paths discards confirmation and ignores a late deletion', async () => {
+test('switching organization paths discards confirmation and applies a late deletion without redirecting', async () => {
   organizations = [organization, otherOrganization]
   await renderSettings()
   await openDelete()
@@ -465,14 +463,61 @@ test('switching organization paths discards confirmation and ignores a late dele
   let finish!: (response: Response) => void
   deleteRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
   await act(() => submit())
-  const signal = deleteRequest.mock.calls[0][1].signal as AbortSignal
   pathname = `/orgs/${otherOrganization.id}/settings`
   await renderSettings()
-  expect(signal.aborted).toBe(true)
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
   await openDelete()
   expect(dialog().querySelector('input')?.value).toBe('')
   await act(async () => finish(new Response(null, { status: 204 })))
   expect(router.replace).not.toHaveBeenCalled()
   expect(container.querySelector('code')?.textContent).toBe(otherOrganization.id)
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(container.querySelector('.rail')).toBeNull()
+})
+
+for (const outcome of ['success', 'network', 'timeout'] as const) test(`leaving settings reconciles a deletion after ${outcome} without redirecting`, async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finish!: () => void
+  deleteRequest.mockImplementation(() => new Promise<Response>((resolve, reject) => {
+    finish = () => outcome === 'success'
+      ? resolve(new Response(null, { status: 204 }))
+      : reject(outcome === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Response lost'))
+  }))
+  await act(() => submit())
+  pathname = '/account'
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  organizations = [otherOrganization]
+  await act(async () => finish())
+  if (outcome !== 'success') expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('.topbar-org')?.textContent).toBe(otherOrganization.name)
+  expect(router.replace).not.toHaveBeenCalled()
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(container.querySelector('.rail')).toBeNull()
+})
+
+test('an uncertain deletion after leaving settings keeps an organization that still exists with its refreshed role', async () => {
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let fail!: (error: Error) => void
+  deleteRequest.mockImplementation(() => new Promise<Response>((_resolve, reject) => { fail = reject }))
+  await act(() => submit())
+  pathname = '/account'
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  organizations = [{ ...organization, role: 'developer' }]
+  await act(async () => fail(new Error('Response lost')))
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(router.replace).not.toHaveBeenCalled()
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  expect(container.querySelector('h1')?.textContent).toBe('General')
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
 })
