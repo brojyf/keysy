@@ -1,4 +1,5 @@
 import { Window } from 'happy-dom'
+import { notifyManager } from '@tanstack/react-query'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
@@ -23,13 +24,30 @@ let root: Root
 let container: HTMLDivElement
 let organizations: typeof organization[]
 let deleteRequest: ReturnType<typeof mock>
+let createRequest: ReturnType<typeof mock>
 let listOrganizations: ReturnType<typeof mock>
 let writeClipboard: ReturnType<typeof mock>
 
+function confirmDeletion(url: string) {
+  organizations = organizations.filter((organization) => !url.endsWith(`/${organization.id}`))
+  return Promise.resolve(new Response(null, { status: 204 }))
+}
+
+async function settleOrganizationRequests() {
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+}
+
 beforeEach(() => {
+  notifyManager.setScheduler(queueMicrotask)
+  notifyManager.setNotifyFunction((callback) => { act(callback) })
   pathname = `/orgs/${organization.id}/settings`
   organizations = [organization]
-  deleteRequest = mock(() => Promise.resolve(new Response(null, { status: 204 })))
+  deleteRequest = mock(confirmDeletion)
+  createRequest = mock(() => {
+    const created = { ...otherOrganization, id: 'created-id', name: 'Created' }
+    organizations = [...organizations, created]
+    return Promise.resolve(Response.json(created, { status: 201 }))
+  })
   listOrganizations = mock(() => Promise.resolve(Response.json(organizations)))
   router.replace.mockClear()
   router.push.mockClear()
@@ -40,6 +58,7 @@ beforeEach(() => {
   Object.defineProperty(browser.navigator, 'clipboard', { configurable: true, value: { writeText: writeClipboard } })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   globalThis.fetch = mock((url: string | URL | Request, init?: RequestInit) => {
+    if (init?.method === 'POST' && String(url).endsWith('/v0/orgs')) return createRequest(url, init)
     if (init?.method === 'DELETE') return deleteRequest(url, init)
     if (String(url).endsWith('/v0/orgs')) return listOrganizations(url, init)
     if (String(url).endsWith('/v0/me')) return Promise.resolve(Response.json(user))
@@ -58,6 +77,8 @@ afterEach(async () => {
   if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
   else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
+  notifyManager.setScheduler((callback) => setTimeout(callback, 0))
+  notifyManager.setNotifyFunction((callback) => callback())
 })
 
 async function renderSettings() {
@@ -246,7 +267,7 @@ for (const cancel of ['Escape', 'Cancel']) test(`${cancel} prevents deletion dur
   await openDelete()
   expect(dialog().querySelector('input')?.value).toBe('')
   await enterName(organization.name)
-  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
+  deleteRequest.mockImplementation(confirmDeletion)
   await act(async () => submit())
   expect(deleteRequest).toHaveBeenCalledTimes(1)
 })
@@ -270,6 +291,7 @@ for (const remaining of [false, true]) test(`successful deletion updates the she
   expect(dialog().querySelector('input')?.disabled).toBe(true)
   await act(() => dialog().dispatchEvent(new browser.Event('cancel', { cancelable: true })))
   expect(dialog().open).toBe(true)
+  organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
   if (remaining) {
     expect(router.replace).toHaveBeenCalledWith(`/orgs/${otherOrganization.id}/secrets`)
@@ -290,12 +312,13 @@ for (const failure of [404, 500, 'network', 'timeout'] as const) test(`delete ha
     ? Promise.resolve(new Response(null, { status: failure }))
     : Promise.reject(failure === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Network unavailable')))
   await act(async () => submit())
+  await settleOrganizationRequests()
   expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy()
   expect(dialog().querySelector('input')?.value).toBe(organization.name)
   expect(confirmButton().disabled).toBe(false)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(router.replace).not.toHaveBeenCalled()
-  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
+  deleteRequest.mockImplementation(confirmDeletion)
   await act(async () => submit())
   expect(deleteRequest).toHaveBeenCalledTimes(2)
   expect(router.replace).toHaveBeenCalledWith('/account/organizations')
@@ -308,11 +331,12 @@ for (const remaining of [false, true]) test(`retry after a lost delete response 
   await enterName(organization.name)
   deleteRequest.mockImplementation(() => Promise.reject(new Error('Response lost')))
   await act(async () => submit())
+  await settleOrganizationRequests()
   expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy()
   organizations = remaining ? [{ ...otherOrganization, name: 'Updated' }] : []
   deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
   await act(async () => submit())
-  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
   expect(container.querySelector('.topbar-org')?.textContent).not.toBe(organization.name)
   expect(router.replace).toHaveBeenCalledWith(remaining ? `/orgs/${otherOrganization.id}/secrets` : '/account/organizations')
   if (remaining) {
@@ -345,6 +369,7 @@ for (const failure of ['network', 'invalid', 500] as const) test(`a failed 404 r
     ? Promise.reject(new Error('Network unavailable'))
     : Promise.resolve(failure === 'invalid' ? Response.json({}) : new Response(null, { status: failure })))
   await act(async () => submit())
+  await settleOrganizationRequests()
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(router.replace).not.toHaveBeenCalled()
@@ -448,6 +473,7 @@ test('signing out cannot be undone by a late delete response', async () => {
   globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
   await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
   await act(async () => container.querySelector<HTMLButtonElement>('.dialog-danger')!.click())
+  organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
   expect(router.replace).toHaveBeenCalledWith('/signin')
   expect(router.replace).not.toHaveBeenCalledWith('/secrets')
@@ -505,6 +531,7 @@ test('switching organization paths discards confirmation and applies a late dele
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
   await openDelete()
   expect(dialog().querySelector('input')?.value).toBe('')
+  organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
   expect(router.replace).not.toHaveBeenCalled()
   expect(container.querySelector('code')?.textContent).toBe(otherOrganization.id)
@@ -578,10 +605,10 @@ for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation 
   await enterName(otherOrganization.name)
   await act(async () => submit())
   expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
-  expect(listOrganizations).toHaveBeenCalledTimes(1)
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
   organizations = []
   await act(async () => finishDelete())
-  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
 
   pathname = `/orgs/${organization.id}/settings`
   await renderSettings()
@@ -590,8 +617,8 @@ for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation 
 })
 
 function OrganizationChanges() {
-  const { onOrganizationCreated } = useCurrentUser()
-  return <button onClick={() => onOrganizationCreated({ ...otherOrganization, id: 'created-id', name: 'Created' })}>Create another organization</button>
+  const { createOrganization } = useCurrentUser()
+  return <button onClick={() => void createOrganization('Created')}>Create another organization</button>
 }
 
 test('a mounted delete dialog navigates only with the accepted reconciliation result', async () => {
@@ -600,11 +627,14 @@ test('a mounted delete dialog navigates only with the accepted reconciliation re
   await enterName(organization.name)
   deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
   let finish!: (response: Response) => void
+  let finishLatest!: (response: Response) => void
   listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishLatest = resolve }))
   await act(() => submit())
   await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Create another organization')!.click())
-  organizations = [{ ...otherOrganization, id: 'created-id', name: 'Created' }]
   await act(async () => finish(Response.json([])))
+  expect(router.replace).not.toHaveBeenCalled()
+  await act(async () => finishLatest(Response.json([{ ...otherOrganization, id: 'created-id', name: 'Created' }])))
   expect(listOrganizations).toHaveBeenCalledTimes(3)
   expect(router.replace).toHaveBeenCalledTimes(1)
   expect(router.replace).toHaveBeenCalledWith('/orgs/created-id/secrets')
@@ -649,7 +679,7 @@ test('each organization change during reconciliation triggers another read befor
   expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
 })
 
-test('an older concurrent reconciliation revalidates after a newer snapshot was accepted', async () => {
+test('an older cancelled reconciliation cannot replace newer permissions', async () => {
   organizations = [organization, otherOrganization]
   await renderSettings()
   await openDelete()
@@ -670,7 +700,7 @@ test('an older concurrent reconciliation revalidates after a newer snapshot was 
   expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
   organizations = [{ ...otherOrganization, role: 'developer' }]
   await act(async () => finishOlder(Response.json([organization, otherOrganization])))
-  expect(listOrganizations).toHaveBeenCalledTimes(4)
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
   expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
   expect(router.replace).not.toHaveBeenCalled()
   pathname = `/orgs/${organization.id}/settings`
@@ -703,4 +733,86 @@ for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconcili
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(router.replace).not.toHaveBeenCalled()
   expect(container.querySelector('.dashboard')).toBeNull()
+})
+
+for (const status of [204, 404]) test(`leaving and returning to settings prevents an old ${status} deletion from navigating`, async () => {
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finish!: (response: Response) => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => submit())
+  pathname = '/account'
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  expect(dialog().querySelector('input')?.value).toBe('')
+  organizations = []
+  await act(async () => finish(new Response(null, { status })))
+  expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('a cancelled list response with 401 cannot sign out the current session', async () => {
+  organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 404 })))
+  let finish!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => submit())
+  const signal = listOrganizations.mock.calls[1][1].signal as AbortSignal
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(async () => submit())
+  expect(signal.aborted).toBe(true)
+  router.replace.mockClear()
+  await act(async () => finish(new Response(null, { status: 401 })))
+  expect(container.querySelector('.dashboard') !== null).toBe(true)
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('simultaneous parallel deletions replace an overlapping read and preserve the final permissions', async () => {
+  const remaining = { ...organization, id: 'remaining-id', name: 'Remaining' }
+  organizations = [organization, otherOrganization, remaining]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finishFirstDelete!: (response: Response) => void
+  let finishSecondDelete!: (response: Response) => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishFirstDelete = resolve }))
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSecondDelete = resolve }))
+  await act(() => submit())
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  await act(() => submit())
+  expect(deleteRequest).toHaveBeenCalledTimes(2)
+  let finishOlderRead!: (response: Response) => void
+  let finishFinalRead!: (response: Response) => void
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishOlderRead = resolve }))
+  listOrganizations.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishFinalRead = resolve }))
+  await act(async () => {
+    finishFirstDelete(new Response(null, { status: 204 }))
+    finishSecondDelete(new Response(null, { status: 204 }))
+  })
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
+  expect((listOrganizations.mock.calls[1][1].signal as AbortSignal).aborted).toBe(true)
+  await act(async () => finishFinalRead(Response.json([{ ...remaining, role: 'developer' }])))
+  await act(async () => finishOlderRead(Response.json([organization, otherOrganization, remaining])))
+  expect(router.replace).toHaveBeenCalledTimes(1)
+  expect(router.replace).toHaveBeenCalledWith('/orgs/remaining-id/secrets')
+  pathname = '/orgs/remaining-id/settings'
+  await renderSettings()
+  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  for (const deleted of [organization, otherOrganization]) {
+    pathname = `/orgs/${deleted.id}/settings`
+    await renderSettings()
+    expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+  }
 })

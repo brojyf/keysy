@@ -1,20 +1,15 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { useRouter } from 'next/navigation'
 import { closeDialog } from '../lib/dialog-controls'
 import Dialog from './dialog'
-import { parseCreatedOrganization } from '../lib/organization'
-import { apiFetch } from '../lib/api-client'
 import { useCurrentUser } from './current-user'
-import { organizationPath } from '../lib/organization-route'
 
 export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
-  const router = useRouter()
   const formId = useId()
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
-  const { onOrganizationCreated, onSignedOut } = useCurrentUser()
+  const { createOrganization } = useCurrentUser()
   const [name, setName] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(false)
@@ -29,16 +24,7 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
     setPending(true)
     setError(false)
     try {
-      const response = await apiFetch('/v0/orgs', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }),
-      })
-      if (!mounted.current) return
-      if (response.status === 401) { onSignedOut(); return }
-      if (response.status !== 201) throw new Error('Create failed')
-      const organization = parseCreatedOrganization(await response.json())
-      if (!mounted.current) return
-      onOrganizationCreated({ ...organization, role: 'owner', memberCount: 1 })
-      router.push(organizationPath(organization.id, '/secrets'))
+      await createOrganization(trimmed)
     } catch { if (mounted.current) setError(true) } finally { submitting.current = false; if (mounted.current) setPending(false) }
   }
 

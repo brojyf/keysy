@@ -3,14 +3,14 @@
 import { createContext, useContext } from 'react'
 import type { Organization } from '../lib/organization'
 import type { SessionUser } from '../lib/session-user'
+import type { DeleteOrganizationResult } from '../lib/organization-queries'
 
 type CurrentUser = {
   user: SessionUser
   organizations: Organization[]
   organization: Organization | undefined
-  onOrganizationCreated: (organization: Organization) => void
-  onOrganizationDeleted: (organizationID: string) => void
-  refreshOrganizations: () => Promise<Organization[] | null>
+  createOrganization: (name: string) => Promise<Organization | null>
+  deleteOrganization: (organizationID: string) => Promise<DeleteOrganizationResult | null>
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
   onSignOutRequest: () => void
