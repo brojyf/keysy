@@ -86,7 +86,7 @@ func TestList(t *testing.T) {
 				}
 			default:
 				want := `[{"id":"` + otherSessionID + `","client":"web","device":"Firefox on Linux","lastUsedAt":"2026-11-03T12:00:00Z","current":false},` +
-					`{"id":"` + currentSessionID + `","client":"web","device":"Unknown device","lastUsedAt":"2026-11-02T09:30:15Z","current":true}]`
+					`{"id":"` + currentSessionID + `","client":"web","device":"Unknown device","lastUsedAt":"2026-11-02T09:30:15.000000123Z","current":true}]`
 				if w.Code != 200 || w.Body.String() != want {
 					t.Fatalf("%d %s", w.Code, w.Body.String())
 				}
