@@ -63,7 +63,7 @@ export default function OrganizationSettings() {
         </SettingsSection>
         <SettingsSection title="Danger zone" danger>
           <SettingsRow label={owner ? 'Delete organization' : 'Leave organization'} control>
-            <button className="account-delete" type="button" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
+            <button className="button button-danger" type="button" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
               const dialog = deleteDialog.current
               if (!dialog) return
               openDialog(dialog)

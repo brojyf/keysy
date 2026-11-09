@@ -37,8 +37,8 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   return (
     <Dialog ref={ref} title="Delete organization?" closable={!pending} onClose={() => { setConfirmation(''); setError('') }} actions={
       <>
-        <button className="dialog-cancel" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
-        <button className="dialog-danger" type="submit" form={formID} disabled={!valid || pending}>{pending ? 'Deleting...' : 'Delete organization'}</button>
+        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
+        <button className="button button-danger" type="submit" form={formID} disabled={!valid || pending}>{pending ? 'Deleting...' : 'Delete organization'}</button>
       </>
     }>
       <p>{organization.name} will no longer be available. You can’t undo this action.</p>

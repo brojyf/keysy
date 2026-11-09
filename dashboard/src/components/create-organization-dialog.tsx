@@ -31,8 +31,8 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
   return (
     <Dialog ref={ref} title="Create an organization" closable={!pending} onClose={() => { setName(''); setError(false) }} actions={
       <>
-        <button className="dialog-cancel" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
-        <button className="dialog-primary" type="submit" form={formId} disabled={!valid || pending}>{pending ? 'Creating...' : 'Create'}</button>
+        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
+        <button className="button button-primary" type="submit" form={formId} disabled={!valid || pending}>{pending ? 'Creating...' : 'Create'}</button>
       </>
     }>
       <form id={formId} onSubmit={create}>

@@ -8,6 +8,7 @@ const stylesheet = [
   '../src/components/dashboard.css',
   '../src/components/account.css',
   '../src/components/dialog.css',
+  '../src/components/button.css',
   '../src/components/sign-in.css',
 ].map(path => readFileSync(new URL(path, import.meta.url), 'utf8')).join('\n')
 
@@ -29,9 +30,9 @@ for (const dark of [false, true]) {
       document.head.append(style)
       document.body.innerHTML = `
         <div class="dialog">
-          <button class="dialog-cancel" data-focus-visible>Cancel</button>
-          <button class="dialog-danger" data-focus-visible>Delete</button>
-          <button class="dialog-primary" data-focus-visible>Confirm</button>
+          <button class="button" data-focus-visible>Cancel</button>
+          <button class="button button-danger" data-focus-visible>Delete</button>
+          <button class="button button-primary" data-focus-visible>Confirm</button>
         </div>
         <div id="account-menu">
           <a class="account-menu-item" href="/account" data-focus-visible>Account</a>
@@ -43,15 +44,15 @@ for (const dark of [false, true]) {
           <a class="account-menu-item" href="/account" data-focus-visible>Settings</a>
         </div>
         <div class="account-save-bar">
-          <button data-focus-visible>Cancel</button>
-          <button type="submit" data-focus-visible>Save</button>
+          <button class="button" data-focus-visible>Cancel</button>
+          <button class="button button-primary" type="submit" data-focus-visible>Save</button>
         </div>
         <a class="auth-button" href="/signin" data-focus-visible>Continue with Google</a>`
       for (const control of document.querySelectorAll('[data-focus-visible]')) {
         const css = window.getComputedStyle(control)
         assert.equal(css.outlineWidth, '2px', control.outerHTML)
         assert.equal(css.outlineStyle, 'solid', control.outerHTML)
-        assert.equal(css.outlineColor, 'transparent', control.outerHTML)
+        assert.equal(css.outlineColor, control.classList.contains('button') ? window.getComputedStyle(document.documentElement).getPropertyValue('--color-button') : 'transparent', control.outerHTML)
         assert.equal(css.outlineOffset, '2px', control.outerHTML)
       }
     } finally {
@@ -80,7 +81,7 @@ for (const dark of [false, true]) {
             <a class="account-menu-item" data-focus-visible data-active>Dashboard with a label that wraps onto multiple lines</a>
             <a class="account-menu-item">Settings</a>
           </div>
-          <div class="account-save-bar"><button type="submit" data-save-state="idle" data-focus-visible data-active>
+          <div class="account-save-bar"><button class="button button-primary" type="submit" data-save-state="idle" data-focus-visible data-active>
             <span class="account-save-label">Save</span>
             <span class="account-save-icon account-save-spinner"></span>
             <span class="account-save-icon account-save-check"></span>
@@ -88,11 +89,15 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-menu-item', '.account-save-bar button']) {
+        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-menu-item']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
         }
+
+        assert.equal(css('.account-save-bar button').outlineOffset, '2px')
+        assert.equal(css('.account-save-bar button').boxShadow, '')
+        assert.equal(css('.account-save-bar button').scale, motion === 'reduce' ? '1' : '0.97')
 
         // Happy DOM has no layout engine. These checks guard the CSS constraints, not pixel geometry.
         for (const selector of ['.account-row-menu', '.account-row-menu .account-menu-item']) {

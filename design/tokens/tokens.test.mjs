@@ -36,6 +36,14 @@ test('both modes define the same color tokens with hex values', () => {
   assert.ok(luminance(darkColors.bg) < luminance(darkColors.text));
 });
 
+test('primary button hover uses the Figma colors and meets text contrast targets in both modes', () => {
+  for (const [mode, values, expected] of [['light', lightColors, '#2a51a7'], ['dark', darkColors, '#3b63bd']]) {
+    assert.equal(values['button-hover'], expected, mode);
+    const ratio = contrast(values['on-button'], values['button-hover']);
+    assert.ok(ratio >= 4.5, `${mode} on-button/button-hover: ${ratio.toFixed(3)}:1; expected 4.5:1`);
+  }
+});
+
 test('every text style has a dark weight 40 lower than its light weight', () => {
   const weights = mode => Object.keys(mode).filter(name => /^--text-[\w-]+--font-weight$/.test(name)).sort();
   assert.deepEqual(weights(dark), weights(light));

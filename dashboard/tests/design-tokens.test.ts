@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css']
+const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css', 'src/components/button.css']
 const files = paths.map(path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'))
 const rule = (css: string, selector: string) => {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -100,7 +100,7 @@ test('account rows and the save bar keep the Figma spacing', () => {
 
 test('save buttons use the compact Figma size and keep their label space while saving', () => {
   const css = files[2]
-  const button = rule(css, '.account-save-bar button')
+  const button = rule(files[5], '.button')
   assert.equal(value(button, 'height'), '28px')
   assert.equal(value(button, 'padding'), '0 10px')
   assert.equal(value(rule(css, '.account-save-bar button[data-feedback] .account-save-label'), 'visibility'), 'hidden')
@@ -149,7 +149,7 @@ test('rail avatar stays at the bottom and dialog text uses body text', () => {
 })
 
 test('create dialog primary button uses button tokens', () => {
-  const primary = rule(files[4], '.dialog-primary')
+  const primary = rule(files[5], '.button-primary')
   assert.equal(value(primary, 'background'), 'var(--color-button)')
   assert.equal(value(primary, 'color'), 'var(--color-on-button)')
 })
@@ -174,4 +174,22 @@ test('custom tooltips accept the pointer and bridge the gap from their triggers'
     }
   }
   assert.equal(value(tooltipRule(':is(.topbar-icon-button, .rail-item)[data-tooltip][data-tooltip-dismissed]::after'), 'visibility'), 'hidden')
+})
+
+
+test('shared buttons use the specified size and interaction styles', () => {
+  const css = files[5]
+  const button = rule(css, '.button')
+  assert.equal(value(button, 'height'), '28px')
+  assert.equal(value(button, 'border-radius'), '10px')
+  const focus = rule(css, '.button:focus-visible')
+  assert.equal(value(focus, 'outline'), '2px solid var(--color-button)')
+  assert.equal(value(focus, 'outline-offset'), '2px')
+  assert.doesNotMatch(focus, /box-shadow\s*:/)
+  const primaryHover = rule(css, '.button-primary:not(:disabled):hover')
+  assert.equal(value(primaryHover, 'background'), 'var(--color-button-hover)')
+  assert.equal(value(primaryHover, 'border-color'), 'var(--color-button-hover)')
+  assert.equal(value(rule(css, '.button-danger:not(:disabled):hover'), 'background'), 'var(--color-danger-bg)')
+  assert.equal(value(rule(css, '.button:disabled'), 'opacity'), '0.5')
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.button:not\(:disabled\):active\s*\{\s*scale:\s*1;/)
 })

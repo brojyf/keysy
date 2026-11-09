@@ -34,7 +34,7 @@ export default function SessionsPage() {
                 <td className="account-table-actions">
                   {session.current
                     ? <span className="account-session-status">This session</span>
-                    : <button className="account-more" type="button" aria-label={`More actions for ${session.device}`} disabled title="Coming soon"><MoreIcon /></button>}
+                    : <button className="account-more" type="button" aria-label={`More actions for ${session.device}`}><MoreIcon /></button>}
                 </td>
               </tr>
             ))}

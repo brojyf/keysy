@@ -188,26 +188,6 @@
   }
 }
 
-.account-delete,
-.account-sign-out {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  color: var(--color-danger);
-  background: var(--color-surface);
-  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
-}
-
-.account-sign-out {
-  cursor: pointer;
-}
-
-.account-sign-out:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: 2px;
-}
-
 /* Organizations and Sessions */
 .account-table {
   max-width: 720px;
@@ -386,10 +366,6 @@ th[aria-sort='descending'] .account-sort svg {
   transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
-.account-more:disabled {
-  cursor: default;
-}
-
 tr:hover .account-more:not(:disabled),
 .account-more:has(+ :popover-open) {
   color: var(--color-text);
@@ -560,25 +536,6 @@ tr:hover .account-more:not(:disabled),
 
 .account-save-bar button {
   position: relative;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--color-line);
-  border-radius: 10px;
-  color: var(--color-text);
-  background: var(--color-surface);
-  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
-  transition: background-color 150ms ease-out, color 150ms ease-out;
-}
-
-.account-save-bar button[type='submit'] {
-  border-color: var(--color-button);
-  color: var(--color-on-button);
-  background: var(--color-button);
-}
-
-.account-save-bar button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .account-save-bar button[data-feedback] {
@@ -589,16 +546,6 @@ tr:hover .account-more:not(:disabled),
   visibility: hidden;
   opacity: 0;
   filter: blur(6px);
-}
-
-.account-save-bar button:focus-visible:not(:disabled) {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
-}
-
-.account-save-bar button:active:not(:disabled) {
-  scale: 0.97;
 }
 
 .account-save-label,
@@ -640,14 +587,9 @@ tr:hover .account-more:not(:disabled),
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .account-save-bar button,
   .account-save-label,
   .account-save-icon {
     transition: none;
-  }
-
-  .account-save-bar button:active:not(:disabled) {
-    scale: 1;
   }
 
   .account-save-spinner,
@@ -689,25 +631,6 @@ tr:hover .account-more:not(:disabled),
   margin: 0;
   color: var(--color-muted);
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
-}
-
-.account-new-organization {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--color-button);
-  border-radius: var(--radius-sm);
-  color: var(--color-on-button);
-  background: var(--color-button);
-  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
-  cursor: pointer;
-}
-
-.account-new-organization:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: 3px;
 }
 
 @media (max-width: 700px) {
