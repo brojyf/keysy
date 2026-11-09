@@ -1,15 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { setTheme, useTheme, type Theme } from '../lib/theme'
-
-const themeOptions = [
-  { label: 'System', Icon: Monitor },
-  { label: 'Light', Icon: Sun },
-  { label: 'Dark', Icon: Moon },
-]
+import ThemeSwitch from './theme-switch'
 
 export type AccountMenuProps = {
   displayName: string
@@ -19,7 +13,6 @@ export type AccountMenuProps = {
 }
 
 export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRequest, selected }: AccountMenuProps & { selected: boolean }) {
-  const theme = useTheme()
   const [failedAvatarURL, setFailedAvatarURL] = useState<string>()
   const menu = useRef<HTMLDivElement>(null)
   return (
@@ -48,14 +41,7 @@ export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRe
         </Link>
         <div className="account-menu-row">
           Theme
-          <div className="theme-switch" role="group" aria-label="Theme" data-theme={theme}>
-            <span className="theme-thumb" aria-hidden="true" />
-            {themeOptions.map(({ label, Icon }) => (
-              <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
-                <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
-              </button>
-            ))}
-          </div>
+          <ThemeSwitch />
         </div>
         <hr className="account-menu-divider" />
         <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => { menu.current?.hidePopover(); onSignOutRequest() }}>

@@ -110,8 +110,8 @@ test('General shows the session profile', async () => {
   expect(container.querySelector('[role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out', 'Delete'])
-  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out'])
+  expect([...container.querySelectorAll<HTMLButtonElement>('button[title="Coming soon"]')].map((button) => [button.textContent, button.disabled])).toEqual([['Delete', true]])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })

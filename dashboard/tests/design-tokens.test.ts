@@ -43,7 +43,7 @@ test('all CSS variables used by the dashboard are defined', () => {
 })
 
 test('theme switches have no track fill or selected shadow', () => {
-  for (const [css, selector] of [[files[1], '.theme-switch'], [files[2], '.account-theme']]) {
+  for (const [css, selector] of [[files[1], '.theme-switch']]) {
     const track = rule(css, selector)
     for (const match of track.matchAll(/\bbackground(?:-color)?\s*:\s*([^;]+);/g)) assert.equal(match[1].trim(), 'none')
     assert.doesNotMatch(rule(css, `${selector} button[aria-pressed='true']`), /box-shadow\s*:/)

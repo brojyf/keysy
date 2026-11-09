@@ -112,16 +112,16 @@ async function openDelete() {
   await act(() => settingsButton('Delete').click())
 }
 
-test('settings shows the current organization and enables placeholder controls', async () => {
+test('settings shows the current organization and marks unavailable features as coming soon', async () => {
   await renderSettings()
-  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe(organization.name)
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.title).toBe('Renaming is coming soon')
   expect(container.querySelector('code')?.textContent).toBe(organization.id)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(container.querySelector(`[aria-current="page"][href="/orgs/${organization.id}/settings"]`)).not.toBeNull()
-  expect(container.querySelector<HTMLButtonElement>('nav[aria-label="Settings"] button')?.disabled).toBe(false)
+  expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].map((button) => [button.textContent, button.disabled, button.title])).toEqual([['Notifications', true, 'Coming soon']])
 })
 
 for (const [role, label] of [['owner', 'Owner'], ['admin', 'Admin'], ['developer', 'Developer']]) test(`settings shows the current organization's ${role} role as read-only text`, async () => {
@@ -234,9 +234,9 @@ for (const role of ['admin', 'developer']) test(`${role} cannot open organizatio
   await renderSettings()
   const leave = settingsButton('Leave')
   expect(leave.textContent).toBe('Leave')
-  expect(leave.disabled).toBe(false)
-  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
-  expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].every((button) => !button.disabled)).toBe(true)
+  expect(leave.disabled).toBe(true)
+  expect(leave.title).toBe('Coming soon')
+  expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].map((button) => [button.textContent, button.disabled, button.title])).toEqual([['Notifications', true, 'Coming soon'], ['My scope', true, 'Coming soon']])
   const fetchCalls = (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length
   await act(() => leave.click())
   expect((globalThis.fetch as ReturnType<typeof mock>).mock.calls).toHaveLength(fetchCalls)
@@ -440,7 +440,7 @@ test('a 404 refreshes changed permissions without treating it as deletion', asyn
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(settingsButton('Leave').textContent).toBe('Leave')
-  expect(settingsButton('Leave').disabled).toBe(false)
+  expect(settingsButton('Leave').disabled).toBe(true)
   expect(router.replace).not.toHaveBeenCalled()
 })
 
@@ -589,7 +589,7 @@ test('permissions come from the organization in the URL', async () => {
   pathname = `/orgs/${otherOrganization.id}/settings`
   await renderSettings()
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
-  expect(settingsButton('Leave').disabled).toBe(false)
+  expect(settingsButton('Leave').disabled).toBe(true)
   expect(container.querySelector('.organization-settings dialog')).toBeNull()
 })
 
@@ -670,7 +670,7 @@ test('an uncertain deletion after leaving settings keeps an organization that st
   await renderSettings()
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(settingsButton('Leave').textContent).toBe('Leave')
-  expect(settingsButton('Leave').disabled).toBe(false)
+  expect(settingsButton('Leave').disabled).toBe(true)
 })
 
 for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation after another deletion removes the unavailable organization: ${outcome}`, async () => {

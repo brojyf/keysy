@@ -148,7 +148,7 @@ for (const reduceMotion of [false, true]) {
     let update!: () => void
     const start = mock((callback: () => void) => { update = callback; return { finished: Promise.resolve(), skipTransition() {} } })
     Object.assign(document, { startViewTransition: start })
-    await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Dark"]')!.click())
+    await act(() => container.querySelector<HTMLButtonElement>('.account-sections .theme-switch button[aria-label="Dark"]')!.click())
     expect(start).toHaveBeenCalledTimes(reduceMotion ? 0 : 1)
     expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Dark', 'Dark'])
     if (!reduceMotion) await act(() => update())
@@ -206,9 +206,9 @@ test('a new choice interrupts the page fade immediately and stale callbacks keep
     skips.push(skipTransition)
     return { finished, skipTransition }
   } })
-  await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Dark"]')!.click())
+  await act(() => container.querySelector<HTMLButtonElement>('.account-sections .theme-switch button[aria-label="Dark"]')!.click())
   await act(() => updates[0]!())
-  await act(() => container.querySelector<HTMLButtonElement>('.account-theme button[aria-label="Light"]')!.click())
+  await act(() => container.querySelector<HTMLButtonElement>('.account-sections .theme-switch button[aria-label="Light"]')!.click())
   expect(skips[0]).toHaveBeenCalledTimes(1)
   expect([...container.querySelectorAll('[aria-pressed="true"]')].map((button) => button.getAttribute('aria-label'))).toEqual(['Light', 'Light'])
   await act(() => { updates[1]!(); updates[0]!() })
