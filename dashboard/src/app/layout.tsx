@@ -7,6 +7,7 @@ import '../components/loading-skeleton.css'
 import '../components/account.css'
 import '../components/organization-settings.css'
 import '../components/dialog.css'
+import '../components/button.css'
 import SessionGate from '../components/session-gate'
 import ThemeSync from '../components/theme-sync'
 

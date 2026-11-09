@@ -1,0 +1,61 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.button-primary {
+  border-color: var(--color-button);
+  background: var(--color-button);
+  color: var(--color-on-button);
+}
+
+.button-danger {
+  color: var(--color-danger);
+}
+
+.button:not(:disabled):hover {
+  background: var(--color-soft);
+}
+
+.button-danger:not(:disabled):hover {
+  background: var(--color-danger-bg);
+}
+
+.button-primary:not(:disabled):hover {
+  border-color: var(--color-button-hover);
+  background: var(--color-button-hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.button:not(:disabled):active {
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:not(:disabled):active {
+    scale: 1;
+  }
+}

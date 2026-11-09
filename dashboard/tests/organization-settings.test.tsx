@@ -85,8 +85,21 @@ async function renderSettings() {
   await act(async () => root.render(<SessionGate><SettingsPage /></SessionGate>))
 }
 
+function buttonNamed(scope: ParentNode, label: string, className: string) {
+  const matches = [...scope.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.getAttribute('aria-label') === label || button.textContent?.trim() === label)
+  if (matches.length !== 1) throw new Error(`Expected one button named "${label}", found ${matches.length}`)
+  expect(matches[0]!.classList.contains(className)).toBe(true)
+  if (label === 'Cancel') expect(matches[0]!.classList.contains('button-danger')).toBe(false)
+  return matches[0]!
+}
+function settingsButton(label: string) { return buttonNamed(container.querySelector('.organization-settings')!, label, 'button-danger') }
 function dialog() { return container.querySelector<HTMLDialogElement>('.organization-settings dialog')! }
-function confirmButton() { return dialog().querySelector<HTMLButtonElement>('.dialog-danger')! }
+function confirmButton() {
+  const buttons = dialog().querySelectorAll<HTMLButtonElement>('.dialog-actions button[type="submit"]')
+  if (buttons.length !== 1) throw new Error(`Expected one delete confirmation submit button, found ${buttons.length}`)
+  expect(buttons[0]!.classList.contains('button-danger')).toBe(true)
+  return buttons[0]!
+}
 function submit() { dialog().querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) }
 async function enterName(name: string) {
   await act(() => {
@@ -96,18 +109,19 @@ async function enterName(name: string) {
   })
 }
 async function openDelete() {
-  await act(() => container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')!.click())
+  await act(() => settingsButton('Delete').click())
 }
 
-test('settings shows the current organization and disables unavailable features', async () => {
+test('settings shows the current organization and enables placeholder controls', async () => {
   await renderSettings()
+  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe(organization.name)
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
   expect(container.querySelector('code')?.textContent).toBe(organization.id)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(container.querySelector(`[aria-current="page"][href="/orgs/${organization.id}/settings"]`)).not.toBeNull()
-  expect(container.querySelector<HTMLButtonElement>('nav[aria-label="Settings"] button')?.disabled).toBe(true)
+  expect(container.querySelector<HTMLButtonElement>('nav[aria-label="Settings"] button')?.disabled).toBe(false)
 })
 
 for (const [role, label] of [['owner', 'Owner'], ['admin', 'Admin'], ['developer', 'Developer']]) test(`settings shows the current organization's ${role} role as read-only text`, async () => {
@@ -218,9 +232,14 @@ for (const width of [360, 700]) test(`settings stacks organization fields at ${w
 for (const role of ['admin', 'developer']) test(`${role} cannot open organization deletion`, async () => {
   organizations = [{ ...organization, role }]
   await renderSettings()
-  const leave = container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')!
+  const leave = settingsButton('Leave')
   expect(leave.textContent).toBe('Leave')
-  expect(leave.disabled).toBe(true)
+  expect(leave.disabled).toBe(false)
+  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
+  expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].every((button) => !button.disabled)).toBe(true)
+  const fetchCalls = (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length
+  await act(() => leave.click())
+  expect((globalThis.fetch as ReturnType<typeof mock>).mock.calls).toHaveLength(fetchCalls)
   expect(container.querySelector('.organization-settings dialog')).toBeNull()
   expect(deleteRequest).not.toHaveBeenCalled()
 })
@@ -239,7 +258,7 @@ test('deletion requires the exact organization name and cancel resets confirmati
   expect(deleteRequest).not.toHaveBeenCalled()
   await enterName(organization.name)
   expect(confirmButton().disabled).toBe(false)
-  await act(async () => dialog().querySelector<HTMLButtonElement>('.dialog-cancel')!.click())
+  await act(async () => buttonNamed(dialog(), 'Cancel', 'button').click())
   await openDelete()
   expect(dialog().querySelector('input')?.value).toBe('')
   expect(confirmButton().disabled).toBe(true)
@@ -256,7 +275,7 @@ for (const cancel of ['Escape', 'Cancel']) test(`${cancel} prevents deletion dur
   deleteRequest.mockImplementation(() => new Promise<Response>(() => {}))
   await act(() => {
     if (cancel === 'Escape') closingDialog.dispatchEvent(new browser.Event('cancel', { cancelable: true }))
-    else closingDialog.querySelector<HTMLButtonElement>('.dialog-cancel')!.click()
+    else buttonNamed(closingDialog, 'Cancel', 'button').click()
     submit()
   })
   expect(closingDialog.dataset.closing).toBe('')
@@ -420,8 +439,8 @@ test('a 404 refreshes changed permissions without treating it as deletion', asyn
   await act(async () => submit())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
+  expect(settingsButton('Leave').textContent).toBe('Leave')
+  expect(settingsButton('Leave').disabled).toBe(false)
   expect(router.replace).not.toHaveBeenCalled()
 })
 
@@ -539,8 +558,8 @@ test('signing out cannot be undone by a late delete response', async () => {
   pathname = '/account'
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
   globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
-  await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
-  await act(async () => container.querySelector<HTMLButtonElement>('.dialog-danger')!.click())
+  await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+  await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
   organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
   expect(router.replace).toHaveBeenCalledWith('/signin')
@@ -570,7 +589,7 @@ test('permissions come from the organization in the URL', async () => {
   pathname = `/orgs/${otherOrganization.id}/settings`
   await renderSettings()
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
+  expect(settingsButton('Leave').disabled).toBe(false)
   expect(container.querySelector('.organization-settings dialog')).toBeNull()
 })
 
@@ -650,8 +669,8 @@ test('an uncertain deletion after leaving settings keeps an organization that st
   pathname = `/orgs/${organization.id}/settings`
   await renderSettings()
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.disabled).toBe(true)
+  expect(settingsButton('Leave').textContent).toBe('Leave')
+  expect(settingsButton('Leave').disabled).toBe(false)
 })
 
 for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation after another deletion removes the unavailable organization: ${outcome}`, async () => {
@@ -765,11 +784,11 @@ test('an older cancelled reconciliation cannot replace newer permissions', async
   await act(() => submit())
   expect(listOrganizations).toHaveBeenCalledTimes(3)
   await act(async () => finishNewer(Response.json([{ ...otherOrganization, role: 'developer' }])))
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  expect(settingsButton('Leave').textContent).toBe('Leave')
   organizations = [{ ...otherOrganization, role: 'developer' }]
   await act(async () => finishOlder(Response.json([organization, otherOrganization])))
   expect(listOrganizations).toHaveBeenCalledTimes(3)
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  expect(settingsButton('Leave').textContent).toBe('Leave')
   expect(router.replace).not.toHaveBeenCalled()
   pathname = `/orgs/${organization.id}/settings`
   await renderSettings()
@@ -789,8 +808,8 @@ for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconcili
     pathname = '/account'
     await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
     globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
-    await act(() => container.querySelector<HTMLButtonElement>('.account-sign-out')!.click())
-    await act(async () => container.querySelector<HTMLButtonElement>('.dialog-danger')!.click())
+    await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+    await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
   } else {
     await act(() => root.unmount())
     root = createRoot(container)
@@ -881,7 +900,7 @@ test('simultaneous parallel deletions replace an overlapping read and preserve t
   expect(router.replace).toHaveBeenCalledWith('/orgs/remaining-id/secrets')
   pathname = '/orgs/remaining-id/settings'
   await renderSettings()
-  expect(container.querySelector<HTMLButtonElement>('.organization-settings .account-delete')?.textContent).toBe('Leave')
+  expect(settingsButton('Leave').textContent).toBe('Leave')
   for (const deleted of [organization, otherOrganization]) {
     pathname = `/orgs/${deleted.id}/settings`
     await renderSettings()

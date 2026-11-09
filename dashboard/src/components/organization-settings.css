@@ -18,12 +18,6 @@
   text-align: left;
 }
 
-.organization-settings .account-nav button:disabled {
-  color: var(--color-muted);
-  background: none;
-  cursor: default;
-}
-
 .organization-settings .account-rows {
   background: var(--color-surface);
 }
@@ -87,25 +81,6 @@
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
 }
 
-.organization-settings .account-delete:not(:disabled) {
-  cursor: pointer;
-  transition: background-color 150ms ease-out, scale 120ms ease-out;
-}
-
-.organization-settings .account-delete:not(:disabled):hover {
-  background: var(--color-danger-bg);
-}
-
-.organization-settings .account-delete:not(:disabled):active {
-  scale: 0.97;
-}
-
-.organization-settings .account-delete:focus-visible {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
-}
-
 .organization-settings .organization-delete-form {
   margin-top: 16px;
 }
@@ -117,13 +92,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .organization-copy,
-  .organization-settings .account-nav-item,
-  .organization-settings .account-delete:not(:disabled) {
+  .organization-settings .account-nav-item {
     transition: none;
   }
 
-  .organization-copy:active,
-  .organization-settings .account-delete:not(:disabled):active {
+  .organization-copy:active {
     scale: 1;
   }
 }

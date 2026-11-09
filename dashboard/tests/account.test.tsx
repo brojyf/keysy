@@ -95,7 +95,9 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
   expect(css('.account-page').paddingRight).toBe('16px')
   expect(css('.account-organizations-empty').paddingLeft).toBe('16px')
   expect(css('.account-organizations-empty').paddingRight).toBe('16px')
-  expect(container.querySelector('.account-new-organization')?.textContent).toBe('New organization')
+  const newOrganization = button('New organization', container.querySelector('.account-page')!)
+  expect(newOrganization.textContent).toBe('New organization')
+  expect(newOrganization.classList.contains('button-primary')).toBe(true)
 })
 
 test('General shows the session profile', async () => {
@@ -108,7 +110,8 @@ test('General shows the session profile', async () => {
   expect(container.querySelector('[role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out'])
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out', 'Delete'])
+  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
@@ -133,9 +136,10 @@ test('General requests sign out from the Session section above the Danger zone',
   await renderAccount('/account', <GeneralPage />)
   expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
   expect(text('.account-sections section:nth-of-type(4) dt')).toEqual(['Sign out of this device'])
-  const button = container.querySelector<HTMLButtonElement>('.account-sign-out')!
-  expect(button.textContent).toBe('Sign out')
-  await act(async () => button.click())
+  const signOut = button('Sign out', container.querySelector('.account-sections')!)
+  expect(signOut.textContent).toBe('Sign out')
+  expect(signOut.classList.contains('button-danger')).toBe(true)
+  await act(async () => signOut.click())
   expect(onSignOutRequest).toHaveBeenCalledTimes(1)
   expect(request).not.toHaveBeenCalled()
 })
@@ -201,7 +205,7 @@ test('the organization row menu links to the dashboard and settings without open
   expect(routerPush).not.toHaveBeenCalled()
 })
 
-test('Sessions lists the mock sessions newest first with disabled row actions', async () => {
+test('Sessions lists the mock sessions newest first with enabled row actions', async () => {
   await renderAccount('/account/sessions', <SessionsPage />)
   expect(text('th')).toEqual(['Client', 'Device', 'Last used', ''])
   expect(tableRows()).toEqual([
@@ -211,11 +215,12 @@ test('Sessions lists the mock sessions newest first with disabled row actions', 
     ['CLI', 'work-desktop', 'Oct 12', ''],
   ])
   expect(headerSort('Last used').getAttribute('aria-sort')).toBe('descending')
+  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
   const more = [...container.querySelectorAll<HTMLButtonElement>('tbody button')]
   expect(more.map((button) => [button.getAttribute('aria-label'), button.disabled])).toEqual([
-    ['More actions for jordan-mbp', true],
-    ['More actions for Chrome on macOS', true],
-    ['More actions for work-desktop', true],
+    ['More actions for jordan-mbp', false],
+    ['More actions for Chrome on macOS', false],
+    ['More actions for work-desktop', false],
   ])
 })
 
@@ -237,7 +242,11 @@ test('Sessions search matches the client or the device', async () => {
 })
 
 function input() { return container.querySelector<HTMLInputElement>('input')! }
-function button(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === label)! }
+function button(label: string, scope: ParentNode = container) {
+  const matches = [...scope.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.getAttribute('aria-label') === label || item.textContent?.trim() === label)
+  if (matches.length !== 1) throw new Error(`Expected one button named "${label}", found ${matches.length}`)
+  return matches[0]!
+}
 async function edit(value: string) {
   await act(() => {
     Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input(), value)
