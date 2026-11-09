@@ -253,6 +253,17 @@ jobs:
     defaults:
       run:
         working-directory: api
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: keysy_org_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d keysy_org_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -262,6 +273,8 @@ jobs:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
       - name: Test
+        env:
+          KEYSY_TEST_DATABASE_URL: postgres://postgres@localhost:5432/keysy_org_test?sslmode=disable
         run: go test -race ./...
       - name: Vet
         run: go vet ./...

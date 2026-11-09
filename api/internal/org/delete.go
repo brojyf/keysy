@@ -16,7 +16,7 @@ func Delete(organizations Organizations) gin.HandlerFunc {
 			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Use a valid organization ID without a query string or request body.")
 			return
 		}
-		deleted, err := organizations.Delete(c.Request.Context(), c.GetString("user_id"), orgID.String())
+		completed, err := organizations.Delete(c.Request.Context(), c.GetString("user_id"), orgID.String())
 		if c.Request.Context().Err() != nil {
 			return
 		}
@@ -24,7 +24,7 @@ func Delete(organizations Organizations) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your organization could not be deleted. Try again later.")
 			return
 		}
-		if !deleted {
+		if !completed {
 			middleware.Error(c, http.StatusNotFound, "ORG_NOT_FOUND", "The organization was not found.")
 			return
 		}
