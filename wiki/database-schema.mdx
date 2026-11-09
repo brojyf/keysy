@@ -199,6 +199,14 @@ erDiagram
 | `reorganizations` | AI reorganization proposals, `proposed` or `applied`. `plan` stores the moves, policy changes, and access diff returned by the API. |
 | `outbox` | Domain events. A successful change writes its event in the same transaction; a denied or failed change attempt writes its event in a separate transaction. The outbox relay publishes them to Kafka, keyed by `aggregate_id`. |
 
+### Scheduled jobs
+
+`pg_cron` runs these jobs. Schedules use UTC.
+
+| Job | Schedule | Action |
+| --- | --- | --- |
+| `delete-idle-sessions` | `0 3 * * *` (daily at 03:00) | Calls `public.delete_idle_sessions()`, which deletes `auth.sessions` rows not refreshed for 30 days. Their refresh tokens are deleted by cascade. |
+
 ## Aiven PostgreSQL
 
 The `audit` service consumes Kafka events and owns this database. It records change attempts, including denied
