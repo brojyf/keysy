@@ -6,6 +6,8 @@ import { KeyRound, ScrollText, Server, Settings, Users, type LucideIcon } from '
 import { Fragment } from 'react'
 import AccountMenu, { type AccountMenuProps } from './account-menu'
 import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
+import { useCurrentUser } from './current-user'
+import { organizationPath } from '../lib/organization-route'
 
 const railGroups: { href: string; label: string; Icon: LucideIcon }[][] = [
   [{ href: '/secrets', label: 'Secrets', Icon: KeyRound }],
@@ -24,6 +26,8 @@ function isCurrentPath(pathname: string, href: string) {
 export default function Rail(accountMenu: AccountMenuProps) {
   const tooltipRef = useTooltipDismissal()
   const pathname = usePathname() ?? ''
+  const { organization } = useCurrentUser()
+  if (!organization) return null
   return (
     <aside ref={tooltipRef} className="rail">
       <nav className="rail-nav" aria-label="Main">
@@ -34,10 +38,10 @@ export default function Rail(accountMenu: AccountMenuProps) {
               <Link
                 key={href}
                 className="rail-item"
-                href={href}
+                href={organizationPath(organization.id, href)}
                 aria-label={label}
                 data-tooltip={label}
-                aria-current={isCurrentPath(pathname, href) ? 'page' : undefined}
+                aria-current={isCurrentPath(pathname, organizationPath(organization.id, href)) ? 'page' : undefined}
               >
                 <Icon size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
               </Link>

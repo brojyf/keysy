@@ -1,0 +1,145 @@
+.organization-settings {
+  text-wrap: pretty;
+}
+
+.organization-settings .account-nav-item {
+  transition: background-color 150ms ease-out;
+}
+
+.organization-settings .account-nav-item:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-button);
+}
+
+.organization-settings .account-nav button {
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.organization-settings .account-nav button:disabled {
+  color: var(--color-muted);
+  background: none;
+  cursor: default;
+}
+
+.organization-settings .account-rows {
+  background: var(--color-surface);
+}
+
+.organization-settings .account-rows dd {
+  min-width: 0;
+}
+
+.organization-settings .organization-id {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: var(--text-code--font-weight) var(--text-code)/var(--text-code--line-height) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.organization-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, scale 120ms ease-out;
+}
+
+.organization-copy:hover {
+  background: var(--color-soft);
+}
+
+.organization-copy:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
+}
+
+.organization-copy:active {
+  scale: 0.97;
+}
+
+.organization-copy svg {
+  flex-shrink: 0;
+}
+
+.organization-copy-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.organization-settings .account-name:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
+}
+
+.organization-settings .account-delete:not(:disabled) {
+  cursor: pointer;
+  transition: background-color 150ms ease-out, scale 120ms ease-out;
+}
+
+.organization-settings .account-delete:not(:disabled):hover {
+  background: var(--color-danger-bg);
+}
+
+.organization-settings .account-delete:not(:disabled):active {
+  scale: 0.97;
+}
+
+.organization-settings .account-delete:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);
+}
+
+.organization-settings .organization-delete-form {
+  margin-top: 16px;
+}
+
+.organization-settings .dialog p,
+.organization-settings .dialog-field label {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .organization-copy,
+  .organization-settings .account-nav-item,
+  .organization-settings .account-delete:not(:disabled) {
+    transition: none;
+  }
+
+  .organization-copy:active,
+  .organization-settings .account-delete:not(:disabled):active {
+    scale: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .organization-settings .account-rows > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .organization-settings .account-rows dt {
+    width: auto;
+  }
+
+  .organization-settings .account-rows > div + div > dd:not(.account-control) {
+    padding-left: 0;
+  }
+}

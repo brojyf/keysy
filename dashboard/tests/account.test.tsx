@@ -56,7 +56,7 @@ afterEach(async () => {
 
 async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, organization: organizations[0], onOrganizationCreated: () => {}, onOrganizationDeleted: () => null, refreshOrganizations: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -82,7 +82,7 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
   document.head.append(style)
   currentPathname = '/account/organizations'
   await act(async () => root.render(
-    <CurrentUserContext.Provider value={{ user, organizations: [], onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}>
+    <CurrentUserContext.Provider value={{ user, organizations: [], organization: undefined, onOrganizationCreated: () => {}, onOrganizationDeleted: () => null, refreshOrganizations: async () => null, onUserChange, onSignedOut, onSignOutRequest }}>
       <AccountLayout><OrganizationsPage /></AccountLayout>
     </CurrentUserContext.Provider>,
   ))
@@ -183,9 +183,9 @@ test('clearing the search restores the rows and keeps focus in the field', async
 
 test('an organization row opens the organization settings', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
-  expect(container.querySelector('tbody a.account-table-link')?.getAttribute('href')).toBe('/settings')
+  expect(container.querySelector('tbody a.account-table-link')?.getAttribute('href')).toBe('/orgs/org-2/settings')
   await act(() => container.querySelector<HTMLTableCellElement>('tbody td:nth-child(2)')!.click())
-  expect(routerPush).toHaveBeenCalledWith('/settings')
+  expect(routerPush).toHaveBeenCalledWith('/orgs/org-2/settings')
 })
 
 test('the organization row menu links to the dashboard and settings without opening the row', async () => {
@@ -193,8 +193,8 @@ test('the organization row menu links to the dashboard and settings without open
   const more = container.querySelector<HTMLButtonElement>('[aria-label="More actions for marketing-site"]')!
   const menu = document.getElementById(more.getAttribute('popovertarget')!)!
   expect([...menu.querySelectorAll('a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
-    ['Dashboard', '/secrets'],
-    ['Settings', '/settings'],
+    ['Dashboard', '/orgs/org-2/secrets'],
+    ['Settings', '/orgs/org-2/settings'],
   ])
   await act(() => menu.click())
   await act(() => more.click())
@@ -338,7 +338,7 @@ test('submits a trimmed name with Enter and updates the session after saving', a
   await act(async () => finish(Response.json(updated)))
   expect(onUserChange).toHaveBeenCalledWith(updated)
   // The provider owns the user, so simulate its state update.
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, onOrganizationCreated: () => {}, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, organization: organizations[0], onOrganizationCreated: () => {}, onOrganizationDeleted: () => null, refreshOrganizations: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
   expect(input().value).toBe('New Name')
   const saveBar = container.querySelector('.account-save-bar')!
   const finishExit = holdExitAnimation(saveBar)

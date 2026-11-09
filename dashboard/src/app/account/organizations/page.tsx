@@ -7,8 +7,7 @@ import { MoreIcon, SortableHeader, TableSearch } from '../../../components/accou
 import CreateOrganizationDialog from '../../../components/create-organization-dialog'
 import { openDialog } from '../../../lib/dialog-controls'
 import { useCurrentUser } from '../../../components/current-user'
-
-const settingsHref = '/settings'
+import { organizationPath } from '../../../lib/organization-route'
 
 function placeRowMenu(event: ToggleEvent<HTMLDivElement>) {
   if (event.newState !== 'open') return
@@ -29,8 +28,8 @@ export default function OrganizationsPage() {
     .filter(({ name }) => name.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
-  function openOrganization(event: MouseEvent<HTMLTableRowElement>) {
-    if (!(event.target as Element).closest('a, button, [popover]')) router.push(settingsHref)
+  function openOrganization(event: MouseEvent<HTMLTableRowElement>, organizationID: string) {
+    if (!(event.target as Element).closest('a, button, [popover]')) router.push(organizationPath(organizationID, '/settings'))
   }
 
   if (allOrganizations.length === 0) return (
@@ -62,8 +61,8 @@ export default function OrganizationsPage() {
           </thead>
           <tbody>
             {organizations.map(({ id, name, role, memberCount }) => (
-              <tr key={id} className="account-org-row" onClick={openOrganization}>
-                <td><Link className="account-table-link" href={settingsHref}>{name}</Link></td>
+              <tr key={id} className="account-org-row" onClick={(event) => openOrganization(event, id)}>
+                <td><Link className="account-table-link" href={organizationPath(id, '/settings')}>{name}</Link></td>
                 <td>{role[0].toUpperCase() + role.slice(1)}</td>
                 <td>{memberCount}</td>
                 <td className="account-table-actions">
@@ -71,8 +70,8 @@ export default function OrganizationsPage() {
                     <MoreIcon />
                   </button>
                   <div id={`organization-menu-${id}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
-                    <Link className="account-menu-item" href="/secrets">Dashboard</Link>
-                    <Link className="account-menu-item" href={settingsHref}>Settings</Link>
+                    <Link className="account-menu-item" href={organizationPath(id, '/secrets')}>Dashboard</Link>
+                    <Link className="account-menu-item" href={organizationPath(id, '/settings')}>Settings</Link>
                   </div>
                 </td>
               </tr>

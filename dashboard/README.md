@@ -25,6 +25,25 @@ The browser does not call Supabase directly.
 Status, Privacy, and Terms remain non-interactive placeholders until their public URLs are available.
 The symbols in `public/` and the dot tile `src/components/sign-in-dots.png` were exported from this Figma screen.
 
+## Organization settings
+
+`/orgs/{orgId}/settings` follows Figma screens 6.1, 6.7, and 6.8. General displays the user's role
+in that organization (Owner, Admin, or Developer). The ID copy button shows a check for 2.5 seconds
+after a successful clipboard write and reports failures for retry. The URL selects the organization
+from the verified membership list. The top bar, navigation, settings, and delete request use that same
+organization. Unknown, deleted, or inaccessible organization IDs show an unavailable page without
+falling back to another organization. Only its owner can open the delete dialog.
+An exact organization name confirmation enables `DELETE /v0/orgs/{orgId}`.
+Success removes the organization from session state and opens `/orgs/{nextOrgId}/secrets` when
+another organization remains, or `/account/organizations` otherwise. Failed requests retain the confirmation for retry.
+The API soft-deletes the organization and preserves memberships and user accounts.
+Rename, leave, notifications, and scope controls remain unavailable.
+
+Secrets, services, members, audit logs, and settings use `/orgs/{orgId}/...` paths.
+The legacy `/secrets`, `/services`, `/members`, `/audit-log`, and `/settings` entry paths redirect
+to the first available organization. Sign-in uses the same default. Creating an organization opens
+its own secrets page. `/account` and its descendants remain global account routes.
+
 ## Development
 
 ```sh

@@ -43,7 +43,7 @@ tests, and `bun test` in `design/tokens`.
   `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
   On 401 it calls `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` once
   (`src/lib/session-refresh.ts`; concurrent 401s share one refresh) and
-  retries. If refresh returns 401, it redirects to `/signin`, which shows the sign-in screen without the app shell. After `/v0/me`, it checks `/v0/orgs` with the same signal. On success it stores organizations. Signed-in users on `/signin` redirect to `/secrets` if they have organizations, or `/account/organizations` otherwise. With none, `/account` and its descendants show the account-only shell, and other paths redirect to `/account/organizations`. With organizations, paths show the full shell (`Topbar`, `Rail`, page content). Logout calls `/v0/auth/logout` and redirects to `/signin`.
+  retries. If refresh returns 401, it redirects to `/signin`, which shows the sign-in screen without the app shell. After `/v0/me`, it checks `/v0/orgs` with the same signal. On success it stores organizations. Signed-in users on `/signin` redirect to `/orgs/{orgId}/secrets` for their first organization if they have organizations, or `/account/organizations` otherwise. With none, `/account` and its descendants show the account-only shell, and unscoped protected paths redirect to `/account/organizations`. Explicit unavailable organization IDs show an unavailable page. With organizations, accessible paths show the full shell (`Topbar`, `Rail`, page content). Logout calls `/v0/auth/logout` and redirects to `/signin`.
   There is no Next.js middleware or server-side session check.
 - The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
@@ -52,7 +52,7 @@ tests, and `bun test` in `design/tokens`.
   both for `next build`. `next.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
   `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`: General uses the session user and `PATCH /v0/me`; Organizations uses `/v0/orgs` data; Sessions uses mock data. Both use local search and sort. `/` redirects to `/secrets`.
+- Route pages under `src/app/` are stubs, except `/account` and `/orgs/{orgId}/settings`: Account General uses the session user and `PATCH /v0/me`; Organizations uses `/v0/orgs` data; Sessions uses mock data. Organization and session tables use local search and sort. Organization pages live under `/orgs/{orgId}/...`. SessionGate resolves the URL ID against verified memberships and shares that organization with Topbar, Rail, and Settings; an unavailable ID never falls back to another organization. Legacy unscoped page paths redirect to the first organization. Settings lets its owner call `DELETE /v0/orgs/{orgId}` after confirming its name. Successful deletion removes it from session state and routes to `/orgs/{nextOrgId}/secrets` or `/account/organizations`. Rename, leave, notifications, and scope controls remain unavailable. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
   `src/app/globals.css` imports. Tailwind is not installed.
   Read `design/tokens/` before any UI or styling change.

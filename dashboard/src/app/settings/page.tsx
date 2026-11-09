@@ -1,7 +1,1 @@
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = { title: 'Settings' }
-
-export default function SettingsPage() {
-  return <p>This is the Settings page.</p>
-}
+export { default, metadata } from '../orgs/[orgId]/settings/page'
