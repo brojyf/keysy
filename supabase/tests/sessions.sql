@@ -134,4 +134,45 @@ end;
 $$;
 
 reset role;
+
+-- Idle cleanup. refreshed_at is UTC wall time, so the +1 hour fixtures fail
+-- under this session's Vancouver time zone if it is read as local time.
+insert into auth.sessions (id, user_id, created_at, refreshed_at, not_after, user_agent) values
+  ('30000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000002',
+    now() - interval '40 days', (now() at time zone 'UTC') - interval '30 days 1 hour', null, 'Idle refreshed'),
+  ('30000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000002',
+    now() - interval '40 days', (now() at time zone 'UTC') - interval '29 days', null, 'Recently refreshed'),
+  ('30000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000002',
+    now() - interval '30 days 1 hour', null, null, 'Idle never refreshed'),
+  ('30000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000002',
+    now() - interval '29 days', null, null, 'Recent never refreshed');
+
+insert into auth.refresh_tokens (token, user_id, session_id) values
+  ('idle-token', '10000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000006');
+
+select public.delete_idle_sessions();
+
+do $$
+begin
+  assert (select array_agg(id order by id) = array[
+      '30000000-0000-0000-0000-000000000007',
+      '30000000-0000-0000-0000-000000000009']::uuid[]
+    from auth.sessions where id between '30000000-0000-0000-0000-000000000006'
+      and '30000000-0000-0000-0000-000000000009'),
+    'Only sessions unused for over 30 days must be deleted';
+  assert not exists (select from auth.refresh_tokens where token = 'idle-token'),
+    'Deleting an idle session must cascade to its refresh tokens';
+
+  assert not has_function_privilege('anon', 'public.delete_idle_sessions()', 'execute')
+    and not has_function_privilege('authenticated', 'public.delete_idle_sessions()', 'execute'),
+    'Client roles must not delete idle sessions';
+  assert (select prosecdef and proowner = 'postgres'::regrole
+    from pg_proc where oid = 'public.delete_idle_sessions()'::regprocedure),
+    'Idle cleanup must run as its owner, postgres';
+  assert exists (select from cron.job where jobname = 'delete-idle-sessions'
+      and schedule = '0 3 * * *' and command = 'select public.delete_idle_sessions()'),
+    'Idle cleanup must run daily at 03:00 UTC';
+end;
+$$;
+
 rollback;
