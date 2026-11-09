@@ -1053,6 +1053,14 @@ for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', '
   })
 }
 
+test('pending session shows the Sessions skeleton for /account/sessions', async () => {
+  currentPathname = '/account/sessions'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  expect(container.querySelector('[data-skeleton-page="account/sessions"] .skeleton-sessions .skeleton-table')).not.toBeNull()
+  expect(container.querySelectorAll('.skeleton-sessions .skeleton-table-row')).toHaveLength(4)
+})
+
 test('pending session shows an accessible shell without page content for an unmapped path', async () => {
   currentPathname = '/unknown'
   sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))

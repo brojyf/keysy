@@ -2,20 +2,12 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, useState, type MouseEvent, type ToggleEvent } from 'react'
-import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import { useRef, useState, type MouseEvent } from 'react'
+import { MoreIcon, placeRowMenu, SortableHeader, TableSearch } from '../../../components/account-table-controls'
 import CreateOrganizationDialog from '../../../components/create-organization-dialog'
 import { openDialog } from '../../../lib/dialog-controls'
 import { useCurrentUser } from '../../../components/current-user'
 import { organizationPath } from '../../../lib/organization-route'
-
-function placeRowMenu(event: ToggleEvent<HTMLDivElement>) {
-  if (event.newState !== 'open') return
-  const menu = event.currentTarget
-  const trigger = menu.previousElementSibling!.getBoundingClientRect()
-  menu.style.top = `${trigger.bottom + 4}px`
-  menu.style.right = `${document.documentElement.clientWidth - trigger.right}px`
-}
 
 export default function OrganizationsPage() {
   const router = useRouter()
