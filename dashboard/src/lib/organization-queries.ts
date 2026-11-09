@@ -24,7 +24,7 @@ export function organizationQueryOptions(userID: string, sessionSignal: AbortSig
   })
 }
 
-export type DeleteOrganizationResult = { status: 204 | 404; organizations: Organization[] }
+export type DeleteOrganizationResult = { outcome: 'completed' | 'unavailable'; organizations: Organization[] }
 
 export function useOrganizationMutations(userID: string, sessionSignal: AbortSignal | undefined, onSignedOut: () => void) {
   const queryClient = useQueryClient()
@@ -52,7 +52,7 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
     onSuccess: (organization) => {
       if (!active() || !organization) return
       const revalidation = refreshOrganizations()
-      queryClient.setQueryData<Organization[]>(queryKey, (current = []) => [...current, organization])
+      queryClient.setQueryData<Organization[]>(queryKey, (current = []) => current.some((item) => item.id === organization.id) ? current : [...current, organization])
       void revalidation.catch(() => {})
     },
     retry: false,
@@ -86,15 +86,20 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
       return active() ? organization : null
     },
     deleteOrganization: async (organizationID: string): Promise<DeleteOrganizationResult | null> => {
-      const status = await remove.mutateAsync(organizationID).catch((error) => {
+      try {
+        const status = await remove.mutateAsync(organizationID)
+        if (!active() || status === null) return null
+        if (status === 204) return { outcome: 'completed', organizations: currentOrganizations() }
+      } catch (error) {
+        if (!active()) return null
         const reconciliation = queryClient.getQueryState(queryKey)
-        if (active() && reconciliation?.status === 'success' && !reconciliation.isInvalidated && !currentOrganizations().some((organization) => organization.id === organizationID)) {
-          return 404 as const
-        }
-        throw error
-      })
-      if (status === 404 && queryClient.getQueryState(queryKey)?.status === 'error') throw queryClient.getQueryState(queryKey)!.error
-      return active() && status !== null ? { status, organizations: currentOrganizations() } : null
+        if (reconciliation?.status !== 'success' || reconciliation.isInvalidated || currentOrganizations().some((organization) => organization.id === organizationID)) throw error
+      }
+      const reconciliation = queryClient.getQueryState(queryKey)
+      if (reconciliation?.status !== 'success' || reconciliation.isInvalidated) throw reconciliation?.error ?? new Error('Organizations check failed')
+      const organizations = currentOrganizations()
+      if (organizations.some((organization) => organization.id === organizationID)) throw new Error('The organization was not found, or you no longer have permission to delete it.')
+      return { outcome: 'unavailable', organizations }
     },
   }
 }

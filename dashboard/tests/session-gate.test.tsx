@@ -1,5 +1,5 @@
 import { Window } from 'happy-dom'
-import { notifyManager, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { notifyManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -15,7 +15,7 @@ import * as settingsPage from '../src/app/settings/page'
 import * as accountLayout from '../src/app/account/layout'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
-import { useOrganizationMutations } from '../src/lib/organization-queries'
+import { organizationQueryOptions, useOrganizationMutations } from '../src/lib/organization-queries'
 
 let currentPathname = '/orgs/org-id/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
@@ -903,6 +903,53 @@ function CreateForSession({ userID, signal }: { userID: string; signal: AbortSig
   const { createOrganization } = useOrganizationMutations(userID, signal, () => {})
   return <button onClick={() => void createOrganization('Delayed').catch(() => {})}>Create</button>
 }
+
+function ObserveOrganizations({ signal }: { signal: AbortSignal }) {
+  useQuery(organizationQueryOptions('user-id', signal, () => {}))
+  return null
+}
+
+test('overlapping creates do not duplicate an organization already accepted from a list refresh', async () => {
+  const queryClient = new QueryClient()
+  const session = new AbortController()
+  const first = { id: 'first-created', name: 'First', role: 'owner', memberCount: 1 }
+  const second = { id: 'second-created', name: 'Renamed', role: 'developer', memberCount: 3 }
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([])))
+  await act(async () => root.render(<QueryClientProvider client={queryClient}><ObserveOrganizations signal={session.signal} /><CreateForSession userID="user-id" signal={session.signal} /></QueryClientProvider>))
+  let finishFirst!: (response: Response) => void
+  let finishSecond!: (response: Response) => void
+  organizationsRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishFirst = resolve }))
+  organizationsRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSecond = resolve }))
+  await act(() => { container.querySelector('button')!.click(); container.querySelector('button')!.click() })
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([first, second])))
+  await act(async () => finishFirst(Response.json(first, { status: 201 })))
+  expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
+  organizationsRequest.mockImplementationOnce(() => Promise.reject(new Error('Refresh unavailable')))
+  await act(async () => finishSecond(Response.json({ id: second.id, name: 'Second' }, { status: 201 })))
+  await settleOrganizationRequests()
+  expect(organizationsRequest).toHaveBeenCalledTimes(5)
+  expect(queryClient.getQueryState(['organizations', 'user-id'])?.status).toBe('error')
+  expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
+})
+
+for (const status of [204, 404, 'network'] as const) test(`deletion exposes a business outcome after ${status}`, async () => {
+  const queryClient = new QueryClient()
+  const session = new AbortController()
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([{ id: 'org-id', name: 'Platform', role: 'owner', memberCount: 1 }])))
+  const onResult = mock(() => {})
+  function DeleteForSession() {
+    const { deleteOrganization } = useOrganizationMutations('user-id', session.signal, () => {})
+    return <button onClick={() => void deleteOrganization('org-id').then(onResult)}>Delete</button>
+  }
+  await act(async () => root.render(<QueryClientProvider client={queryClient}><ObserveOrganizations signal={session.signal} /><DeleteForSession /></QueryClientProvider>))
+  sessionRequest.mockImplementationOnce(() => status === 'network'
+    ? Promise.reject(new Error('Response lost'))
+    : Promise.resolve(new Response(null, { status })))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([])))
+  await act(async () => container.querySelector('button')!.click())
+  await settleOrganizationRequests()
+  expect(onResult).toHaveBeenCalledWith({ outcome: status === 204 ? 'completed' : 'unavailable', organizations: [] })
+})
 
 test('an old mutation cannot populate a new account after its response body was delayed across session replacement', async () => {
   const queryClient = new QueryClient()

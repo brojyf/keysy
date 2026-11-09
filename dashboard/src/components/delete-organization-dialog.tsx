@@ -25,14 +25,7 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
     setPending(true)
     setError('')
     try {
-      const result = await deleteOrganization(organization.id)
-      if (!result || !mounted.current) return
-      if (result.status === 404) {
-        const updated = result.organizations
-        if (!updated.some((item) => item.id === organization.id)) return
-        setError('The organization was not found, or you no longer have permission to delete it.')
-        return
-      }
+      await deleteOrganization(organization.id)
     } catch {
       if (mounted.current) setError('Could not delete the organization. Try again.')
     } finally {
