@@ -13,17 +13,26 @@ on:
 permissions:
   contents: read
 
-# Never cancel a running deploy. A newer run waits its turn.
-concurrency:
-  group: fly-deploy
-  cancel-in-progress: false
-
 jobs:
+  notify:
+    if: github.event.workflow_run.event == 'push'
+    uses: ./.github/workflows/discord-merge.yml
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
   deploy:
     name: Deploy
-    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    needs: notify
+    # A notification failure must not block deployment.
+    if: ${{ !cancelled() && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      deployed: ${{ steps.assets.outcome == 'success' }}
+    # Serialize only deploys, so CI notifications do not wait for an older deploy.
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
     steps:
       # Deploy the commit CI tested, not whatever main points to now.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,6 +65,7 @@ jobs:
       # A stale page can return 200 while its CSS or JS is gone from the origin.
       # The unique query string skips the Cloudflare cache, so the origin answers.
       - name: Check the dashboard assets
+        id: assets
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         run: |
           origin=https://dashboard.keysy.net
@@ -64,3 +74,14 @@ jobs:
           for path in $assets; do
             curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
           done
+
+  update-notification:
+    needs: [notify, deploy]
+    if: always() && needs.notify.outputs.message_id != '' && github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/discord-merge.yml
+    with:
+      message_id: ${{ needs.notify.outputs.message_id }}
+      deploy_result: ${{ needs.deploy.result }}
+      deployed: ${{ needs.deploy.outputs.deployed == 'true' }}
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
