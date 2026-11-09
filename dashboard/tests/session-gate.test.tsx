@@ -247,8 +247,20 @@ function signOutDialog() {
   return container.querySelector<HTMLDialogElement>('dialog.dialog')!
 }
 
+function buttonNamed(scope: ParentNode, label: string) {
+  const matches = [...scope.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.getAttribute('aria-label') === label || button.textContent?.trim() === label)
+  if (matches.length !== 1) throw new Error(`Expected one button named "${label}", found ${matches.length}`)
+  return matches[0]!
+}
+
+function styledButton(scope: ParentNode, label: string, className: string) {
+  const button = buttonNamed(scope, label)
+  expect(button.classList.contains(className)).toBe(true)
+  return button
+}
+
 function dialogButton(label: string) {
-  return [...signOutDialog().querySelectorAll('button')].find((button) => button.textContent === label)!
+  return buttonNamed(signOutDialog(), label)
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
@@ -731,7 +743,7 @@ async function renderEmpty(path: string, page: React.ReactNode) {
 }
 
 async function openCreateDialog() {
-  await act(() => container.querySelector<HTMLButtonElement>('.account-page .button-primary')!.click())
+  await act(() => styledButton(container.querySelector('.account-page')!, 'New organization', 'button-primary').click())
 }
 
 function setOrganizationName(value: string) {
@@ -799,7 +811,8 @@ test('create form validates names and submits one trimmed request, then redirect
   expect(container.querySelector('.dialog h2')?.textContent).toBe('Create an organization')
   expect(container.querySelector('label')?.textContent).toBe('Name')
   expect(document.activeElement).toBe(container.querySelector('#organization-name'))
-  const button = container.querySelector<HTMLButtonElement>('dialog .button-primary')!
+  const button = dialogButton('Create')
+  expect(button.classList.contains('button-primary')).toBe(true)
   expect(button.disabled).toBe(true)
   await act(() => setOrganizationName(' '.repeat(3)))
   expect(button.disabled).toBe(true)
@@ -875,7 +888,7 @@ test('sign out on create page ignores a late create response', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   currentPathname = '/account'
   await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
-  await act(() => container.querySelector<HTMLButtonElement>('.account-sections .button-danger')!.click())
+  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
   await act(async () => dialogButton('Sign out').click())
   await act(async () => finish(Response.json({ id: '1', name: 'Name' }, { status: 201 })))
   expect(router.push).not.toHaveBeenCalled()
@@ -1006,7 +1019,11 @@ test('empty account shell hides organization controls and shows empty organizati
   await openCreateDialog()
   expect(document.activeElement).toBe(container.querySelector('#organization-name'))
   await act(() => setOrganizationName('Discard this'))
-  await act(async () => container.querySelector<HTMLButtonElement>('dialog .button:not(.button-primary):not(.button-danger)')!.click())
+  const cancel = dialogButton('Cancel')
+  expect(cancel.classList.contains('button')).toBe(true)
+  expect(cancel.classList.contains('button-primary')).toBe(false)
+  expect(cancel.classList.contains('button-danger')).toBe(false)
+  await act(async () => cancel.click())
   await openCreateDialog()
   expect(container.querySelector<HTMLInputElement>('#organization-name')?.value).toBe('')
   await act(() => setOrganizationName('Discard with Escape'))
@@ -1022,7 +1039,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
   expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Session', 'Danger zone', 'Sign out?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
-  await act(() => container.querySelector<HTMLButtonElement>('.account-sections .button-danger')!.click())
+  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
   await act(async () => dialogButton('Sign out').click())
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })

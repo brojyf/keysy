@@ -95,7 +95,9 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
   expect(css('.account-page').paddingRight).toBe('16px')
   expect(css('.account-organizations-empty').paddingLeft).toBe('16px')
   expect(css('.account-organizations-empty').paddingRight).toBe('16px')
-  expect(container.querySelector('.button-primary')?.textContent).toBe('New organization')
+  const newOrganization = button('New organization', container.querySelector('.account-page')!)
+  expect(newOrganization.textContent).toBe('New organization')
+  expect(newOrganization.classList.contains('button-primary')).toBe(true)
 })
 
 test('General shows the session profile', async () => {
@@ -134,9 +136,10 @@ test('General requests sign out from the Session section above the Danger zone',
   await renderAccount('/account', <GeneralPage />)
   expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
   expect(text('.account-sections section:nth-of-type(4) dt')).toEqual(['Sign out of this device'])
-  const button = container.querySelector<HTMLButtonElement>('.account-sections .button-danger')!
-  expect(button.textContent).toBe('Sign out')
-  await act(async () => button.click())
+  const signOut = button('Sign out', container.querySelector('.account-sections')!)
+  expect(signOut.textContent).toBe('Sign out')
+  expect(signOut.classList.contains('button-danger')).toBe(true)
+  await act(async () => signOut.click())
   expect(onSignOutRequest).toHaveBeenCalledTimes(1)
   expect(request).not.toHaveBeenCalled()
 })
@@ -239,7 +242,11 @@ test('Sessions search matches the client or the device', async () => {
 })
 
 function input() { return container.querySelector<HTMLInputElement>('input')! }
-function button(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === label)! }
+function button(label: string, scope: ParentNode = container) {
+  const matches = [...scope.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.getAttribute('aria-label') === label || item.textContent?.trim() === label)
+  if (matches.length !== 1) throw new Error(`Expected one button named "${label}", found ${matches.length}`)
+  return matches[0]!
+}
 async function edit(value: string) {
   await act(() => {
     Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input(), value)
