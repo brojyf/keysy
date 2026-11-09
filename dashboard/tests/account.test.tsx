@@ -160,17 +160,17 @@ test('Organizations lists the mock organizations from A to Z', async () => {
 test('the Organization header toggles the sort direction', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   await act(() => headerSort('Organization').querySelector('button')!.click())
-  expect(text('tbody a.account-table-link')).toEqual(['z-owner', 'platform', 'marketing-site'])
+  expect(text('tbody td:first-child')).toEqual(['z-owner', 'platform', 'marketing-site'])
   expect(headerSort('Organization').getAttribute('aria-sort')).toBe('descending')
   await act(() => headerSort('Organization').querySelector('button')!.click())
-  expect(text('tbody a.account-table-link')).toEqual(['marketing-site', 'platform', 'z-owner'])
+  expect(text('tbody td:first-child')).toEqual(['marketing-site', 'platform', 'z-owner'])
 })
 
 test('Organizations search filters the rows and shows a no results row', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   expect(container.querySelector('[aria-label="Clear search"]')).toBeNull()
   await search('PLAT')
-  expect(text('tbody a.account-table-link')).toEqual(['platform'])
+  expect(text('tbody td:first-child')).toEqual(['platform'])
   await search('acme')
   expect(tableRows()).toEqual([['No organizations match “acme”']])
   expect(text('th')).toEqual(['Organization', 'Role', 'Members', ''])
@@ -187,14 +187,14 @@ test('clearing the search restores the rows and keeps focus in the field', async
   expect(tableRows()).toHaveLength(3)
 })
 
-test('an organization row opens the organization settings', async () => {
+test('an organization row shows the name as plain text and does not navigate', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
-  expect(container.querySelector('tbody a.account-table-link')?.getAttribute('href')).toBe('/orgs/org-2/settings')
+  expect(container.querySelector('tbody td:first-child a')).toBeNull()
   await act(() => container.querySelector<HTMLTableCellElement>('tbody td:nth-child(2)')!.click())
-  expect(routerPush).toHaveBeenCalledWith('/orgs/org-2/settings')
+  expect(routerPush).not.toHaveBeenCalled()
 })
 
-test('the organization row menu links to the dashboard and settings without opening the row', async () => {
+test('the organization row menu links to the dashboard and settings', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   const more = container.querySelector<HTMLButtonElement>('[aria-label="More actions for marketing-site"]')!
   const menu = document.getElementById(more.getAttribute('popovertarget')!)!
