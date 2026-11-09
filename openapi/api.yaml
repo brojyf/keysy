@@ -13,15 +13,25 @@ servers:
   - url: http://localhost:8081
 tags:
   - name: Account
+    description: The signed-in user's profile and sessions.
   - name: Orgs
+    description: Orgs the signed-in user belongs to, and their settings.
   - name: Members
+    description: Org members and their Admin access.
   - name: Secrets
+    description: Secret metadata and values.
   - name: Folders
+    description: Folder versions, rollbacks, and service retrievals.
   - name: Policies
+    description: Policies that grant their assignees read access to matching secrets.
   - name: Services
+    description: Services and their tokens.
   - name: Reorganizations
+    description: Secret moves and policy changes that the AI agent proposes.
   - name: Audit logs
+    description: The org's audit log.
   - name: Health
+    description: Process liveness.
 security:
   - bearerAuth: []
 paths:

@@ -1,0 +1,5 @@
+extends:
+  - recommended
+rules:
+  # The repository has no license.
+  info-license: off
