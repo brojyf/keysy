@@ -139,7 +139,7 @@ export default function GeneralPage() {
           <div>
             <dt>Sign out of this device</dt>
             <dd className="account-control">
-              <button className="account-sign-out" type="button" onClick={onSignOutRequest}>Sign out</button>
+              <button className="button button-danger" type="button" onClick={onSignOutRequest}>Sign out</button>
             </dd>
           </div>
         </dl>
@@ -150,7 +150,7 @@ export default function GeneralPage() {
           <div>
             <dt>Delete account</dt>
             <dd className="account-control">
-              <button className="account-delete" type="button" disabled title="Coming soon">Delete</button>
+              <button className="button button-danger" type="button">Delete</button>
             </dd>
           </div>
         </dl>
@@ -162,8 +162,8 @@ export default function GeneralPage() {
             {saved && <span className="account-save-success">Saved</span>}
           </span>
           {error && <span role="alert">Could not save. Try again.</span>}
-          <button type="button" disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
-          <button type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
+          <button className="button" type="button" disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
+          <button className="button button-primary" type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
             <span className="account-save-label">Save</span>
             <LoaderCircle className="account-save-icon account-save-spinner" size={14} strokeWidth={2} aria-hidden />
             <Check className="account-save-icon account-save-check" size={14} strokeWidth={2} aria-hidden />

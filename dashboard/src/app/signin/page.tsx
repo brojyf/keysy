@@ -19,8 +19,8 @@ export default function SignInPage() {
         </a>
         <p className="sign-in-terms">
           By continuing, you agree to the{' '}
-          <span aria-disabled="true" title="Coming soon">Terms</span> and{' '}
-          <span aria-disabled="true" title="Coming soon">Privacy Policy</span>.
+          <span>Terms</span> and{' '}
+          <span>Privacy Policy</span>.
         </p>
       </section>
       <AuthFooter />

@@ -36,7 +36,7 @@ export default function OrganizationsPage() {
     <>
       <div className="account-organizations-empty">
         <div><h2>No organizations yet</h2><p>Create one, or ask an Admin to add you.</p></div>
-        <button className="account-new-organization" type="button" onClick={() => {
+        <button className="button button-primary" type="button" onClick={() => {
           if (!dialog.current) return
           openDialog(dialog.current)
           dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()

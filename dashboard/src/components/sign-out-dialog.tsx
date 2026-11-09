@@ -15,10 +15,10 @@ export default function SignOutDialog({ ref, status, onConfirm }: SignOutDialogP
   return (
     <Dialog ref={ref} title="Sign out?" closable={!pending} actions={
       <>
-        <button className="dialog-cancel" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>
+        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>
           Cancel
         </button>
-        <button className="dialog-danger" type="button" disabled={pending} onClick={onConfirm}>
+        <button className="button button-danger" type="button" disabled={pending} onClick={onConfirm}>
           {pending ? 'Signing out...' : 'Sign out'}
         </button>
       </>
