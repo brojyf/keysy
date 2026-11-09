@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -12,21 +12,32 @@ servers:
   - url: https://api.keysy.net
   - url: http://localhost:8081
 tags:
+  - name: Account
+    description: The signed-in user's profile and sessions.
   - name: Orgs
+    description: Orgs the signed-in user belongs to, and their settings.
   - name: Members
+    description: Org members and their Admin access.
   - name: Secrets
+    description: Secret metadata and values.
   - name: Folders
+    description: Folder versions, rollbacks, and service retrievals.
   - name: Policies
+    description: Policies that grant their assignees read access to matching secrets.
   - name: Services
+    description: Services and their tokens.
   - name: Reorganizations
+    description: Secret moves and policy changes that the AI agent proposes.
   - name: Audit logs
+    description: The org's audit log.
   - name: Health
+    description: Process liveness.
 security:
   - bearerAuth: []
 paths:
   /v0/me:
     get:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: getMe
@@ -63,7 +74,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     patch:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: updateMe
@@ -120,7 +131,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     options:
-      tags: [Orgs]
+      tags: [Account]
       operationId: preflightMe
       security: []
       summary: CORS preflight for the profile route
@@ -141,6 +152,193 @@ paths:
           schema:
             type: string
             enum: [GET, PATCH]
+        - name: Access-Control-Request-Headers
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                enum: ['GET, POST, PATCH, DELETE']
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                enum: [Content-Type]
+        '403':
+          $ref: '#/components/responses/InvalidPreflight'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v0/me/sessions:
+    get:
+      tags: [Account]
+      security:
+        - accessCookie: []
+      operationId: listMySessions
+      summary: List the signed-in user's sessions
+      description: |
+        Returns every active Supabase Auth session of the signed-in user, and no other user's session. Sessions whose not_after has passed are excluded.
+        The list includes the session that made this request, so it is not empty in practice. Clients must still accept an empty array.
+        The list is sorted by lastUsedAt descending, then by id ascending. There is no pagination.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string or request body is accepted.
+      responses:
+        '200':
+          description: The signed-in user's active sessions.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    options:
+      tags: [Account]
+      operationId: preflightMySessions
+      security: []
+      summary: CORS preflight for the sessions route
+      description: |
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET.
+        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
+        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [GET]
+        - name: Access-Control-Request-Headers
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                enum: ['GET, POST, PATCH, DELETE']
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                enum: [Content-Type]
+        '403':
+          $ref: '#/components/responses/InvalidPreflight'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v0/me/sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    delete:
+      tags: [Account]
+      security:
+        - accessCookie: []
+      operationId: revokeMySession
+      summary: Revoke one of the signed-in user's other sessions
+      description: |
+        Deletes the session and its refresh tokens, so that device can no longer refresh its access token.
+        An access token already issued to that session stays valid until it expires, up to the access token lifetime, because the api verifies access tokens locally.
+        The current session cannot be revoked here and returns CURRENT_SESSION. It ends only through POST /v0/auth/logout on the auth service.
+        Missing sessions and sessions of other users return SESSION_NOT_FOUND.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        sessionId must be a UUID. No query string or request body is accepted.
+      responses:
+        '204':
+          description: The session and its refresh tokens are deleted. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '409':
+          $ref: '#/components/responses/CurrentSessionRevoke'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    options:
+      tags: [Account]
+      operationId: preflightMySession
+      security: []
+      summary: CORS preflight for the session revocation route
+      description: |
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of DELETE.
+        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
+        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Access-Control-Request-Method
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
@@ -1248,6 +1446,13 @@ components:
       schema:
         type: string
         format: uuid
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     MemberId:
       name: memberId
       in: path
@@ -1332,6 +1537,30 @@ components:
         avatarUrl:
           type: string
           description: Present only when the token contains a valid HTTPS avatar URL.
+    Session:
+      type: object
+      description: An active Supabase Auth session of the signed-in user.
+      required: [id, client, device, lastUsedAt, current]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The Supabase session ID.
+        client:
+          type: string
+          enum: [web]
+          description: The client that created the session. Only web exists today. CLI and browser extension values will be added when those clients ship.
+        device:
+          type: string
+          description: Derived from the User-Agent recorded at sign-in or refresh, formatted as `<Browser> on <OS>`, for example `Chrome on macOS`. The value is `Unknown device` when the User-Agent is missing or cannot be parsed.
+          example: Chrome on macOS
+        lastUsedAt:
+          type: string
+          format: date-time
+          description: The last token refresh time of the session, or its creation time if it never refreshed. The value is approximate. It changes only when the access token is refreshed, so it can lag real use by up to the access token lifetime.
+        current:
+          type: boolean
+          description: True for the session that made this request, matched by the session_id claim of the access token.
     Org:
       type: object
       required: [id, name]
@@ -1784,6 +2013,36 @@ components:
   responses:
     OrgNotFound:
       description: ORG_NOT_FOUND. The org is missing or the caller is not an owner. Non-owner requests for deleted orgs also return this response.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    SessionNotFound:
+      description: SESSION_NOT_FOUND. The session is missing or belongs to another user. The response does not reveal which.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    CurrentSessionRevoke:
+      description: CURRENT_SESSION. sessionId is the session that made this request. The current session ends only through POST /v0/auth/logout on the auth service.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'

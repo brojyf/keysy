@@ -1,0 +1,11 @@
+extends:
+  - recommended
+rules:
+  # The repository has no license.
+  info-license: off
+  # localhost servers are the real local development URLs.
+  no-server-example.com: off
+  # /health only returns 200.
+  operation-4xx-response: off
+  # Google sign-in start and callback only redirect (302 and 303).
+  operation-2xx-response: off

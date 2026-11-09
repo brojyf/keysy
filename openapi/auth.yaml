@@ -34,8 +34,11 @@ servers:
   - url: http://localhost:8080
 tags:
   - name: Sign-in
+    description: Google sign-in.
   - name: Session
+    description: Sign-out and session renewal.
   - name: Health
+    description: Process liveness.
 paths:
   /v0/auth/google:
     get:
