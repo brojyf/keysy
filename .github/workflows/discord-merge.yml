@@ -1,11 +1,25 @@
 name: Discord Merge Notification
 
-# Runs after CI finishes on main, so the message can show the CI result.
+# Called before and after Fly deployment to create, then edit, one message.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  workflow_call:
+    inputs:
+      message_id:
+        type: string
+        default: ''
+      deploy_result:
+        type: string
+        default: pending
+      deployed:
+        type: boolean
+        default: false
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: true
+    outputs:
+      message_id:
+        description: Discord message to update after deployment
+        value: ${{ jobs.notify.outputs.message_id }}
 
 permissions:
   contents: read
@@ -16,8 +30,11 @@ jobs:
     if: github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      message_id: ${{ steps.message.outputs.message_id }}
     steps:
       - name: Notify Discord
+        id: message
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GH_TOKEN: ${{ github.token }}
@@ -26,6 +43,9 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
           COMMIT_AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
           CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          MESSAGE_ID: ${{ inputs.message_id }}
+          DEPLOY_RESULT: ${{ inputs.deploy_result }}
+          DEPLOYED: ${{ inputs.deployed }}
         run: |
           # First path segment of each changed file, e.g. "dashboard / wiki".
           # Falls back so an API failure does not drop the whole message.
@@ -40,13 +60,31 @@ jobs:
             --arg scope "$scope" \
             --arg author "$COMMIT_AUTHOR" \
             --arg conclusion "$CI_CONCLUSION" \
-            '{content: ("### " + $sha + ": " + $message + " " +
-              (if $conclusion == "success" then "✅" else "❌" end) +
+            --arg deploy_result "$DEPLOY_RESULT" \
+            --arg deployed "$DEPLOYED" \
+            '{content: ("### " + $sha + ": " + $message +
               "\nScope: " + $scope +
-              "\nBy: " + $author),
+              "\nBy: " + $author +
+              "\nCI: " + (if $conclusion == "success" then "✅ Passed" else "❌ " + $conclusion end) +
+              "\nFly deploy: " +
+              (if $conclusion != "success" then "⏭️ Not run (CI did not pass)"
+               elif $deploy_result == "pending" then "⏳ Pending"
+               elif $deploy_result == "failure" then "❌ Failed"
+               elif $deploy_result == "cancelled" then "🚫 Cancelled"
+               elif $deploy_result == "success" and $deployed == "true" then "✅ Succeeded"
+               else "⏭️ Skipped" end)),
               allowed_mentions: {parse: []}}')
 
-          curl --fail-with-body -sS \
-            -H "Content-Type: application/json" \
-            -d "$payload" \
-            "$WEBHOOK_URL"
+          if [ -n "$MESSAGE_ID" ]; then
+            curl --fail-with-body -sS -X PATCH \
+              -H "Content-Type: application/json" \
+              -d "$payload" \
+              "$WEBHOOK_URL/messages/$MESSAGE_ID" > /dev/null
+          else
+            response=$(curl --fail-with-body -sS \
+              -H "Content-Type: application/json" \
+              -d "$payload" \
+              "$WEBHOOK_URL?wait=true")
+            message_id=$(jq -er '.id | strings | select(test("^[0-9]+$"))' <<< "$response")
+            echo "message_id=$message_id" >> "$GITHUB_OUTPUT"
+          fi
