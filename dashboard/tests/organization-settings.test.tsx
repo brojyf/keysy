@@ -304,6 +304,53 @@ for (const remaining of [false, true]) test(`successful deletion updates the she
   }
 })
 
+for (const remaining of [false, true]) for (const batched of [false, true]) test(`successful overlapping deletions use the latest organizations with a remaining organization: ${remaining}, batched responses: ${batched}`, async () => {
+  const survivingOrganization = { ...organization, id: 'surviving-id', name: 'Surviving' }
+  organizations = [organization, otherOrganization, ...(remaining ? [survivingOrganization] : [])]
+  pathname = `/orgs/${otherOrganization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(otherOrganization.name)
+  let finishOther!: (response: Response) => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishOther = resolve }))
+  await act(() => submit())
+
+  pathname = `/orgs/${organization.id}/settings`
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  let finishCurrent!: (response: Response) => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishCurrent = resolve }))
+  await act(() => submit())
+  expect(deleteRequest.mock.calls.map(([url]) => url)).toEqual([
+    `https://api.keysy.net/v0/orgs/${otherOrganization.id}`,
+    `https://api.keysy.net/v0/orgs/${organization.id}`,
+  ])
+
+  if (batched) {
+    organizations = remaining ? [survivingOrganization] : []
+    await act(async () => {
+      finishOther(new Response(null, { status: 204 }))
+      finishCurrent(new Response(null, { status: 204 }))
+    })
+  } else {
+    organizations = organizations.filter((item) => item.id !== otherOrganization.id)
+    await act(async () => finishOther(new Response(null, { status: 204 })))
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
+    organizations = remaining ? [survivingOrganization] : []
+    await act(async () => finishCurrent(new Response(null, { status: 204 })))
+  }
+  const destination = remaining ? `/orgs/${survivingOrganization.id}/secrets` : '/account/organizations'
+  expect(router.replace).toHaveBeenCalledTimes(1)
+  expect(router.replace).toHaveBeenCalledWith(destination)
+  expect(listOrganizations).toHaveBeenCalledTimes(3)
+  pathname = destination
+  await act(async () => root.render(<SessionGate><p>Destination</p></SessionGate>))
+  expect(container.querySelector('.topbar-org')?.textContent ?? null).toBe(remaining ? survivingOrganization.name : null)
+  expect(container.textContent).toContain('Destination')
+})
+
 for (const failure of [404, 500, 'network', 'timeout'] as const) test(`delete handles ${failure} and allows retry`, async () => {
   await renderSettings()
   await openDelete()
