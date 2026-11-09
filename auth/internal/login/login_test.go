@@ -233,7 +233,7 @@ func TestGoogleLoginSetsCookiesWithoutExposingTokens(t *testing.T) {
 				t.Errorf("invalid access cookie: %+v", c)
 			}
 		case refreshCookieName:
-			if openTestCookie(t, f.handler, c.Name, c.Value) != "keysy-refresh" || c.MaxAge != 0 {
+			if openTestCookie(t, f.handler, c.Name, c.Value) != "keysy-refresh" || c.MaxAge != 30*24*60*60 {
 				t.Errorf("invalid refresh cookie: %+v", c)
 			}
 		case oauthCookieName:

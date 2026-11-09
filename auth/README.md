@@ -49,7 +49,7 @@ Their values use unpadded URL-safe Base64 encoding.
 |---|---|---|
 | `__Host-keysy-oauth` | State, PKCE verifier, nonce, and issue time | 10 minutes; cleared on callback |
 | `__Secure-keysy-access` | Supabase access token | Supabase's `expires_in` |
-| `__Host-keysy-refresh` | Supabase refresh token | Browser session cookie |
+| `__Host-keysy-refresh` | Supabase refresh token | 30 days; renewed on each refresh |
 
 HTTPS cookies use `HttpOnly; Secure; SameSite=Lax; Path=/`. The access cookie
 uses `Domain=<COOKIE_DOMAIN>` (`keysy.net` in production), so the API can read it.

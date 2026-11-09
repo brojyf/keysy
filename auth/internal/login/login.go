@@ -25,6 +25,8 @@ const (
 	accessCookieName    = "__Secure-keysy-access"
 	refreshCookieName   = "__Host-keysy-refresh"
 	transactionLifetime = 10 * time.Minute
+	// Each refresh renews it, so only 30 idle days end the browser sign-in.
+	refreshCookieLifetime = 30 * 24 * time.Hour
 )
 
 type Options struct {
@@ -181,7 +183,7 @@ func (h *Handler) callback(c *gin.Context) {
 func (h *Handler) setSessionCookies(w http.ResponseWriter, session session) bool {
 	cookies := []*http.Cookie{
 		h.newTokenCookie(accessCookieName, session.AccessToken, session.ExpiresIn),
-		h.newTokenCookie(refreshCookieName, session.RefreshToken, 0),
+		h.newTokenCookie(refreshCookieName, session.RefreshToken, int(refreshCookieLifetime.Seconds())),
 	}
 	for _, cookie := range cookies {
 		if cookie.Valid() != nil || len(cookie.String()) > 4096 {

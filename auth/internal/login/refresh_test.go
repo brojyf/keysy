@@ -41,7 +41,7 @@ func TestRefreshRotatesTokenCookies(t *testing.T) {
 			for _, c := range cookies {
 				name, want, maxAge, domain := accessCookieName, "keysy-access-2", 600, f.handler.cookieDomain
 				if c.Name == f.handler.cookieName(refreshCookieName) {
-					name, want, maxAge, domain = refreshCookieName, "keysy-refresh-2", 0, ""
+					name, want, maxAge, domain = refreshCookieName, "keysy-refresh-2", 30 * 24 * 60 * 60, ""
 				} else if c.Name != f.handler.cookieName(accessCookieName) {
 					t.Fatalf("unexpected cookie %s", c.Name)
 				}
