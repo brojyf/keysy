@@ -86,7 +86,13 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
       return active() ? organization : null
     },
     deleteOrganization: async (organizationID: string): Promise<DeleteOrganizationResult | null> => {
-      const status = await remove.mutateAsync(organizationID)
+      const status = await remove.mutateAsync(organizationID).catch((error) => {
+        const reconciliation = queryClient.getQueryState(queryKey)
+        if (active() && reconciliation?.status === 'success' && !reconciliation.isInvalidated && !currentOrganizations().some((organization) => organization.id === organizationID)) {
+          return 404 as const
+        }
+        throw error
+      })
       if (status === 404 && queryClient.getQueryState(queryKey)?.status === 'error') throw queryClient.getQueryState(queryKey)!.error
       return active() && status !== null ? { status, organizations: currentOrganizations() } : null
     },

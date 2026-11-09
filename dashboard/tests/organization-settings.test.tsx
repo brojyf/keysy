@@ -324,6 +324,24 @@ for (const failure of [404, 500, 'network', 'timeout'] as const) test(`delete ha
   expect(router.replace).toHaveBeenCalledWith('/account/organizations')
 })
 
+for (const failure of ['network', 'timeout'] as const) for (const remaining of [false, true]) test(`a lost delete response navigates after reconciliation: ${failure}, remaining: ${remaining}`, async () => {
+  if (remaining) organizations = [organization, otherOrganization]
+  await renderSettings()
+  await openDelete()
+  await enterName(organization.name)
+  deleteRequest.mockImplementation(() => {
+    organizations = remaining ? [otherOrganization] : []
+    return Promise.reject(failure === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Response lost'))
+  })
+  await act(async () => submit())
+  await settleOrganizationRequests()
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(deleteRequest).toHaveBeenCalledTimes(1)
+  expect(dialog()).toBeNull()
+  expect(router.replace).toHaveBeenCalledTimes(1)
+  expect(router.replace).toHaveBeenCalledWith(remaining ? `/orgs/${otherOrganization.id}/secrets` : '/account/organizations')
+})
+
 for (const remaining of [false, true]) test(`retry after a lost delete response reconciles organizations: ${remaining}`, async () => {
   if (remaining) organizations = [organization, otherOrganization]
   await renderSettings()
@@ -360,11 +378,13 @@ test('a 404 refreshes changed permissions without treating it as deletion', asyn
   expect(router.replace).not.toHaveBeenCalled()
 })
 
-for (const failure of ['network', 'invalid', 500] as const) test(`a failed 404 reconciliation preserves organizations and allows retry: ${failure}`, async () => {
+for (const outcome of ['404', 'network'] as const) for (const failure of ['network', 'invalid', 500] as const) test(`a failed ${outcome} reconciliation preserves organizations and allows retry: ${failure}`, async () => {
   await renderSettings()
   await openDelete()
   await enterName(organization.name)
-  deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
+  deleteRequest.mockImplementation(() => outcome === '404'
+    ? Promise.resolve(new Response(null, { status: 404 }))
+    : Promise.reject(new Error('Response lost')))
   listOrganizations.mockImplementation(() => failure === 'network'
     ? Promise.reject(new Error('Network unavailable'))
     : Promise.resolve(failure === 'invalid' ? Response.json({}) : new Response(null, { status: failure })))
@@ -374,6 +394,7 @@ for (const failure of ['network', 'invalid', 500] as const) test(`a failed 404 r
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(router.replace).not.toHaveBeenCalled()
   expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy()
+  expect(dialog().querySelector('input')?.value).toBe(organization.name)
   expect(confirmButton().disabled).toBe(false)
   listOrganizations.mockImplementation(() => Promise.resolve(Response.json([])))
   await act(async () => submit())
@@ -735,12 +756,16 @@ for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconcili
   expect(container.querySelector('.dashboard')).toBeNull()
 })
 
-for (const status of [204, 404]) test(`leaving and returning to settings prevents an old ${status} deletion from navigating`, async () => {
+for (const status of [204, 404, 'network', 'timeout'] as const) test(`leaving and returning to settings prevents an old ${status} deletion from navigating`, async () => {
   await renderSettings()
   await openDelete()
   await enterName(organization.name)
-  let finish!: (response: Response) => void
-  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  let finish!: () => void
+  deleteRequest.mockImplementationOnce(() => new Promise<Response>((resolve, reject) => {
+    finish = () => typeof status === 'number'
+      ? resolve(new Response(null, { status }))
+      : reject(status === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Response lost'))
+  }))
   await act(() => submit())
   pathname = '/account'
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
@@ -749,7 +774,7 @@ for (const status of [204, 404]) test(`leaving and returning to settings prevent
   await openDelete()
   expect(dialog().querySelector('input')?.value).toBe('')
   organizations = []
-  await act(async () => finish(new Response(null, { status })))
+  await act(async () => finish())
   expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
   expect(router.replace).not.toHaveBeenCalled()
 })
