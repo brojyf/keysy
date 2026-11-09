@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, lets owners rename and soft-delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -323,7 +323,7 @@ paths:
       security: []
       summary: CORS preflight for the session revocation route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of DELETE.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of PATCH or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -517,6 +517,62 @@ paths:
   /v0/orgs/{orgId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
+    patch:
+      tags: [Orgs]
+      security:
+        - accessCookie: []
+      operationId: renameOrg
+      summary: Rename an org
+      description: |
+        Only an owner of the target org can rename it. Missing, soft-deleted, and non-owner requests return ORG_NOT_FOUND.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        orgId must be a UUID. No query string is accepted. The body must be UTF-8 JSON of at most 1024 bytes.
+        The body must contain exactly one field, name. The service trims whitespace, then accepts 1 to 32 Unicode code points.
+        Names must not contain null characters because PostgreSQL text cannot store them. Names need not be unique.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: Whitespace is trimmed before the length is checked.
+      responses:
+        '200':
+          description: The renamed org.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Org'
+        '400':
+          $ref: '#/components/responses/InvalidOrgNameRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          $ref: '#/components/responses/OrgNotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     delete:
       tags: [Orgs]
       security:
@@ -560,7 +616,7 @@ paths:
       tags: [Orgs]
       operationId: preflightOrg
       security: []
-      summary: CORS preflight for the org deletion route
+      summary: CORS preflight for the org rename and deletion route
       description: |
         Requires exactly one dashboard Origin and one Access-Control-Request-Method of DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
@@ -577,7 +633,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [DELETE]
+            enum: [PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:

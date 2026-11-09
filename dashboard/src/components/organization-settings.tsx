@@ -1,7 +1,7 @@
 'use client'
 
 import { Check, Copy, Settings } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { openDialog } from '../lib/dialog-controls'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
@@ -10,9 +10,11 @@ import SettingsLayout from './settings-layout'
 import { SettingsRow, SettingsSection } from './settings-section'
 
 export default function OrganizationSettings() {
-  const { organization } = useCurrentUser()
+  const { organization, renameOrganization } = useCurrentUser()
   const deleteDialog = useRef<HTMLDialogElement>(null)
   const copyOperation = useRef(0)
+  const [nameDraft, setNameDraft] = useState<{ id: string; value: string } | null>(null)
+  const [renameState, setRenameState] = useState<'idle' | 'saving' | 'error'>('idle')
   const [copyFeedback, setCopyFeedback] = useState<{ id: string; status: 'copied' | 'error' } | null>(null)
   useEffect(() => {
     if (copyFeedback?.status !== 'copied') return
@@ -21,9 +23,26 @@ export default function OrganizationSettings() {
   }, [copyFeedback])
   if (!organization) return null
   const owner = organization.role === 'owner'
+  const draftName = nameDraft?.id === organization.id ? nameDraft.value : organization.name
+  const trimmedName = draftName.trim()
+  const nameChanged = trimmedName !== organization.name
+  const nameValid = trimmedName.length > 0 && [...trimmedName].length <= 32
   const copied = copyFeedback?.id === organization.id && copyFeedback.status === 'copied'
   const copyFailed = copyFeedback?.id === organization.id && copyFeedback.status === 'error'
   const copyLabel = copied ? 'Organization ID copied' : copyFailed ? 'Copy failed. Try again.' : 'Copy organization ID'
+
+  async function rename(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!organization || !nameChanged || !nameValid || renameState === 'saving') return
+    setRenameState('saving')
+    try {
+      await renameOrganization(organization.id, trimmedName)
+      setNameDraft(null)
+      setRenameState('idle')
+    } catch {
+      setRenameState('error')
+    }
+  }
 
   async function copyOrganizationID(id: string) {
     const operation = ++copyOperation.current
@@ -50,7 +69,12 @@ export default function OrganizationSettings() {
       <div className="account-sections">
         <SettingsSection title="Organization">
           <SettingsRow label={<label htmlFor="organization-settings-name">Name</label>}>
-            <input id="organization-settings-name" className="account-name" value={organization.name} readOnly title="Renaming is coming soon" />
+            <form className="organization-rename" onSubmit={(event) => void rename(event)}>
+              <input id="organization-settings-name" className="account-name" autoComplete="off" value={draftName} readOnly={!owner} disabled={renameState === 'saving'}
+                onInput={(event) => { setNameDraft({ id: organization.id, value: event.currentTarget.value }); setRenameState('idle') }} />
+              {owner && nameChanged && <button className="button button-primary" type="submit" disabled={!nameValid || renameState === 'saving'}>Save</button>}
+              {renameState === 'error' && <span role="alert">Could not save. Try again.</span>}
+            </form>
           </SettingsRow>
           <SettingsRow label="Organization ID">
             <button className="organization-copy" type="button" aria-label={copyLabel} title={copyLabel} onClick={() => void copyOrganizationID(organization.id)}>

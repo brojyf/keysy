@@ -23,6 +23,7 @@ All other tables live in the `public` schema.
 | `deleted_at` | `timestamptz` | Nullable. Null means active. |
 
 Names must contain at least one non-whitespace character. Different orgs can use the same name.
+An owner can rename an org through `PATCH /v0/orgs/{orgId}`.
 An owner can soft-delete an org through `DELETE /v0/orgs/{orgId}`. The API sets `deleted_at`,
 retains memberships and user accounts, and excludes the org from `GET /v0/orgs`.
 There are no org settings columns. Complete resource cleanup is tracked in

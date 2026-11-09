@@ -59,6 +59,28 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
     networkMode: 'always',
   })
 
+  const rename = useMutation({
+    mutationKey: [...queryKey, 'rename'],
+    mutationFn: async ({ organizationID, name }: { organizationID: string; name: string }): Promise<{ id: string; name: string } | null> => {
+      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organizationID)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }), signal: sessionSignal,
+      })
+      sessionSignal?.throwIfAborted()
+      if (response.status === 401) { onSignedOut(); return null }
+      if (response.status !== 200) throw new Error('Rename failed')
+      return parseCreatedOrganization(await response.json())
+    },
+    onSuccess: (renamed) => {
+      if (!active() || !renamed) return
+      const revalidation = refreshOrganizations()
+      queryClient.setQueryData<Organization[]>(queryKey, (current = []) => current.map((organization) => organization.id === renamed.id ? { ...organization, name: renamed.name } : organization))
+      void revalidation.catch(() => {})
+    },
+    onError: () => { if (active()) return refreshOrganizations().catch(() => {}) },
+    retry: false,
+    networkMode: 'always',
+  })
+
   const remove = useMutation({
     mutationKey: [...queryKey, 'delete'],
     mutationFn: async (organizationID: string) => {
@@ -83,6 +105,10 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
   return {
     createOrganization: async (name: string) => {
       const organization = await create.mutateAsync(name)
+      return active() ? organization : null
+    },
+    renameOrganization: async (organizationID: string, name: string) => {
+      const organization = await rename.mutateAsync({ organizationID, name })
       return active() ? organization : null
     },
     deleteOrganization: async (organizationID: string): Promise<DeleteOrganizationResult | null> => {

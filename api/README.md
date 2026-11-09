@@ -13,6 +13,9 @@ Results are sorted by name and then ID ascending. No memberships returns `[]`.
 Names are trimmed, then must contain 1 to 32 Unicode code points without null
 characters. Duplicate names are allowed. The org and the current user's `owner` membership are
 created in one transaction; success returns `201` with `{id, name}`.
+`PATCH /v0/orgs/{orgId}` renames an org. The body has one field, `name`, with the same rules as create.
+Only an owner of an active org can rename it. Success returns `200` with `{id, name}`; missing, deleted,
+and non-owner targets return `404 ORG_NOT_FOUND`.
 `DELETE /v0/orgs/{orgId}` accepts only an org UUID in the path. Only an owner of that org can delete it.
 It sets `orgs.deleted_at` and returns `204` without a response body. Memberships and user accounts remain.
 Owner retries on already deleted orgs return `204` without another write or a change to `deleted_at`.

@@ -18,6 +18,7 @@ type organizationStore struct {
 	create func(context.Context, string, string) (Organization, error)
 	list   func(context.Context, string) ([]Membership, error)
 	delete func(context.Context, string, string) (bool, error)
+	rename func(context.Context, string, string, string) (bool, error)
 }
 
 func (s organizationStore) Create(ctx context.Context, userID, name string) (Organization, error) {
@@ -250,4 +251,8 @@ func TestHandlersRespectTimeout(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (s organizationStore) Rename(ctx context.Context, userID, orgID, name string) (bool, error) {
+	return s.rename(ctx, userID, orgID, name)
 }
