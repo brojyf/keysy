@@ -25,5 +25,8 @@ export default function nextConfig(phase: string): NextConfig {
     devIndicators: {
       position: 'bottom-right',
     },
+    async redirects() {
+      return [{ source: '/', destination: '/secrets', permanent: false }]
+    },
   }
 }
