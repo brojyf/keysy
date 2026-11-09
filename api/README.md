@@ -21,19 +21,33 @@ Deleted orgs are excluded from `GET /v0/orgs`. Permanent resource cleanup is tra
 [issue #120](https://github.com/brojyf/keysy/issues/120).
 All org routes reject query strings; GET and DELETE also reject request bodies.
 
+`GET /v0/me/sessions` returns an array of `{id, client, device, lastUsedAt, current}`
+for the current user's unexpired sessions in `auth.sessions`, newest first.
+`client` is always `web`. `device` is `<Browser> on <OS>` from the user agent,
+or `Unknown device`. `lastUsedAt` is the last token refresh, or the sign-in time,
+in RFC 3339 UTC. `current` marks the session in the JWT `session_id` claim.
+`DELETE /v0/me/sessions/{sessionId}` accepts only a session UUID in the path and
+deletes that session and its refresh tokens; it returns `204`. The current session
+returns `409 CURRENT_SESSION`; missing and other users' sessions return
+`404 SESSION_NOT_FOUND`. Access tokens of a revoked session stay valid until they expire.
+Both routes reject query strings and request bodies.
+
 ## Configuration
 
 Copy `.env.example` to ignored `.env.local` for Air. Direct runs require exported
 variables. `PORT` defaults to 8081. `DATABASE_URL` must be a PostgreSQL URL with
 permission to SELECT and UPDATE `public.profiles`, plus SELECT, INSERT, and UPDATE on
-`public.orgs`, and SELECT and INSERT on `public.members`. The backend role must bypass RLS because
+`public.orgs`, SELECT and INSERT on `public.members`, and EXECUTE on
+`public.list_user_sessions(uuid)` and `public.revoke_user_session(uuid, uuid)`.
+These `SECURITY DEFINER` functions are the only access to `auth.sessions`. The backend role must bypass RLS because
 these org tables have RLS enabled without direct-client policies. Keep this
 connection server-side; org queries enforce the authenticated user ID.
 Use Supabase's direct or session pooler
 connection (port 5432); the transaction pooler (port 6543) breaks prepared statements. `SUPABASE_URL` requires HTTPS.
 `WEB_APP_URL` requires HTTPS except `http://localhost`; its exact origin is
 allowed for credentialed GET, POST, PATCH, and DELETE requests and OPTIONS preflight.
-Preflight accepts GET/PATCH for `/v0/me`, GET/POST for `/v0/orgs`, and DELETE for `/v0/orgs/{orgId}`.
+Preflight accepts GET/PATCH for `/v0/me`, GET for `/v0/me/sessions`, DELETE for
+`/v0/me/sessions/{sessionId}`, GET/POST for `/v0/orgs`, and DELETE for `/v0/orgs/{orgId}`.
 CORS allows only the `Content-Type` request header.
 `OAUTH_COOKIE_KEY` must decode from Base64 to 32 bytes and match auth's key.
 Never commit secrets.
@@ -46,7 +60,7 @@ The API reads only the sealed `__Secure-keysy-access` cookie, or `keysy-access`
 when `WEB_APP_URL` is HTTP localhost. Both use `__Secure-keysy-access` as AES-GCM
 AAD. JWT verification uses cached Supabase JWKS at
 `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`, requires ES256, the Supabase
-`/auth/v1` issuer, `authenticated` audience, and expiration. Bearer tokens are
+`/auth/v1` issuer, `authenticated` audience, expiration, and a `session_id` claim. Bearer tokens are
 not accepted. Responses use `Cache-Control: no-store`.
 
 ## Run and verify
@@ -74,5 +88,5 @@ exported. Server spans and the `http.server.request.duration` histogram carry
 only the method, route template, status, and request ID. JWKS fetches and
 database queries (without query variables) are child spans. Incoming trace
 headers are ignored and outgoing requests carry none. Logs keep going to stdout.
-Tests use local JWKS servers, fake profile and org stores, and SQL mocks for
+Tests use local JWKS servers, fake profile, org, and session stores, and SQL mocks for
 org transactions and user-scoped queries, with no live services.

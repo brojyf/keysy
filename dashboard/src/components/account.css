@@ -67,7 +67,7 @@
   overflow-y: clip;
 }
 
-.account-page:has(> .account-table) {
+.account-page:has(> .account-table, > .skeleton-sessions) {
   gap: 18px;
 }
 

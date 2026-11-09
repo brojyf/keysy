@@ -47,7 +47,7 @@ func TestOrganizationSession(t *testing.T) {
 					expires = time.Now().Add(-time.Hour)
 				}
 				token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-					"sub": userID, "iss": "https://auth.example.test/auth/v1", "aud": "authenticated", "exp": expires.Unix(),
+					"sub": userID, "session_id": "session-123", "iss": "https://auth.example.test/auth/v1", "aud": "authenticated", "exp": expires.Unix(),
 				})
 				signed, err := token.SignedString(private)
 				if err != nil {

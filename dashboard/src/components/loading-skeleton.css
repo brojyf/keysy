@@ -25,6 +25,7 @@
 .skeleton-table-header, .skeleton-table-row { display: grid; align-items: center; }
 .skeleton-table-header { height: 40px; background: var(--color-table-header); }
 .skeleton-table-header > div, .skeleton-table-cell { min-width: 0; padding: 0 14px; }
+.skeleton-table-header > div { display: flex; align-items: center; gap: 4px; }
 .skeleton-header-bone { background: var(--color-line); }
 .skeleton-table-row { border-top: 1px solid var(--color-line); }
 .skeleton-table-cell { display: flex; flex-direction: column; gap: 11px; }
@@ -37,6 +38,10 @@
 .skeleton-card-row { min-height: 56px; display: grid; grid-template-columns: 38.2% minmax(0, 1fr); align-items: center; gap: 0; padding: 0 14px; }
 .skeleton-card-row + .skeleton-card-row { border-top: 1px solid var(--color-line); }
 .skeleton-card-end { justify-self: end; }
+.skeleton-account-table { max-width: 784px; }
+.skeleton-account-table .skeleton-page-header { gap: 25px; }
+.skeleton-sessions { display: flex; flex-direction: column; gap: 18px; max-width: 720px; }
+.skeleton-sessions .skeleton-table-cell:last-child { align-items: flex-end; }
 @media (prefers-reduced-motion: no-preference) {
   .skeleton-bone { animation: skeleton-pulse 1.6s ease-in-out infinite; }
   @keyframes skeleton-pulse { 50% { opacity: 0.55; } }

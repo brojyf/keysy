@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Window } from 'happy-dom'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
@@ -38,6 +39,7 @@ beforeEach(() => {
   routerPush.mockClear()
   globalThis.fetch = request
   browser = new Window({ url: 'https://dashboard.keysy.net' })
+  Object.assign(browser.HTMLElement.prototype, { hidePopover() {} })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   container = document.createElement('div')
   document.body.append(container)
@@ -64,7 +66,7 @@ function text(selector: string) {
 }
 
 test('the account sidebar links to each account page and marks the current one', async () => {
-  await renderAccount('/account/sessions', <SessionsPage />)
+  await renderSessions()
   const links = [...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Account"] a')]
   expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
     ['General', '/account'],
@@ -205,40 +207,164 @@ test('the organization row menu links to the dashboard and settings without open
   expect(routerPush).not.toHaveBeenCalled()
 })
 
-test('Sessions lists the mock sessions newest first with enabled row actions', async () => {
-  await renderAccount('/account/sessions', <SessionsPage />)
+const minute = 60_000
+const apiSessions = () => [
+  { id: 'session-old', client: 'web', device: 'Firefox on Linux', lastUsedAt: '2025-10-12T09:00:00Z', current: false },
+  { id: 'session-current', client: 'web', device: 'Chrome on macOS', lastUsedAt: new Date(Date.now() - 3 * minute).toISOString(), current: true },
+  { id: 'session-phone', client: 'web', device: 'Safari on iOS', lastUsedAt: new Date(Date.now() - 125 * minute).toISOString(), current: false },
+]
+
+function sessionsAPI(revoke: (init: RequestInit) => Promise<Response> = () => Promise.resolve(new Response(null, { status: 204 }))) {
+  let sessions = apiSessions()
+  request.mockImplementation((url: string, init: RequestInit = {}) => {
+    if (url === 'https://api.keysy.net/v0/me/sessions' && !init.method) return Promise.resolve(Response.json(sessions))
+    if (url === 'https://api.keysy.net/v0/me/sessions/session-phone' && init.method === 'DELETE') {
+      return revoke(init).then((response) => {
+        if (response.status === 204) sessions = sessions.filter(({ id }) => id !== 'session-phone')
+        return response
+      })
+    }
+    return Promise.reject(new Error(`Unexpected request ${init.method ?? 'GET'} ${url}`))
+  })
+}
+
+async function settle() {
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+}
+
+// The session gate provides the QueryClient in the app.
+async function renderSessions() {
+  await renderAccount('/account/sessions', <QueryClientProvider client={new QueryClient()}><SessionsPage /></QueryClientProvider>)
+  await settle()
+}
+
+function sessionsDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
+
+function sessionRequests() {
+  return request.mock.calls.map(([url, init]) => `${(init as RequestInit | undefined)?.method ?? 'GET'} ${url}`)
+}
+
+async function openRevoke() {
+  const more = container.querySelector<HTMLButtonElement>('[aria-label="More actions for Safari on iOS"]')!
+  const menu = document.getElementById(more.getAttribute('popovertarget')!)!
+  expect([...menu.querySelectorAll('button')].map((item) => [item.textContent, item.className])).toEqual([['Revoke', 'account-menu-item account-menu-sign-out']])
+  await act(() => menu.querySelector('button')!.click())
+  expect(sessionsDialog().open).toBe(true)
+}
+
+test('Sessions shows the table skeleton while the list loads', async () => {
+  request.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessions()
+  expect(container.querySelector('.account-page > .skeleton-sessions')).not.toBeNull()
+  expect(container.querySelector('table')).toBeNull()
+  expect(container.querySelector('h1')?.textContent).toBe('Sessions')
+})
+
+test('Sessions lists API sessions newest first and marks the current one', async () => {
+  sessionsAPI()
+  await renderSessions()
+  expect(request.mock.calls[0][0]).toBe('https://api.keysy.net/v0/me/sessions')
+  expect((request.mock.calls[0][1] as RequestInit).credentials).toBe('include')
   expect(text('th')).toEqual(['Client', 'Device', 'Last used', ''])
-  expect(tableRows()).toEqual([
-    ['Web', 'Chrome on macOS', 'Now', 'This session'],
-    ['CLI', 'jordan-mbp', '2 hours ago', ''],
-    ['Browser extension', 'Chrome on macOS', 'Yesterday', ''],
-    ['CLI', 'work-desktop', 'Oct 12', ''],
+  expect(tableRows().map((row) => row.slice(0, 3))).toEqual([
+    ['Web', 'Chrome on macOS', 'Now'],
+    ['Web', 'Safari on iOS', '2 hours ago'],
+    ['Web', 'Firefox on Linux', 'Oct 12, 2025'],
   ])
   expect(headerSort('Last used').getAttribute('aria-sort')).toBe('descending')
-  expect(container.innerHTML.toLowerCase()).not.toContain('coming soon')
-  const more = [...container.querySelectorAll<HTMLButtonElement>('tbody button')]
-  expect(more.map((button) => [button.getAttribute('aria-label'), button.disabled])).toEqual([
-    ['More actions for jordan-mbp', false],
-    ['More actions for Chrome on macOS', false],
-    ['More actions for work-desktop', false],
+  const rows = [...container.querySelectorAll('tbody tr')]
+  expect(rows[0].querySelector('button, [popover]')).toBeNull()
+  expect(rows[0].querySelector('.account-session-status')?.textContent).toBe('This session')
+  expect([...container.querySelectorAll<HTMLButtonElement>('tbody button.account-more')].map((button) => button.getAttribute('aria-label'))).toEqual([
+    'More actions for Safari on iOS',
+    'More actions for Firefox on Linux',
   ])
 })
 
 test('the Last used header reverses the sessions', async () => {
-  await renderAccount('/account/sessions', <SessionsPage />)
+  sessionsAPI()
+  await renderSessions()
   await act(() => headerSort('Last used').querySelector('button')!.click())
-  expect(tableRows().map((row) => row[2])).toEqual(['Oct 12', 'Yesterday', '2 hours ago', 'Now'])
+  expect(tableRows().map((row) => row[2])).toEqual(['Oct 12, 2025', '2 hours ago', 'Now'])
   expect(headerSort('Last used').getAttribute('aria-sort')).toBe('ascending')
 })
 
 test('Sessions search matches the client or the device', async () => {
-  await renderAccount('/account/sessions', <SessionsPage />)
-  await search('cli')
-  expect(tableRows().map((row) => row[1])).toEqual(['jordan-mbp', 'work-desktop'])
-  await search('chrome')
-  expect(tableRows().map((row) => row[0])).toEqual(['Web', 'Browser extension'])
+  sessionsAPI()
+  await renderSessions()
+  await search('web')
+  expect(tableRows()).toHaveLength(3)
+  await search('SAFARI')
+  expect(tableRows().map((row) => row[1])).toEqual(['Safari on iOS'])
   await search('acme')
   expect(tableRows()).toEqual([['No sessions match “acme”']])
+})
+
+test('Sessions shows a load failure in the table', async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status: 500 })))
+  await renderSessions()
+  expect(tableRows()).toEqual([['Could not load sessions. Refresh the page to try again.']])
+  expect(container.querySelector('tbody td')?.getAttribute('role')).toBe('alert')
+})
+
+test('an expired session on the sessions list signs out', async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
+  await renderSessions()
+  expect(sessionRequests()).toEqual(['GET https://api.keysy.net/v0/me/sessions', 'POST https://auth.keysy.net/v0/auth/refresh'])
+  expect(onSignedOut).toHaveBeenCalledTimes(1)
+})
+
+test('revoking a session confirms, deletes it, and refetches the list', async () => {
+  let finish!: (response: Response) => void
+  sessionsAPI(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await renderSessions()
+  await openRevoke()
+  expect(sessionsDialog().querySelector('h2')?.textContent).toBe('Revoke session?')
+  expect(sessionsDialog().querySelector('p')?.textContent).toBe('Safari on iOS will be signed out.')
+  await act(async () => button('Revoke', sessionsDialog()).click())
+  expect([...sessionsDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Revoking...', true]])
+  await act(async () => finish(new Response(null, { status: 204 })))
+  await settle()
+  expect(sessionsDialog().open).toBe(false)
+  expect(sessionRequests()).toEqual([
+    'GET https://api.keysy.net/v0/me/sessions',
+    'DELETE https://api.keysy.net/v0/me/sessions/session-phone',
+    'GET https://api.keysy.net/v0/me/sessions',
+  ])
+  expect(tableRows().map((row) => row[1])).toEqual(['Chrome on macOS', 'Firefox on Linux'])
+})
+
+test('a session that is already gone closes the dialog and refetches the list', async () => {
+  sessionsAPI(() => Promise.resolve(Response.json({ error: { code: 'SESSION_NOT_FOUND', message: 'This session was not found. Refresh the page and try again.' } }, { status: 404 })))
+  await renderSessions()
+  await openRevoke()
+  await act(async () => button('Revoke', sessionsDialog()).click())
+  await settle()
+  expect(sessionsDialog().open).toBe(false)
+  expect(sessionRequests()).toEqual([
+    'GET https://api.keysy.net/v0/me/sessions',
+    'DELETE https://api.keysy.net/v0/me/sessions/session-phone',
+    'GET https://api.keysy.net/v0/me/sessions',
+  ])
+})
+
+for (const [status, body, message] of [
+  [409, { error: { code: 'CURRENT_SESSION', message: 'You cannot revoke the session you are using. Sign out instead.' } }, 'You cannot revoke the session you are using. Sign out instead.'],
+  [500, null, 'Could not revoke the session. Try again.'],
+] as const) test(`a ${status} revoke response shows its message in the dialog`, async () => {
+  sessionsAPI(() => Promise.resolve(body ? Response.json(body, { status }) : new Response(null, { status })))
+  await renderSessions()
+  await openRevoke()
+  await act(async () => button('Revoke', sessionsDialog()).click())
+  expect(sessionsDialog().open).toBe(true)
+  const alert = sessionsDialog().querySelector('[role="alert"]')!
+  expect(alert.textContent).toBe(message)
+  expect(alert.className).toBe('dialog-error')
+  expect([...sessionsDialog().querySelectorAll('button')].map((item) => item.disabled)).toEqual([false, false])
+  expect(tableRows()).toHaveLength(3)
+  await act(async () => button('Cancel', sessionsDialog()).click())
+  await openRevoke()
+  expect(sessionsDialog().querySelector('[role="alert"]')).toBeNull()
 })
 
 function input() { return container.querySelector<HTMLInputElement>('input')! }

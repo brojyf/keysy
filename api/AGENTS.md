@@ -1,15 +1,23 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, profile lookup and update, and org list/create/delete.
+configuration, middleware, profile lookup and update, session list/revoke, and
+org list/create/delete.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
+`GET /v0/me/sessions` lists the current user's active web sessions from
+`auth.sessions` and marks the current one by the JWT `session_id`.
+`DELETE /v0/me/sessions/{sessionId}` deletes one of the user's other sessions.
+The current session returns 409; missing and other users' sessions return 404.
+Existing access tokens of a revoked session stay valid until they expire.
 `GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
 `DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
 Memberships and user accounts remain. Owner retries on deleted orgs return 204
 without another write. Missing and non-owner targets return 404.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
-INSERT on `public.orgs` and `public.members`, and UPDATE on `public.orgs`. The backend database role must
+INSERT on `public.orgs` and `public.members`, UPDATE on `public.orgs`, and
+EXECUTE on `public.list_user_sessions(uuid)` and
+`public.revoke_user_session(uuid, uuid)`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
