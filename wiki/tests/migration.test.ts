@@ -292,7 +292,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Orgs', 'GET', '/v0/me'], 9],
+    ['api', 'API', ['Account', 'GET', '/v0/me'], 10],
     ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();

@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, and lets owners soft-delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
 
     This is the v0 draft, not a stable release.
 
@@ -12,6 +12,7 @@ servers:
   - url: https://api.keysy.net
   - url: http://localhost:8081
 tags:
+  - name: Account
   - name: Orgs
   - name: Members
   - name: Secrets
@@ -26,7 +27,7 @@ security:
 paths:
   /v0/me:
     get:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: getMe
@@ -63,7 +64,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     patch:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: updateMe
@@ -120,7 +121,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     options:
-      tags: [Orgs]
+      tags: [Account]
       operationId: preflightMe
       security: []
       summary: CORS preflight for the profile route
@@ -171,7 +172,7 @@ paths:
           $ref: '#/components/responses/InternalError'
   /v0/me/sessions:
     get:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: listMySessions
@@ -213,7 +214,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     options:
-      tags: [Orgs]
+      tags: [Account]
       operationId: preflightMySessions
       security: []
       summary: CORS preflight for the sessions route
@@ -266,7 +267,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/SessionId'
     delete:
-      tags: [Orgs]
+      tags: [Account]
       security:
         - accessCookie: []
       operationId: revokeMySession
@@ -307,7 +308,7 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
     options:
-      tags: [Orgs]
+      tags: [Account]
       operationId: preflightMySession
       security: []
       summary: CORS preflight for the session revocation route
@@ -2016,7 +2017,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     SessionNotFound:
-      description: 'SESSION_NOT_FOUND, with the message "This session was not found. Refresh the page and try again." The session is missing or belongs to another user. The response does not reveal which.'
+      description: SESSION_NOT_FOUND. The session is missing or belongs to another user. The response does not reveal which.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -2031,7 +2032,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     CurrentSessionRevoke:
-      description: 'CURRENT_SESSION, with the message "You cannot revoke the session you are using. Sign out instead." sessionId is the session that made this request. The current session ends only through POST /v0/auth/logout on the auth service.'
+      description: CURRENT_SESSION. sessionId is the session that made this request. The current session ends only through POST /v0/auth/logout on the auth service.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
