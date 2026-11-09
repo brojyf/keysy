@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useRef, useState, type MouseEvent } from 'react'
+import { useRef, useState } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
 import { placeRowMenu } from '../../../lib/row-menu'
 import CreateOrganizationDialog from '../../../components/create-organization-dialog'
@@ -11,7 +10,6 @@ import { useCurrentUser } from '../../../components/current-user'
 import { organizationPath } from '../../../lib/organization-route'
 
 export default function OrganizationsPage() {
-  const router = useRouter()
   const dialog = useRef<HTMLDialogElement>(null)
   const { organizations: allOrganizations } = useCurrentUser()
   const [query, setQuery] = useState('')
@@ -20,10 +18,6 @@ export default function OrganizationsPage() {
   const organizations = allOrganizations
     .filter(({ name }) => name.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
-
-  function openOrganization(event: MouseEvent<HTMLTableRowElement>, organizationID: string) {
-    if (!(event.target as Element).closest('a, button, [popover]')) router.push(organizationPath(organizationID, '/settings'))
-  }
 
   if (allOrganizations.length === 0) return (
     <>
@@ -54,8 +48,8 @@ export default function OrganizationsPage() {
           </thead>
           <tbody>
             {organizations.map(({ id, name, role, memberCount }) => (
-              <tr key={id} className="account-org-row" onClick={(event) => openOrganization(event, id)}>
-                <td><Link className="account-table-link" href={organizationPath(id, '/settings')}>{name}</Link></td>
+              <tr key={id}>
+                <td>{name}</td>
                 <td>{role[0].toUpperCase() + role.slice(1)}</td>
                 <td>{memberCount}</td>
                 <td className="account-table-actions">

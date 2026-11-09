@@ -252,19 +252,6 @@
   width: 56px;
 }
 
-.account-org-row {
-  cursor: pointer;
-}
-
-.account-table-link {
-  color: inherit;
-}
-
-.account-table-link:focus-visible {
-  outline: 2px solid var(--color-button);
-  outline-offset: 2px;
-}
-
 .account-sessions th:is(:first-child, :nth-child(3)) {
   width: 200px;
 }
