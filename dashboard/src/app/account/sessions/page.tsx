@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { MoreIcon, placeRowMenu, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import { placeRowMenu } from '../../../lib/row-menu'
 import { useCurrentUser } from '../../../components/current-user'
 import { SessionsSkeleton } from '../../../components/loading-skeleton'
 import RevokeSessionDialog from '../../../components/revoke-session-dialog'

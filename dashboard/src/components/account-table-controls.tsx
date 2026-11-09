@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, X } from 'lucide-react'
-import { useRef, type ToggleEvent } from 'react'
+import { useRef } from 'react'
 
 export function TableSearch({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const input = useRef<HTMLInputElement>(null)
@@ -40,13 +40,4 @@ export function MoreIcon() {
       <circle cx="12.67" cy="8" r="1.67" />
     </svg>
   )
-}
-
-// Opens a row menu below its trigger, right aligned to it.
-export function placeRowMenu(event: ToggleEvent<HTMLDivElement>) {
-  if (event.newState !== 'open') return
-  const menu = event.currentTarget
-  const trigger = menu.previousElementSibling!.getBoundingClientRect()
-  menu.style.top = `${trigger.bottom + 4}px`
-  menu.style.right = `${document.documentElement.clientWidth - trigger.right}px`
 }
