@@ -76,9 +76,9 @@ func TestSessionJWKS(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, local := range []bool{false, true} {
-		for _, scenario := range []string{"valid", "expired", "missing-exp", "wrong-alg", "wrong-iss", "wrong-aud", "missing-sub", "bad-avatar", "relative-avatar", "no-host-avatar", "missing-cookie", "duplicate", "bad-seal", "bearer", "wrong-signature"} {
+		for _, scenario := range []string{"valid", "expired", "missing-exp", "wrong-alg", "wrong-iss", "wrong-aud", "missing-sub", "missing-session", "bad-avatar", "relative-avatar", "no-host-avatar", "missing-cookie", "duplicate", "bad-seal", "bearer", "wrong-signature"} {
 			t.Run(scenario+map[bool]string{true: "/local", false: "/prod"}[local], func(t *testing.T) {
-				claims := jwt.MapClaims{"sub": "user-123", "email": "user@example.test", "iss": server.URL + "/auth/v1", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix(), "user_metadata": map[string]any{"avatar_url": "https://google.test/photo"}}
+				claims := jwt.MapClaims{"sub": "user-123", "session_id": "session-123", "email": "user@example.test", "iss": server.URL + "/auth/v1", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix(), "user_metadata": map[string]any{"avatar_url": "https://google.test/photo"}}
 				method := jwt.SigningMethodES256
 				var signingKey any = private
 				switch scenario {
@@ -92,6 +92,8 @@ func TestSessionJWKS(t *testing.T) {
 					claims["aud"] = "anon"
 				case "missing-sub":
 					delete(claims, "sub")
+				case "missing-session":
+					delete(claims, "session_id")
 				case "bad-avatar":
 					claims["user_metadata"] = map[string]any{"avatar_url": "http://google.test/photo"}
 				case "relative-avatar":
@@ -127,7 +129,7 @@ func TestSessionJWKS(t *testing.T) {
 				r := gin.New()
 				r.Use(Session(cookieKey, local, server.URL+"/auth/v1", keys.KeyfuncCtx, func() bool { return true }))
 				r.GET("/v0/me", func(c *gin.Context) {
-					c.JSON(200, gin.H{"id": c.GetString("user_id"), "email": c.GetString("email"), "avatar": c.GetString("avatar_url")})
+					c.JSON(200, gin.H{"id": c.GetString("user_id"), "email": c.GetString("email"), "avatar": c.GetString("avatar_url"), "session": c.GetString("session_id")})
 				})
 				req := httptest.NewRequest("GET", "/v0/me", nil)
 				if scenario != "missing-cookie" && scenario != "bearer" {
@@ -148,7 +150,7 @@ func TestSessionJWKS(t *testing.T) {
 					}
 					var body map[string]string
 					json.Unmarshal(w.Body.Bytes(), &body)
-					if body["id"] != "user-123" || body["email"] != "user@example.test" {
+					if body["id"] != "user-123" || body["email"] != "user@example.test" || body["session"] != "session-123" {
 						t.Fatal(body)
 					}
 					if scenario == "valid" && body["avatar"] != "https://google.test/photo" || scenario != "valid" && body["avatar"] != "" {
@@ -192,7 +194,7 @@ func TestSessionJWKSRefreshHonorsRequestDeadline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": server.URL + "/auth/v1", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "session_id": "session-123", "iss": server.URL + "/auth/v1", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
 	token.Header["kid"] = "rotated"
 	signed, err := token.SignedString(private)
 	if err != nil {
@@ -227,7 +229,7 @@ func TestSessionKeyLookupFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "session_id": "session-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
 	token.Header["kid"] = "rotated"
 	signed, err := token.SignedString(private)
 	if err != nil {
@@ -275,7 +277,7 @@ func TestSessionWithProductionJWKS(t *testing.T) {
 		t.Fatal(err)
 	}
 	encode := func(value []byte) string { return base64.RawURLEncoding.EncodeToString(value) }
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "session_id": "session-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
 	token.Header["kid"] = "rotated"
 	signed, err := token.SignedString(private)
 	if err != nil {
