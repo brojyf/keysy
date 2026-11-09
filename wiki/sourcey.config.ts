@@ -28,6 +28,7 @@ function endpointNavigation(specPath: string) {
 
 export default defineConfig({
   name: 'Keysy',
+  titleSeparator: ' | ',
   siteUrl: 'https://wiki.keysy.net',
   logo: { light: './logo/light.svg', dark: './logo/dark.svg' },
   favicon: './favicon.svg',

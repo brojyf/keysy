@@ -213,3 +213,8 @@ test('favicon adapts the Namespace symbol to the browser color scheme', async ()
     expect(contrast(background === '#ffffff' ? tokenLight['--color-button']! : tokenDark['--color-button']!, background)).toBeGreaterThanOrEqual(3);
   }
 });
+
+test('browser tab titles separate page and site name with a pipe', async () => {
+  expect(config.titleSeparator).toBe(' | ');
+  expect(await readFile(new URL('dist/prd.html', docs), 'utf8')).toContain('<title>PRD | Keysy</title>');
+});
