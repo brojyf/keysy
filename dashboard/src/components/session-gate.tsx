@@ -2,12 +2,13 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../lib/api-client'
 import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationForPath, organizationPath, organizationRoute } from '../lib/organization-route'
-import { parseOrganizations, type Organization } from '../lib/organization'
+import { organizationQueryOptions, useOrganizationMutations } from '../lib/organization-queries'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
 import Rail from './rail'
@@ -16,27 +17,29 @@ import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
 import LoadingSkeleton from './loading-skeleton'
 
-function SessionGate({ children }: { children: ReactNode }) {
+function SessionGateContent({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
   const pathname = usePathname() ?? ''
   const router = useRouter()
-  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const queryClient = useQueryClient()
   const [user, setUser] = useState<SessionUser | null>()
   const [sessionError, setSessionError] = useState(false)
   const [logoutStatus, setLogoutStatus] = useState<'idle' | 'pending' | 'error'>('idle')
   const [sessionCheck, setSessionCheck] = useState(0)
   const signOutDialog = useRef<HTMLDialogElement>(null)
-  const organizationSnapshot = useRef(organizations)
-  const sessionController = useRef<AbortController | null>(null)
+  const [currentSession, setCurrentSession] = useState<AbortController>()
+  const navigation = useRef({ pathname })
+  useLayoutEffect(() => { navigation.current = { pathname } }, [pathname])
 
-  function updateOrganizations(updated: Organization[]) {
-    organizationSnapshot.current = updated
-    setOrganizations(updated)
-  }
+  const signedOut = useCallback((controller: AbortController | undefined) => {
+    if (!controller || controller.signal.aborted) return
+    controller.abort()
+    queryClient.clear()
+    setUser(null)
+  }, [queryClient])
 
   useEffect(() => {
     const controller = new AbortController()
-    sessionController.current = controller
     async function checkSession() {
       try {
         const response = await apiFetch('/v0/me', { signal: controller.signal })
@@ -46,43 +49,38 @@ function SessionGate({ children }: { children: ReactNode }) {
         }
         if (!response.ok) throw new Error('Session check failed')
         const session = parseSessionUser(await response.json())
-        const orgResponse = await apiFetch('/v0/orgs', { signal: controller.signal })
-        if (orgResponse.status === 401) { if (!controller.signal.aborted) setUser(null); return }
-        if (!orgResponse.ok) throw new Error('Organizations check failed')
-        const orgs = parseOrganizations(await orgResponse.json())
-        if (!controller.signal.aborted) { updateOrganizations(orgs); setUser(session) }
+        await queryClient.query(organizationQueryOptions(session.id, controller.signal, () => signedOut(controller)))
+        if (!controller.signal.aborted) { setCurrentSession(controller); setUser(session) }
       } catch {
         // Only a 401 means signed out; any other failure must not show sign-in.
         if (!controller.signal.aborted) setSessionError(true)
       }
     }
     void checkSession()
-    return () => controller.abort()
-  }, [authURL, sessionCheck])
+    return () => { controller.abort(); queryClient.clear() }
+  }, [authURL, sessionCheck, queryClient, signedOut])
 
-  const currentSession = sessionController.current
+  const onSignedOut = () => signedOut(currentSession)
+  const organizationQuery = useQuery({ ...organizationQueryOptions(user?.id ?? '', currentSession?.signal, onSignedOut), enabled: !!user })
+  const organizations = organizationQuery.data ?? []
+  const { createOrganization: addOrganization, deleteOrganization: removeOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
 
-  function signedOut() {
-    if (!currentSession || currentSession.signal.aborted) return
-    currentSession.abort()
-    setUser(null)
+  async function createOrganization(name: string) {
+    const startedAt = navigation.current
+    const organization = await addOrganization(name)
+    if (organization && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && startedAt.pathname === '/account/organizations') {
+      router.push(organizationPath(organization.id, '/secrets'))
+    }
+    return organization
   }
 
-  async function refreshOrganizations() {
-    while (currentSession && !currentSession.signal.aborted) {
-      const startedWith = organizationSnapshot.current
-      const response = await apiFetch('/v0/orgs', { signal: currentSession.signal })
-      if (currentSession.signal.aborted) return null
-      if (response.status === 401) { signedOut(); return null }
-      if (!response.ok) throw new Error('Organizations check failed')
-      const updated = parseOrganizations(await response.json())
-      if (currentSession.signal.aborted) return null
-      // Re-read when a creation, deletion, or another accepted refresh overlaps this GET.
-      if (organizationSnapshot.current !== startedWith) continue
-      updateOrganizations(updated)
-      return updated
+  async function deleteOrganization(organizationID: string) {
+    const startedAt = navigation.current
+    const result = await removeOrganization(organizationID)
+    if (result && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && !result.organizations.some((item) => item.id === organizationID)) {
+      router.replace(result.organizations[0] ? organizationPath(result.organizations[0].id, '/secrets') : '/account/organizations')
     }
-    return null
+    return result
   }
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
@@ -114,7 +112,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     try {
       const response = await logoutSession(authURL)
       if (!response.ok) throw new Error('Logout failed')
-      signedOut()
+      signedOut(currentSession)
       setSessionError(false)
       setLogoutStatus('idle')
     } catch {
@@ -148,16 +146,10 @@ function SessionGate({ children }: { children: ReactNode }) {
         user,
         organizations,
         organization,
-        onOrganizationCreated: (organization) => { if (currentSession && !currentSession.signal.aborted) updateOrganizations([...organizationSnapshot.current, organization]) },
-        onOrganizationDeleted: (organizationID) => {
-          if (!currentSession || currentSession.signal.aborted) return null
-          const remaining = organizationSnapshot.current.filter((organization) => organization.id !== organizationID)
-          updateOrganizations(remaining)
-          return remaining
-        },
-        refreshOrganizations,
+        createOrganization,
+        deleteOrganization,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
-        onSignedOut: signedOut,
+        onSignedOut,
         onSignOutRequest: requestSignOut,
       }}>
         <div className="dashboard">
@@ -183,4 +175,7 @@ function SessionGate({ children }: { children: ReactNode }) {
   return children
 }
 
-export default SessionGate
+export default function SessionGate({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient())
+  return <QueryClientProvider client={queryClient}><SessionGateContent>{children}</SessionGateContent></QueryClientProvider>
+}
