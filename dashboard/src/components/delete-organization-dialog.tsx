@@ -1,19 +1,15 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { apiFetch } from '../lib/api-client'
 import { closeDialog } from '../lib/dialog-controls'
 import type { Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'
 import Dialog from './dialog'
-import { organizationPath } from '../lib/organization-route'
 
 export default function DeleteOrganizationDialog({ ref, organization }: { ref: Ref<HTMLDialogElement>; organization: Organization }) {
-  const router = useRouter()
   const formID = useId()
   const confirmationID = useId()
-  const { onOrganizationDeleted, refreshOrganizations, onSignedOut } = useCurrentUser()
+  const { deleteOrganization } = useCurrentUser()
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -29,28 +25,9 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
     setPending(true)
     setError('')
     try {
-      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organization.id)}`, { method: 'DELETE' })
-      if (response.status === 401) { onSignedOut(); return }
-      if (response.status === 404) {
-        const updated = await refreshOrganizations()
-        if (!updated || !mounted.current) return
-        if (!updated.some((item) => item.id === organization.id)) {
-          router.replace(updated[0] ? organizationPath(updated[0].id, '/secrets') : '/account/organizations')
-          return
-        }
-        setError('The organization was not found, or you no longer have permission to delete it.')
-        return
-      }
-      if (response.status !== 204) throw new Error('Delete failed')
-      const remaining = onOrganizationDeleted(organization.id)
-      if (!remaining || !mounted.current) return
-      router.replace(remaining[0] ? organizationPath(remaining[0].id, '/secrets') : '/account/organizations')
+      await deleteOrganization(organization.id)
     } catch {
-      if (!mounted.current) {
-        await refreshOrganizations().catch(() => {})
-        return
-      }
-      setError('Could not delete the organization. Try again.')
+      if (mounted.current) setError('Could not delete the organization. Try again.')
     } finally {
       submitting.current = false
       if (mounted.current) setPending(false)

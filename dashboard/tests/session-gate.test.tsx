@@ -1,4 +1,5 @@
 import { Window } from 'happy-dom'
+import { notifyManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -14,6 +15,7 @@ import * as settingsPage from '../src/app/settings/page'
 import * as accountLayout from '../src/app/account/layout'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
+import { organizationQueryOptions, useOrganizationMutations } from '../src/lib/organization-queries'
 
 let currentPathname = '/orgs/org-id/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
@@ -52,7 +54,13 @@ function rejectWhenAborted(_url: string, init: RequestInit) {
   })
 }
 
+async function settleOrganizationRequests() {
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+}
+
 beforeEach(() => {
+  notifyManager.setScheduler(queueMicrotask)
+  notifyManager.setNotifyFunction((callback) => { act(callback) })
   currentPathname = '/orgs/org-id/secrets'
   process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net/'
   process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
@@ -83,6 +91,8 @@ afterEach(async () => {
   if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
   else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
+  notifyManager.setScheduler((callback) => setTimeout(callback, 0))
+  notifyManager.setNotifyFunction((callback) => callback())
 })
 
 test('each API attempt, refresh, retry, and logout gets a 20 second timeout', async () => {
@@ -810,6 +820,7 @@ test('create form validates names and submits one trimmed request, then redirect
   const createDialog = container.querySelector<HTMLDialogElement>('dialog')!
   await act(() => createDialog.dispatchEvent(new browser.Event('cancel', { cancelable: true })))
   expect(createDialog.open).toBe(true)
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([{ id: 'new-id', name: 'New org', role: 'owner', memberCount: 1 }])))
   await act(async () => finish(Response.json({ id: 'new-id', name: 'New org' }, { status: 201 })))
   expect(router.push).toHaveBeenCalledWith('/orgs/new-id/secrets')
   expect(container.querySelector('.rail')).not.toBeNull()
@@ -827,7 +838,7 @@ test('a create timeout shows the form error and sends one POST', async () => {
   await act(() => setOrganizationName('Keep this name'))
   await act(() => submitOrganization())
   controllers[2].abort(new DOMException('Timed out', 'TimeoutError'))
-  await act(async () => Promise.resolve())
+  await settleOrganizationRequests()
   expect(durations).toEqual([20_000, 20_000, 20_000])
   expect(organizationsRequest.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
@@ -842,6 +853,7 @@ for (const failure of ['500', 'malformed', '401']) {
     organizationsRequest.mockImplementation(() => Promise.resolve(failure === 'malformed' ? Response.json({ id: 42 }, { status: 201 }) : new Response(null, { status: Number(failure) })))
     await act(() => setOrganizationName('Name'))
     await act(async () => submitOrganization())
+    await settleOrganizationRequests()
     if (failure === '401') expect(router.replace).toHaveBeenCalledWith('/signin')
     else {
       expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
@@ -867,6 +879,120 @@ test('sign out on create page ignores a late create response', async () => {
   await act(async () => finish(Response.json({ id: '1', name: 'Name' }, { status: 201 })))
   expect(router.push).not.toHaveBeenCalled()
   expect(router.replace).toHaveBeenCalledWith('/signin')
+})
+
+test('leaving the creation page preserves a confirmed organization without stale navigation', async () => {
+  await renderEmpty('/account/organizations', <AccountLayout><OrganizationsPage /></AccountLayout>)
+  await openCreateDialog()
+  let finish!: (response: Response) => void
+  organizationsRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => setOrganizationName('New organization'))
+  await act(() => submitOrganization())
+  currentPathname = '/account'
+  await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([{ id: 'new-id', name: 'New organization', role: 'owner', memberCount: 1 }])))
+  await act(async () => finish(Response.json({ id: 'new-id', name: 'New organization' }, { status: 201 })))
+  expect(router.push).not.toHaveBeenCalled()
+  currentPathname = '/orgs/new-id/secrets'
+  await act(async () => root.render(<SessionGate><p>Secrets</p></SessionGate>))
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('New organization')
+  expect(container.querySelector('h1')?.textContent).not.toBe('Organization unavailable')
+})
+
+function CreateForSession({ userID, signal }: { userID: string; signal: AbortSignal }) {
+  const { createOrganization } = useOrganizationMutations(userID, signal, () => {})
+  return <button onClick={() => void createOrganization('Delayed').catch(() => {})}>Create</button>
+}
+
+function ObserveOrganizations({ signal }: { signal: AbortSignal }) {
+  useQuery(organizationQueryOptions('user-id', signal, () => {}))
+  return null
+}
+
+test('overlapping creates do not duplicate an organization already accepted from a list refresh', async () => {
+  const queryClient = new QueryClient()
+  const session = new AbortController()
+  const first = { id: 'first-created', name: 'First', role: 'owner', memberCount: 1 }
+  const second = { id: 'second-created', name: 'Renamed', role: 'developer', memberCount: 3 }
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([])))
+  await act(async () => root.render(<QueryClientProvider client={queryClient}><ObserveOrganizations signal={session.signal} /><CreateForSession userID="user-id" signal={session.signal} /></QueryClientProvider>))
+  let finishFirst!: (response: Response) => void
+  let finishSecond!: (response: Response) => void
+  organizationsRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishFirst = resolve }))
+  organizationsRequest.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishSecond = resolve }))
+  await act(() => { container.querySelector('button')!.click(); container.querySelector('button')!.click() })
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([first, second])))
+  await act(async () => finishFirst(Response.json(first, { status: 201 })))
+  expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
+  organizationsRequest.mockImplementationOnce(() => Promise.reject(new Error('Refresh unavailable')))
+  await act(async () => finishSecond(Response.json({ id: second.id, name: 'Second' }, { status: 201 })))
+  await settleOrganizationRequests()
+  expect(organizationsRequest).toHaveBeenCalledTimes(5)
+  expect(queryClient.getQueryState(['organizations', 'user-id'])?.status).toBe('error')
+  expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
+})
+
+for (const status of [204, 404, 'network'] as const) test(`deletion exposes a business outcome after ${status}`, async () => {
+  const queryClient = new QueryClient()
+  const session = new AbortController()
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([{ id: 'org-id', name: 'Platform', role: 'owner', memberCount: 1 }])))
+  const onResult = mock(() => {})
+  function DeleteForSession() {
+    const { deleteOrganization } = useOrganizationMutations('user-id', session.signal, () => {})
+    return <button onClick={() => void deleteOrganization('org-id').then(onResult)}>Delete</button>
+  }
+  await act(async () => root.render(<QueryClientProvider client={queryClient}><ObserveOrganizations signal={session.signal} /><DeleteForSession /></QueryClientProvider>))
+  sessionRequest.mockImplementationOnce(() => status === 'network'
+    ? Promise.reject(new Error('Response lost'))
+    : Promise.resolve(new Response(null, { status })))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([])))
+  await act(async () => container.querySelector('button')!.click())
+  await settleOrganizationRequests()
+  expect(onResult).toHaveBeenCalledWith({ outcome: status === 204 ? 'completed' : 'unavailable', organizations: [] })
+})
+
+test('an old mutation cannot populate a new account after its response body was delayed across session replacement', async () => {
+  const queryClient = new QueryClient()
+  const oldSession = new AbortController()
+  const newSession = new AbortController()
+  const newOrganizations = [{ id: 'new-org', name: 'New account', role: 'developer', memberCount: 1 }]
+  queryClient.setQueryData(['organizations', 'old-user'], [])
+  let finish!: (value: unknown) => void
+  const response = new Response(null, { status: 201 })
+  response.json = () => new Promise((resolve) => { finish = resolve })
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(response))
+  await act(() => root.render(<QueryClientProvider client={queryClient}><CreateForSession userID="old-user" signal={oldSession.signal} /></QueryClientProvider>))
+  await act(async () => container.querySelector('button')!.click())
+  expect(finish).toBeDefined()
+  oldSession.abort()
+  queryClient.clear()
+  queryClient.setQueryData(['organizations', 'new-user'], newOrganizations)
+  await act(() => root.render(<QueryClientProvider client={queryClient}><CreateForSession userID="new-user" signal={newSession.signal} /></QueryClientProvider>))
+  await act(async () => finish({ id: 'old-created', name: 'Old account' }))
+  expect(queryClient.getQueryData(['organizations', 'new-user'])).toEqual(newOrganizations)
+  expect(queryClient.getQueryData(['organizations', 'old-user'])).toBeUndefined()
+  queryClient.clear()
+})
+
+test('separate SessionGate instances do not share an organization cache for the same user', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([{ id: 'org-id', name: 'First', role: 'owner', memberCount: 1 }])))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([{ id: 'org-id', name: 'Second', role: 'developer', memberCount: 1 }])))
+  await act(async () => root.render(<><SessionGate><p>First app</p></SessionGate><SessionGate><p>Second app</p></SessionGate></>))
+  expect(organizationsRequest).toHaveBeenCalledTimes(2)
+  expect([...container.querySelectorAll('.topbar-org')].map((node) => node.textContent)).toEqual(['First', 'Second'])
+})
+
+test('focus and reconnect keep the verified organization list until an explicit refresh', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  await renderSessionGate()
+  await act(async () => {
+    browser.dispatchEvent(new browser.Event('focus'))
+    browser.document.dispatchEvent(new browser.Event('visibilitychange'))
+    browser.dispatchEvent(new browser.Event('online'))
+  })
+  expect(organizationsRequest).toHaveBeenCalledTimes(1)
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('platform')
 })
 
 test('empty account shell hides organization controls and shows empty organizations', async () => {
