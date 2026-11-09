@@ -7,6 +7,7 @@
   --color-muted: #64666b;
   --color-accent: #1d4ed8;
   --color-button: #2f5aba;
+  --color-button-hover: #2a51a7;
   --color-on-button: #ffffff;
   --color-soft: #f0f1f3;
   --color-line: #e3e4e6;
@@ -89,6 +90,7 @@
   --color-muted: #c4c5c9;
   --color-accent: #9dbbff;
   --color-button: #426ed2;
+  --color-button-hover: #3b63bd;
   --color-on-button: #ffffff;
   --color-soft: #292929;
   --color-line: #2e2e2e;

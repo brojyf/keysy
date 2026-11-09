@@ -32,7 +32,8 @@
 }
 
 .button-primary:not(:disabled):hover {
-  background: var(--color-button);
+  border-color: var(--color-button-hover);
+  background: var(--color-button-hover);
 }
 
 .button:focus-visible {
