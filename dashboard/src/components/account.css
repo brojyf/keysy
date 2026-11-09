@@ -188,52 +188,6 @@
   }
 }
 
-.account-theme {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-full);
-  background: none;
-}
-
-.account-theme button {
-  position: relative;
-  z-index: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-full);
-  color: var(--color-muted);
-  background: none;
-  transition: color 150ms ease-out;
-}
-
-.account-theme button:hover,
-.account-theme button:focus-visible {
-  color: var(--color-text);
-}
-
-.account-theme button:active:not(:disabled) {
-  scale: 0.97;
-}
-
-.account-theme button:focus-visible {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
-}
-
-.account-theme button[aria-pressed='true'] {
-  color: var(--color-text);
-}
-
 .account-delete,
 .account-sign-out {
   height: 28px;
@@ -507,7 +461,6 @@ tr:hover .account-more:not(:disabled),
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .account-theme button,
   .account-more,
   .account-menu.account-row-menu,
   .account-menu.account-row-menu .account-menu-item {
@@ -515,7 +468,6 @@ tr:hover .account-more:not(:disabled),
     animation: none;
   }
 
-  .account-theme button:active:not(:disabled),
   .account-more:active:not(:disabled),
   .account-menu.account-row-menu .account-menu-item:active {
     scale: 1;

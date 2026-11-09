@@ -37,7 +37,7 @@ for (const dark of [false, true]) {
           <a class="account-menu-item" href="/account" data-focus-visible>Account</a>
           <span class="theme-switch"><button data-focus-visible>Theme</button></span>
         </div>
-        <span class="account-theme"><button data-focus-visible>Theme</button></span>
+        <div class="account-sections"><span class="theme-switch"><button data-focus-visible>Theme</button></span></div>
         <button class="account-more" data-focus-visible>More</button>
         <div class="account-menu account-row-menu">
           <a class="account-menu-item" href="/account" data-focus-visible>Settings</a>
@@ -73,7 +73,7 @@ for (const dark of [false, true]) {
           .replaceAll(':active', '[data-active]')
         document.head.append(style)
         document.body.innerHTML = `
-          <span class="account-theme"><span class="theme-thumb"></span><button data-focus-visible data-active>Theme</button></span>
+          <div class="account-sections"><span class="theme-switch"><span class="theme-thumb"></span><button data-focus-visible data-active>Theme</button></span></div>
           <div id="account-menu"><span class="theme-switch"><span class="theme-thumb"></span></span></div>
           <button class="account-more" data-focus-visible data-active>More</button>
           <div class="account-menu account-row-menu" data-popover-open>
@@ -88,7 +88,7 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-theme button', '.account-more', '.account-menu-item', '.account-save-bar button']) {
+        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-menu-item', '.account-save-bar button']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
@@ -103,11 +103,11 @@ for (const dark of [false, true]) {
           assert.equal(css('.account-row-menu').transition, 'none')
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'none')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animation, 'none')
-          assert.equal(css('.account-theme .theme-thumb').transition, '')
+          assert.equal(css('.account-sections .theme-switch .theme-thumb').transition, '')
         } else {
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'account-menu-row-enter 120ms ease-out backwards')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animationDelay, '20ms')
-          assert.equal(css('.account-theme .theme-thumb').transition, `transform 300ms ${tokens.getPropertyValue('--ease-spring')}, background-color 200ms ease`)
+          assert.equal(css('.account-sections .theme-switch .theme-thumb').transition, `transform 300ms ${tokens.getPropertyValue('--ease-spring')}, background-color 200ms ease`)
         }
         assert.equal(css('#account-menu .theme-thumb').transition, motion === 'reduce' ? '' : 'transform 200ms ease-in-out, background-color 200ms ease-in-out')
 

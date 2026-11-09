@@ -1,12 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { Check, Copy, Settings } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { openDialog } from '../lib/dialog-controls'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
 import { organizationPath } from '../lib/organization-route'
+import SettingsLayout from './settings-layout'
+import { SettingsRow, SettingsSection } from './settings-section'
 
 export default function OrganizationSettings() {
   const { organization } = useCurrentUser()
@@ -35,55 +36,43 @@ export default function OrganizationSettings() {
   }
 
   return (
-    <div className="account organization-settings">
-      <aside className="account-sidebar">
-        <p className="account-sidebar-title">Settings</p>
-        <nav className="account-nav" aria-label="Settings">
-          <Link className="account-nav-item" href={organizationPath(organization.id, '/settings')} aria-current="page">General</Link>
-          <button className="account-nav-item" type="button" disabled title="Coming soon">Notifications</button>
-          {!owner && <button className="account-nav-item" type="button" disabled title="Coming soon">My scope</button>}
-        </nav>
-      </aside>
-      <div className="account-page">
-        <header className="account-page-header">
-          <Settings size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
-          <span className="account-page-slash" aria-hidden>/</span>
-          <h1>General</h1>
-        </header>
-        <div className="account-sections">
-          <section>
-            <h2>Organization</h2>
-            <dl className="account-rows">
-              <div><dt><label htmlFor="organization-settings-name">Name</label></dt><dd><input id="organization-settings-name" className="account-name" value={organization.name} readOnly title="Renaming is coming soon" /></dd></div>
-              <div><dt>Organization ID</dt><dd>
-                <button className="organization-copy" type="button" aria-label={copyLabel} title={copyLabel} onClick={() => void copyOrganizationID(organization.id)}>
-                  <code className="organization-id">{organization.id}</code>
-                  {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
-                </button>
-                <span className="organization-copy-status" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
-              </dd></div>
-              <div><dt>Role</dt><dd>{organization.role[0].toUpperCase() + organization.role.slice(1)}</dd></div>
-            </dl>
-          </section>
-          <section>
-            <h2 className="account-danger">Danger zone</h2>
-            <dl className="account-rows">
-              <div>
-                <dt>{owner ? 'Delete organization' : 'Leave organization'}</dt>
-                <dd className="account-control">
-                  <button className="account-delete" type="button" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
-                    const dialog = deleteDialog.current
-                    if (!dialog) return
-                    openDialog(dialog)
-                    dialog.querySelector('input')?.focus()
-                  }}>{owner ? 'Delete' : 'Leave'}</button>
-                </dd>
-              </div>
-            </dl>
-          </section>
-        </div>
+    <SettingsLayout
+      title="Settings"
+      className="organization-settings"
+      Icon={Settings}
+      heading="General"
+      nav={[
+        { label: 'General', href: organizationPath(organization.id, '/settings'), current: true },
+        { label: 'Notifications' },
+        ...(owner ? [] : [{ label: 'My scope' }]),
+      ]}
+    >
+      <div className="account-sections">
+        <SettingsSection title="Organization">
+          <SettingsRow label={<label htmlFor="organization-settings-name">Name</label>}>
+            <input id="organization-settings-name" className="account-name" value={organization.name} readOnly title="Renaming is coming soon" />
+          </SettingsRow>
+          <SettingsRow label="Organization ID">
+            <button className="organization-copy" type="button" aria-label={copyLabel} title={copyLabel} onClick={() => void copyOrganizationID(organization.id)}>
+              <code className="organization-id">{organization.id}</code>
+              {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
+            </button>
+            <span className="organization-copy-status" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
+          </SettingsRow>
+          <SettingsRow label="Role">{organization.role[0].toUpperCase() + organization.role.slice(1)}</SettingsRow>
+        </SettingsSection>
+        <SettingsSection title="Danger zone" danger>
+          <SettingsRow label={owner ? 'Delete organization' : 'Leave organization'} control>
+            <button className="account-delete" type="button" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
+              const dialog = deleteDialog.current
+              if (!dialog) return
+              openDialog(dialog)
+              dialog.querySelector('input')?.focus()
+            }}>{owner ? 'Delete' : 'Leave'}</button>
+          </SettingsRow>
+        </SettingsSection>
       </div>
       {owner && <DeleteOrganizationDialog key={organization.id} ref={deleteDialog} organization={organization} />}
-    </div>
+    </SettingsLayout>
   )
 }

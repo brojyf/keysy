@@ -412,10 +412,26 @@
   color: var(--color-muted);
   background: none;
   cursor: pointer;
+  transition: color 150ms ease-out;
 }
 
 .theme-switch button[aria-pressed='true'] {
   color: var(--color-text);
+}
+
+.theme-switch button:hover,
+.theme-switch button:focus-visible {
+  color: var(--color-text);
+}
+
+.theme-switch button:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.theme-switch button:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
 .theme-thumb {
@@ -429,12 +445,22 @@
   pointer-events: none;
 }
 
-:is(.theme-switch, .account-theme)[data-theme='light'] > .theme-thumb { transform: translateX(28px); }
-:is(.theme-switch, .account-theme)[data-theme='dark'] > .theme-thumb { transform: translateX(56px); }
+.theme-switch[data-theme='light'] > .theme-thumb { transform: translateX(28px); }
+.theme-switch[data-theme='dark'] > .theme-thumb { transform: translateX(56px); }
 
 @media (prefers-reduced-motion: no-preference) {
   .theme-thumb {
     transition: transform 300ms var(--ease-spring), background-color 200ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch button {
+    transition: none;
+  }
+
+  .theme-switch button:active:not(:disabled) {
+    scale: 1;
   }
 }
 
