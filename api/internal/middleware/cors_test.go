@@ -67,11 +67,18 @@ func TestOrganizationPreflight(t *testing.T) {
 		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "PATCH", 403},
 		{"/v0/me", "POST", 403},
 		{"/v0/me", "PATCH", 204},
+		{"/v0/me/sessions", "GET", 204},
+		{"/v0/me/sessions", "DELETE", 403},
+		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "DELETE", 204},
+		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "GET", 403},
+		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "PATCH", 403},
 	} {
 		t.Run(tc.path+" "+tc.method, func(t *testing.T) {
 			r := gin.New()
 			r.Use(CORS("https://dashboard.keysy.net"))
 			r.OPTIONS("/v0/me")
+			r.OPTIONS("/v0/me/sessions")
+			r.OPTIONS("/v0/me/sessions/:sessionId")
 			r.OPTIONS("/v0/orgs")
 			r.OPTIONS("/v0/orgs/:orgId")
 			req := httptest.NewRequest("OPTIONS", tc.path, nil)

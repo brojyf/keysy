@@ -14,18 +14,24 @@ function PageHeader({ width, action = false }: { width: number; action?: boolean
   )
 }
 
-function Table({ columns, headers, rows, rowHeight = 43, boneHeight = 12 }: { columns: number[]; headers: number[]; rows: (number | number[])[][]; rowHeight?: number; boneHeight?: number }) {
+// A null cell stays empty, like a hover-only row action.
+function Table({ columns, headers, rows, sortColumn, rowHeight = 43, boneHeight = 12 }: { columns: number[]; headers: (number | null)[]; rows: (number | number[] | null)[][]; sortColumn?: number; rowHeight?: number; boneHeight?: number }) {
   const style = { gridTemplateColumns: columns.map((width) => `minmax(0, ${width}fr)`).join(' ') } as CSSProperties
   return (
     <div className="skeleton-table">
       <div className="skeleton-table-header" style={style}>
-        {headers.map((width, i) => <div key={i}><Bone width={width} className="skeleton-header-bone" /></div>)}
+        {headers.map((width, i) => (
+          <div key={i}>
+            {width !== null && <Bone width={width} className="skeleton-header-bone" />}
+            {i === sortColumn && <Bone width={14} height={14} radius={4} className="skeleton-header-bone" />}
+          </div>
+        ))}
       </div>
       {rows.map((row, i) => (
         <div key={i} className="skeleton-table-row" style={{ ...style, minHeight: row.some(Array.isArray) ? 66 : rowHeight }}>
           {row.map((cell, j) => (
             <div key={j} className="skeleton-table-cell">
-              {(Array.isArray(cell) ? cell : [cell]).map((width, k) => <Bone key={k} width={width} height={boneHeight} />)}
+              {(cell === null ? [] : Array.isArray(cell) ? cell : [cell]).map((width, k) => <Bone key={k} width={width} height={boneHeight} />)}
             </div>
           ))}
         </div>
@@ -152,6 +158,27 @@ function Account() {
   )
 }
 
+// The table part of 14.15 Sessions; the Sessions page also shows it while its list loads.
+export function SessionsSkeleton() {
+  return (
+    <div className="skeleton-sessions">
+      <Bone width={280} height={32} radius={10} />
+      <Table columns={[200, 198, 200, 120]} headers={[36, 41, 60, null]} sortColumn={2} rows={[[20, 101, 20, 73], [20, 68, 71, null], [111, 101, 59, null], [20, 81, 38, null]]} />
+    </div>
+  )
+}
+function AccountSessions() {
+  return (
+    <>
+      <Sidebar page="account" />
+      <div className="skeleton-content skeleton-account-table">
+        <PageHeader width={75} />
+        <SessionsSkeleton />
+      </div>
+    </>
+  )
+}
+
 function SkeletonTopbar() {
   return (
     <div className="skeleton-topbar">
@@ -183,7 +210,8 @@ function SkeletonRail() {
   )
 }
 
-const pages = { secrets: Secrets, services: Services, members: Members, 'audit-log': AuditLog, settings: Settings, account: Account }
+// More specific paths come first.
+const pages = { secrets: Secrets, services: Services, members: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
 
 export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const pagePath = pathname.replace(/^\/orgs\/[^/]+(?=\/|$)/, '')

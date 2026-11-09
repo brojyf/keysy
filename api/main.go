@@ -19,6 +19,7 @@ import (
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/brojyf/keysy/api/internal/org"
 	"github.com/brojyf/keysy/api/internal/profile"
+	"github.com/brojyf/keysy/api/internal/session"
 	"github.com/brojyf/keysy/api/internal/telemetry"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -64,6 +65,10 @@ func main() {
 	router.OPTIONS("/v0/me")
 	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Get(profile.Store{DB: db}))
 	router.PATCH("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Patch(profile.Store{DB: db}))
+	router.OPTIONS("/v0/me/sessions")
+	router.GET("/v0/me/sessions", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), session.List(session.Store{DB: db}))
+	router.OPTIONS("/v0/me/sessions/:sessionId")
+	router.DELETE("/v0/me/sessions/:sessionId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), session.Revoke(session.Store{DB: db}))
 	router.OPTIONS("/v0/orgs")
 	router.GET("/v0/orgs", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.List(org.Store{DB: db}))
 	router.POST("/v0/orgs", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Create(org.Store{DB: db}))

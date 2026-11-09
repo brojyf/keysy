@@ -19,6 +19,7 @@ const accessCookieName = "__Secure-keysy-access"
 type sessionClaims struct {
 	jwt.RegisteredClaims
 	Email        string         `json:"email"`
+	SessionID    string         `json:"session_id"`
 	UserMetadata map[string]any `json:"user_metadata"`
 }
 
@@ -69,7 +70,7 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Con
 			Error(c, http.StatusServiceUnavailable, "KEYS_UNAVAILABLE", "Your session cannot be verified right now. Try again later.")
 			return
 		}
-		if err != nil || !parsed.Valid || claims.Subject == "" {
+		if err != nil || !parsed.Valid || claims.Subject == "" || claims.SessionID == "" {
 			Error(c, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session is invalid or has expired. Sign in again.")
 			return
 		}
@@ -80,6 +81,7 @@ func Session(key []byte, localHTTP bool, issuer string, keyfunc func(context.Con
 		}
 		c.Set("user_id", claims.Subject)
 		c.Set("email", claims.Email)
+		c.Set("session_id", claims.SessionID)
 		c.Set("avatar_url", avatar)
 		c.Next()
 	}

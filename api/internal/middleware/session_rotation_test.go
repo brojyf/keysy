@@ -55,7 +55,7 @@ func TestSessionConcurrentSigningKeyRotation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"sub": "user-123", "session_id": "session-123", "iss": "issuer", "aud": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
 	token.Header["kid"] = "rotated"
 	signed, err := token.SignedString(private)
 	if err != nil {
