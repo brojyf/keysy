@@ -44,7 +44,7 @@ func List(sessions Sessions) gin.HandlerFunc {
 				ID:         s.ID,
 				Client:     "web", // Only web sessions exist today.
 				Device:     deviceName(s.UserAgent),
-				LastUsedAt: s.LastUsedAt.UTC().Format(time.RFC3339),
+				LastUsedAt: s.LastUsedAt.UTC().Format(time.RFC3339Nano),
 				Current:    s.ID == c.GetString("session_id"),
 			})
 		}
