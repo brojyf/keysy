@@ -69,7 +69,7 @@ jobs:
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         run: |
           origin=https://dashboard.keysy.net
-          assets=$(curl --fail --silent --show-error --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin/" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
+          assets=$(curl --fail --silent --show-error --location --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin/" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
           test -n "$assets"
           for path in $assets; do
             curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"

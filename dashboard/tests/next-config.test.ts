@@ -25,6 +25,10 @@ test('Turbopack resolves shared files from the repository root', () => {
   assert.equal(nextConfig('phase-development-server').turbopack?.root, fileURLToPath(new URL('../..', import.meta.url)))
 })
 
+test('root redirects to /secrets with a temporary 307', async () => {
+  assert.deepEqual(await nextConfig('phase-development-server').redirects?.(), [{ source: '/', destination: '/secrets', permanent: false }])
+})
+
 test('development indicator defaults to the bottom-right corner', () => {
   delete process.env.NEXT_PUBLIC_AUTH_URL
   const indicators = nextConfig('phase-development-server').devIndicators
