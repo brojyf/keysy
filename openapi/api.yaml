@@ -328,14 +328,15 @@ paths:
       description: |
         Only an owner of the target org can delete it. Sets deleted_at once and preserves memberships and user accounts.
         Deleted orgs are excluded from GET /v0/orgs. Permanent resource cleanup, including secrets, is tracked in issue #120.
-        Missing orgs, deleted orgs, and requests from non-owners all return ORG_NOT_FOUND.
+        An owner retrying deletion of an already soft-deleted org receives 204 without changing deleted_at.
+        Missing orgs and requests from non-owners return ORG_NOT_FOUND, including non-owner requests for deleted orgs.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
         A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
         Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
         orgId must be a UUID. No query string or request body is accepted.
       responses:
         '204':
-          description: The org was soft-deleted. The response body is empty.
+          description: The org is soft-deleted and the caller is an owner. Repeated deletion succeeds without another write. The response body is empty.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -1782,7 +1783,7 @@ components:
               type: string
   responses:
     OrgNotFound:
-      description: ORG_NOT_FOUND. The org is missing, is deleted, or the caller is not an owner.
+      description: ORG_NOT_FOUND. The org is missing or the caller is not an owner. Non-owner requests for deleted orgs also return this response.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'

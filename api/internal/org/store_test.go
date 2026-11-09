@@ -123,26 +123,32 @@ func TestStoreCanceledContext(t *testing.T) {
 }
 
 func TestStoreDelete(t *testing.T) {
-	for _, scenario := range []string{"owner", "not owner or missing or deleted", "database error"} {
+	for _, scenario := range []string{"owner", "deleted owner", "not owner or missing", "database error"} {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			failure := errors.New("database unavailable")
-			query := mock.ExpectExec(`UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP WHERE orgs.id = $1 AND orgs.deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members WHERE members.org_id = orgs.id AND members.user_id = $2 AND members.role = 'owner')`).WithArgs("org-123", "user-123")
+			query := mock.ExpectQuery(`WITH owned_org AS (
+				SELECT orgs.id, orgs.deleted_at FROM public.orgs AS orgs
+				WHERE orgs.id = $1 AND EXISTS (SELECT 1 FROM public.members AS members
+					WHERE members.org_id = orgs.id AND members.user_id = $2 AND members.role = 'owner')
+				FOR UPDATE OF orgs
+			), deleted_org AS (
+				UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP
+				FROM owned_org WHERE orgs.id = owned_org.id AND owned_org.deleted_at IS NULL
+				RETURNING orgs.id
+			)
+			SELECT EXISTS (SELECT 1 FROM owned_org)`).WithArgs("org-123", "user-123")
 			if scenario == "database error" {
 				query.WillReturnError(failure)
 			} else {
-				var affected int64
-				if scenario == "owner" {
-					affected = 1
-				}
-				query.WillReturnResult(sqlmock.NewResult(0, affected))
+				query.WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(scenario == "owner" || scenario == "deleted owner"))
 			}
 			deleted, err := store.Delete(context.Background(), "user-123", "org-123")
 			if scenario == "database error" {
 				if !errors.Is(err, failure) || deleted {
 					t.Fatalf("deleted=%v err=%v", deleted, err)
 				}
-			} else if err != nil || deleted != (scenario == "owner") {
+			} else if err != nil || deleted != (scenario == "owner" || scenario == "deleted owner") {
 				t.Fatalf("deleted=%v err=%v", deleted, err)
 			}
 		})

@@ -15,7 +15,8 @@ characters. Duplicate names are allowed. The org and the current user's `owner` 
 created in one transaction; success returns `201` with `{id, name}`.
 `DELETE /v0/orgs/{orgId}` accepts only an org UUID in the path. Only an owner of that org can delete it.
 It sets `orgs.deleted_at` and returns `204` without a response body. Memberships and user accounts remain.
-Missing, already deleted, and non-owner targets all return `404 ORG_NOT_FOUND`.
+Owner retries on already deleted orgs return `204` without another write or a change to `deleted_at`.
+Missing and non-owner targets return `404 ORG_NOT_FOUND`, including non-owner requests for deleted orgs.
 Deleted orgs are excluded from `GET /v0/orgs`. Permanent resource cleanup is tracked in
 [issue #120](https://github.com/brojyf/keysy/issues/120).
 All org routes reject query strings; GET and DELETE also reject request bodies.

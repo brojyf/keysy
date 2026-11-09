@@ -6,7 +6,8 @@ configuration, middleware, profile lookup and update, and org list/create/delete
 `GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
 `DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
-Memberships and user accounts remain. Missing, deleted, and non-owner targets return 404.
+Memberships and user accounts remain. Owner retries on deleted orgs return 204
+without another write. Missing and non-owner targets return 404.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
 INSERT on `public.orgs` and `public.members`, and UPDATE on `public.orgs`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
@@ -16,6 +17,8 @@ all repository content. Keep `../openapi/api.yaml` in sync with implemented rout
 Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and
 `go build ./...`. Air loads ignored `.env.local` and serves on port 8081.
 CI's API job runs race tests, vet, and build. Tests must not call live services.
+Set `KEYSY_TEST_DATABASE_URL` to an empty, isolated PostgreSQL database to run the
+store integration test. CI supplies this database through its PostgreSQL service.
 
 Keep telemetry → recovery → requestid → log → timeout → CORS → session → handler order.
 Telemetry spans and metrics follow the same rule as logs: method, route template,

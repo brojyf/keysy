@@ -46,10 +46,18 @@ func (s Store) List(ctx context.Context, userID string) ([]Membership, error) {
 }
 
 func (s Store) Delete(ctx context.Context, userID, orgID string) (bool, error) {
-	result := s.DB.WithContext(ctx).Exec(`UPDATE public.orgs AS orgs
-		SET deleted_at = CURRENT_TIMESTAMP
-		WHERE orgs.id = ? AND orgs.deleted_at IS NULL
-		AND EXISTS (SELECT 1 FROM public.members AS members
-			WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')`, orgID, userID)
-	return result.RowsAffected == 1, result.Error
+	var completed bool
+	// Lock before checking deleted_at so concurrent retries do not repeat the write.
+	err := s.DB.WithContext(ctx).Raw(`WITH owned_org AS (
+		SELECT orgs.id, orgs.deleted_at FROM public.orgs AS orgs
+		WHERE orgs.id = ? AND EXISTS (SELECT 1 FROM public.members AS members
+			WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')
+		FOR UPDATE OF orgs
+	), deleted_org AS (
+		UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP
+		FROM owned_org WHERE orgs.id = owned_org.id AND owned_org.deleted_at IS NULL
+		RETURNING orgs.id
+	)
+	SELECT EXISTS (SELECT 1 FROM owned_org)`, orgID, userID).Scan(&completed).Error
+	return completed, err
 }
