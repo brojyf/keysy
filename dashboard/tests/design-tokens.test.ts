@@ -93,6 +93,14 @@ test('the session status uses text at 50% in light mode and muted in dark mode',
   assert.equal(value(dark, 'opacity'), '1')
 })
 
+test('settings sidebar title uses Heading and lines up with the nav item text', () => {
+  const title = rule(files[2], '.account-sidebar-title')
+  assert.equal(value(title, 'padding'), '4px 8px')
+  assert.equal(value(title, 'font'), 'var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans)')
+  assert.equal(value(rule(files[2], '.account-nav-item'), 'padding'), '0 8px')
+  assert.doesNotMatch(files[2], /:not\(:has\(\.rail\)\) \.account-sidebar-title/)
+})
+
 test('account rows and the save bar keep the Figma spacing', () => {
   assert.equal(value(rule(files[2], '.account-rows > div:not(:last-child)'), 'border-bottom'), '1px solid var(--color-line)')
   assert.equal(value(rule(files[2], ".account-save-bar [role='status']"), 'margin-right'), '24px')
