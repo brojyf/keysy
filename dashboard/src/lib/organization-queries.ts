@@ -108,8 +108,15 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
       return active() ? organization : null
     },
     renameOrganization: async (organizationID: string, name: string) => {
-      const organization = await rename.mutateAsync({ organizationID, name })
-      return active() ? organization : null
+      try {
+        const organization = await rename.mutateAsync({ organizationID, name })
+        return active() ? organization : null
+      } catch (error) {
+        if (!active()) return null
+        const reconciliation = queryClient.getQueryState(queryKey)
+        if (reconciliation?.status !== 'success' || reconciliation.isInvalidated || !currentOrganizations().some((organization) => organization.id === organizationID && organization.name === name)) throw error
+        return { id: organizationID, name }
+      }
     },
     deleteOrganization: async (organizationID: string): Promise<DeleteOrganizationResult | null> => {
       try {

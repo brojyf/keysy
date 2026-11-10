@@ -961,6 +961,22 @@ test('a failed rename shows an error and keeps the draft', async () => {
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
 })
 
+for (const saved of [true, false]) test(`a lost rename response reconciles with the refreshed name: saved ${saved}`, async () => {
+  renameRequest.mockImplementationOnce((url: string, init: RequestInit) => {
+    if (saved) organizations = organizations.map((item) => item.id === String(url).split('/').pop() ? { ...item, name: JSON.parse(String(init.body)).name } : item)
+    return Promise.reject(new Error('Response lost'))
+  })
+  await renderSettings()
+  await typeOrganizationName('Renamed')
+  await act(async () => submitRename())
+  await settleOrganizationRequests()
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : 'Could not save. Try again.')
+  expect(container.querySelector('.topbar-org')?.textContent).toBe(saved ? 'Renamed' : organization.name)
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
+  expect(container.querySelector('.organization-rename button[type="submit"]')?.textContent ?? null).toBe(saved ? null : 'Save')
+})
+
 for (const role of ['admin', 'developer']) test(`a ${role} cannot rename the organization`, async () => {
   organizations = [{ ...organization, role }]
   await renderSettings()
