@@ -1,21 +1,18 @@
 'use client'
 
-import { Check, LoaderCircle } from 'lucide-react'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import Button from '../../components/button'
 import { useCurrentUser } from '../../components/current-user'
-import { exitAnimationFinished } from '../../lib/exit-animation'
 import { apiFetch } from '../../lib/api-client'
 import { parseSessionUser } from '../../lib/session-user'
 import { SettingsRow, SettingsSection } from '../../components/settings-section'
+import SaveBar from '../../components/save-bar'
+import { useSaveBar } from '../../lib/use-save-bar'
 import ThemeSwitch from '../../components/theme-switch'
 
 export default function GeneralPage() {
   const { user, organizations, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
   const [draft, setDraft] = useState(user.displayName)
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'leaving'>('idle')
-  const saving = saveState === 'saving'
-  const saved = saveState === 'saved' || saveState === 'leaving'
   const [error, setError] = useState(false)
   const [pendingAutoApply, setPendingAutoApply] = useState<boolean | null>(null)
   const settingSaving = pendingAutoApply !== null
@@ -23,27 +20,8 @@ export default function GeneralPage() {
   const trimmed = draft.trim()
   const changed = trimmed !== user.displayName
   const valid = trimmed.length > 0 && [...trimmed].length <= 32
-  const saveBar = useRef<HTMLDivElement>(null)
-  const [saveBarMounted, setSaveBarMounted] = useState(false)
-  if (changed && !saveBarMounted) setSaveBarMounted(true)
-
-  useEffect(() => {
-    if (saveState !== 'saved') return
-    const timer = setTimeout(() => setSaveState('leaving'), 800)
-    return () => clearTimeout(timer)
-  }, [saveState])
-
-  useEffect(() => {
-    if (changed || saving || saveState === 'saved' || !saveBar.current) return
-    let interrupted = false
-    void exitAnimationFinished(saveBar.current).then(() => {
-      if (!interrupted) {
-        setSaveBarMounted(false)
-        setSaveState('idle')
-      }
-    })
-    return () => { interrupted = true }
-  }, [changed, saving, saveState])
+  const saveBar = useSaveBar(changed)
+  const { saving, saved, setSaveState } = saveBar
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -89,7 +67,7 @@ export default function GeneralPage() {
   }
 
   return (
-    <form className={`account-sections${saveBarMounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
+    <form className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
           <input id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false); if (saved) setSaveState('idle') }} />
@@ -120,21 +98,7 @@ export default function GeneralPage() {
           <Button variant="danger" disabled title="Coming soon">Delete</Button>
         </SettingsRow>
       </SettingsSection>
-      {saveBarMounted && (
-        <div ref={saveBar} data-saved={saved || undefined} className={`account-save-bar${changed || saving || saveState === 'saved' ? '' : ' account-save-bar-leaving'}`}>
-          <span role="status">
-            <span className="account-save-count" aria-hidden={saved}>1 unsaved change</span>
-            {saved && <span className="account-save-success">Saved</span>}
-          </span>
-          {error && <span role="alert">Could not save. Try again.</span>}
-          <Button disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</Button>
-          <Button variant="primary" type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
-            <span className="account-save-label">Save</span>
-            <LoaderCircle className="account-save-icon account-save-spinner" size={14} strokeWidth={2} aria-hidden />
-            <Check className="account-save-icon account-save-check" size={14} strokeWidth={2} aria-hidden />
-          </Button>
-        </div>
-      )}
+      {saveBar.mounted && <SaveBar saveBar={saveBar} error={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
   )
 }
