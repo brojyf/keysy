@@ -40,7 +40,7 @@ There are no org settings columns. Complete resource cleanup is tracked in
 The primary key is `(org_id, user_id)`. A user can join multiple orgs, but only once per org.
 A user's role can differ between orgs. There is no standalone member ID, email, or timestamp.
 Members must reference existing Auth users; pending email invitations are not part of this schema.
-The migration does not define role permissions or restrict the number of owners.
+The migration does not define role permissions. A partial unique index allows at most one owner per org.
 Physically deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.
 The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.
 Both tables enable row level security (RLS), with no policies for direct client access.
