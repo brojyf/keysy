@@ -116,9 +116,3 @@
     padding-left: 0;
   }
 }
-
-.organization-rename {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
