@@ -21,10 +21,10 @@ test('the membership schema uses existing auth users and a composite primary key
   expect(schema).not.toContain('`user_id` stays null');
 });
 
-test('the schema documents the agreed roles without inventing permission or owner-count rules', () => {
+test('the schema documents the agreed roles and the one-owner rule without inventing permission rules', () => {
   expect(schema).toContain('`owner`, `admin`, or `developer`');
   expect(schema).not.toContain('`super_admin`');
-  expect(schema).toContain('The migration does not define role permissions or restrict the number of owners.');
+  expect(schema).toContain('A partial unique index allows at most one owner per org.');
   expect(schema).toContain('There is no default role.');
 });
 

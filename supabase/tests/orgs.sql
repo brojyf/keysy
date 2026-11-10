@@ -77,6 +77,21 @@ begin
   exception when unique_violation then null;
   end;
 
+  begin
+    update public.members set role = 'owner'
+      where org_id = '20000000-0000-0000-0000-000000000001'
+        and user_id = '10000000-0000-0000-0000-000000000002';
+    raise exception 'An org must not have more than one owner';
+  exception when unique_violation then null;
+  end;
+
+  update public.members set role = 'owner'
+    where org_id = '20000000-0000-0000-0000-000000000002'
+      and user_id = '10000000-0000-0000-0000-000000000001';
+  assert (select count(*) = 2 from public.members
+    where user_id = '10000000-0000-0000-0000-000000000001' and role = 'owner'),
+    'A user must be able to own multiple orgs';
+
   foreach invalid_role in array array['super_admin', 'dev', 'user', '', 'Owner'] loop
     begin
       update public.members set role = invalid_role
