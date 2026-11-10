@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type MouseEvent, type Ref } from 'react'
 import { closeDialog } from '../lib/dialog-controls'
 import { useRevokeSession, type AccountSession } from '../lib/session-queries'
 import { useCurrentUser } from './current-user'
+import Button from './button'
 import Dialog from './dialog'
 
 export default function RevokeSessionDialog({ ref, session }: { ref: Ref<HTMLDialogElement>; session: AccountSession | undefined }) {
@@ -30,11 +31,8 @@ export default function RevokeSessionDialog({ ref, session }: { ref: Ref<HTMLDia
   }
 
   return (
-    <Dialog ref={ref} title="Revoke session?" closable={!pending} onClose={() => setError('')} actions={
-      <>
-        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
-        <button className="button button-danger" type="button" disabled={pending} onClick={revoke}>{pending ? 'Revoking...' : 'Revoke'}</button>
-      </>
+    <Dialog ref={ref} title="Revoke session?" closable={!pending} onClose={() => setError('')} action={
+      <Button variant="danger" disabled={pending} onClick={revoke}>{pending ? 'Revoking...' : 'Revoke'}</Button>
     }>
       <p>{session?.device} will be signed out.</p>
       {error && <p className="dialog-error" role="alert">{error}</p>}

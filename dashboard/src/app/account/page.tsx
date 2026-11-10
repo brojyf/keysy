@@ -2,6 +2,7 @@
 
 import { Check, LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import Button from '../../components/button'
 import { useCurrentUser } from '../../components/current-user'
 import { exitAnimationFinished } from '../../lib/exit-animation'
 import { apiFetch } from '../../lib/api-client'
@@ -111,12 +112,12 @@ export default function GeneralPage() {
       </SettingsSection>
       <SettingsSection title="Session">
         <SettingsRow label="Sign out of this device" control>
-          <button className="button button-danger" type="button" onClick={onSignOutRequest}>Sign out</button>
+          <Button variant="danger" onClick={onSignOutRequest}>Sign out</Button>
         </SettingsRow>
       </SettingsSection>
       <SettingsSection title="Danger zone" danger>
         <SettingsRow label="Delete account" control>
-          <button className="button button-danger" type="button" disabled title="Coming soon">Delete</button>
+          <Button variant="danger" disabled title="Coming soon">Delete</Button>
         </SettingsRow>
       </SettingsSection>
       {saveBarMounted && (
@@ -126,12 +127,12 @@ export default function GeneralPage() {
             {saved && <span className="account-save-success">Saved</span>}
           </span>
           {error && <span role="alert">Could not save. Try again.</span>}
-          <button className="button" type="button" disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</button>
-          <button className="button button-primary" type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
+          <Button disabled={saving || saved} onClick={() => { setDraft(user.displayName); setError(false) }}>Discard</Button>
+          <Button variant="primary" type="submit" data-feedback={saving || saved || undefined} data-save-state={saved ? 'saved' : saving ? 'saving' : 'idle'} aria-busy={saving} aria-label={saving ? 'Saving' : saved ? 'Saved' : undefined} disabled={saving || saved || settingSaving || !valid}>
             <span className="account-save-label">Save</span>
             <LoaderCircle className="account-save-icon account-save-spinner" size={14} strokeWidth={2} aria-hidden />
             <Check className="account-save-icon account-save-check" size={14} strokeWidth={2} aria-hidden />
-          </button>
+          </Button>
         </div>
       )}
     </form>
