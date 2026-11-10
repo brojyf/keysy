@@ -373,6 +373,19 @@ test('versions belong to folders, addressed by path, not to individual secrets',
   expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
 });
 
+test('every member lists the org members by name, avatar, email, and role only', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  const start = yaml.indexOf('operationId: listMembers\n');
+  const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
+  expect(operation).toContain('Every member of the org, whatever their role, can list its members.');
+  expect(operation).toContain('There is no pagination (issue #157).');
+  expect(operation).not.toMatch(/cursor|nextCursor|Super Admin/i);
+  const member = yaml.match(/^    Member:\n([\s\S]*?)^    \w/m)?.[1] ?? '';
+  expect(member).toContain('required: [userId, name, email, role]');
+  expect(member).toContain('enum: [owner, admin, developer]');
+  expect(member).not.toMatch(/access|createdAt|super_admin/i);
+});
+
 test('a folder that would hold both secrets and subfolders is a conflict', async () => {
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   for (const operationId of ['createSecret', 'updateSecret', 'rollBackFolder', 'applyReorganization']) {
