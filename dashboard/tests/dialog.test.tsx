@@ -22,9 +22,9 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-test('labels the dialog and renders children and actions without an alert by default', async () => {
+test('labels the dialog and renders children, Cancel, and the action without an alert by default', async () => {
   const ref = createRef<HTMLDialogElement>()
-  await act(() => root.render(<Dialog ref={ref} title="Title" actions={<button>Action</button>}><p>Body</p></Dialog>))
+  await act(() => root.render(<Dialog ref={ref} title="Title" action={<button>Action</button>}><p>Body</p></Dialog>))
   const dialog = ref.current!
   const title = dialog.querySelector('h2')!
   expect(title.textContent).toBe('Title')
@@ -32,19 +32,19 @@ test('labels the dialog and renders children and actions without an alert by def
   expect(dialog.getAttribute('aria-labelledby')).toBe(title.id)
   expect(dialog.querySelector('.dialog-alert')).toBeNull()
   expect(dialog.querySelector('p')?.textContent).toBe('Body')
-  expect(dialog.querySelector('.dialog-actions button')?.textContent).toBe('Action')
+  expect([...dialog.querySelectorAll('.dialog-actions button')].map((button) => button.textContent)).toEqual(['Cancel', 'Action'])
 })
 
 test('renders an alert icon when requested', async () => {
   const ref = createRef<HTMLDialogElement>()
-  await act(() => root.render(<Dialog ref={ref} title="Alert" alert actions={null}>Body</Dialog>))
+  await act(() => root.render(<Dialog ref={ref} title="Alert" alert action={null}>Body</Dialog>))
   expect(ref.current!.querySelector('h2 .dialog-alert')?.getAttribute('aria-hidden')).toBe('true')
 })
 
 for (const closable of [true, false]) {
   test(`Escape ${closable ? 'closes' : 'keeps open'} the dialog`, async () => {
     const ref = createRef<HTMLDialogElement>()
-    await act(() => root.render(<Dialog ref={ref} title="Title" closable={closable} actions={null}>Body</Dialog>))
+    await act(() => root.render(<Dialog ref={ref} title="Title" closable={closable} action={null}>Body</Dialog>))
     const dialog = ref.current!
     openDialog(dialog)
     let finish!: () => void
@@ -58,5 +58,21 @@ for (const closable of [true, false]) {
     await act(async () => finish())
     expect(dialog.open).toBe(!closable)
     expect(dialog.dataset.closing).toBeUndefined()
+  })
+}
+
+for (const closable of [true, false]) {
+  test(`Cancel ${closable ? 'closes the dialog' : 'is disabled while the dialog cannot close'}`, async () => {
+    const ref = createRef<HTMLDialogElement>()
+    await act(() => root.render(<Dialog ref={ref} title="Title" closable={closable} action={null}>Body</Dialog>))
+    const dialog = ref.current!
+    openDialog(dialog)
+    dialog.getAnimations = () => []
+    const cancel = dialog.querySelector<HTMLButtonElement>('.dialog-actions button')!
+    expect(cancel.className).toBe('button')
+    expect(cancel.type).toBe('button')
+    expect(cancel.disabled).toBe(!closable)
+    await act(async () => cancel.click())
+    expect(dialog.open).toBe(!closable)
   })
 }

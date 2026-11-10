@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
 import { placeRowMenu } from '../../../lib/row-menu'
+import Button from '../../../components/button'
 import CreateOrganizationDialog from '../../../components/create-organization-dialog'
 import { openDialog } from '../../../lib/dialog-controls'
 import { useCurrentUser } from '../../../components/current-user'
@@ -23,11 +24,11 @@ export default function OrganizationsPage() {
     <>
       <div className="account-organizations-empty">
         <div><h2>No organizations yet</h2><p>Create one, or ask an Admin to add you.</p></div>
-        <button className="button button-primary" type="button" onClick={() => {
+        <Button variant="primary" onClick={() => {
           if (!dialog.current) return
           openDialog(dialog.current)
           dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()
-        }}>New organization</button>
+        }}>New organization</Button>
       </div>
       <CreateOrganizationDialog ref={dialog} />
     </>

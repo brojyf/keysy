@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { closeDialog } from '../lib/dialog-controls'
 import type { Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'
+import Button from './button'
 import Dialog from './dialog'
 
 export default function DeleteOrganizationDialog({ ref, organization }: { ref: Ref<HTMLDialogElement>; organization: Organization }) {
@@ -35,11 +35,8 @@ export default function DeleteOrganizationDialog({ ref, organization }: { ref: R
   }
 
   return (
-    <Dialog ref={ref} title="Delete organization?" closable={!pending} onClose={() => { setConfirmation(''); setError('') }} actions={
-      <>
-        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
-        <button className="button button-danger" type="submit" form={formID} disabled={!valid || pending}>{pending ? 'Deleting...' : 'Delete organization'}</button>
-      </>
+    <Dialog ref={ref} title="Delete organization?" closable={!pending} onClose={() => { setConfirmation(''); setError('') }} action={
+      <Button variant="danger" type="submit" form={formID} disabled={!valid || pending}>{pending ? 'Deleting...' : 'Delete organization'}</Button>
     }>
       <p>{organization.name} will no longer be available. You can’t undo this action.</p>
       <form id={formID} className="organization-delete-form" onSubmit={remove} aria-busy={pending}>
