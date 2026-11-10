@@ -386,6 +386,15 @@ test('every member lists the org members by name, email, and role only', async (
   expect(member).not.toMatch(/avatar|access|createdAt|super_admin/i);
 });
 
+test('every member operation uses the Owner, Admin, and Developer roles', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  const start = yaml.indexOf('  /v0/orgs/{orgId}/members:\n');
+  const members = yaml.slice(start, yaml.indexOf('\n  /v0/orgs/{orgId}/secrets:', start));
+  expect(members).toContain('/v0/orgs/{orgId}/members/{userId}:');
+  expect(members).toContain('enum: [admin, developer]');
+  expect(members).not.toMatch(/Super Admin|`user`|\[admin, user\]|memberId/);
+});
+
 test('a folder that would hold both secrets and subfolders is a conflict', async () => {
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   for (const operationId of ['createSecret', 'updateSecret', 'rollBackFolder', 'applyReorganization']) {
