@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { closeDialog } from '../lib/dialog-controls'
+import Button from './button'
 import Dialog from './dialog'
 import { useCurrentUser } from './current-user'
 
@@ -29,11 +29,8 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
   }
 
   return (
-    <Dialog ref={ref} title="Create an organization" closable={!pending} onClose={() => { setName(''); setError(false) }} actions={
-      <>
-        <button className="button" type="button" disabled={pending} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</button>
-        <button className="button button-primary" type="submit" form={formId} disabled={!valid || pending}>{pending ? 'Creating...' : 'Create'}</button>
-      </>
+    <Dialog ref={ref} title="Create an organization" closable={!pending} onClose={() => { setName(''); setError(false) }} action={
+      <Button variant="primary" type="submit" form={formId} disabled={!valid || pending}>{pending ? 'Creating...' : 'Create'}</Button>
     }>
       <form id={formId} onSubmit={create}>
         <div className="dialog-field">

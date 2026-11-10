@@ -3,6 +3,7 @@
 import { Check, Copy, Settings } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { openDialog } from '../lib/dialog-controls'
+import Button from './button'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
 import { organizationPath } from '../lib/organization-route'
@@ -72,7 +73,7 @@ export default function OrganizationSettings() {
             <form className="organization-rename" onSubmit={(event) => void rename(event)}>
               <input id="organization-settings-name" className="account-name" autoComplete="off" value={draftName} readOnly={!owner} disabled={renameState === 'saving'}
                 onInput={(event) => { setNameDraft({ id: organization.id, value: event.currentTarget.value }); setRenameState('idle') }} />
-              {owner && nameChanged && <button className="button button-primary" type="submit" disabled={!nameValid || renameState === 'saving'}>Save</button>}
+              {owner && nameChanged && <Button variant="primary" type="submit" disabled={!nameValid || renameState === 'saving'}>Save</Button>}
               {renameState === 'error' && <span role="alert">Could not save. Try again.</span>}
             </form>
           </SettingsRow>
@@ -87,12 +88,12 @@ export default function OrganizationSettings() {
         </SettingsSection>
         <SettingsSection title="Danger zone" danger>
           <SettingsRow label={owner ? 'Delete organization' : 'Leave organization'} control>
-            <button className="button button-danger" type="button" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
+            <Button variant="danger" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
               const dialog = deleteDialog.current
               if (!dialog) return
               openDialog(dialog)
               dialog.querySelector('input')?.focus()
-            }}>{owner ? 'Delete' : 'Leave'}</button>
+            }}>{owner ? 'Delete' : 'Leave'}</Button>
           </SettingsRow>
         </SettingsSection>
       </div>
