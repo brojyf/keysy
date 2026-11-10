@@ -30,7 +30,7 @@ func CORS(webAppURL string) gin.HandlerFunc {
 			methods := c.Request.Header.Values("Access-Control-Request-Method")
 			headers := c.Request.Header.Values("Access-Control-Request-Headers")
 			allowedMethod := len(methods) == 1 && ((methods[0] == http.MethodGet && c.FullPath() != "/v0/orgs/:orgId" && c.FullPath() != "/v0/me/sessions/:sessionId") ||
-				(methods[0] == http.MethodPatch && c.FullPath() == "/v0/me") ||
+				(methods[0] == http.MethodPatch && (c.FullPath() == "/v0/me" || c.FullPath() == "/v0/orgs/:orgId")) ||
 				(methods[0] == http.MethodPost && c.FullPath() == "/v0/orgs") ||
 				(methods[0] == http.MethodDelete && (c.FullPath() == "/v0/orgs/:orgId" || c.FullPath() == "/v0/me/sessions/:sessionId")))
 			if !allowedMethod || len(headers) > 1 || (len(headers) == 1 && !strings.EqualFold(strings.TrimSpace(headers[0]), "content-type")) {
