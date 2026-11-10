@@ -255,7 +255,10 @@ test('the published client includes the patched drawer lifecycle and appearance 
 test('PRD requirements and endpoint callout content are published', async () => {
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
-  expect(prd).toContain('Each org has exactly one Admin, whose scope covers every path.');
+  expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
+  expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
+  expect(prd).toContain('Every member can view the member list, which shows each member’s name, avatar, email, and role');
+  expect(prd).toContain('Developers cannot see other members’ scopes and cannot change members.');
   expect(prd).not.toContain('Super Admin');
   expect(prd).toContain('Secret values are never recorded in audit logs.');
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
