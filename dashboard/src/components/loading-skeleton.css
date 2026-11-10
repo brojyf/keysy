@@ -18,7 +18,7 @@
 .skeleton-filter { margin-top: 16px; }
 .skeleton-tree { display: flex; align-items: center; gap: 6px; margin: 18px 8px 0; }
 .skeleton-sidebar-items { display: flex; flex-direction: column; gap: 18px; margin: 24px 8px 0; }
-.skeleton-content { width: 100%; max-width: 1144px; min-width: 0; padding: 24px 32px; }
+.skeleton-content { width: 100%; max-width: 1144px; min-width: 0; padding: 15px 32px 24px; }
 .skeleton-page-header { height: 28px; display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
 .skeleton-action { margin-left: auto; }
 .skeleton-table { border: 1px solid var(--color-line); border-radius: 16px; overflow: hidden; }

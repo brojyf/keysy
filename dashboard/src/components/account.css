@@ -62,7 +62,8 @@
   gap: 24px;
   flex: 1;
   min-width: 0;
-  padding: 24px 32px 48px;
+  /* 13px puts the 32px page header center 29px below the top bar, on the first rail icon and sidebar title. */
+  padding: 13px 32px 48px;
   /* Keeps the save bar's slide from adding page scroll. */
   overflow-y: clip;
 }
