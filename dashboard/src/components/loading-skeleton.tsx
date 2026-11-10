@@ -158,7 +158,7 @@ function Account() {
   )
 }
 
-// The table part of 14.15 Sessions; the Sessions page also shows it while its list loads.
+// The table part of 24.15 Sessions; the Sessions page also shows it while its list loads.
 export function SessionsSkeleton() {
   return (
     <div className="skeleton-sessions">
