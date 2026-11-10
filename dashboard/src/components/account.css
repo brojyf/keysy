@@ -20,9 +20,9 @@
 }
 
 .account-sidebar-title {
-  padding: 6px 0;
+  padding: 4px 8px;
   color: var(--color-text);
-  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+  font: var(--text-heading--font-weight) var(--text-heading)/var(--text-heading--line-height) var(--font-sans);
 }
 
 .account-nav {
@@ -585,10 +585,6 @@ tr:hover .account-more:not(:disabled),
   }
 }
 
-
-.dashboard-body:not(:has(.rail)) .account-sidebar-title {
-  padding-left: 8px;
-}
 
 .account-organizations-empty {
   max-width: 720px;
