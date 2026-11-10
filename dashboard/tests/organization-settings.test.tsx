@@ -25,6 +25,7 @@ let container: HTMLDivElement
 let organizations: typeof organization[]
 let deleteRequest: ReturnType<typeof mock>
 let createRequest: ReturnType<typeof mock>
+let renameRequest: ReturnType<typeof mock>
 let listOrganizations: ReturnType<typeof mock>
 let writeClipboard: ReturnType<typeof mock>
 
@@ -48,6 +49,12 @@ beforeEach(() => {
     organizations = [...organizations, created]
     return Promise.resolve(Response.json(created, { status: 201 }))
   })
+  renameRequest = mock((url: string, init: RequestInit) => {
+    const id = String(url).split('/').pop()
+    const { name } = JSON.parse(String(init.body))
+    organizations = organizations.map((item) => item.id === id ? { ...item, name } : item)
+    return Promise.resolve(Response.json({ id, name }))
+  })
   listOrganizations = mock(() => Promise.resolve(Response.json(organizations)))
   router.replace.mockClear()
   router.push.mockClear()
@@ -60,6 +67,7 @@ beforeEach(() => {
   globalThis.fetch = mock((url: string | URL | Request, init?: RequestInit) => {
     if (init?.method === 'POST' && String(url).endsWith('/v0/orgs')) return createRequest(url, init)
     if (init?.method === 'DELETE') return deleteRequest(url, init)
+    if (init?.method === 'PATCH' && String(url).includes('/v0/orgs/')) return renameRequest(url, init)
     if (String(url).endsWith('/v0/orgs')) return listOrganizations(url, init)
     if (String(url).endsWith('/v0/me')) return Promise.resolve(Response.json(user))
     return Promise.resolve(new Response(null, { status: 401 }))
@@ -116,8 +124,7 @@ test('settings shows the current organization and marks unavailable features as 
   await renderSettings()
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe(organization.name)
-  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
-  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.title).toBe('Renaming is coming soon')
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(false)
   expect(container.querySelector('code')?.textContent).toBe(organization.id)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(container.querySelector(`[aria-current="page"][href="/orgs/${organization.id}/settings"]`)).not.toBeNull()
@@ -906,4 +913,73 @@ test('simultaneous parallel deletions replace an overlapping read and preserve t
     await renderSettings()
     expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
   }
+})
+
+async function typeOrganizationName(name: string) {
+  await act(() => {
+    const input = container.querySelector<HTMLInputElement>('#organization-settings-name')!
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input, name)
+    input.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+}
+function renameForm() { return container.querySelector<HTMLFormElement>('.organization-rename')! }
+function submitRename() { renameForm().dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) }
+
+test('an owner renames the organization and the new name replaces the old one everywhere', async () => {
+  await renderSettings()
+  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
+  await typeOrganizationName('  Renamed  ')
+  expect(container.querySelector('.organization-rename button[type="submit"]')?.textContent).toBe('Save')
+  await act(async () => submitRename())
+  await settleOrganizationRequests()
+  expect(renameRequest).toHaveBeenCalledTimes(1)
+  const [url, init] = renameRequest.mock.calls[0] as [string, RequestInit]
+  expect(url).toBe(`https://api.keysy.net/v0/orgs/${organization.id}`)
+  expect(init.method).toBe('PATCH')
+  expect(init.body).toBe(JSON.stringify({ name: 'Renamed' }))
+  expect(container.querySelector('.topbar-org')?.textContent).toBe('Renamed')
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
+  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
+})
+
+test('rename rejects a blank name without calling the API', async () => {
+  await renderSettings()
+  await typeOrganizationName('   ')
+  expect(container.querySelector<HTMLButtonElement>('.organization-rename button[type="submit"]')?.disabled).toBe(true)
+  await act(async () => submitRename())
+  expect(renameRequest).not.toHaveBeenCalled()
+})
+
+test('a failed rename shows an error and keeps the draft', async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
+  await renderSettings()
+  await typeOrganizationName('Renamed')
+  await act(async () => submitRename())
+  await settleOrganizationRequests()
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
+  expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
+})
+
+for (const saved of [true, false]) test(`a lost rename response reconciles with the refreshed name: saved ${saved}`, async () => {
+  renameRequest.mockImplementationOnce((url: string, init: RequestInit) => {
+    if (saved) organizations = organizations.map((item) => item.id === String(url).split('/').pop() ? { ...item, name: JSON.parse(String(init.body)).name } : item)
+    return Promise.reject(new Error('Response lost'))
+  })
+  await renderSettings()
+  await typeOrganizationName('Renamed')
+  await act(async () => submitRename())
+  await settleOrganizationRequests()
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : 'Could not save. Try again.')
+  expect(container.querySelector('.topbar-org')?.textContent).toBe(saved ? 'Renamed' : organization.name)
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
+  expect(container.querySelector('.organization-rename button[type="submit"]')?.textContent ?? null).toBe(saved ? null : 'Save')
+})
+
+for (const role of ['admin', 'developer']) test(`a ${role} cannot rename the organization`, async () => {
+  organizations = [{ ...organization, role }]
+  await renderSettings()
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
+  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
 })

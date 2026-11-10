@@ -11,6 +11,7 @@ The current session returns 409; missing and other users' sessions return 404.
 Existing access tokens of a revoked session stay valid until they expire.
 `GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
+`PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
 `DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
 Memberships and user accounts remain. Owner retries on deleted orgs return 204
 without another write. Missing and non-owner targets return 404.

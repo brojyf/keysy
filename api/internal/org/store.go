@@ -61,3 +61,10 @@ func (s Store) Delete(ctx context.Context, userID, orgID string) (bool, error) {
 	SELECT EXISTS (SELECT 1 FROM owned_org)`, orgID, userID).Scan(&completed).Error
 	return completed, err
 }
+
+// Rename reports false when the org is missing, deleted, or the caller is not its owner.
+func (s Store) Rename(ctx context.Context, userID, orgID, name string) (bool, error) {
+	result := s.DB.WithContext(ctx).Exec(`UPDATE public.orgs SET name = ? WHERE id = ? AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members
+		WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')`, name, orgID, userID)
+	return result.RowsAffected == 1, result.Error
+}

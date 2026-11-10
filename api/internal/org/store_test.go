@@ -154,3 +154,30 @@ func TestStoreDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestStoreRename(t *testing.T) {
+	for _, scenario := range []string{"owner", "not owner, missing, or deleted", "database error"} {
+		t.Run(scenario, func(t *testing.T) {
+			store, mock := testStore(t)
+			failure := errors.New("database unavailable")
+			exec := mock.ExpectExec(`UPDATE public.orgs SET name = $1 WHERE id = $2 AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members
+		WHERE members.org_id = orgs.id AND members.user_id = $3 AND members.role = 'owner')`).WithArgs("Platform", "org-123", "user-123")
+			switch scenario {
+			case "owner":
+				exec.WillReturnResult(sqlmock.NewResult(0, 1))
+			case "database error":
+				exec.WillReturnError(failure)
+			default:
+				exec.WillReturnResult(sqlmock.NewResult(0, 0))
+			}
+			renamed, err := store.Rename(context.Background(), "user-123", "org-123", "Platform")
+			if scenario == "database error" {
+				if !errors.Is(err, failure) || renamed {
+					t.Fatalf("renamed=%v err=%v", renamed, err)
+				}
+			} else if err != nil || renamed != (scenario == "owner") {
+				t.Fatalf("renamed=%v err=%v", renamed, err)
+			}
+		})
+	}
+}

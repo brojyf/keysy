@@ -63,7 +63,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const onSignedOut = () => signedOut(currentSession)
   const organizationQuery = useQuery({ ...organizationQueryOptions(user?.id ?? '', currentSession?.signal, onSignedOut), enabled: !!user })
   const organizations = organizationQuery.data ?? []
-  const { createOrganization: addOrganization, deleteOrganization: removeOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
+  const { createOrganization: addOrganization, renameOrganization, deleteOrganization: removeOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
 
   async function createOrganization(name: string) {
     const startedAt = navigation.current
@@ -147,6 +147,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
         organizations,
         organization,
         createOrganization,
+        renameOrganization,
         deleteOrganization,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
         onSignedOut,

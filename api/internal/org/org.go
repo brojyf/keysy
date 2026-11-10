@@ -18,35 +18,45 @@ type Organizations interface {
 	Create(context.Context, string, string) (Organization, error)
 	List(context.Context, string) ([]Membership, error)
 	Delete(context.Context, string, string) (bool, error)
+	Rename(context.Context, string, string, string) (bool, error)
+}
+
+// readName validates the request and returns the trimmed org name. It writes the error response itself.
+func readName(c *gin.Context) (string, bool) {
+	if c.Request.URL.RawQuery != "" {
+		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Remove the query string and try again.")
+		return "", false
+	}
+	mediaType, _, err := mime.ParseMediaType(c.GetHeader("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		middleware.Error(c, http.StatusUnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "Send the request body as JSON.")
+		return "", false
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 1<<10))
+	var fields map[string]json.RawMessage
+	if err != nil || !utf8.Valid(body) || json.Unmarshal(body, &fields) != nil || len(fields) != 1 {
+		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
+		return "", false
+	}
+	raw, ok := fields["name"]
+	var name string
+	if !ok || bytes.Equal(raw, []byte("null")) || json.Unmarshal(raw, &name) != nil {
+		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
+		return "", false
+	}
+	name = strings.TrimSpace(name)
+	if n := utf8.RuneCountInString(name); n < 1 || n > 32 || strings.ContainsRune(name, '\x00') {
+		middleware.Error(c, http.StatusBadRequest, "INVALID_ORG_NAME", "Enter a valid name with 1 to 32 characters.")
+		return "", false
+	}
+	return name, true
 }
 
 func Create(organizations Organizations) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
-		if c.Request.URL.RawQuery != "" {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Remove the query string and try again.")
-			return
-		}
-		mediaType, _, err := mime.ParseMediaType(c.GetHeader("Content-Type"))
-		if err != nil || mediaType != "application/json" {
-			middleware.Error(c, http.StatusUnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "Send the request body as JSON.")
-			return
-		}
-		body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 1<<10))
-		var fields map[string]json.RawMessage
-		if err != nil || !utf8.Valid(body) || json.Unmarshal(body, &fields) != nil || len(fields) != 1 {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
-			return
-		}
-		raw, ok := fields["name"]
-		var name string
-		if !ok || bytes.Equal(raw, []byte("null")) || json.Unmarshal(raw, &name) != nil {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
-			return
-		}
-		name = strings.TrimSpace(name)
-		if n := utf8.RuneCountInString(name); n < 1 || n > 32 || strings.ContainsRune(name, '\x00') {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_ORG_NAME", "Enter a valid name with 1 to 32 characters.")
+		name, ok := readName(c)
+		if !ok {
 			return
 		}
 		organization, err := organizations.Create(c.Request.Context(), c.GetString("user_id"), name)
