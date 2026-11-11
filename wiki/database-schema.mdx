@@ -1,18 +1,79 @@
 ---
 title: "Database schema"
-description: "Keysy's tables in Supabase PostgreSQL and Aiven PostgreSQL."
+description: "Implemented Supabase tables, triggers, and jobs, plus the planned schema."
 ---
 
-Keysy stores business data in Supabase PostgreSQL and audit records in Aiven PostgreSQL.
-The org and membership definitions below describe the minimal schema agreed for the Supabase migration.
-The [PRD](/prd) and `openapi/api.yaml` still need a separate permissions and API contract update.
+The first section lists what the migrations in `supabase/migrations/` implement.
+The planned schema section is a preview. It is not implemented.
 
-## Supabase PostgreSQL
+## Implemented schema
+
+```mermaid
+erDiagram
+  auth_users ||--|| profiles : "has"
+  auth_users ||--o{ members : "joins"
+  orgs ||--o{ members : "has"
+
+  auth_users {
+    uuid id PK
+    text email
+  }
+  profiles {
+    uuid id PK, FK
+    varchar(32) display_name
+    text email
+    boolean agent_auto_apply
+    timestamptz deleted_at
+  }
+  orgs {
+    uuid id PK
+    varchar(32) name
+    timestamptz deleted_at
+  }
+  members {
+    uuid org_id PK, FK
+    uuid user_id PK, FK
+    text role
+  }
+```
+
+### Triggers
+
+| Trigger | Table and event | Action |
+| --- | --- | --- |
+| `create_profile_after_user_insert` | `auth.users`, after each insert | Calls `public.create_profile_for_new_user()`, which inserts the user's `public.profiles` row. The initial `display_name` is the trimmed Google full name, then the email local part, then `User`, cut to 32 characters. It is never synced again. `email` is copied from `auth.users.email`. |
+| `sync_profile_email_after_user_update` | `auth.users`, after `email` changes | Calls `public.sync_profile_email()`, which copies the new email to `public.profiles.email`. |
+
+`profiles.email` copies `auth.users.email`. Only these two triggers write it.
+Each trigger runs in the same transaction as the Auth write. If a trigger fails, the Auth write rolls back.
+
+### Scheduled jobs
+
+`pg_cron` runs these jobs. Schedules use UTC.
+
+| Job | Schedule | Action |
+| --- | --- | --- |
+| `delete-idle-sessions` | `0 3 * * *` (daily at 03:00) | Calls `public.delete_idle_sessions()`, which deletes `auth.sessions` rows not refreshed for 30 days. Their refresh tokens are deleted by cascade. |
+
+### Functions for the API
+
+The API role cannot read schema `auth`. It calls these `SECURITY DEFINER` functions instead.
+
+| Function | Action |
+| --- | --- |
+| `public.list_user_sessions(target_user_id)` | Returns the user's active sessions: ID, user agent, and last used time. |
+| `public.revoke_user_session(target_user_id, target_session_id)` | Deletes one session of the user. Returns whether it deleted a row. |
+
+## Planned schema (preview)
+
+This section is a plan. It is not implemented. Its tables, rules, and the Aiven audit database can change.
+
+### Supabase PostgreSQL
 
 `auth.users` belongs to Supabase Auth, and `vault.secrets` belongs to Supabase Vault.
 All other tables live in the `public` schema.
 
-### Organizations and memberships
+#### Organizations and memberships
 
 `orgs` contains `id`, `name`, and `deleted_at`:
 
@@ -45,7 +106,7 @@ Physically deleting an org cascades to its memberships and preserves Auth users,
 The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.
 Both tables enable row level security (RLS), with no policies for direct client access.
 
-### Domain model
+#### Domain model
 
 The diagram uses the agreed `orgs` and `members` columns.
 All other domain tables in this diagram are proposals, not implemented tables.
@@ -200,23 +261,7 @@ erDiagram
 | `reorganizations` | AI reorganization proposals, `proposed` or `applied`. `plan` stores the moves, policy changes, and access diff returned by the API. |
 | `outbox` | Domain events. A successful change writes its event in the same transaction; a denied or failed change attempt writes its event in a separate transaction. The outbox relay publishes them to Kafka, keyed by `aggregate_id`. |
 
-### Scheduled jobs
-
-`pg_cron` runs these jobs. Schedules use UTC.
-
-| Job | Schedule | Action |
-| --- | --- | --- |
-| `delete-idle-sessions` | `0 3 * * *` (daily at 03:00) | Calls `public.delete_idle_sessions()`, which deletes `auth.sessions` rows not refreshed for 30 days. Their refresh tokens are deleted by cascade. |
-
-### Triggers
-
-| Trigger | Table and event | Action |
-| --- | --- | --- |
-| `create_profile_after_user_insert` | `auth.users`, after each insert | Calls `public.create_profile_for_new_user()`, which inserts the user's `public.profiles` row. The initial `display_name` is the trimmed Google full name, then the email local part, then `User`, cut to 32 characters. It is never synced again. |
-
-The trigger runs in the same transaction as the insert. If it fails, Supabase Auth does not create the user and sign-in fails.
-
-## Aiven PostgreSQL
+### Aiven PostgreSQL
 
 The `audit` service consumes Kafka events and owns this database. It records change attempts, including denied
 and failed ones, and never stores secret values.
