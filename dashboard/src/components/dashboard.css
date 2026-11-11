@@ -538,9 +538,11 @@
     animation: account-menu-row-enter 120ms ease-out backwards;
   }
 
-  #account-menu:popover-open > .account-menu-item { animation-delay: 20ms; }
-  #account-menu:popover-open > .account-menu-row { animation-delay: 40ms; }
-  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 60ms; }
+  /* The panel grows up from the avatar, so rows enter bottom-up. */
+  #account-menu:popover-open > .account-menu-identity { animation-delay: 60ms; }
+  #account-menu:popover-open > .account-menu-item { animation-delay: 40ms; }
+  #account-menu:popover-open > .account-menu-row { animation-delay: 20ms; }
+  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 0ms; }
 }
 
 @keyframes account-menu-row-enter {
