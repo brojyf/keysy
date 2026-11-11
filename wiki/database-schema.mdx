@@ -208,6 +208,14 @@ erDiagram
 | --- | --- | --- |
 | `delete-idle-sessions` | `0 3 * * *` (daily at 03:00) | Calls `public.delete_idle_sessions()`, which deletes `auth.sessions` rows not refreshed for 30 days. Their refresh tokens are deleted by cascade. |
 
+### Triggers
+
+| Trigger | Table and event | Action |
+| --- | --- | --- |
+| `create_profile_after_user_insert` | `auth.users`, after each insert | Calls `public.create_profile_for_new_user()`, which inserts the user's `public.profiles` row. The initial `display_name` is the trimmed Google full name, then the email local part, then `User`, cut to 32 characters. It is never synced again. |
+
+The trigger runs in the same transaction as the insert. If it fails, Supabase Auth does not create the user and sign-in fails.
+
 ## Aiven PostgreSQL
 
 The `audit` service consumes Kafka events and owns this database. It records change attempts, including denied
