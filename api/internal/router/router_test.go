@@ -86,3 +86,18 @@ func TestProtectedRoutesRunSession(t *testing.T) {
 		})
 	}
 }
+
+func TestPreflightSkipsSession(t *testing.T) {
+	calls := 0
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodOptions, "/v0/orgs/org", nil)
+	request.Header.Set("Origin", "https://keysy.net")
+	request.Header.Set("Access-Control-Request-Method", http.MethodPatch)
+	newTestRouter(&calls).ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+	if calls != 0 {
+		t.Fatalf("session calls = %d, want 0", calls)
+	}
+}

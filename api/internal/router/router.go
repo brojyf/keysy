@@ -43,21 +43,21 @@ func New(d Deps) *gin.Engine {
 	orgs := org.Store{DB: d.DB}
 	members := member.Store{DB: d.DB}
 
-	v0 := router.Group("/v0")
+	v0 := router.Group("/v0", d.Session)
 	v0.OPTIONS("/me")
-	v0.GET("/me", d.Session, me.Get(profiles))
-	v0.PATCH("/me", d.Session, me.Patch(profiles))
+	v0.GET("/me", me.Get(profiles))
+	v0.PATCH("/me", me.Patch(profiles))
 	v0.OPTIONS("/me/sessions")
-	v0.GET("/me/sessions", d.Session, session.List(sessions))
+	v0.GET("/me/sessions", session.List(sessions))
 	v0.OPTIONS("/me/sessions/:sessionId")
-	v0.DELETE("/me/sessions/:sessionId", d.Session, session.Revoke(sessions))
+	v0.DELETE("/me/sessions/:sessionId", session.Revoke(sessions))
 	v0.OPTIONS("/orgs")
-	v0.GET("/orgs", d.Session, org.List(orgs))
-	v0.POST("/orgs", d.Session, org.Create(orgs))
+	v0.GET("/orgs", org.List(orgs))
+	v0.POST("/orgs", org.Create(orgs))
 	v0.OPTIONS("/orgs/:orgId")
-	v0.PATCH("/orgs/:orgId", d.Session, org.Rename(orgs))
-	v0.DELETE("/orgs/:orgId", d.Session, org.Delete(orgs))
+	v0.PATCH("/orgs/:orgId", org.Rename(orgs))
+	v0.DELETE("/orgs/:orgId", org.Delete(orgs))
 	v0.OPTIONS("/orgs/:orgId/members")
-	v0.GET("/orgs/:orgId/members", d.Session, member.List(members))
+	v0.GET("/orgs/:orgId/members", member.List(members))
 	return router
 }
