@@ -1,8 +1,8 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, profile lookup and update, session list/revoke, and
-org list/create/delete.
+configuration, middleware, profile lookup and update, session list/revoke,
+org list/create/delete, and the org member list.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
 `GET /v0/me/sessions` lists the current user's active web sessions from
 `auth.sessions` and marks the current one by the JWT `session_id`.
@@ -12,6 +12,8 @@ Existing access tokens of a revoked session stay valid until they expire.
 `GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
 `PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
+`GET /v0/orgs/{orgId}/members` lists every member's name, email, and role for any member of an active org.
+Soft-deleted profiles are left out. The order is not specified. Missing, deleted, and non-member targets return 404.
 `DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
 Memberships and user accounts remain. Owner retries on deleted orgs return 204
 without another write. Missing and non-owner targets return 404.
@@ -23,11 +25,11 @@ bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
 
-Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and
+Run `gofmt -l .`, `go vet ./...`, `go test -race -cover -p 1 ./...`, and
 `go build ./...`. Air loads ignored `.env.local` and serves on port 8081.
 CI's API job runs race tests, vet, and build. Tests must not call live services.
 Set `KEYSY_TEST_DATABASE_URL` to an empty, isolated PostgreSQL database to run the
-store integration test. CI supplies this database through its PostgreSQL service.
+store integration tests. They share that database, so use `-p 1`. CI supplies this database through its PostgreSQL service.
 
 Keep telemetry → recovery → requestid → log → timeout → CORS → session → handler order.
 Telemetry spans and metrics follow the same rule as logs: method, route template,

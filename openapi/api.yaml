@@ -718,7 +718,8 @@ paths:
       description: |
         Every member of the org, whatever their role, can list its members. Each item shows only the member's name, email, and role.
         Access details are not included; they belong to the member page.
-        The list is sorted by name ascending, then by userId ascending. There is no pagination (issue #157).
+        Members whose accounts are deleted are not listed.
+        The order is not specified; clients sort the list. There is no pagination (issue #157).
         Missing and soft-deleted orgs, and orgs the caller is not a member of, return ORG_NOT_FOUND.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
         A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
