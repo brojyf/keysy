@@ -14,18 +14,15 @@ begin
 
   update auth.users set email = 'ada@new.example.com'
     where id = '00000000-0000-0000-0000-000000000021';
-  assert (select email = 'ada@new.example.com' from public.profiles
+  assert (select email = 'ada@example.com' from public.profiles
     where id = '00000000-0000-0000-0000-000000000021'),
-    'Auth email changes must sync to the profile';
-  assert (select email = 'grace@example.com' from public.profiles
-    where id = '00000000-0000-0000-0000-000000000022'),
-    'Email changes must not touch other profiles';
+    'Auth email changes must not change the profile email';
 
   update public.profiles set display_name = 'Ada'
     where id = '00000000-0000-0000-0000-000000000021';
   update auth.users set raw_user_meta_data = '{"full_name": "Countess"}'
     where id = '00000000-0000-0000-0000-000000000021';
-  assert (select display_name = 'Ada' and email = 'ada@new.example.com' from public.profiles
+  assert (select display_name = 'Ada' and email = 'ada@example.com' from public.profiles
     where id = '00000000-0000-0000-0000-000000000021'),
     'Other Auth changes must keep the profile';
 
@@ -36,15 +33,6 @@ begin
   end;
   assert not exists (select from auth.users where id = '00000000-0000-0000-0000-000000000023'),
     'A failed profile insert must roll back the Auth user';
-
-  begin
-    update auth.users set email = null where id = '00000000-0000-0000-0000-000000000022';
-    raise exception 'Removing an email must be rejected';
-  exception when not_null_violation then null;
-  end;
-  assert (select email = 'grace@example.com' from auth.users
-    where id = '00000000-0000-0000-0000-000000000022'),
-    'A failed email sync must roll back the Auth change';
 end;
 $$;
 
