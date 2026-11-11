@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -27,11 +28,13 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 		"GET /v0/me",
 		"GET /v0/me/sessions",
 		"GET /v0/orgs",
+		"GET /v0/orgs/:orgId/members",
 		"OPTIONS /v0/me",
 		"OPTIONS /v0/me/sessions",
 		"OPTIONS /v0/me/sessions/:sessionId",
 		"OPTIONS /v0/orgs",
 		"OPTIONS /v0/orgs/:orgId",
+		"OPTIONS /v0/orgs/:orgId/members",
 		"PATCH /v0/me",
 		"PATCH /v0/orgs/:orgId",
 		"POST /v0/orgs",
@@ -49,9 +52,11 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 func TestHealthSkipsSessionAndMiddleware(t *testing.T) {
 	calls := 0
 	response := httptest.NewRecorder()
-	newTestRouter(&calls).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/health", nil))
+	request := httptest.NewRequest(http.MethodGet, "/health", nil)
+	request.Header.Set("Origin", "https://evil.example")
+	newTestRouter(&calls).ServeHTTP(response, request)
 	if response.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+		t.Fatalf("status = %d, want %d because probes skip CORS", response.Code, http.StatusOK)
 	}
 	if calls != 0 {
 		t.Fatalf("session calls = %d, want 0", calls)
@@ -62,13 +67,22 @@ func TestHealthSkipsSessionAndMiddleware(t *testing.T) {
 }
 
 func TestProtectedRoutesRunSession(t *testing.T) {
-	calls := 0
-	response := httptest.NewRecorder()
-	newTestRouter(&calls).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v0/me", nil))
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
-	}
-	if calls != 1 {
-		t.Fatalf("session calls = %d, want 1", calls)
+	router := newTestRouter(new(int))
+	for _, route := range router.Routes() {
+		if route.Method == http.MethodOptions || !strings.HasPrefix(route.Path, "/v0/") {
+			continue
+		}
+		t.Run(route.Method+" "+route.Path, func(t *testing.T) {
+			calls := 0
+			response := httptest.NewRecorder()
+			path := strings.NewReplacer(":orgId", "org", ":sessionId", "session").Replace(route.Path)
+			newTestRouter(&calls).ServeHTTP(response, httptest.NewRequest(route.Method, path, nil))
+			if response.Code != http.StatusUnauthorized {
+				t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+			}
+			if calls != 1 {
+				t.Fatalf("session calls = %d, want 1", calls)
+			}
+		})
 	}
 }

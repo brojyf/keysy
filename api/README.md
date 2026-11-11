@@ -20,6 +20,10 @@ and non-owner targets return `404 ORG_NOT_FOUND`.
 It sets `orgs.deleted_at` and returns `204` without a response body. Memberships and user accounts remain.
 Owner retries on already deleted orgs return `204` without another write or a change to `deleted_at`.
 Missing and non-owner targets return `404 ORG_NOT_FOUND`, including non-owner requests for deleted orgs.
+`GET /v0/orgs/{orgId}/members` accepts only an org UUID in the path. Any member of an active org gets `200`
+with `[{userId, name, email, role}]`; `name` is the profile display name and `email` is the profile email.
+Members with soft-deleted profiles are left out. The order is not specified; clients sort the list.
+Missing, deleted, and non-member targets return `404 ORG_NOT_FOUND`.
 Deleted orgs are excluded from `GET /v0/orgs`. Permanent resource cleanup is tracked in
 [issue #120](https://github.com/brojyf/keysy/issues/120).
 All org routes reject query strings; GET and DELETE also reject request bodies.
@@ -50,7 +54,8 @@ connection (port 5432); the transaction pooler (port 6543) breaks prepared state
 `WEB_APP_URL` requires HTTPS except `http://localhost`; its exact origin is
 allowed for credentialed GET, POST, PATCH, and DELETE requests and OPTIONS preflight.
 Preflight accepts GET/PATCH for `/v0/me`, GET for `/v0/me/sessions`, DELETE for
-`/v0/me/sessions/{sessionId}`, GET/POST for `/v0/orgs`, and DELETE for `/v0/orgs/{orgId}`.
+`/v0/me/sessions/{sessionId}`, GET/POST for `/v0/orgs`, DELETE for `/v0/orgs/{orgId}`, and GET for
+`/v0/orgs/{orgId}/members`.
 CORS allows only the `Content-Type` request header.
 `OAUTH_COOKIE_KEY` must decode from Base64 to 32 bytes and match auth's key.
 Never commit secrets.
@@ -76,7 +81,7 @@ existing local file or regenerate the shared cookie key on restart.
 go run .
 gofmt -l .
 go vet ./...
-go test -race -cover ./...
+go test -race -cover -p 1 ./...
 go build ./...
 ```
 

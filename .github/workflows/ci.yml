@@ -277,7 +277,8 @@ jobs:
       - name: Test
         env:
           KEYSY_TEST_DATABASE_URL: postgres://postgres@localhost:5432/keysy_org_test?sslmode=disable
-        run: go test -race ./...
+        # Store tests in different packages share one database, so packages run one at a time.
+        run: go test -race -p 1 ./...
       - name: Vet
         run: go vet ./...
       - name: Build

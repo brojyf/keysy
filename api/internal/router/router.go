@@ -6,6 +6,7 @@ import (
 
 	"github.com/brojyf/keysy/api/internal/health"
 	"github.com/brojyf/keysy/api/internal/me"
+	"github.com/brojyf/keysy/api/internal/member"
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/brojyf/keysy/api/internal/org"
 	"github.com/brojyf/keysy/api/internal/profile"
@@ -23,16 +24,24 @@ type Deps struct {
 	Session   gin.HandlerFunc
 }
 
-// New builds the engine. Add new endpoints here, one line per method and path.
+// New builds the engine.
 func New(d Deps) *gin.Engine {
 	router := gin.New()
 	// Registered before the middleware so probes add no spans, metrics, or logs.
 	router.GET("/health", health.Get)
-	router.Use(middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()), middleware.Recovery(d.Logger), middleware.RequestID(), middleware.Log(d.Logger), middleware.Timeout(), middleware.CORS(d.WebAppURL))
+	router.Use(
+		middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()),
+		middleware.Recovery(d.Logger),
+		middleware.RequestID(),
+		middleware.Log(d.Logger),
+		middleware.Timeout(),
+		middleware.CORS(d.WebAppURL),
+	)
 
 	profiles := profile.Store{DB: d.DB}
 	sessions := session.Store{DB: d.DB}
 	orgs := org.Store{DB: d.DB}
+	members := member.Store{DB: d.DB}
 
 	v0 := router.Group("/v0")
 	v0.OPTIONS("/me")
@@ -48,5 +57,7 @@ func New(d Deps) *gin.Engine {
 	v0.OPTIONS("/orgs/:orgId")
 	v0.PATCH("/orgs/:orgId", d.Session, org.Rename(orgs))
 	v0.DELETE("/orgs/:orgId", d.Session, org.Delete(orgs))
+	v0.OPTIONS("/orgs/:orgId/members")
+	v0.GET("/orgs/:orgId/members", d.Session, member.List(members))
 	return router
 }
