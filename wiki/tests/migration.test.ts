@@ -378,7 +378,8 @@ test('every member lists the org members by name, email, and role only', async (
   const start = yaml.indexOf('operationId: listMembers\n');
   const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
   expect(operation).toContain('Every member of the org, whatever their role, can list its members.');
-  expect(operation).toContain('There is no pagination (issue #157).');
+  expect(operation).toContain('The order is not specified; clients sort the list. There is no pagination (issue #157).');
+  expect(operation).not.toMatch(/sorted by/i);
   expect(operation).not.toMatch(/avatar|cursor|nextCursor|Super Admin/i);
   const member = yaml.match(/^    Member:\n([\s\S]*?)^    \w/m)?.[1] ?? '';
   expect(member).toContain('required: [userId, name, email, role]');

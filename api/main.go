@@ -75,6 +75,8 @@ func main() {
 	router.OPTIONS("/v0/orgs/:orgId")
 	router.PATCH("/v0/orgs/:orgId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Rename(org.Store{DB: db}))
 	router.DELETE("/v0/orgs/:orgId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Delete(org.Store{DB: db}))
+	router.OPTIONS("/v0/orgs/:orgId/members")
+	router.GET("/v0/orgs/:orgId/members", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Members(org.Store{DB: db}))
 	server := &http.Server{Addr: ":" + c.Port, Handler: router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	listener, err := net.Listen("tcp", server.Addr)
 	if err != nil {

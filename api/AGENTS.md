@@ -1,8 +1,8 @@
 # AGENTS.md
 
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
-configuration, middleware, profile lookup and update, session list/revoke, and
-org list/create/delete.
+configuration, middleware, profile lookup and update, session list/revoke,
+org list/create/delete, and the org member list.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
 `GET /v0/me/sessions` lists the current user's active web sessions from
 `auth.sessions` and marks the current one by the JWT `session_id`.
@@ -12,6 +12,8 @@ Existing access tokens of a revoked session stay valid until they expire.
 `GET /v0/orgs` lists the current user's active orgs, roles, and total member counts.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
 `PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
+`GET /v0/orgs/{orgId}/members` lists every member's name, email, and role for any member of an active org.
+Soft-deleted profiles are left out. The order is not specified. Missing, deleted, and non-member targets return 404.
 `DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
 Memberships and user accounts remain. Owner retries on deleted orgs return 204
 without another write. Missing and non-owner targets return 404.

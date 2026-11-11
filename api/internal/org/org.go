@@ -19,6 +19,7 @@ type Organizations interface {
 	List(context.Context, string) ([]Membership, error)
 	Delete(context.Context, string, string) (bool, error)
 	Rename(context.Context, string, string, string) (bool, error)
+	Members(context.Context, string, string) ([]Member, error)
 }
 
 // readName validates the request and returns the trimmed org name. It writes the error response itself.
