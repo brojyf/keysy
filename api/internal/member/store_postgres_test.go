@@ -69,6 +69,7 @@ func TestStoreListPostgres(t *testing.T) {
 	}
 	for _, tc := range []struct{ name, userID, orgID string }{
 		{"not a member", "linus", "20000000-0000-0000-0000-000000000001"},
+		{"deleted caller", "gone", "20000000-0000-0000-0000-000000000001"},
 		{"deleted org", "ada", "20000000-0000-0000-0000-000000000003"},
 		{"missing org", "ada", "20000000-0000-0000-0000-000000000009"},
 	} {
