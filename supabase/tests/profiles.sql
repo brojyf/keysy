@@ -3,8 +3,8 @@
 begin;
 
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-000000000001', null, null),
-  ('00000000-0000-0000-0000-000000000002', null, null),
+  ('00000000-0000-0000-0000-000000000001', ' @example.com', null),
+  ('00000000-0000-0000-0000-000000000002', 'second@example.com', null),
   ('00000000-0000-0000-0000-000000000011', 'ada@example.com', '{"full_name": "  Ada Lovelace  "}'),
   ('00000000-0000-0000-0000-000000000012', 'long@example.com', jsonb_build_object('full_name', repeat('名', 40))),
   ('00000000-0000-0000-0000-000000000013', 'grace@example.com', jsonb_build_object('full_name', E' \t ')),
@@ -33,7 +33,7 @@ begin
     'Long email local parts must be cut to 32 characters';
   assert (select display_name = 'User' from public.profiles
     where id = '00000000-0000-0000-0000-000000000001'),
-    'Users without a name or email must get the default name';
+    'Users without a name or email local part must get the default name';
 
   update auth.users set raw_user_meta_data = '{"full_name": "Countess"}'
     where id = '00000000-0000-0000-0000-000000000011';
@@ -86,15 +86,15 @@ begin
   end;
 
   begin
-    insert into public.profiles (id, display_name)
-      values ('00000000-0000-0000-0000-000000000001', 'Duplicate');
+    insert into public.profiles (id, display_name, email)
+      values ('00000000-0000-0000-0000-000000000001', 'Duplicate', 'duplicate@example.com');
     raise exception 'Duplicate user IDs must be rejected';
   exception when unique_violation then null;
   end;
 
   begin
-    insert into public.profiles (id, display_name)
-      values ('00000000-0000-0000-0000-000000000003', 'Unknown');
+    insert into public.profiles (id, display_name, email)
+      values ('00000000-0000-0000-0000-000000000003', 'Unknown', 'unknown@example.com');
     raise exception 'Profiles must reference an existing auth user';
   exception when foreign_key_violation then null;
   end;
