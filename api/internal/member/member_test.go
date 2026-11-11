@@ -1,4 +1,4 @@
-package org
+package member
 
 import (
 	"context"
@@ -11,7 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestMembers(t *testing.T) {
+type memberStore func(context.Context, string, string) ([]Member, error)
+
+func (list memberStore) List(ctx context.Context, userID, orgID string) ([]Member, error) {
+	return list(ctx, userID, orgID)
+}
+
+func TestList(t *testing.T) {
 	const orgID = "20000000-0000-0000-0000-000000000001"
 	ada := Member{UserID: "user-123", Name: "Ada", Email: "ada@example.com", Role: "owner"}
 	for _, tc := range []struct {
@@ -34,7 +40,7 @@ func TestMembers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			called := false
-			store := organizationStore{members: func(got context.Context, userID, gotOrgID string) ([]Member, error) {
+			store := memberStore(func(got context.Context, userID, gotOrgID string) ([]Member, error) {
 				called = true
 				if got != ctx || userID != "user-123" || gotOrgID != orgID {
 					t.Fatal("lost request context, authenticated user, or target org")
@@ -44,10 +50,10 @@ func TestMembers(t *testing.T) {
 					return nil, ctx.Err()
 				}
 				return tc.members, tc.storeErr
-			}}
+			})
 			r := gin.New()
 			r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
-			r.GET("/v0/orgs/:orgId/members", Members(store))
+			r.GET("/v0/orgs/:orgId/members", List(store))
 			req := httptest.NewRequest(http.MethodGet, "/v0/orgs/"+tc.id+"/members"+tc.query, strings.NewReader(tc.body)).WithContext(ctx)
 			if tc.chunked {
 				req.ContentLength = -1

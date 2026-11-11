@@ -1,4 +1,4 @@
-package org
+package member
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func TestStoreMembersPostgres(t *testing.T) {
+func TestStoreListPostgres(t *testing.T) {
 	databaseURL := os.Getenv("KEYSY_TEST_DATABASE_URL")
 	if databaseURL == "" {
 		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
@@ -61,7 +61,7 @@ func TestStoreMembersPostgres(t *testing.T) {
 		{UserID: "grace", Name: "Grace", Email: "grace@example.com", Role: "developer"},
 	}
 	for _, userID := range []string{"ada", "grace"} {
-		got, err := store.Members(ctx, userID, "20000000-0000-0000-0000-000000000001")
+		got, err := store.List(ctx, userID, "20000000-0000-0000-0000-000000000001")
 		slices.SortFunc(got, byUserID)
 		if err != nil || !slices.Equal(got, want) {
 			t.Fatalf("member %s: got=%v err=%v", userID, got, err)
@@ -72,7 +72,7 @@ func TestStoreMembersPostgres(t *testing.T) {
 		{"deleted org", "ada", "20000000-0000-0000-0000-000000000003"},
 		{"missing org", "ada", "20000000-0000-0000-0000-000000000009"},
 	} {
-		got, err := store.Members(ctx, tc.userID, tc.orgID)
+		got, err := store.List(ctx, tc.userID, tc.orgID)
 		if err != nil || got == nil || len(got) != 0 {
 			t.Fatalf("%s: got=%v err=%v", tc.name, got, err)
 		}
