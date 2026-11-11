@@ -375,8 +375,8 @@ tr:hover .account-more:not(:disabled),
 
 .account-menu.account-row-menu {
   inset: auto;
-  width: 128px;
-  padding: 6px;
+  width: 160px;
+  padding: 4px;
   border: 0;
   transform-origin: right top;
   transition-duration: 128ms;
