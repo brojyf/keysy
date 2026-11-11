@@ -515,7 +515,7 @@
   transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
-#account-menu :is(.account-menu-item, .theme-switch button):active {
+#account-menu .theme-switch button:active {
   scale: 0.97;
 }
 
@@ -554,7 +554,7 @@
     transition: none;
   }
 
-  #account-menu :is(.account-menu-item, .theme-switch button):active {
+  #account-menu .theme-switch button:active {
     scale: 1;
   }
 }
