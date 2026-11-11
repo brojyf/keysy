@@ -136,7 +136,7 @@ paths:
       security: []
       summary: CORS preflight for the profile route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or PATCH.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -151,7 +151,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [GET, PATCH]
+            enum: [GET, POST, PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
@@ -229,7 +229,7 @@ paths:
       security: []
       summary: CORS preflight for the sessions route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -244,7 +244,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [GET]
+            enum: [GET, POST, PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
@@ -323,7 +323,7 @@ paths:
       security: []
       summary: CORS preflight for the session revocation route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of PATCH or DELETE.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -338,7 +338,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [DELETE]
+            enum: [GET, POST, PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
@@ -470,7 +470,7 @@ paths:
       security: []
       summary: CORS preflight for the orgs route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET or POST.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -485,7 +485,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [GET, POST]
+            enum: [GET, POST, PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
@@ -618,7 +618,7 @@ paths:
       security: []
       summary: CORS preflight for the org rename and deletion route
       description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of DELETE.
+        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
         The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
         Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
         Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
@@ -633,7 +633,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [PATCH, DELETE]
+            enum: [GET, POST, PATCH, DELETE]
         - name: Access-Control-Request-Headers
           in: header
           schema:
