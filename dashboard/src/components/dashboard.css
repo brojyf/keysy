@@ -316,7 +316,7 @@
   margin: 0;
   padding: 4px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   color: var(--color-text);
   background: var(--color-raised);
   box-shadow: var(--shadow-md);
@@ -384,7 +384,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
+  padding: 1px 8px;
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
@@ -467,7 +467,7 @@
 .account-menu-item {
   display: block;
   width: 100%;
-  padding: 7px 8px;
+  padding: 6px 8px;
   border: 0;
   border-radius: var(--radius-sm);
   color: inherit;
@@ -492,10 +492,11 @@
 }
 
 #account-menu {
-  padding: 6px;
+  padding: 4px;
   border: 0;
   text-wrap: pretty;
   font-variant-numeric: tabular-nums;
+  --menu-row-offset: 4px;
   transition:
     opacity 160ms ease-out,
     transform 160ms ease-out,
@@ -538,13 +539,16 @@
     animation: account-menu-row-enter 120ms ease-out backwards;
   }
 
-  #account-menu:popover-open > .account-menu-item { animation-delay: 20ms; }
-  #account-menu:popover-open > .account-menu-row { animation-delay: 40ms; }
-  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 60ms; }
+  /* The panel grows up from the avatar, so rows rise bottom-up. */
+  #account-menu:popover-open > .account-menu-identity { animation-delay: 60ms; }
+  #account-menu:popover-open > .account-menu-item { animation-delay: 40ms; }
+  #account-menu:popover-open > .account-menu-row { animation-delay: 20ms; }
+  #account-menu:popover-open > .account-menu-sign-out { animation-delay: 0ms; }
 }
 
+/* Rows move away from the trigger: set --menu-row-offset toward it (+ below, - above). */
 @keyframes account-menu-row-enter {
-  from { opacity: 0; translate: -4px 0; }
+  from { opacity: 0; translate: 0 var(--menu-row-offset); }
   to { opacity: 1; translate: 0 0; }
 }
 
