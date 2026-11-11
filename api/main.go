@@ -13,17 +13,12 @@ import (
 	"time"
 
 	"github.com/brojyf/keysy/api/internal/config"
-	"github.com/brojyf/keysy/api/internal/health"
 	"github.com/brojyf/keysy/api/internal/jwks"
-	"github.com/brojyf/keysy/api/internal/me"
 	"github.com/brojyf/keysy/api/internal/middleware"
-	"github.com/brojyf/keysy/api/internal/org"
-	"github.com/brojyf/keysy/api/internal/profile"
-	"github.com/brojyf/keysy/api/internal/session"
+	"github.com/brojyf/keysy/api/internal/router"
 	"github.com/brojyf/keysy/api/internal/telemetry"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
-	"go.opentelemetry.io/otel"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -55,27 +50,16 @@ func main() {
 		log.Fatal("JWKS initialization failed")
 	}
 	gin.SetMode(gin.ReleaseMode)
-	router := gin.New()
-	if err := router.SetTrustedProxies(nil); err != nil {
+	engine := router.New(router.Deps{
+		DB:        db,
+		Logger:    requestLogger,
+		WebAppURL: c.WebAppURL,
+		Session:   middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available),
+	})
+	if err := engine.SetTrustedProxies(nil); err != nil {
 		log.Fatal(err)
 	}
-	// Registered before the middleware so probes add no spans, metrics, or logs.
-	router.GET("/health", health.Get)
-	router.Use(middleware.Telemetry(otel.GetTracerProvider(), otel.GetMeterProvider()), middleware.Recovery(requestLogger), middleware.RequestID(), middleware.Log(requestLogger), middleware.Timeout(), middleware.CORS(c.WebAppURL))
-	router.OPTIONS("/v0/me")
-	router.GET("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Get(profile.Store{DB: db}))
-	router.PATCH("/v0/me", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), me.Patch(profile.Store{DB: db}))
-	router.OPTIONS("/v0/me/sessions")
-	router.GET("/v0/me/sessions", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), session.List(session.Store{DB: db}))
-	router.OPTIONS("/v0/me/sessions/:sessionId")
-	router.DELETE("/v0/me/sessions/:sessionId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), session.Revoke(session.Store{DB: db}))
-	router.OPTIONS("/v0/orgs")
-	router.GET("/v0/orgs", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.List(org.Store{DB: db}))
-	router.POST("/v0/orgs", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Create(org.Store{DB: db}))
-	router.OPTIONS("/v0/orgs/:orgId")
-	router.PATCH("/v0/orgs/:orgId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Rename(org.Store{DB: db}))
-	router.DELETE("/v0/orgs/:orgId", middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available), org.Delete(org.Store{DB: db}))
-	server := &http.Server{Addr: ":" + c.Port, Handler: router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
+	server := &http.Server{Addr: ":" + c.Port, Handler: engine, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	listener, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		log.Fatal(err)

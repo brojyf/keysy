@@ -23,6 +23,8 @@ bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
 
+Register every route in `internal/router/router.go`; `main.go` only starts the service.
+
 Run `gofmt -l .`, `go vet ./...`, `go test -race -cover ./...`, and
 `go build ./...`. Air loads ignored `.env.local` and serves on port 8081.
 CI's API job runs race tests, vet, and build. Tests must not call live services.
