@@ -42,10 +42,9 @@ erDiagram
 | Trigger | Table and event | Action |
 | --- | --- | --- |
 | `create_profile_after_user_insert` | `auth.users`, after each insert | Calls `public.create_profile_for_new_user()`, which inserts the user's `public.profiles` row. The initial `display_name` is the trimmed Google full name, then the email local part, then `User`, cut to 32 characters. It is never synced again. `email` is copied from `auth.users.email`. |
-| `sync_profile_email_after_user_update` | `auth.users`, after `email` changes | Calls `public.sync_profile_email()`, which copies the new email to `public.profiles.email`. |
 
-`profiles.email` copies `auth.users.email`. Only these two triggers write it.
-Each trigger runs in the same transaction as the Auth write. If a trigger fails, the Auth write rolls back.
+`profiles.email` copies `auth.users.email` once and is never synced again. Supabase Auth does not change `auth.users.email` when a returning user signs in with Google.
+The trigger runs in the same transaction as the Auth write. If it fails, the Auth write rolls back.
 
 ### Scheduled jobs
 
