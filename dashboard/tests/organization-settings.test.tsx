@@ -922,14 +922,17 @@ async function typeOrganizationName(name: string) {
     input.dispatchEvent(new browser.Event('input', { bubbles: true }))
   })
 }
-function renameForm() { return container.querySelector<HTMLFormElement>('.organization-rename')! }
+function renameForm() { return container.querySelector<HTMLInputElement>('#organization-settings-name')!.form! }
 function submitRename() { renameForm().dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) }
+function saveBarButton(label: string) { return [...container.querySelectorAll<HTMLButtonElement>('.account-save-bar button')].find((button) => button.textContent === label || button.getAttribute('aria-label') === label) ?? null }
+function saveButton() { return container.querySelector<HTMLButtonElement>('.account-save-bar button[type="submit"]') }
 
-test('an owner renames the organization and the new name replaces the old one everywhere', async () => {
+test('an owner renames the organization from the save bar and the new name replaces the old one everywhere', async () => {
   await renderSettings()
-  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar')).toBeNull()
   await typeOrganizationName('  Renamed  ')
-  expect(container.querySelector('.organization-rename button[type="submit"]')?.textContent).toBe('Save')
+  expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
+  expect(saveButton()?.textContent).toBe('Save')
   await act(async () => submitRename())
   await settleOrganizationRequests()
   expect(renameRequest).toHaveBeenCalledTimes(1)
@@ -939,13 +942,23 @@ test('an owner renames the organization and the new name replaces the old one ev
   expect(init.body).toBe(JSON.stringify({ name: 'Renamed' }))
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Renamed')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
-  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
+  expect(saveButton()?.dataset.saveState).toBe('saved')
+  expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
+})
+
+test('discard restores the organization name and hides the save bar', async () => {
+  await renderSettings()
+  await typeOrganizationName('Renamed')
+  await act(async () => saveBarButton('Discard')!.click())
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe(organization.name)
+  expect(container.querySelector('.account-save-bar')).toBeNull()
+  expect(renameRequest).not.toHaveBeenCalled()
 })
 
 test('rename rejects a blank name without calling the API', async () => {
   await renderSettings()
   await typeOrganizationName('   ')
-  expect(container.querySelector<HTMLButtonElement>('.organization-rename button[type="submit"]')?.disabled).toBe(true)
+  expect(saveButton()?.disabled).toBe(true)
   await act(async () => submitRename())
   expect(renameRequest).not.toHaveBeenCalled()
 })
@@ -956,9 +969,10 @@ test('a failed rename shows an error and keeps the draft', async () => {
   await typeOrganizationName('Renamed')
   await act(async () => submitRename())
   await settleOrganizationRequests()
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
+  expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe('Could not save. Try again.')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
+  expect(saveButton()?.disabled).toBe(false)
 })
 
 for (const saved of [true, false]) test(`a lost rename response reconciles with the refreshed name: saved ${saved}`, async () => {
@@ -974,12 +988,12 @@ for (const saved of [true, false]) test(`a lost rename response reconciles with 
   expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : 'Could not save. Try again.')
   expect(container.querySelector('.topbar-org')?.textContent).toBe(saved ? 'Renamed' : organization.name)
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
-  expect(container.querySelector('.organization-rename button[type="submit"]')?.textContent ?? null).toBe(saved ? null : 'Save')
+  expect(saveButton()?.dataset.saveState).toBe(saved ? 'saved' : 'idle')
 })
 
 for (const role of ['admin', 'developer']) test(`a ${role} cannot rename the organization`, async () => {
   organizations = [{ ...organization, role }]
   await renderSettings()
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
-  expect(container.querySelector('.organization-rename button[type="submit"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar')).toBeNull()
 })
