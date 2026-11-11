@@ -257,7 +257,7 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
   expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
-  expect(prd).toContain('Every member can view the member list, which shows each member’s name, avatar, email, and role');
+  expect(prd).toContain('Every member can view the member list, which shows each member’s name, email, and role');
   expect(prd).toContain('Developers cannot see other members’ scopes and cannot change members.');
   expect(prd).not.toContain('Super Admin');
   expect(prd).toContain('Secret values are never recorded in audit logs.');
@@ -371,6 +371,28 @@ test('versions belong to folders, addressed by path, not to individual secrets',
     expect(yaml).toContain(`\n  ${path}:\n`);
   }
   expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
+});
+
+test('every member lists the org members by name, email, and role only', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  const start = yaml.indexOf('operationId: listMembers\n');
+  const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
+  expect(operation).toContain('Every member of the org, whatever their role, can list its members.');
+  expect(operation).toContain('There is no pagination (issue #157).');
+  expect(operation).not.toMatch(/avatar|cursor|nextCursor|Super Admin/i);
+  const member = yaml.match(/^    Member:\n([\s\S]*?)^    \w/m)?.[1] ?? '';
+  expect(member).toContain('required: [userId, name, email, role]');
+  expect(member).toContain('enum: [owner, admin, developer]');
+  expect(member).not.toMatch(/avatar|access|createdAt|super_admin/i);
+});
+
+test('every member operation uses the Owner, Admin, and Developer roles', async () => {
+  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
+  const start = yaml.indexOf('  /v0/orgs/{orgId}/members:\n');
+  const members = yaml.slice(start, yaml.indexOf('\n  /v0/orgs/{orgId}/secrets:', start));
+  expect(members).toContain('/v0/orgs/{orgId}/members/{userId}:');
+  expect(members).toContain('enum: [admin, developer]');
+  expect(members).not.toMatch(/Super Admin|`user`|\[admin, user\]|memberId/);
 });
 
 test('a folder that would hold both secrets and subfolders is a conflict', async () => {

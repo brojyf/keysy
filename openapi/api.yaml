@@ -711,29 +711,69 @@ paths:
       - $ref: '#/components/parameters/OrgId'
     get:
       tags: [Members]
+      security:
+        - accessCookie: []
       operationId: listMembers
-      summary: List members
-      description: Admin or Super Admin.
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
+      summary: List an org's members
+      description: |
+        Every member of the org, whatever their role, can list its members. Each item shows only the member's name, email, and role.
+        Access details are not included; they belong to the member page.
+        The list is sorted by name ascending, then by userId ascending. There is no pagination (issue #157).
+        Missing and soft-deleted orgs, and orgs the caller is not a member of, return ORG_NOT_FOUND.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        orgId must be a UUID. No query string or request body is accepted.
       responses:
         '200':
-          description: A page of members.
+          description: The org's members. The caller is always included.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MemberPage'
+                type: array
+                minItems: 1
+                items:
+                  $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          $ref: '#/components/responses/Unauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          description: ORG_NOT_FOUND. The org is missing, soft-deleted, or the caller is not a member. The response does not reveal which.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     post:
       tags: [Members]
       operationId: addMember
       summary: Add a member by email
       description: |
-        Admin or Super Admin. The member gets the `user` role and no policies.
+        Owner or Admin. The member gets the Developer role and an empty scope.
         The org appears for that user after they sign in with this email.
       requestBody:
         required: true
@@ -761,15 +801,15 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
-  /v0/orgs/{orgId}/members/{memberId}:
+  /v0/orgs/{orgId}/members/{userId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/MemberId'
+      - $ref: '#/components/parameters/UserId'
     patch:
       tags: [Members]
       operationId: updateMemberRole
-      summary: Grant or revoke Admin access
-      description: Super Admin only. A Super Admin's role cannot be changed.
+      summary: Change a member between Admin and Developer
+      description: Owner or Admin. The Owner's role cannot be changed here.
       requestBody:
         required: true
         content:
@@ -780,7 +820,7 @@ paths:
               properties:
                 role:
                   type: string
-                  enum: [admin, user]
+                  enum: [admin, developer]
       responses:
         '200':
           description: Role updated.
@@ -801,8 +841,8 @@ paths:
       operationId: removeMember
       summary: Remove a member
       description: |
-        Admin or Super Admin can remove a user. Only a Super Admin can remove
-        an Admin. A Super Admin cannot be removed.
+        Owner or Admin can remove an Admin or a Developer. The Owner cannot
+        be removed.
       responses:
         '204':
           description: Member removed.
@@ -1509,8 +1549,8 @@ components:
       schema:
         type: string
         format: uuid
-    MemberId:
-      name: memberId
+    UserId:
+      name: userId
       in: path
       required: true
       schema:
@@ -1575,9 +1615,6 @@ components:
         type: string
         enum: [no-store]
   schemas:
-    Role:
-      type: string
-      enum: [super_admin, admin, user]
     Me:
       type: object
       required: [id, email, displayName, agentAutoApply]
@@ -1654,35 +1691,22 @@ components:
           description: Days before a secret's `expiresAt` when Admins receive a reminder.
     Member:
       type: object
-      required: [id, email, role, userId, createdAt]
+      description: An org member as the member list shows it.
+      required: [userId, name, email, role]
       properties:
-        id:
+        userId:
           type: string
           format: uuid
+          description: Identifies the member within the org. The dashboard uses it to open the member page.
+        name:
+          type: string
+          description: The member's display name from their profile.
         email:
           type: string
           format: email
         role:
-          $ref: '#/components/schemas/Role'
-        userId:
           type: string
-          format: uuid
-          nullable: true
-          description: Null until the member signs in for the first time.
-        createdAt:
-          type: string
-          format: date-time
-    MemberPage:
-      type: object
-      required: [items, nextCursor]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Member'
-        nextCursor:
-          type: string
-          nullable: true
+          enum: [owner, admin, developer]
     SecretPath:
       type: string
       description: Slash-separated path. The last segment is the secret name.
