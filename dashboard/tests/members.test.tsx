@@ -48,8 +48,8 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderMembers() {
-  const currentUser = { user, organizations: [organization], organization, onSignedOut } as never
+async function renderMembers(role: 'owner' | 'admin' | 'developer' = 'developer') {
+  const currentUser = { user, organizations: [{ ...organization, role }], organization: { ...organization, role }, onSignedOut } as never
   await act(async () => root.render(
     <CurrentUserContext.Provider value={currentUser}>
       <QueryClientProvider client={new QueryClient()}><MemberList /></QueryClientProvider>
@@ -60,6 +60,15 @@ async function renderMembers() {
 
 function tableRows() {
   return [...container.querySelectorAll('tbody tr')].map((row) => [...row.querySelectorAll('td')].map((cell) => cell.textContent))
+}
+
+function rowMenus() {
+  return Object.fromEntries([...container.querySelectorAll('tbody tr')].flatMap((row) => {
+    const more = row.querySelector('button')
+    if (!more) return []
+    const items = [...row.querySelectorAll('[popover] button')].map((item) => item.textContent)
+    return [[more.getAttribute('aria-label'), items]]
+  }))
 }
 
 function nameHeader() {
@@ -94,6 +103,26 @@ test('Members lists the org members by name with their roles', async () => {
     ['Sam Rivera', 'sam@acme.dev', 'Developer'],
   ])
   expect(nameHeader().getAttribute('aria-sort')).toBe('ascending')
+})
+
+test('an Owner gets a row menu on every member but the Owner', async () => {
+  await renderMembers('owner')
+  expect([...container.querySelectorAll('th')].map((cell) => cell.textContent)).toEqual(['Name', 'Email', 'Role', ''])
+  expect(rowMenus()).toEqual({
+    'More actions for Jordan Lee': ['Change role', 'Transfer ownership', 'Remove'],
+    'More actions for Sam Rivera': ['Change role', 'Transfer ownership', 'Remove'],
+  })
+})
+
+test('an Admin gets a row menu on Developers only', async () => {
+  await renderMembers('admin')
+  expect(rowMenus()).toEqual({ 'More actions for Sam Rivera': ['Change role', 'Remove'] })
+})
+
+test('a Developer gets no row menu column', async () => {
+  await renderMembers('developer')
+  expect(container.querySelectorAll('th')).toHaveLength(3)
+  expect(rowMenus()).toEqual({})
 })
 
 test('the Name header reverses the members', async () => {

@@ -1,4 +1,4 @@
-/* Figma 11.1 Members. */
+/* Figma 11.1–11.6 Members. */
 .dashboard-content:has(> .member-page) {
   padding: 0;
 }
@@ -11,17 +11,28 @@
   padding: 13px 32px 48px;
 }
 
-.member-page .account-table,
-.member-page .skeleton-table {
-  max-width: 1080px;
+.member-page .account-table {
+  max-width: 720px;
 }
 
 .member-table th:first-child {
-  width: 182px;
+  width: 240px;
 }
 
-.member-table th:nth-child(2) {
-  width: 201px;
+.member-table th:nth-child(3) {
+  width: 140px;
+}
+
+.member-table th:nth-child(4) {
+  width: 56px;
+}
+
+.account-menu.member-row-menu {
+  width: 160px;
+}
+
+.member-row-menu .account-menu-divider {
+  margin: 3px 0;
 }
 
 @media (max-width: 700px) {

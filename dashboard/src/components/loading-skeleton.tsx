@@ -83,9 +83,13 @@ function Services() {
     </div>
   )
 }
-// The member table of 24.7 Members; the Members page also shows it while its list loads.
+// The member table of 24.7 Members, sized to the 11.3 table; the Members page also shows it while its list loads.
 export function MemberTableSkeleton() {
-  return <Table columns={[182, 201, 695]} headers={[41, 27, 41]} rows={[[54, 34, 81], [68, 61, 47], [68, 61, 81]]} />
+  return (
+    <div className="skeleton-member-table">
+      <Table columns={[240, 338, 140]} headers={[41, 27, 41]} rows={[[54, 34, 81], [68, 61, 47], [68, 61, 81]]} />
+    </div>
+  )
 }
 function Members() {
   return (

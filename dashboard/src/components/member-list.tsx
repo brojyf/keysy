@@ -3,20 +3,30 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
 import { useState } from 'react'
-import { SortableHeader, TableSearch } from './account-table-controls'
+import { MoreIcon, SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
 import { MemberTableSkeleton } from './loading-skeleton'
-import { memberQueryOptions } from '../lib/member-queries'
+import { memberQueryOptions, type Member } from '../lib/member-queries'
+import { placeRowMenu } from '../lib/row-menu'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
 
-// Figma 11.1 Members. The row menu and member page come with their APIs.
+// Figma 11.1–11.3: an Owner manages everyone but the Owner; an Admin manages Developers.
+function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['role']) {
+  return (viewerRole === 'owner' && memberRole !== 'owner') || (viewerRole === 'admin' && memberRole === 'developer')
+}
+
+// Figma 11.1–11.6 Members. The row menu items do nothing until their APIs exist.
+// The member page comes later.
 export default function MemberList() {
   const { user, organization, onSignedOut } = useCurrentUser()
   const memberQuery = useQuery({ ...memberQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
+  const viewerRole = organization?.role
+  const hasActions = viewerRole === 'owner' || viewerRole === 'admin'
+  const columnCount = hasActions ? 4 : 3
   const search = query.trim().toLowerCase()
   const members = (memberQuery.data ?? [])
     .filter(({ name, email }) => `${name} ${email}`.toLowerCase().includes(search))
@@ -37,6 +47,7 @@ export default function MemberList() {
                 <SortableHeader label="Name" direction={direction} onToggle={() => setDirection(direction === 'ascending' ? 'descending' : 'ascending')} />
                 <th>Email</th>
                 <th>Role</th>
+                {hasActions && <th />}
               </tr>
             </thead>
             <tbody>
@@ -45,10 +56,31 @@ export default function MemberList() {
                   <td>{name}</td>
                   <td>{email}</td>
                   <td>{roleLabels[role]}</td>
+                  {hasActions && (
+                    <td className="account-table-actions">
+                      {canManage(viewerRole, role) && (
+                        <>
+                          <button className="account-more" type="button" popoverTarget={`member-menu-${userId}`} aria-label={`More actions for ${name}`}>
+                            <MoreIcon />
+                          </button>
+                          <div id={`member-menu-${userId}`} className="account-menu account-row-menu member-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
+                            <button className="account-menu-item" type="button">Change role</button>
+                            {viewerRole === 'owner' && (
+                              <>
+                                <button className="account-menu-item" type="button">Transfer ownership</button>
+                                <hr className="account-menu-divider" />
+                              </>
+                            )}
+                            <button className="account-menu-item account-menu-sign-out" type="button">Remove</button>
+                          </div>
+                        </>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
-              {memberQuery.isError && <tr><td className="account-table-empty" colSpan={3} role="alert">Could not load members. Refresh the page to try again.</td></tr>}
-              {memberQuery.isSuccess && members.length === 0 && <tr><td className="account-table-empty" colSpan={3}>{`No members match “${query.trim()}”`}</td></tr>}
+              {memberQuery.isError && <tr><td className="account-table-empty" colSpan={columnCount} role="alert">Could not load members. Refresh the page to try again.</td></tr>}
+              {memberQuery.isSuccess && members.length === 0 && <tr><td className="account-table-empty" colSpan={columnCount}>{`No members match “${query.trim()}”`}</td></tr>}
             </tbody>
           </table>
         </div>

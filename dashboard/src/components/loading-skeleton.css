@@ -29,6 +29,7 @@
 .skeleton-header-bone { background: var(--color-line); }
 .skeleton-table-row { border-top: 1px solid var(--color-line); }
 .skeleton-table-cell { display: flex; flex-direction: column; gap: 11px; }
+.skeleton-member-table { max-width: 720px; }
 .skeleton-members-heading { display: flex; align-items: center; justify-content: space-between; margin: 30px 0 18px; }
 .skeleton-caption { margin: 2px 0 22px; }
 .skeleton-form { max-width: 784px; }
