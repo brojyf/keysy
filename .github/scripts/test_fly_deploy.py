@@ -78,7 +78,7 @@ sys.exit(subprocess.run([os.environ["REAL_CURL"], *args]).returncode)
             "REAL_CURL": shutil.which("curl"),
             "TEST_ORIGIN": f"http://127.0.0.1:{server.server_port}",
             "CF_ACCESS_CLIENT_ID": "test-client-id",
-            "CF_ACCESS_SECRET": "test-client-secret",
+            "CF_ACCESS_CLIENT_SECRET": "test-client-secret",
             "GITHUB_RUN_ID": "123",
             "GITHUB_RUN_ATTEMPT": "2",
         }
@@ -105,11 +105,11 @@ sys.exit(subprocess.run([os.environ["REAL_CURL"], *args]).returncode)
 
     def test_access_environment_uses_repository_secrets(self):
         block = workflow_step("Check the dashboard assets")
-        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_SECRET"):
+        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_CLIENT_SECRET"):
             self.assertIn(f"{name}: ${{{{ secrets.{name} }}}}", block)
 
     def test_missing_access_credentials_fail_before_requests(self):
-        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_SECRET"):
+        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_CLIENT_SECRET"):
             with self.subTest(name=name):
                 result = self.run_step(**{name: ""})
                 self.assertNotEqual(result.returncode, 0)
