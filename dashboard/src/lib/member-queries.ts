@@ -17,9 +17,11 @@ export function parseMembers(value: unknown): Member[] {
 export function memberQueryOptions(userID: string, organizationID: string, onSignedOut: () => void) {
   return queryOptions({
     queryKey: ['members', userID, organizationID],
-    queryFn: async ({ signal }): Promise<Member[]> => {
+    queryFn: async ({ signal, client }): Promise<Member[]> => {
       const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organizationID)}/members`, { signal })
       if (response.status === 401) { onSignedOut(); throw new Error('Session expired') }
+      // 404 means the org is gone or the viewer left it; the refreshed org list lets SessionGate show Organization unavailable.
+      if (response.status === 404) void client.invalidateQueries({ queryKey: ['organizations', userID], exact: true })
       if (!response.ok) throw new Error('Members check failed')
       return parseMembers(await response.json())
     },

@@ -28,7 +28,8 @@ export default function MemberList() {
   const hasActions = viewerRole === 'owner' || viewerRole === 'admin'
   const columnCount = hasActions ? 4 : 3
   const search = query.trim().toLowerCase()
-  const members = (memberQuery.data ?? [])
+  // A failed refetch keeps the old data; never show it after an error.
+  const members = (memberQuery.isError ? [] : memberQuery.data ?? [])
     .filter(({ name, email }) => `${name} ${email}`.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
@@ -39,7 +40,12 @@ export default function MemberList() {
         <h1>Members</h1>
       </header>
       <TableSearch label="Search members" value={query} onChange={setQuery} />
-      {memberQuery.isPending ? <MemberTableSkeleton /> : (
+      {memberQuery.isPending ? (
+        <>
+          <p role="status" className="skeleton-status">Loading members...</p>
+          <MemberTableSkeleton />
+        </>
+      ) : (
         <div className="account-table member-table">
           <table>
             <thead>

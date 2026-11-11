@@ -48,11 +48,11 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderMembers(role: 'owner' | 'admin' | 'developer' = 'developer') {
+async function renderMembers(role: 'owner' | 'admin' | 'developer' = 'developer', client = new QueryClient()) {
   const currentUser = { user, organizations: [{ ...organization, role }], organization: { ...organization, role }, onSignedOut } as never
   await act(async () => root.render(
     <CurrentUserContext.Provider value={currentUser}>
-      <QueryClientProvider client={new QueryClient()}><MemberList /></QueryClientProvider>
+      <QueryClientProvider client={client}><MemberList /></QueryClientProvider>
     </CurrentUserContext.Provider>,
   ))
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
@@ -89,6 +89,8 @@ test('Members shows the table skeleton while the list loads', async () => {
   expect(container.querySelector('h1')?.textContent).toBe('Members')
   expect(container.querySelector('.skeleton-table')).not.toBeNull()
   expect(container.querySelector('table')).toBeNull()
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('Loading members...')
+  expect(container.querySelector('.skeleton-member-table')?.getAttribute('aria-busy')).toBe('true')
 })
 
 test('Members lists the org members by name with their roles', async () => {
@@ -147,6 +149,16 @@ test('Members shows an error row when the list cannot load', async () => {
   await renderMembers()
   expect(tableRows()).toEqual([['Could not load members. Refresh the page to try again.']])
   expect(onSignedOut).not.toHaveBeenCalled()
+})
+
+test('Members hides cached members and rechecks the organizations when the organization is not found', async () => {
+  const client = new QueryClient()
+  client.setQueryData(['members', 'user-id', 'org-1'], apiMembers)
+  client.setQueryData(['organizations', 'user-id'], [organization])
+  request.mockImplementation(() => Promise.resolve(Response.json({ error: { code: 'ORG_NOT_FOUND' } }, { status: 404 })))
+  await renderMembers('owner', client)
+  expect(tableRows()).toEqual([['Could not load members. Refresh the page to try again.']])
+  expect(client.getQueryState(['organizations', 'user-id'])?.isInvalidated).toBe(true)
 })
 
 test('Members signs out when the session has expired', async () => {

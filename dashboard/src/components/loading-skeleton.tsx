@@ -86,7 +86,7 @@ function Services() {
 // The member table of 24.7 Members; the Members page also shows it while its list loads.
 export function MemberTableSkeleton() {
   return (
-    <div className="skeleton-member-table">
+    <div className="skeleton-member-table" aria-busy="true">
       <Table columns={[240, 338, 140]} headers={[41, 27, 41]} rows={[[54, 34, 81], [68, 61, 47], [68, 61, 81]]} />
     </div>
   )
