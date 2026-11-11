@@ -379,6 +379,7 @@ tr:hover .account-more:not(:disabled),
   padding: 4px;
   border: 0;
   transform-origin: right top;
+  --menu-row-offset: -4px;
   transition-duration: 128ms;
   transition-timing-function: ease-out;
 }

@@ -496,6 +496,7 @@
   border: 0;
   text-wrap: pretty;
   font-variant-numeric: tabular-nums;
+  --menu-row-offset: 4px;
   transition:
     opacity 160ms ease-out,
     transform 160ms ease-out,
@@ -538,15 +539,16 @@
     animation: account-menu-row-enter 120ms ease-out backwards;
   }
 
-  /* The panel grows up from the avatar, so rows enter bottom-up. */
+  /* The panel grows up from the avatar, so rows rise bottom-up. */
   #account-menu:popover-open > .account-menu-identity { animation-delay: 60ms; }
   #account-menu:popover-open > .account-menu-item { animation-delay: 40ms; }
   #account-menu:popover-open > .account-menu-row { animation-delay: 20ms; }
   #account-menu:popover-open > .account-menu-sign-out { animation-delay: 0ms; }
 }
 
+/* Rows move away from the trigger: set --menu-row-offset toward it (+ below, - above). */
 @keyframes account-menu-row-enter {
-  from { opacity: 0; translate: -4px 0; }
+  from { opacity: 0; translate: 0 var(--menu-row-offset); }
   to { opacity: 1; translate: 0 0; }
 }
 

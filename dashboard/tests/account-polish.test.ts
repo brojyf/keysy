@@ -118,6 +118,8 @@ for (const dark of [false, true]) {
         } else {
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'account-menu-row-enter 120ms ease-out backwards')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animationDelay, '20ms')
+          // Row menus open below their trigger, so rows drop in from above.
+          assert.equal(css('.account-row-menu').getPropertyValue('--menu-row-offset').trim(), '-4px')
           assert.equal(css('.account-sections .theme-switch .theme-thumb').transition, `transform 300ms ${tokens.getPropertyValue('--ease-spring')}, background-color 200ms ease`)
         }
         assert.equal(css('#account-menu .theme-thumb').transition, motion === 'reduce' ? '' : 'transform 200ms ease-in-out, background-color 200ms ease-in-out')
@@ -145,7 +147,7 @@ for (const dark of [false, true]) {
   }
 }
 
-test('account menu rows enter bottom-up, from the avatar the panel grows out of', async () => {
+test('account menu rows rise bottom-up, from the avatar the panel grows out of', async () => {
   const window = new Window()
   try {
     const document = window.document
@@ -162,6 +164,7 @@ test('account menu rows enter bottom-up, from the avatar the panel grows out of'
     const delay = (selector: string) => parseFloat(window.getComputedStyle(document.querySelector(selector)!).animationDelay) || 0
     const topDown = ['.account-menu-identity', 'a.account-menu-item', '.account-menu-row', '.account-menu-sign-out'].map(delay)
     assert.deepEqual(topDown, [60, 40, 20, 0])
+    assert.equal(window.getComputedStyle(document.querySelector('#account-menu')!).getPropertyValue('--menu-row-offset').trim(), '4px')
   } finally {
     await window.happyDOM.close()
   }
