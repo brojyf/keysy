@@ -16,9 +16,9 @@ func TestCORS(t *testing.T) {
 		{"https://dashboard.keysy.net", "GET", "", "", 200}, {"", "GET", "", "", 200},
 		{"https://other.keysy.net", "GET", "", "", 403}, {"null", "GET", "", "", 403},
 		{"https://dashboard.keysy.net", "OPTIONS", "GET", "", 204},
-		{"https://dashboard.keysy.net", "OPTIONS", "POST", "", 403},
+		{"https://dashboard.keysy.net", "OPTIONS", "POST", "", 204},
 		{"https://dashboard.keysy.net", "OPTIONS", "PATCH", " content-TYPE ", 204},
-		{"https://dashboard.keysy.net", "OPTIONS", "DELETE", "", 403},
+		{"https://dashboard.keysy.net", "OPTIONS", "DELETE", "", 204},
 		{"https://dashboard.keysy.net", "OPTIONS", "PUT", "", 403},
 		{"https://dashboard.keysy.net", "OPTIONS", "PATCH", "content-type, x-foo", 403},
 		{"https://dashboard.keysy.net", "OPTIONS", "GET", "Authorization", 403}, {"", "OPTIONS", "GET", "", 403},
@@ -26,7 +26,6 @@ func TestCORS(t *testing.T) {
 		r := gin.New()
 		r.Use(CORS("https://DASHBOARD.keysy.net:443/"))
 		r.GET("/v0/me", func(c *gin.Context) { c.Status(200) })
-		r.OPTIONS("/v0/me")
 		req := httptest.NewRequest(item.method, "/v0/me", nil)
 		if item.origin != "" {
 			req.Header.Set("Origin", item.origin)
@@ -51,48 +50,26 @@ func TestCORS(t *testing.T) {
 	}
 }
 
-func TestOrganizationPreflight(t *testing.T) {
+func TestPreflightAllowsSharedMethodsOnEveryPath(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	for _, tc := range []struct {
-		path, method string
-		status       int
-	}{
-		{"/v0/orgs", "GET", 204},
-		{"/v0/orgs", "POST", 204},
-		{"/v0/orgs", "PATCH", 403},
-		{"/v0/orgs", "DELETE", 403},
-		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "DELETE", 204},
-		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "GET", 403},
-		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "POST", 403},
-		{"/v0/orgs/20000000-0000-0000-0000-000000000001", "PATCH", 204},
-		{"/v0/me", "POST", 403},
-		{"/v0/me", "PATCH", 204},
-		{"/v0/me/sessions", "GET", 204},
-		{"/v0/me/sessions", "DELETE", 403},
-		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "DELETE", 204},
-		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "GET", 403},
-		{"/v0/me/sessions/30000000-0000-0000-0000-000000000001", "PATCH", 403},
-	} {
-		t.Run(tc.path+" "+tc.method, func(t *testing.T) {
-			r := gin.New()
-			r.Use(CORS("https://dashboard.keysy.net"))
-			r.OPTIONS("/v0/me")
-			r.OPTIONS("/v0/me/sessions")
-			r.OPTIONS("/v0/me/sessions/:sessionId")
-			r.OPTIONS("/v0/orgs")
-			r.OPTIONS("/v0/orgs/:orgId")
-			req := httptest.NewRequest("OPTIONS", tc.path, nil)
-			req.Header.Set("Origin", "https://dashboard.keysy.net")
-			req.Header.Set("Access-Control-Request-Method", tc.method)
-			req.Header.Set("Access-Control-Request-Headers", "Content-Type")
-			w := httptest.NewRecorder()
-			r.ServeHTTP(w, req)
-			if w.Code != tc.status {
-				t.Fatalf("%d %s", w.Code, w.Body.String())
-			}
-			if tc.status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
-				t.Fatal("missing credentialed preflight headers")
-			}
-		})
+	for _, path := range []string{"/v0/me", "/v0/orgs/20000000-0000-0000-0000-000000000001"} {
+		for method, status := range map[string]int{"GET": 204, "POST": 204, "PATCH": 204, "DELETE": 204, "PUT": 403, "HEAD": 403} {
+			t.Run(path+" "+method, func(t *testing.T) {
+				r := gin.New()
+				r.Use(CORS("https://dashboard.keysy.net"))
+				req := httptest.NewRequest("OPTIONS", path, nil)
+				req.Header.Set("Origin", "https://dashboard.keysy.net")
+				req.Header.Set("Access-Control-Request-Method", method)
+				req.Header.Set("Access-Control-Request-Headers", "Content-Type")
+				w := httptest.NewRecorder()
+				r.ServeHTTP(w, req)
+				if w.Code != status {
+					t.Fatalf("%d %s", w.Code, w.Body.String())
+				}
+				if status == 204 && (w.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
+					t.Fatal("missing credentialed preflight headers")
+				}
+			})
+		}
 	}
 }

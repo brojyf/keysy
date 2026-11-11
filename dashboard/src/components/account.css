@@ -403,10 +403,6 @@ tr:hover .account-more:not(:disabled),
   box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
 }
 
-.account-menu.account-row-menu .account-menu-item:active {
-  scale: 0.97;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .account-menu.account-row-menu:popover-open > .account-menu-item {
     animation: account-menu-row-enter 120ms ease-out backwards;
@@ -432,8 +428,7 @@ tr:hover .account-more:not(:disabled),
     animation: none;
   }
 
-  .account-more:active:not(:disabled),
-  .account-menu.account-row-menu .account-menu-item:active {
+  .account-more:active:not(:disabled) {
     scale: 1;
   }
 }
