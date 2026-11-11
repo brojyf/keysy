@@ -1,0 +1,40 @@
+/* Figma 11.1–11.6 Members. */
+.dashboard-content:has(> .member-page) {
+  padding: 0;
+}
+
+.member-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  /* Same offsets as .account-page: the header center sits on the first rail icon. */
+  padding: 13px 32px 48px;
+}
+
+.member-page .account-table {
+  max-width: 720px;
+}
+
+.member-table th:first-child {
+  width: 240px;
+}
+
+.member-table th:nth-child(3) {
+  width: 140px;
+}
+
+.member-table th:nth-child(4) {
+  width: 56px;
+}
+
+.account-menu.member-row-menu {
+  width: 160px;
+}
+
+.member-row-menu .account-menu-divider {
+  margin: 3px 0;
+}
+
+@media (max-width: 700px) {
+  .member-page { padding: 20px 16px 32px; }
+}
