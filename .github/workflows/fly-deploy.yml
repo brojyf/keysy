@@ -4,6 +4,8 @@ name: Fly Deploy
 # Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
+# Dashboard checks also need CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET,
+# authorized by a Cloudflare Access Service Auth policy for dashboard.keysy.net.
 on:
   workflow_run:
     workflows: [CI]
@@ -59,20 +61,33 @@ jobs:
       - name: Check the public hosts
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         run: |
-          for url in https://api.keysy.net/health https://auth.keysy.net/health https://dashboard.keysy.net/; do
-            curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 12 --retry-delay 5 --retry-all-errors "$url"
+          for url in https://api.keysy.net/health https://auth.keysy.net/health; do
+            curl --fail --silent --show-error --location --max-redirs 0 --output /dev/null --max-time 10 --retry 12 --retry-delay 5 --retry-all-errors "$url"
           done
       # A stale page can return 200 while its CSS or JS is gone from the origin.
       # The unique query string skips the Cloudflare cache, so the origin answers.
       - name: Check the dashboard assets
         id: assets
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
+          : "${CF_ACCESS_CLIENT_ID:?Set the CF_ACCESS_CLIENT_ID repository secret}"
+          : "${CF_ACCESS_CLIENT_SECRET:?Set the CF_ACCESS_CLIENT_SECRET repository secret}"
           origin=https://dashboard.keysy.net
-          assets=$(curl --fail --silent --show-error --location --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin/" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
+          # Never follow redirects with credentials, including Access login redirects.
+          dashboard_get() {
+            curl --fail --silent --show-error --location --max-redirs 0 --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors \
+              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
+          }
+          # The root normally redirects. Check the sign-in page directly instead.
+          html=$(dashboard_get "$origin/signin")
+          assets=$(printf '%s' "$html" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
           test -n "$assets"
           for path in $assets; do
-            curl --fail --silent --show-error --output /dev/null --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+            dashboard_get --output /dev/null "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
           done
 
   update-notification:
