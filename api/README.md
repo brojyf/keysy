@@ -53,9 +53,8 @@ Use Supabase's direct or session pooler
 connection (port 5432); the transaction pooler (port 6543) breaks prepared statements. `SUPABASE_URL` requires HTTPS.
 `WEB_APP_URL` requires HTTPS except `http://localhost`; its exact origin is
 allowed for credentialed GET, POST, PATCH, and DELETE requests and OPTIONS preflight.
-Preflight accepts GET/PATCH for `/v0/me`, GET for `/v0/me/sessions`, DELETE for
-`/v0/me/sessions/{sessionId}`, GET/POST for `/v0/orgs`, DELETE for `/v0/orgs/{orgId}`, and GET for
-`/v0/orgs/{orgId}/members`.
+Preflight accepts the same four methods on every route; the router answers unsupported
+methods.
 CORS allows only the `Content-Type` request header.
 `OAUTH_COOKIE_KEY` must decode from Base64 to 32 bytes and match auth's key.
 Never commit secrets.
