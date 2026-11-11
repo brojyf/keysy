@@ -26,7 +26,6 @@ func TestCORS(t *testing.T) {
 		r := gin.New()
 		r.Use(CORS("https://DASHBOARD.keysy.net:443/"))
 		r.GET("/v0/me", func(c *gin.Context) { c.Status(200) })
-		r.OPTIONS("/v0/me")
 		req := httptest.NewRequest(item.method, "/v0/me", nil)
 		if item.origin != "" {
 			req.Header.Set("Origin", item.origin)
@@ -58,8 +57,6 @@ func TestPreflightAllowsSharedMethodsOnEveryPath(t *testing.T) {
 			t.Run(path+" "+method, func(t *testing.T) {
 				r := gin.New()
 				r.Use(CORS("https://dashboard.keysy.net"))
-				r.OPTIONS("/v0/me")
-				r.OPTIONS("/v0/orgs/:orgId")
 				req := httptest.NewRequest("OPTIONS", path, nil)
 				req.Header.Set("Origin", "https://dashboard.keysy.net")
 				req.Header.Set("Access-Control-Request-Method", method)

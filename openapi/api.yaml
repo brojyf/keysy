@@ -5,6 +5,8 @@ info:
   description: |
     The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, lets owners rename and soft-delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. The unauthenticated `/health` endpoint reports process liveness. Other paths in this draft are not implemented.
 
+    CORS allows credentialed requests from the dashboard origin only. Preflight accepts GET, POST, PATCH, and DELETE with at most the `Content-Type` request header on every path, and returns 204 with `Access-Control-Allow-Methods: GET, POST, PATCH, DELETE` and `Access-Control-Allow-Headers: Content-Type`. A preflight with any other origin, method, or header returns 403 `INVALID_ORIGIN` or `INVALID_REQUEST`.
+
     This is the v0 draft, not a stable release.
 
     This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
@@ -130,56 +132,6 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-    options:
-      tags: [Account]
-      operationId: preflightMe
-      security: []
-      summary: CORS preflight for the profile route
-      description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
-        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
-        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-      parameters:
-        - name: Origin
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [GET, POST, PATCH, DELETE]
-        - name: Access-Control-Request-Headers
-          in: header
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
-          headers:
-            X-Request-ID:
-              $ref: '#/components/headers/RequestID'
-            Cache-Control:
-              $ref: '#/components/headers/NoStore'
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-                enum: ['GET, POST, PATCH, DELETE']
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-                enum: [Content-Type]
-        '403':
-          $ref: '#/components/responses/InvalidPreflight'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /v0/me/sessions:
     get:
       tags: [Account]
@@ -223,56 +175,6 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-    options:
-      tags: [Account]
-      operationId: preflightMySessions
-      security: []
-      summary: CORS preflight for the sessions route
-      description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
-        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
-        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-      parameters:
-        - name: Origin
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [GET, POST, PATCH, DELETE]
-        - name: Access-Control-Request-Headers
-          in: header
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
-          headers:
-            X-Request-ID:
-              $ref: '#/components/headers/RequestID'
-            Cache-Control:
-              $ref: '#/components/headers/NoStore'
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-                enum: ['GET, POST, PATCH, DELETE']
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-                enum: [Content-Type]
-        '403':
-          $ref: '#/components/responses/InvalidPreflight'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /v0/me/sessions/{sessionId}:
     parameters:
       - $ref: '#/components/parameters/SessionId'
@@ -317,56 +219,6 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-    options:
-      tags: [Account]
-      operationId: preflightMySession
-      security: []
-      summary: CORS preflight for the session revocation route
-      description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
-        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
-        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-      parameters:
-        - name: Origin
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [GET, POST, PATCH, DELETE]
-        - name: Access-Control-Request-Headers
-          in: header
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
-          headers:
-            X-Request-ID:
-              $ref: '#/components/headers/RequestID'
-            Cache-Control:
-              $ref: '#/components/headers/NoStore'
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-                enum: ['GET, POST, PATCH, DELETE']
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-                enum: [Content-Type]
-        '403':
-          $ref: '#/components/responses/InvalidPreflight'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /v0/orgs:
     get:
       tags: [Orgs]
@@ -464,56 +316,6 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-    options:
-      tags: [Orgs]
-      operationId: preflightOrgs
-      security: []
-      summary: CORS preflight for the orgs route
-      description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
-        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
-        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-      parameters:
-        - name: Origin
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [GET, POST, PATCH, DELETE]
-        - name: Access-Control-Request-Headers
-          in: header
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
-          headers:
-            X-Request-ID:
-              $ref: '#/components/headers/RequestID'
-            Cache-Control:
-              $ref: '#/components/headers/NoStore'
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-                enum: ['GET, POST, PATCH, DELETE']
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-                enum: [Content-Type]
-        '403':
-          $ref: '#/components/responses/InvalidPreflight'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /v0/orgs/{orgId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -612,56 +414,6 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-    options:
-      tags: [Orgs]
-      operationId: preflightOrg
-      security: []
-      summary: CORS preflight for the org rename and deletion route
-      description: |
-        Requires exactly one dashboard Origin and one Access-Control-Request-Method of GET, POST, PATCH, or DELETE.
-        The response advertises every method the shared CORS configuration allows: GET, POST, PATCH, and DELETE.
-        Access-Control-Request-Headers may be absent or contain only Content-Type, case-insensitively.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-      parameters:
-        - name: Origin
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: Access-Control-Request-Method
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [GET, POST, PATCH, DELETE]
-        - name: Access-Control-Request-Headers
-          in: header
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Allowed. Access-Control-Allow-Origin echoes the dashboard origin, Access-Control-Allow-Credentials is true, Access-Control-Allow-Methods is GET, POST, PATCH, DELETE, and Access-Control-Allow-Headers is Content-Type.
-          headers:
-            X-Request-ID:
-              $ref: '#/components/headers/RequestID'
-            Cache-Control:
-              $ref: '#/components/headers/NoStore'
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AllowOrigin'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AllowCredentials'
-            Access-Control-Allow-Methods:
-              schema:
-                type: string
-                enum: ['GET, POST, PATCH, DELETE']
-            Access-Control-Allow-Headers:
-              schema:
-                type: string
-                enum: [Content-Type]
-        '403':
-          $ref: '#/components/responses/InvalidPreflight'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /v0/orgs/{orgId}/settings:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -2249,17 +2001,6 @@ components:
           $ref: '#/components/headers/AllowOrigin'
         Access-Control-Allow-Credentials:
           $ref: '#/components/headers/AllowCredentials'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    InvalidPreflight:
-      description: INVALID_ORIGIN or INVALID_REQUEST. This response has no CORS allow headers.
-      headers:
-        X-Request-ID:
-          $ref: '#/components/headers/RequestID'
-        Cache-Control:
-          $ref: '#/components/headers/NoStore'
       content:
         application/json:
           schema:
