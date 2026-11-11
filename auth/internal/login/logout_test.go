@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLogoutRevokesCurrentSessionAndClearsCookies(t *testing.T) {
@@ -258,4 +259,50 @@ func TestLogoutRetainsRotatedSessionWhenRevocationFails(t *testing.T) {
 		}
 	}
 	t.Fatal("missing rotated refresh cookie")
+}
+
+type deadlineRecorder struct {
+	deadlines *[]time.Time
+}
+
+func (d deadlineRecorder) RoundTrip(r *http.Request) (*http.Response, error) {
+	deadline, _ := r.Context().Deadline()
+	*d.deadlines = append(*d.deadlines, deadline)
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+// Three sequential upstream calls with a 10s client timeout each can outlast
+// the 20s server write timeout, so one shared deadline must bound them all.
+func TestLogoutBoundsAllUpstreamCallsWithOneDeadline(t *testing.T) {
+	f := newFixture(t)
+	logoutCalls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/v1/token" {
+			w.Write([]byte(`{"access_token":"new-access","refresh_token":"new-refresh","token_type":"bearer","expires_in":600}`))
+			return
+		}
+		logoutCalls++
+		if logoutCalls == 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(server.Close)
+	f.handler.supabaseURL = server.URL
+	var deadlines []time.Time
+	f.handler.httpClient = &http.Client{Transport: deadlineRecorder{&deadlines}}
+	r := refreshRequest(f, "https://app.keysy.test", "keysy-refresh")
+	r.URL.Path = "/v0/auth/logout"
+	r.AddCookie(f.handler.newTokenCookie(accessCookieName, "expired-access", 3600))
+	f.router.ServeHTTP(httptest.NewRecorder(), r)
+	latest := time.Now().Add(logoutTimeout)
+	if len(deadlines) != 3 {
+		t.Fatalf("upstream calls = %d, want 3", len(deadlines))
+	}
+	for _, deadline := range deadlines {
+		if deadline.IsZero() || !deadline.Equal(deadlines[0]) || deadline.After(latest) {
+			t.Fatalf("upstream deadlines = %v, want one shared deadline within %v", deadlines, logoutTimeout)
+		}
+	}
 }
