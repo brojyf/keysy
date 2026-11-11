@@ -4,7 +4,7 @@ name: Fly Deploy
 # Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
-# Dashboard checks also need CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET,
+# Dashboard checks also need CF_ACCESS_CLIENT_ID and CF_ACCESS_SECRET,
 # authorized by a Cloudflare Access Service Auth policy for dashboard.keysy.net.
 on:
   workflow_run:
@@ -71,16 +71,16 @@ jobs:
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         env:
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          CF_ACCESS_SECRET: ${{ secrets.CF_ACCESS_SECRET }}
         run: |
           : "${CF_ACCESS_CLIENT_ID:?Set the CF_ACCESS_CLIENT_ID repository secret}"
-          : "${CF_ACCESS_CLIENT_SECRET:?Set the CF_ACCESS_CLIENT_SECRET repository secret}"
+          : "${CF_ACCESS_SECRET:?Set the CF_ACCESS_SECRET repository secret}"
           origin=https://dashboard.keysy.net
           # Never follow redirects with credentials, including Access login redirects.
           dashboard_get() {
             curl --fail --silent --show-error --location --max-redirs 0 --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors \
               --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
+              --header "CF-Access-Client-Secret: $CF_ACCESS_SECRET" "$@"
           }
           # The root normally redirects. Check the sign-in page directly instead.
           html=$(dashboard_get "$origin/signin")
