@@ -75,7 +75,7 @@ for (const dark of [false, true]) {
         document.head.append(style)
         document.body.innerHTML = `
           <div class="account-sections"><span class="theme-switch"><span class="theme-thumb"></span><button data-focus-visible data-active>Theme</button></span></div>
-          <div id="account-menu"><span class="theme-switch"><span class="theme-thumb"></span></span></div>
+          <div id="account-menu"><span class="theme-switch"><span class="theme-thumb"></span></span><a class="account-menu-item account-menu-press" data-active>Account</a></div>
           <button class="account-more" data-focus-visible data-active>More</button>
           <div class="account-menu account-row-menu" data-popover-open>
             <a class="account-menu-item" data-focus-visible data-active>Dashboard with a label that wraps onto multiple lines</a>
@@ -89,10 +89,16 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-menu-item']) {
+        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-row-menu .account-menu-item']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
-          assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
+        }
+        for (const selector of ['.account-sections .theme-switch button', '.account-more']) {
+          assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
+        }
+        // Menu items close the menu on click, so a press scale is never seen and only shrinks the row highlight.
+        for (const selector of ['.account-row-menu .account-menu-item', '#account-menu .account-menu-press']) {
+          assert.ok(['', 'none', '1'].includes(css(selector).scale), selector)
         }
 
         assert.equal(css('.account-save-bar button').outlineOffset, '2px')
