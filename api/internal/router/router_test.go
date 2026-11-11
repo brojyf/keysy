@@ -101,3 +101,16 @@ func TestPreflightSkipsSession(t *testing.T) {
 		t.Fatalf("session calls = %d, want 0", calls)
 	}
 }
+
+func TestClientIPIgnoresForwardedHeaders(t *testing.T) {
+	router := newTestRouter(new(int))
+	var clientIP string
+	router.GET("/client-ip", func(c *gin.Context) { clientIP = c.ClientIP() })
+	request := httptest.NewRequest(http.MethodGet, "/client-ip", nil)
+	request.RemoteAddr = "10.0.0.1:1234"
+	request.Header.Set("X-Forwarded-For", "203.0.113.9")
+	router.ServeHTTP(httptest.NewRecorder(), request)
+	if clientIP != "10.0.0.1" {
+		t.Fatalf("ClientIP = %q, want %q", clientIP, "10.0.0.1")
+	}
+}

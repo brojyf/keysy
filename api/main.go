@@ -56,9 +56,6 @@ func main() {
 		WebAppURL: c.WebAppURL,
 		Session:   middleware.Session(c.CookieKey, c.LocalHTTP, c.SupabaseURL+"/auth/v1", keys.KeyfuncCtx, keys.Available),
 	})
-	if err := engine.SetTrustedProxies(nil); err != nil {
-		log.Fatal(err)
-	}
 	server := &http.Server{Addr: ":" + c.Port, Handler: engine, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	listener, err := net.Listen("tcp", server.Addr)
 	if err != nil {

@@ -27,6 +27,10 @@ type Deps struct {
 // New builds the engine.
 func New(d Deps) *gin.Engine {
 	router := gin.New()
+	// No proxy is trusted, so ClientIP is the TCP peer. A nil list cannot fail.
+	if err := router.SetTrustedProxies(nil); err != nil {
+		panic(err)
+	}
 	// Registered before the middleware so probes add no spans, metrics, or logs.
 	router.GET("/health", health.Get)
 	router.Use(
