@@ -24,7 +24,8 @@ export default function MemberList() {
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
-  const viewerRole = organization?.role
+  // The member list is newer than the cached org role.
+  const viewerRole = (memberQuery.isError ? undefined : memberQuery.data?.find(({ userId }) => userId === user.id)?.role) ?? organization?.role
   const hasActions = viewerRole === 'owner' || viewerRole === 'admin'
   const columnCount = hasActions ? 4 : 3
   const search = query.trim().toLowerCase()

@@ -15,7 +15,7 @@ const user = { id: 'user-id', email: 'jordan@acme.dev', displayName: 'Jordan Lee
 const apiMembers = [
   { userId: 'user-sam', name: 'Sam Rivera', email: 'sam@acme.dev', role: 'developer' },
   { userId: 'user-alex', name: 'Alex Kim', email: 'alex@acme.dev', role: 'owner' },
-  { userId: 'user-id', name: 'Jordan Lee', email: 'jordan@acme.dev', role: 'admin' },
+  { userId: 'user-id', name: 'Jordan Lee', email: 'jordan@acme.dev', role: 'developer' },
 ]
 const originalFetch = globalThis.fetch
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
@@ -56,6 +56,10 @@ async function renderMembers(role: 'owner' | 'admin' | 'developer' = 'developer'
     </CurrentUserContext.Provider>,
   ))
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+}
+
+function respondWithMembers(roles: Record<string, string>) {
+  request.mockImplementation(() => Promise.resolve(Response.json(apiMembers.map((member) => ({ ...member, role: roles[member.userId] ?? member.role })))))
 }
 
 function tableRows() {
@@ -101,22 +105,24 @@ test('Members lists the org members by name with their roles', async () => {
   expect([...container.querySelectorAll('th')].map((cell) => cell.textContent)).toEqual(['Name', 'Email', 'Role'])
   expect(tableRows()).toEqual([
     ['Alex Kim', 'alex@acme.dev', 'Owner'],
-    ['Jordan Lee', 'jordan@acme.dev', 'Admin'],
+    ['Jordan Lee', 'jordan@acme.dev', 'Developer'],
     ['Sam Rivera', 'sam@acme.dev', 'Developer'],
   ])
   expect(nameHeader().getAttribute('aria-sort')).toBe('ascending')
 })
 
 test('an Owner gets a row menu on every member but the Owner', async () => {
+  respondWithMembers({ 'user-id': 'owner', 'user-alex': 'admin' })
   await renderMembers('owner')
   expect([...container.querySelectorAll('th')].map((cell) => cell.textContent)).toEqual(['Name', 'Email', 'Role', ''])
   expect(rowMenus()).toEqual({
-    'More actions for Jordan Lee': ['Change role', 'Transfer ownership', 'Remove'],
+    'More actions for Alex Kim': ['Change role', 'Transfer ownership', 'Remove'],
     'More actions for Sam Rivera': ['Change role', 'Transfer ownership', 'Remove'],
   })
 })
 
 test('an Admin gets a row menu on Developers only', async () => {
+  respondWithMembers({ 'user-id': 'admin' })
   await renderMembers('admin')
   expect(rowMenus()).toEqual({ 'More actions for Sam Rivera': ['Change role', 'Remove'] })
 })
@@ -125,6 +131,22 @@ test('a Developer gets no row menu column', async () => {
   await renderMembers('developer')
   expect(container.querySelectorAll('th')).toHaveLength(3)
   expect(rowMenus()).toEqual({})
+})
+
+test('the row menus follow the viewer role in the member list and recheck the stale organization role', async () => {
+  const client = new QueryClient()
+  client.setQueryData(['organizations', 'user-id'], [{ ...organization, role: 'owner' }])
+  await renderMembers('owner', client)
+  expect(container.querySelectorAll('th')).toHaveLength(3)
+  expect(rowMenus()).toEqual({})
+  expect(client.getQueryState(['organizations', 'user-id'])?.isInvalidated).toBe(true)
+})
+
+test('Members keeps the organizations when the viewer role is unchanged', async () => {
+  const client = new QueryClient()
+  client.setQueryData(['organizations', 'user-id'], [organization])
+  await renderMembers('developer', client)
+  expect(client.getQueryState(['organizations', 'user-id'])?.isInvalidated).toBe(false)
 })
 
 test('the Name header reverses the members', async () => {
