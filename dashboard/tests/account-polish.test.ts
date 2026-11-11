@@ -118,6 +118,8 @@ for (const dark of [false, true]) {
         } else {
           assert.equal(css('.account-row-menu .account-menu-item').animation, 'account-menu-row-enter 120ms ease-out backwards')
           assert.equal(css('.account-row-menu .account-menu-item:nth-child(2)').animationDelay, '20ms')
+          // Row menus open below their trigger, so rows drop in from above.
+          assert.equal(css('.account-row-menu').getPropertyValue('--menu-row-offset').trim(), '-4px')
           assert.equal(css('.account-sections .theme-switch .theme-thumb').transition, `transform 300ms ${tokens.getPropertyValue('--ease-spring')}, background-color 200ms ease`)
         }
         assert.equal(css('#account-menu .theme-thumb').transition, motion === 'reduce' ? '' : 'transform 200ms ease-in-out, background-color 200ms ease-in-out')
@@ -144,3 +146,26 @@ for (const dark of [false, true]) {
     })
   }
 }
+
+test('account menu rows rise bottom-up, from the avatar the panel grows out of', async () => {
+  const window = new Window()
+  try {
+    const document = window.document
+    const style = document.createElement('style')
+    style.textContent = stylesheet.replaceAll(':popover-open', '[data-popover-open]')
+    document.head.append(style)
+    document.body.innerHTML = `
+      <div id="account-menu" class="account-menu" data-popover-open>
+        <div class="account-menu-identity"></div>
+        <a class="account-menu-item">Account</a>
+        <div class="account-menu-row">Theme</div>
+        <button class="account-menu-item account-menu-sign-out">Sign out</button>
+      </div>`
+    const delay = (selector: string) => parseFloat(window.getComputedStyle(document.querySelector(selector)!).animationDelay) || 0
+    const topDown = ['.account-menu-identity', 'a.account-menu-item', '.account-menu-row', '.account-menu-sign-out'].map(delay)
+    assert.deepEqual(topDown, [60, 40, 20, 0])
+    assert.equal(window.getComputedStyle(document.querySelector('#account-menu')!).getPropertyValue('--menu-row-offset').trim(), '4px')
+  } finally {
+    await window.happyDOM.close()
+  }
+})
