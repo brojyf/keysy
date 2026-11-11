@@ -1,11 +1,17 @@
 package login
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+// logoutTimeout bounds all upstream calls of one logout. A logout makes up to
+// three calls, so it must stay below the 20s server write timeout.
+const logoutTimeout = 15 * time.Second
 
 func (h *Handler) logout(c *gin.Context) {
 	sensitiveResponse(c)
@@ -32,11 +38,13 @@ func (h *Handler) logout(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "Your logout request contains duplicate session cookies.")
 		return
 	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), logoutTimeout)
+	defer cancel()
 	var refreshed session
 	for {
 		if accessToken == "" && refreshToken != "" {
 			var status int
-			refreshed, status = h.refreshSession(c.Request.Context(), refreshToken, c.Request.UserAgent())
+			refreshed, status = h.refreshSession(ctx, refreshToken, c.Request.UserAgent())
 			refreshToken = ""
 			if status != 0 && status != http.StatusBadRequest {
 				respondError(c, http.StatusServiceUnavailable, "LOGOUT_UNAVAILABLE", "Sign-out is temporarily unavailable. Try again later.")
@@ -47,7 +55,7 @@ func (h *Handler) logout(c *gin.Context) {
 		if accessToken == "" {
 			break
 		}
-		r, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, h.supabaseURL+"/auth/v1/logout?scope=local", nil)
+		r, err := http.NewRequestWithContext(ctx, http.MethodPost, h.supabaseURL+"/auth/v1/logout?scope=local", nil)
 		if err != nil {
 			respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Sign-out could not be completed. Try again later.")
 			return
