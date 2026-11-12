@@ -25,6 +25,23 @@ for (const service of ['api', 'auth']) {
   });
 }
 
+test('member role changes allow Admins to promote Developers but not change existing Admins', async () => {
+  const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text());
+  const operation = 'paths./v0/orgs/{orgId}/members/{userId}.patch';
+  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining('The Owner can change a member between Admin and Developer.'));
+  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining('An Admin can promote a Developer to Admin but cannot change an existing Admin.'));
+  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining("The Owner's role cannot be changed here."));
+  expect(spec).toHaveProperty(`${operation}.requestBody.content.application/json.schema.properties.role.enum`, ['admin', 'developer']);
+});
+
+test('member removal allows Admins to remove Developers only', async () => {
+  const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text());
+  const description = 'paths./v0/orgs/{orgId}/members/{userId}.delete.description';
+  expect(spec).toHaveProperty(description, expect.stringContaining('The Owner can remove an Admin or a Developer.'));
+  expect(spec).toHaveProperty(description, expect.stringContaining('An Admin can remove only a Developer.'));
+  expect(spec).toHaveProperty(description, expect.stringContaining('The Owner cannot be removed.'));
+});
+
 test('logout documents rotated session cookies when revocation fails', async () => {
   const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/auth.yaml', import.meta.url)).text());
   expect(spec).toMatchObject({

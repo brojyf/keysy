@@ -16,13 +16,13 @@ As secrets become shared across services, developers struggle to identify which 
 The Owner, Admins, and Developers are an org’s members.
 
 - **Owner:** One per org. Has every Admin ability, and is the only member who can rename or delete the org or transfer the Owner role.
-- **Admins:** Manage members and their scopes, and have full access to every secret, policy, and service.
+- **Admins:** Manage Developers and their scopes, and can promote Developers to Admin. Have full access to every secret, policy, and service. Cannot change or remove Admins or the Owner.
 - **Developers:** Manage secrets, services, and policies within the scope the Owner or an Admin assigns them through policies and permission sets.
 - **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
-- **Manage members:** The Owner and Admins add and remove members, change members between Admin and Developer, set each Developer’s scope with policies and permission sets, and review access requests. The Owner transfers the Owner role to another member.
+- **Manage members:** The Owner and Admins add Developers, set each Developer’s scope with policies and permission sets, and review access requests. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin and remove Developers. The Owner transfers the Owner role to another member.
 - **Request access:** Developers see every policy and request the ones they need; the Owner or an Admin approves or declines.
 - **Manage secrets:** Members create, read, update, and delete secrets within their scope through the web app or CLI, with optional notes and expiration reminders.
 - **Manage service access:** Members create services and grant them read access to paths within their scope.
@@ -51,7 +51,7 @@ The Owner, Admins, and Developers are an org’s members.
 ## Scope
 
 - **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders.
-- **Scoped access:** The Owner and Admins manage members and their scopes, built from policies and reusable permission sets. Developers manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
+- **Scoped access:** The Owner manages Admins and Developers. The Owner and Admins manage Developer scopes, built from policies and reusable permission sets. Developers manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
 - **AI-assisted reorganization:** Move secrets, identify and update affected policies, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
 - **Version history:** View the last N previous versions of each folder, what changed in each, and when, plus each service’s last-retrieved version and time per folder. Roll a folder back to any of these versions. Older versions are permanently deleted.
@@ -77,7 +77,7 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 
 ## Requirements
 
-- Each org has exactly one Owner and any number of Admins and Developers. The member who creates an org becomes its Owner. The Owner and Admins have a scope that covers every path. Only the Owner can rename or delete the org or transfer the Owner role. The Owner and Admins can add or remove Admins and Developers, change members between Admin and Developer, and change scopes. No one else can change the Owner. Every member can view the member list, which shows each member’s name, email, and role, so they know whom to ask for access. Developers cannot see other members’ scopes and cannot change members.
+- Each org has exactly one Owner and any number of Admins and Developers. The member who creates an org becomes its Owner. The Owner and Admins have a scope that covers every path. Only the Owner can rename or delete the org or transfer the Owner role. The Owner and Admins can add Developers. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin, remove Developers, and change their scopes. Admins cannot change or remove Admins or the Owner. No one else can change the Owner. Every member can view the member list, which shows each member’s name, email, and role, so they know whom to ask for access. Developers cannot see other members’ scopes and cannot change members.
 - If the Owner can no longer be reached, Keysy support transfers the Owner role after verifying the request.
 - The Owner must transfer the role or delete the org before leaving it. The previous Owner becomes an Admin.
 - A member who is an org’s Owner cannot delete their account until they transfer the role or delete that org. Deleting an account removes the member from every other org.
