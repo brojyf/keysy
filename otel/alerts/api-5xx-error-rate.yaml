@@ -27,10 +27,13 @@ spec:
         from: 10m
         to: "0"
       model:
+        # Requests per series = now minus the last value before the window.
+        # rate() skips a new series' first sample, so a first 5xx would read as 0.
+        # A new series or a counter reset has no usable earlier value, so it counts in full.
         expr: |
-          sum(rate(http_server_request_duration_seconds_count{job="keysy-api", http_response_status_code=~"5.."}[5m]))
+          sum(((http_server_request_duration_seconds_count{job="keysy-api", http_response_status_code=~"5.."} - last_over_time(http_server_request_duration_seconds_count{job="keysy-api", http_response_status_code=~"5.."}[7d] offset 5m)) >= 0) or http_server_request_duration_seconds_count{job="keysy-api", http_response_status_code=~"5.."})
           /
-          sum(rate(http_server_request_duration_seconds_count{job="keysy-api"}[5m]))
+          sum(((http_server_request_duration_seconds_count{job="keysy-api"} - last_over_time(http_server_request_duration_seconds_count{job="keysy-api"}[7d] offset 5m)) >= 0) or http_server_request_duration_seconds_count{job="keysy-api"})
         instant: true
     B:
       datasourceUID: __expr__
