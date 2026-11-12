@@ -1,6 +1,6 @@
 name: Fly Deploy
 
-# Deploys main to Fly after CI passes on a push.
+# Deploys main to Fly after CI and Supabase migrations pass on a push.
 # Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
@@ -28,7 +28,10 @@ jobs:
     # A notification failure must not block deployment.
     if: ${{ !cancelled() && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      checks: read
     outputs:
       deployed: ${{ steps.assets.outcome == 'success' }}
     # Serialize only deploys, so CI notifications do not wait for an older deploy.
@@ -41,6 +44,23 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
+      # Schema first, then code. Check the commit CI tested, not workflow_run's GITHUB_SHA.
+      - name: Wait for Supabase migrations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          for _ in $(seq 60); do
+            conclusion=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA/check-runs?check_name=Supabase%20Preview" \
+              --jq '.check_runs[0] | if . == null then "pending" else (.conclusion // "pending") end')
+            case "$conclusion" in
+              success) exit 0 ;;
+              pending) sleep 15 ;;
+              *) echo "::error::Supabase migrations finished with: $conclusion"; exit 1 ;;
+            esac
+          done
+          echo "::error::Supabase migrations did not finish within 15 minutes"
+          exit 1
       - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # v1.6
       # CI runs can finish out of order or be re-run. Only the tip of main deploys,
       # so an older commit never replaces a newer one.

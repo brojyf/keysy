@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 import shutil
@@ -19,6 +20,90 @@ def workflow_step(name):
 def step_script(name):
     block = workflow_step(name).split("        run: |\n", 1)[1]
     return "\n".join(line[10:] for line in block.splitlines() if line.startswith("          "))
+
+
+class MigrationGateTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name)
+        self.call_log = path / "calls"
+        gh = path / "gh"
+        gh.write_text('''#!/usr/bin/env python3
+import json
+import os
+from pathlib import Path
+import sys
+assert sys.argv[1:3] == ["api", "repos/test/keysy/commits/tested-commit/check-runs?check_name=Supabase%20Preview"]
+assert sys.argv[3] == "--jq"
+assert os.environ["GH_TOKEN"] == "test-token"
+log = Path(os.environ["MIGRATION_CALL_LOG"])
+calls = log.read_text().splitlines() if log.exists() else []
+attempt = calls.count("gh")
+with log.open("a") as output:
+    output.write("gh\\n")
+if os.environ.get("GH_API_FAILURE"):
+    sys.exit(1)
+conclusions = json.loads(os.environ["MIGRATION_CONCLUSIONS"])
+print(conclusions[min(attempt, len(conclusions) - 1)])
+''')
+        gh.chmod(0o755)
+        sleep = path / "sleep"
+        sleep.write_text('#!/bin/sh\nprintf "sleep\\n" >> "$MIGRATION_CALL_LOG"\n')
+        sleep.chmod(0o755)
+        self.environment = {
+            **os.environ,
+            "PATH": f"{path}:{os.environ['PATH']}",
+            "MIGRATION_CALL_LOG": str(self.call_log),
+            "GH_TOKEN": "test-token",
+            "GITHUB_REPOSITORY": "test/keysy",
+            # workflow_run's GITHUB_SHA can differ from the commit CI tested.
+            "GITHUB_SHA": "workflow-default-commit",
+            "COMMIT_SHA": "tested-commit",
+        }
+
+    def run_gate(self, conclusions, **environment):
+        self.call_log.unlink(missing_ok=True)
+        return subprocess.run(
+            ["bash", "-e", "-o", "pipefail", "-c", step_script("Wait for Supabase migrations")],
+            env={**self.environment, "MIGRATION_CONCLUSIONS": json.dumps(conclusions), **environment},
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+
+    def test_waits_for_migrations_on_the_commit_ci_tested(self):
+        result = self.run_gate(["pending", "success"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.call_log.read_text().splitlines(), ["gh", "sleep", "gh"])
+
+    def test_migration_environment_uses_the_ci_commit(self):
+        block = workflow_step("Wait for Supabase migrations")
+        self.assertIn("COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}", block)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", block)
+
+    def test_completed_migrations_do_not_wait(self):
+        result = self.run_gate(["success"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
+
+    def test_unsuccessful_migrations_block_deployment(self):
+        for conclusion in ("failure", "cancelled", "timed_out", "action_required", "neutral", "skipped", "stale"):
+            with self.subTest(conclusion=conclusion):
+                result = self.run_gate([conclusion])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(conclusion, result.stdout)
+                self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
+
+    def test_api_errors_block_deployment(self):
+        self.assertNotEqual(self.run_gate(["success"], GH_API_FAILURE="1").returncode, 0)
+        self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
+
+    def test_pending_migrations_time_out(self):
+        result = self.run_gate(["pending"])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("15 minutes", result.stdout)
+        self.assertEqual(self.call_log.read_text().splitlines().count("gh"), 60)
 
 
 class FlyDeployTests(unittest.TestCase):
