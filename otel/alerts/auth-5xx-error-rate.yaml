@@ -1,0 +1,47 @@
+apiVersion: rules.alerting.grafana.app/v1beta1
+kind: AlertRule
+metadata:
+  name: keysy-auth-5xx-error-rate
+  annotations:
+    grafana.app/folder: keysy
+spec:
+  title: auth 5xx error rate
+  trigger:
+    interval: 1m
+  for: 1m
+  noDataState: Ok
+  execErrState: Error
+  labels:
+    severity: warning
+    service: keysy-auth
+  annotations:
+    summary: 5xx error rate
+    description: '{{ humanizePercentage $values.A.Value }} of requests over 5m (threshold 1%)'
+  notificationSettings:
+    type: SimplifiedRouting
+    receiver: discord
+  expressions:
+    A:
+      datasourceUID: grafanacloud-prom
+      relativeTimeRange:
+        from: 10m
+        to: "0"
+      model:
+        # Requests per series = now minus the last value before the window.
+        # rate() skips a new series' first sample, so a first 5xx would read as 0.
+        # A new series or a counter reset has no usable earlier value, so it counts in full.
+        expr: |
+          sum(((http_server_request_duration_seconds_count{job="keysy-auth", http_response_status_code=~"5.."} - last_over_time(http_server_request_duration_seconds_count{job="keysy-auth", http_response_status_code=~"5.."}[7d] offset 5m)) >= 0) or http_server_request_duration_seconds_count{job="keysy-auth", http_response_status_code=~"5.."})
+          /
+          sum(((http_server_request_duration_seconds_count{job="keysy-auth"} - last_over_time(http_server_request_duration_seconds_count{job="keysy-auth"}[7d] offset 5m)) >= 0) or http_server_request_duration_seconds_count{job="keysy-auth"})
+        instant: true
+    B:
+      datasourceUID: __expr__
+      source: true
+      model:
+        type: threshold
+        expression: A
+        conditions:
+          - evaluator:
+              type: gt
+              params: [0.01]
