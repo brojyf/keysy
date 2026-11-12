@@ -1,0 +1,15 @@
+apiVersion: notifications.alerting.grafana.app/v1beta1
+kind: TemplateGroup
+metadata:
+  name: keysy-discord
+spec:
+  title: keysy-discord
+  content: |
+    {{ define "keysy.discord.title" }}{{ with index .Alerts 0 -}}
+    {{ if eq $.Status "resolved" }}✅{{ else if eq .Labels.severity "critical" }}🔴{{ else }}🟡{{ end }} {{ .Annotations.summary }}{{ if eq $.Status "resolved" }} resolved{{ end }}
+    {{- end }}{{ end }}
+
+    {{ define "keysy.discord.message" }}{{ with index .Alerts 0 -}}
+    {{ .Labels.service }}{{ if eq $.Status "firing" }}
+    {{ .Annotations.description }}{{ end }}
+    {{- end }}{{ end }}

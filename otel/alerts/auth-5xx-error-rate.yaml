@@ -13,8 +13,10 @@ spec:
   execErrState: Error
   labels:
     severity: warning
+    service: keysy-auth
   annotations:
-    summary: More than 1% of keysy-auth requests returned 5xx in the last 5 minutes.
+    summary: 5xx error rate
+    description: '{{ humanizePercentage $values.A.Value }} of requests over 5m (threshold 1%)'
   notificationSettings:
     type: SimplifiedRouting
     receiver: discord
