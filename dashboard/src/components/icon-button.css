@@ -1,0 +1,67 @@
+.icon-button {
+  place-items: center;
+  padding: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon-button-round {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.icon-button-round:hover,
+.icon-button-round:active {
+  background: var(--color-soft);
+}
+
+.icon-button-round:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 2px;
+}
+
+.icon-button-square {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  vertical-align: top;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+tr:hover .icon-button-square:not(:disabled),
+.icon-button-square:has(+ :popover-open) {
+  color: var(--color-text);
+}
+
+.icon-button-square:has(+ :popover-open) {
+  background: var(--color-soft);
+}
+
+.icon-button-square:focus-visible:not(:disabled) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+}
+
+.icon-button-square:active:not(:disabled) {
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-button-square {
+    transition: none;
+    animation: none;
+  }
+
+  .icon-button-square:active:not(:disabled) {
+    scale: 1;
+  }
+}

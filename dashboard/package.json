@@ -7,7 +7,7 @@
     "dev": "next dev --hostname localhost --port 5173",
     "build": "tsc --noEmit && next build",
     "lint": "oxlint",
-    "test": "node --test tests/*.test.ts && bun test tests/button.test.tsx tests/dialog.test.tsx tests/session-gate.test.tsx tests/account.test.tsx tests/theme.test.tsx tests/organization-settings.test.tsx tests/members.test.tsx",
+    "test": "node --test tests/*.test.ts && bun test tests/button.test.tsx tests/icon-button.test.tsx tests/dialog.test.tsx tests/session-gate.test.tsx tests/account.test.tsx tests/theme.test.tsx tests/organization-settings.test.tsx tests/members.test.tsx",
     "start": "next start --hostname localhost --port 5173"
   },
   "dependencies": {

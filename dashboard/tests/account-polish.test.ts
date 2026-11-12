@@ -9,6 +9,7 @@ const stylesheet = [
   '../src/components/account.css',
   '../src/components/dialog.css',
   '../src/components/button.css',
+  '../src/components/icon-button.css',
   '../src/components/sign-in.css',
 ].map(path => readFileSync(new URL(path, import.meta.url), 'utf8')).join('\n')
 
@@ -39,7 +40,7 @@ for (const dark of [false, true]) {
           <span class="theme-switch"><button data-focus-visible>Theme</button></span>
         </div>
         <div class="account-sections"><span class="theme-switch"><button data-focus-visible>Theme</button></span></div>
-        <button class="account-more" data-focus-visible>More</button>
+        <button class="icon-button-square" data-focus-visible>More</button>
         <div class="account-menu account-row-menu">
           <a class="account-menu-item" href="/account" data-focus-visible>Settings</a>
         </div>
@@ -76,7 +77,7 @@ for (const dark of [false, true]) {
         document.body.innerHTML = `
           <div class="account-sections"><span class="theme-switch"><span class="theme-thumb"></span><button data-focus-visible data-active>Theme</button></span></div>
           <div id="account-menu"><span class="theme-switch"><span class="theme-thumb"></span></span><a class="account-menu-item account-menu-press" data-active>Account</a></div>
-          <button class="account-more" data-focus-visible data-active>More</button>
+          <button class="icon-button-square" data-focus-visible data-active>More</button>
           <div class="account-menu account-row-menu" data-popover-open>
             <a class="account-menu-item" data-focus-visible data-active>Dashboard with a label that wraps onto multiple lines</a>
             <a class="account-menu-item">Settings</a>
@@ -89,11 +90,11 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-sections .theme-switch button', '.account-more', '.account-row-menu .account-menu-item']) {
+        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square', '.account-row-menu .account-menu-item']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
         }
-        for (const selector of ['.account-sections .theme-switch button', '.account-more']) {
+        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
           assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
         }
         // Menu items close the menu on click, so a press scale is never seen and only shrinks the row highlight.

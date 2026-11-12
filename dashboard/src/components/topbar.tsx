@@ -2,6 +2,7 @@
 
 import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
+import IconButton from './icon-button'
 import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
 // Figma icons with no lucide equivalent.
@@ -16,7 +17,7 @@ function QuestionMarkIcon() {
 
 function AgentSparkIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" aria-hidden>
+    <svg className="topbar-spark-icon" width="15" height="15" viewBox="0 0 15 15" fill="currentColor" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" aria-hidden>
       <path d="M7.5 1.875 8.625 4.8125 11.5625 5.9375 8.625 7.0625 7.5 10 6.375 7.0625 3.4375 5.9375 6.375 4.8125ZM11.875 9.375l.5 1.375 1.375.5-1.375.5-.5 1.375-.5-1.375L10 11.25l1.375-.5Z" />
     </svg>
   )
@@ -44,21 +45,21 @@ export default function Topbar() {
           </button>
         </>
       )}
-      <button className="topbar-icon-button" type="button" aria-label="Report issue" data-tooltip="Report issue">
+      <IconButton aria-label="Report issue" data-tooltip="Report issue">
         <Bug size={15} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
-      </button>
-      <button className="topbar-icon-button" type="button" aria-label="Support" data-tooltip="Support">
+      </IconButton>
+      <IconButton aria-label="Support" data-tooltip="Support">
         <QuestionMarkIcon />
-      </button>
-      <button className="topbar-icon-button" type="button" aria-label="Notifications" data-tooltip="Notifications">
+      </IconButton>
+      <IconButton aria-label="Notifications" data-tooltip="Notifications">
         <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
-      </button>
+      </IconButton>
       {organizationName && (
         <>
           <hr className="topbar-divider" />
-          <button className="topbar-icon-button topbar-agent" type="button" aria-label="Open agent" data-tooltip="Open agent">
+          <IconButton aria-label="Open agent" data-tooltip="Open agent">
             <AgentSparkIcon />
-          </button>
+          </IconButton>
         </>
       )}
     </header>

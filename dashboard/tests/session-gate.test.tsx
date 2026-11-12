@@ -554,7 +554,7 @@ test('shows the top bar with the mock organization and action buttons', async ()
     'Notifications',
     'Open agent',
   ])
-  const iconButtons = [...topbar!.querySelectorAll<HTMLButtonElement>('.topbar-icon-button')]
+  const iconButtons = [...topbar!.querySelectorAll<HTMLButtonElement>('.icon-button-round')]
   expect(iconButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('data-tooltip'), button.hasAttribute('title')])).toEqual([
     ['Report issue', 'Report issue', false],
     ['Support', 'Support', false],
@@ -1083,7 +1083,7 @@ test('session skeleton disappears after the session resolves', async () => {
   expect(container.querySelector('[aria-busy="true"]')).toBeNull()
 })
 
-for (const selector of ['.topbar-icon-button', '.rail-item[data-tooltip]']) {
+for (const selector of ['.icon-button-round', '.rail-item[data-tooltip]']) {
   test(`${selector} tooltip dismisses on Escape without moving focus and resets on re-entry`, async () => {
     sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
     await renderSessionGate()

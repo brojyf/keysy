@@ -339,40 +339,6 @@ th[aria-sort='descending'] .account-sort svg {
   transform: rotate(180deg);
 }
 
-.account-more {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-muted);
-  background: none;
-  vertical-align: top;
-  cursor: pointer;
-  transition: background-color 150ms ease-out, color 150ms ease-out;
-}
-
-tr:hover .account-more:not(:disabled),
-.account-more:has(+ :popover-open) {
-  color: var(--color-text);
-}
-
-.account-more:has(+ :popover-open) {
-  background: var(--color-soft);
-}
-
-.account-more:focus-visible:not(:disabled) {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
-}
-
-.account-more:active:not(:disabled) {
-  scale: 0.97;
-}
-
 .account-menu.account-row-menu {
   inset: auto;
   width: 160px;
@@ -422,15 +388,10 @@ tr:hover .account-more:not(:disabled),
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .account-more,
   .account-menu.account-row-menu,
   .account-menu.account-row-menu .account-menu-item {
     transition: none;
     animation: none;
-  }
-
-  .account-more:active:not(:disabled) {
-    scale: 1;
   }
 }
 
