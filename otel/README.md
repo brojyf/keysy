@@ -24,3 +24,13 @@ docker run --rm --env-file .env.local -p 127.0.0.1:4318:4318 keysy-otel
 
 Then set `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` in
 `api/.env.local` and `auth/.env.local`.
+
+## Alerts
+
+`alerts/` holds Grafana-managed alert rules: one warning per service when more
+than 1% of its requests return 5xx over 5 minutes. They notify the `discord`
+contact point, which holds the Discord webhook URL and lives only in Grafana.
+
+```sh
+gcx --context earnestsalad2096 resources push -p alerts
+```

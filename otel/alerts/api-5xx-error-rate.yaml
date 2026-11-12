@@ -1,0 +1,42 @@
+apiVersion: rules.alerting.grafana.app/v0alpha1
+kind: AlertRule
+metadata:
+  name: keysy-api-5xx-error-rate
+  annotations:
+    grafana.app/folder: keysy
+spec:
+  title: api 5xx error rate
+  trigger:
+    interval: 1m
+  for: 1m
+  noDataState: Ok
+  execErrState: Error
+  labels:
+    severity: warning
+  annotations:
+    summary: More than 1% of keysy-api requests returned 5xx in the last 5 minutes.
+  notificationSettings:
+    type: SimplifiedRouting
+    receiver: discord
+  expressions:
+    A:
+      datasourceUID: grafanacloud-prom
+      relativeTimeRange:
+        from: 10m
+        to: "0"
+      model:
+        expr: |
+          sum(rate(http_server_request_duration_seconds_count{job="keysy-api", http_response_status_code=~"5.."}[5m]))
+          /
+          sum(rate(http_server_request_duration_seconds_count{job="keysy-api"}[5m]))
+        instant: true
+    B:
+      datasourceUID: __expr__
+      source: true
+      model:
+        type: threshold
+        expression: A
+        conditions:
+          - evaluator:
+              type: gt
+              params: [0.01]
