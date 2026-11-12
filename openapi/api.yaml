@@ -562,7 +562,10 @@ paths:
       tags: [Members]
       operationId: updateMemberRole
       summary: Change a member between Admin and Developer
-      description: Owner or Admin. The Owner's role cannot be changed here.
+      description: |
+        The Owner can change a member between Admin and Developer.
+        An Admin can promote a Developer to Admin but cannot change an existing Admin.
+        The Owner's role cannot be changed here.
       requestBody:
         required: true
         content:
@@ -594,8 +597,8 @@ paths:
       operationId: removeMember
       summary: Remove a member
       description: |
-        Owner or Admin can remove an Admin or a Developer. The Owner cannot
-        be removed.
+        The Owner can remove an Admin or a Developer. An Admin can remove only a Developer.
+        The Owner cannot be removed.
       responses:
         '204':
           description: Member removed.
