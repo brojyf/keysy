@@ -8,8 +8,9 @@ spec:
     {{/* Plain Discord webhook message: no embed, so no link or footer. */}}
     {{ define "keysy.discord.payload" }}{{ coll.Dict "content" (tmpl.Exec "keysy.discord.content" .) | data.ToJSON }}{{ end }}
 
-    {{ define "keysy.discord.content" }}{{ with index .Alerts 0 -}}
-    ### {{ if eq $.Status "resolved" }}✅{{ else if eq .Labels.severity "critical" }}🔴{{ else }}🟡{{ end }} {{ .Labels.service }}: {{ .Annotations.summary }}{{ if eq $.Status "resolved" }} resolved{{ end }}
-    {{- if eq $.Status "firing" }}
+    {{ define "keysy.discord.content" }}{{ range $i, $alert := .Alerts }}{{ if $i }}
+    {{ end -}}
+    ### {{ if eq .Status "resolved" }}✅{{ else if eq .Labels.severity "critical" }}🔴{{ else }}🟡{{ end }} {{ .Labels.service }}: {{ .Annotations.summary }}{{ if eq .Status "resolved" }} resolved{{ end }}
+    {{- if eq .Status "firing" }}
     {{ .Annotations.description }}{{ end }}
-    {{- end }}{{ end }}
+    {{ end }}{{ end }}
