@@ -29,8 +29,7 @@ Then set `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` in
 
 `alerts/` holds Grafana-managed alert rules. Each service gets a warning when
 more than 1% of its requests return 5xx over 5 minutes, and when its p99
-latency is above 1s or its p95 latency is above 500ms for 5 minutes (local
-environment excluded). They notify the `discord`
+latency is above 1s or its p95 latency is above 500ms for 5 minutes. They notify the `discord`
 contact point, which holds the Discord webhook URL and lives only in Grafana.
 It is a webhook integration, not the Discord one, so messages carry no embed
 link or footer. Its custom payload is `{{ template "keysy.discord.payload" . }}`

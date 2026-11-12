@@ -28,7 +28,7 @@ spec:
         to: "0"
       model:
         expr: |
-          histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job="keysy-auth", deployment_environment_name!="local"}[5m])))
+          histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job="keysy-auth"}[5m])))
         instant: true
     B:
       datasourceUID: __expr__
