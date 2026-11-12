@@ -30,8 +30,9 @@ Then set `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` in
 `alerts/` holds Grafana-managed alert rules: one warning per service when more
 than 1% of its requests return 5xx over 5 minutes. They notify the `discord`
 contact point, which holds the Discord webhook URL and lives only in Grafana.
-Its title and message use the `keysy.discord.title` and `keysy.discord.message`
-templates from `alerts/discord-template.yaml`.
+It is a webhook integration, not the Discord one, so messages carry no embed
+link or footer. Its custom payload is `{{ template "keysy.discord.payload" . }}`
+from `alerts/discord-template.yaml`.
 
 ```sh
 gcx --context earnestsalad2096 resources push -p alerts
