@@ -90,11 +90,13 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 ### Scopes and policies
 
 - A Developer’s scope is the policies and permission sets (named groups of policies) assigned to them. Developers can read or change secrets only within their scope.
+- The Owner and Admins can remove a Developer’s policies or permission sets at any time.
 - A policy path is an exact folder or a prefix ending in `/*`, never a single secret.
 - Each service has exactly one policy, and each policy belongs to one service. Services retrieve only secrets their policy permits.
+- Keysy keeps only each service’s latest retrieved version and time per folder.
 - A Developer can change a service or its policy only if all its paths, before and after, are within their current scope.
-- Developers see every policy’s name and service, but not paths outside their scope. They can request such a policy with an optional reason, and the Owner or an Admin approves or declines.
-- Moving or deleting secrets updates only the policies the member can manage.
+- Developers see every policy’s name and service, but not paths outside their scope. They can request such a policy with an optional reason. The Owner and Admins are notified, and one of them approves or declines.
+- Moving or deleting secrets updates every affected policy. The change is blocked if the member cannot manage one of those policies.
 
 ### Secrets and versions
 
@@ -105,7 +107,6 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - Secrets are not versioned individually. Each change creates a new version of every affected folder; a move versions both folders.
 - Rolling back a folder creates a new version and keeps later versions. A folder that now holds subfolders cannot roll back to a version with secrets.
 - Each folder keeps at most N previous versions.
-- Keysy keeps only each service’s latest retrieved version and time per folder.
 
 ### Audit logs
 
