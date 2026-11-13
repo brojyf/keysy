@@ -256,8 +256,9 @@ test('PRD requirements and endpoint callout content are published', async () => 
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
   expect((await matches(prd, '#content-area h3')).map((heading) => heading.id)).toEqual([
-    'members-and-roles', 'scopes-and-policies', 'secrets-and-versions', 'audit-logs', 'account',
+    'members-and-roles', 'scopes-and-policies', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
   ]);
+  expect(prd).toContain('within the Developer’s scope as it stood before the change.');
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
   expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
   expect(prd).toContain('The Owner can change members between Admin and Developer and remove either role.');
