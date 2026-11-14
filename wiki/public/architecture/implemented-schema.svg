@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="560" viewBox="0 0 780 560">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#1b1c1e}
+.card{fill:#ffffff;stroke:#e3e4e6;stroke-width:1.5}
+.divider{stroke:#e3e4e6;stroke-width:1}
+.table{font-size:17px;font-weight:600}
+.column{font-size:15px}
+.type,.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;fill:#64666b}
+.ref{font-size:14px;fill:#1b1c1e}
+.icon{fill:none;stroke:#64666b;stroke-width:1.4;stroke-linecap:round}
+.diamond{fill:#64666b;stroke:#64666b;stroke-width:1.2}
+.hollow{fill:#ffffff}
+.link{fill:none;stroke:#64666b;stroke-width:1.5}
+.legend{font-size:13px;fill:#64666b}
+</style>
+<path class="link" d="M340 104.0 H384 Q390 104.0 390 110.0 V408.0 Q390 414.0 384 414.0 H340"/>
+<path class="link" d="M390 192.0 H440"/>
+<path class="link" d="M340 374.0 H440"/>
+<rect class="card" x="440" y="172" width="150" height="40" rx="8"/>
+<text class="ref" x="515.0" y="197.0" text-anchor="middle">auth.users.id</text>
+<rect class="card" x="40" y="40" width="300" height="244" rx="8"/>
+<g class="icon"><rect x="56" y="54.0" width="16" height="16" rx="2"/><path d="M56 59.0 H72 M61 59.0 V70.0"/></g>
+<text class="table" x="82" y="68.0">profiles</text>
+<line class="divider" x1="40" y1="84" x2="340" y2="84"/>
+<g class="icon"><circle cx="64" cy="101.0" r="3.5"/><path d="M61.5 103.5 L55 110.0 M57 108.0 L59 110.0"/></g>
+<rect class="diamond" x="75.5" y="99.5" width="9" height="9" rx="1.5" transform="rotate(45 80 104.0)"/>
+<text class="column" x="98" y="109.0">id</text>
+<text class="type" x="324" y="108.0" text-anchor="end">uuid</text>
+<line class="divider" x1="40" y1="124" x2="340" y2="124"/>
+<rect class="diamond" x="75.5" y="139.5" width="9" height="9" rx="1.5" transform="rotate(45 80 144.0)"/>
+<text class="column" x="98" y="149.0">display_name</text>
+<text class="type" x="324" y="148.0" text-anchor="end">varchar</text>
+<line class="divider" x1="40" y1="164" x2="340" y2="164"/>
+<rect class="diamond" x="75.5" y="179.5" width="9" height="9" rx="1.5" transform="rotate(45 80 184.0)"/>
+<text class="column" x="98" y="189.0">agent_auto_apply</text>
+<text class="type" x="324" y="188.0" text-anchor="end">bool</text>
+<line class="divider" x1="40" y1="204" x2="340" y2="204"/>
+<rect class="diamond hollow" x="75.5" y="219.5" width="9" height="9" rx="1.5" transform="rotate(45 80 224.0)"/>
+<text class="column" x="98" y="229.0">deleted_at</text>
+<text class="type" x="324" y="228.0" text-anchor="end">timestamptz</text>
+<line class="divider" x1="40" y1="244" x2="340" y2="244"/>
+<rect class="diamond" x="75.5" y="259.5" width="9" height="9" rx="1.5" transform="rotate(45 80 264.0)"/>
+<text class="column" x="98" y="269.0">email</text>
+<text class="type" x="324" y="268.0" text-anchor="end">text</text>
+<rect class="card" x="40" y="310" width="300" height="164" rx="8"/>
+<g class="icon"><rect x="56" y="324.0" width="16" height="16" rx="2"/><path d="M56 329.0 H72 M61 329.0 V340.0"/></g>
+<text class="table" x="82" y="338.0">members</text>
+<line class="divider" x1="40" y1="354" x2="340" y2="354"/>
+<g class="icon"><circle cx="64" cy="371.0" r="3.5"/><path d="M61.5 373.5 L55 380.0 M57 378.0 L59 380.0"/></g>
+<rect class="diamond" x="75.5" y="369.5" width="9" height="9" rx="1.5" transform="rotate(45 80 374.0)"/>
+<text class="column" x="98" y="379.0">org_id</text>
+<text class="type" x="324" y="378.0" text-anchor="end">uuid</text>
+<line class="divider" x1="40" y1="394" x2="340" y2="394"/>
+<g class="icon"><circle cx="64" cy="411.0" r="3.5"/><path d="M61.5 413.5 L55 420.0 M57 418.0 L59 420.0"/></g>
+<rect class="diamond" x="75.5" y="409.5" width="9" height="9" rx="1.5" transform="rotate(45 80 414.0)"/>
+<text class="column" x="98" y="419.0">user_id</text>
+<text class="type" x="324" y="418.0" text-anchor="end">uuid</text>
+<line class="divider" x1="40" y1="434" x2="340" y2="434"/>
+<rect class="diamond" x="75.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 80 454.0)"/>
+<text class="column" x="98" y="459.0">role</text>
+<text class="type" x="324" y="458.0" text-anchor="end">text</text>
+<rect class="card" x="440" y="310" width="300" height="164" rx="8"/>
+<g class="icon"><rect x="456" y="324.0" width="16" height="16" rx="2"/><path d="M456 329.0 H472 M461 329.0 V340.0"/></g>
+<text class="table" x="482" y="338.0">orgs</text>
+<line class="divider" x1="440" y1="354" x2="740" y2="354"/>
+<g class="icon"><circle cx="464" cy="371.0" r="3.5"/><path d="M461.5 373.5 L455 380.0 M457 378.0 L459 380.0"/></g>
+<rect class="diamond" x="475.5" y="369.5" width="9" height="9" rx="1.5" transform="rotate(45 480 374.0)"/>
+<text class="column" x="498" y="379.0">id</text>
+<text class="type" x="724" y="378.0" text-anchor="end">uuid</text>
+<line class="divider" x1="440" y1="394" x2="740" y2="394"/>
+<rect class="diamond" x="475.5" y="409.5" width="9" height="9" rx="1.5" transform="rotate(45 480 414.0)"/>
+<text class="column" x="498" y="419.0">name</text>
+<text class="type" x="724" y="418.0" text-anchor="end">varchar</text>
+<line class="divider" x1="440" y1="434" x2="740" y2="434"/>
+<rect class="diamond hollow" x="475.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 480 454.0)"/>
+<text class="column" x="498" y="459.0">deleted_at</text>
+<text class="type" x="724" y="458.0" text-anchor="end">timestamptz</text>
+<g class="icon"><circle cx="52" cy="517" r="3.5"/><path d="M49.5 519.5 L43 526 M45 524 L47 526"/></g>
+<text class="legend" x="62" y="525">Primary key</text>
+<rect class="diamond" x="163.5" y="515.5" width="9" height="9" rx="1.5" transform="rotate(45 168 520)"/>
+<text class="legend" x="182" y="525">Non-nullable</text>
+<rect class="diamond hollow" x="293.5" y="515.5" width="9" height="9" rx="1.5" transform="rotate(45 298 520)"/>
+<text class="legend" x="312" y="525">Nullable</text>
+</svg>

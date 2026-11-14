@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig, markdown, openapi } from 'sourcey';
 import { architectureDiagram } from './components/architecture-diagram';
+import { themedImage } from './components/themed-image';
 import { tokenDark, tokenLight, writeWikiTheme } from './design-tokens';
 
 // Lists each operation by its path, in spec order, from the `paths` block's fixed indentation.
@@ -35,7 +36,7 @@ export default defineConfig({
   codeSamples: ['curl'],
   publicDir: './public',
   prettyUrls: 'strip',
-  components: { ArchitectureDiagram: architectureDiagram },
+  components: { ArchitectureDiagram: architectureDiagram, ThemedImage: themedImage },
   theme: {
     name: 'default',
     colors: { primary: tokenLight['--color-accent']!, light: tokenDark['--color-accent']!, dark: tokenLight['--color-button']! },

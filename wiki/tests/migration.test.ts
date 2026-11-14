@@ -366,11 +366,18 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
   expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
-test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
+test('database schema Markdown exports both diagrams with descriptive alt text', async () => {
+  const markdown = await Bun.file(new URL('database-schema.md', output)).text();
+  expect(markdown).toContain('![Implemented Supabase tables](/architecture/implemented-schema.svg)');
+  expect(markdown.slice(markdown.indexOf('## ERD'))).toContain('![Entity relationship diagram](/architecture/erd.svg)');
+});
+
+test('database schema renders the implemented schema and ERD images for both themes', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
-  expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
-  for (const table of ['orgs', 'members', 'secrets', 'folders', 'folder_versions', 'folder_version_changes', 'folder_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
-    expect(html).toContain(`<code>${table}</code>`);
+  for (const image of ['implemented-schema', 'erd']) {
+    const [light, dark] = [`/architecture/${image}.svg`, `/architecture/${image}-dark.svg`];
+    expect(await matches(html, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
+    for (const path of [light, dark]) expect(await Bun.file(new URL(`.${path}`, output)).exists()).toBe(true);
   }
 });
 
