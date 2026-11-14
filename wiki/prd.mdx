@@ -9,53 +9,53 @@ Keysy is a simple, AI-assisted secret manager for local development and deployed
 
 ## Problem
 
-As secrets become shared across services, developers struggle to identify which access policies need updating and verify that permissions remain correct. Existing tools make these routine changes too complex.
+As secrets become shared across services, developers struggle to identify which services’ access needs updating and verify that permissions remain correct. Existing tools make these routine changes too complex.
 
 ## Users
 
 The Owner, Admins, and Developers are an org’s members.
 
 - **Owner:** One per org. Has every Admin ability, and is the only member who can rename or delete the org or transfer the Owner role.
-- **Admins:** Manage Developers and their scopes, and can promote Developers to Admin. Have full access to every secret, policy, and service. Cannot change or remove Admins or the Owner.
-- **Developers:** Manage secrets, services, and policies within the scope the Owner or an Admin assigns them through policies and permission sets.
+- **Admins:** Manage Developers and their scopes, and can promote Developers to Admin. Have full access to every secret and service. Cannot change or remove Admins or the Owner.
+- **Developers:** Manage secrets and services within the scope the Owner or an Admin assigns them through services and permission sets.
 - **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
-- **Manage members:** The Owner and Admins add Developers, set each Developer’s scope with policies and permission sets, and review access requests. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin and remove Developers. The Owner transfers the Owner role to another member.
-- **Request access:** Developers see every policy and request the ones they need; the Owner or an Admin approves or declines.
+- **Manage members:** The Owner and Admins add Developers, set each Developer’s scope with services and permission sets, and review access requests. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin and remove Developers. The Owner transfers the Owner role to another member.
+- **Request access:** Developers see every service and request the ones they need; the Owner or an Admin approves or declines.
 - **Manage secrets:** Members create, read, update, and delete secrets within their scope through the web app or CLI, with optional notes and expiration reminders.
 - **Manage service access:** Members create services and grant them read access to paths within their scope.
-- **Reorganize with AI:** Members use the AI agent to move secrets within their scope, identify and update affected policies, and verify permissions.
+- **Reorganize with AI:** Members use the AI agent to move secrets within their scope, identify and update affected services, and verify permissions.
 - **Track folder versions:** Every change to a secret creates a new version of its folder. Members can view a folder’s version history, see which version each service last retrieved, and roll the folder back to a previous version.
-- **Review audit logs:** Members trace changes to secrets, policies, and member access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
+- **Review audit logs:** Members trace changes to secrets, services, and member access, including the actor, timestamp, and outcome. Secret values are never recorded in audit logs.
 - **Access secrets locally:** Developers retrieve secrets within their scope for local development.
-- **Access secrets at runtime:** Services retrieve secrets permitted by their policy.
+- **Access secrets at runtime:** Services retrieve secrets within their paths.
 - **Save or update secrets from the browser:** Members use the Keysy browser extension to save newly generated API keys as new secrets or update the values of existing secrets, directly from provider websites.
 - **Use Keysy with coding agents:** A Keysy skill guides coding agents to retrieve or manage secrets through the CLI.
 
 ## Goals
 
 - **Simplify secret management:** Make secret management straightforward across the web app, CLI, browser extension, and coding agents.
-- **Reduce manual policy maintenance:** Help members reorganize secrets and update affected policies with AI assistance.
-- **Maintain least-privilege access:** Ensure Developers can access only the secrets within their scope, and services only the secrets their policy permits.
+- **Reduce manual access maintenance:** Help members reorganize secrets and update affected services with AI assistance.
+- **Maintain least-privilege access:** Ensure Developers can access only the secrets within their scope, and services only the secrets within their paths.
 
 ## Success metrics
 
 - **Setup time:** p50 and p95 time from secret creation to first authorized retrieval.
 - **Atomic updates:** 100% of concurrent read/write tests return a complete folder version, with no partial or mixed-version values.
 - **AI success rate:** Percentage of reorganizations completed with correct permissions and no manual fixes.
-- **Access correctness:** Pass rate of role, scope, and policy permission tests.
+- **Access correctness:** Pass rate of role, scope, and service permission tests.
 - **API performance:** Secret retrieval p95/p99 latency, reported with QPS and sample size, and validated under sustained load.
 
 ## Scope
 
 - **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders.
-- **Scoped access:** The Owner manages Admins and Developers. The Owner and Admins manage Developer scopes, built from policies and reusable permission sets. Developers manage secrets, services, and policies within their scope; services retrieve only secrets their policy permits.
-- **AI-assisted reorganization:** Move secrets, identify and update affected policies, and verify permissions.
+- **Scoped access:** The Owner manages Admins and Developers. The Owner and Admins manage Developer scopes, built from services and reusable permission sets. Developers manage secrets and services within their scope; services retrieve only secrets within their paths.
+- **AI-assisted reorganization:** Move secrets, identify and update affected services, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
 - **Version history:** View the last N previous versions of each folder, what changed in each, and when, plus each service’s last-retrieved version and time per folder. Roll a folder back to any of these versions. Older versions are permanently deleted.
-- **Audit logs:** Record secret, policy, and member access changes without recording secret values.
+- **Audit logs:** Record secret, service, and member access changes without recording secret values.
 
 ## Non-goals
 
@@ -70,10 +70,10 @@ The Owner, Admins, and Developers are an org’s members.
 
 1. A member creates a secret within their scope through the web app or CLI.
 2. The member specifies its storage path and value, optionally adding notes and an expiration reminder.
-3. The member adds the path to a service’s policy, or the Owner or an Admin adds that policy to a Developer’s scope.
+3. The member adds the path to a service, or the Owner or an Admin adds that service to a Developer’s scope.
 4. The authorized Developer or service retrieves the secret.
 
-Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Save a Key File as a Secret / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Request Access to a Policy / Transfer the Owner Role
+Others: Reorganize a Secret with AI / Update a Secret and View Folder Version History / Roll Back a Folder / Save or Update a Secret through the Browser Extension / Save a Key File as a Secret / Use Keysy through a Coding Agent / Review Audit Logs / Manage Members and Scopes / Request Access to a Service / Transfer the Owner Role
 
 ## Requirements
 
@@ -87,15 +87,15 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - After the Owner transfers the role, they become an Admin. If the Owner is unreachable, Keysy support transfers the role after verification, and the previous Owner becomes a Developer.
 - The Owner must transfer the role or delete the org before leaving it or deleting their account. Deleting an account removes the member from every org.
 
-### Scopes and policies
+### Scopes and services
 
-- A Developer’s scope is the policies and permission sets (named groups of policies) that the Owner or an Admin assigns them. Developers can read or change secrets only within their scope.
-- The Owner and Admins can remove a Developer’s policies or permission sets at any time.
-- A policy path is an exact folder or a prefix ending in `/*`, never a single secret.
-- Each service has exactly one policy, and each policy belongs to exactly one service. Services retrieve only secrets their policy permits.
-- A Developer can create, change, or delete a service and its policy only if all of the policy’s paths, before and after the change, are within the Developer’s scope as it stood before the change.
-- Developers see every policy’s name and service, but not paths outside their scope. They can request such a policy with an optional reason. The Owner and Admins are notified, and one of them approves, which adds the policy to the Developer’s scope, or declines.
-- Moving secrets updates every affected policy. The move is blocked if the member cannot manage one of those policies.
+- A Developer’s scope is the services and permission sets (named groups of services) that the Owner or an Admin assigns them. Developers can read or change secrets only within their scope.
+- The Owner and Admins can remove a Developer’s services or permission sets at any time.
+- A service’s paths set which folders it can read. A path is an exact folder or a prefix ending in `/*`, never a single secret. Services retrieve only secrets within their paths.
+- A Developer can create or delete a service only if all of its paths are within the Developer’s scope as it stood before the operation.
+- Only the Owner and Admins can update a service’s name, paths, or assigned members.
+- Developers see every service’s name, but not paths outside their scope. They can request such a service with an optional reason. The Owner and Admins are notified, and one of them approves, which adds the service to the Developer’s scope, or declines.
+- Moving secrets updates every affected service. The move is blocked if the member cannot manage one of those services.
 
 ### Secrets and versions
 
@@ -110,8 +110,8 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 
 ### Audit logs
 
-- Secret, policy, and member access changes create audit records without secret values. The folder version limit does not apply to audit records.
-- Developers see only records for paths within their scope, and policy records only when all the policy’s paths are within it. Records not tied to a secret path, such as member, scope, and role changes, are visible only to the Owner and Admins.
+- Secret, service, and member access changes create audit records without secret values. The folder version limit does not apply to audit records.
+- Developers see only records for paths within their scope, and service records only when all the service’s paths are within it. Records not tied to a secret path, such as member, scope, and role changes, are visible only to the Owner and Admins.
 
 ### Notifications
 

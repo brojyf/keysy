@@ -86,28 +86,12 @@
   font: var(--text-code-small--font-weight) var(--text-code-small)/var(--text-code-small--line-height) var(--font-mono);
 }
 
-.topbar-icon-button {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-full);
-  color: var(--color-muted);
-  background: var(--color-surface);
-  cursor: pointer;
-}
-
-.topbar-agent {
+.topbar-spark-icon {
   color: var(--color-accent);
 }
 
 .topbar-org:hover,
-.topbar-search:hover,
-.topbar-icon-button:hover,
-.topbar-icon-button:active {
+.topbar-search:hover {
   background: var(--color-soft);
 }
 
@@ -116,7 +100,7 @@
   outline-offset: 2px;
 }
 
-.topbar-icon-button[data-tooltip]::after,
+.topbar .icon-button-round[data-tooltip]::after,
 .rail-item[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -133,14 +117,14 @@
   transition: opacity 120ms ease, scale 120ms ease;
 }
 
-.topbar-icon-button[data-tooltip]::after {
+.topbar .icon-button-round[data-tooltip]::after {
   top: calc(100% + 8px);
   left: 50%;
   translate: -50% 0;
   transform-origin: top center;
 }
 
-.topbar-icon-button:last-child::after {
+.topbar .icon-button-round:last-child::after {
   right: -6px;
   left: auto;
   translate: none;
@@ -158,14 +142,14 @@
   transform-origin: left center;
 }
 
-:is(.topbar-icon-button, .rail-item)[data-tooltip]::before {
+:is(.topbar .icon-button-round, .rail-item)[data-tooltip]::before {
   content: '';
   position: absolute;
   visibility: hidden;
 }
 
 /* Keep the pointer over the trigger while crossing the tooltip gap. */
-.topbar-icon-button[data-tooltip]::before {
+.topbar .icon-button-round[data-tooltip]::before {
   top: 100%;
   left: 0;
   width: 100%;
@@ -180,9 +164,9 @@
 }
 
 @media (hover: hover) {
-  .topbar-icon-button[data-tooltip]:hover::before,
+  .topbar .icon-button-round[data-tooltip]:hover::before,
   .rail-item[data-tooltip]:hover::before,
-  .topbar-icon-button[data-tooltip]:hover::after,
+  .topbar .icon-button-round[data-tooltip]:hover::after,
   .rail-item[data-tooltip]:hover::after {
     visibility: visible;
     opacity: 1;
@@ -192,9 +176,9 @@
   }
 }
 
-.topbar-icon-button[data-tooltip]:focus-visible::before,
+.topbar .icon-button-round[data-tooltip]:focus-visible::before,
 .rail-item[data-tooltip]:focus-visible::before,
-.topbar-icon-button[data-tooltip]:focus-visible::after,
+.topbar .icon-button-round[data-tooltip]:focus-visible::after,
 .rail-item[data-tooltip]:focus-visible::after {
   visibility: visible;
   opacity: 1;
@@ -202,15 +186,15 @@
   transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1), scale 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:is(.topbar-icon-button, .rail-item)[data-tooltip][data-tooltip-dismissed]::before,
-:is(.topbar-icon-button, .rail-item)[data-tooltip][data-tooltip-dismissed]::after {
+:is(.topbar .icon-button-round, .rail-item)[data-tooltip][data-tooltip-dismissed]::before,
+:is(.topbar .icon-button-round, .rail-item)[data-tooltip][data-tooltip-dismissed]::after {
   visibility: hidden;
   opacity: 0;
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .topbar-icon-button[data-tooltip]::after,
+  .topbar .icon-button-round[data-tooltip]::after,
   .rail-item[data-tooltip]::after { scale: 1; }
 }
 

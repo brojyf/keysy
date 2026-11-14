@@ -9,6 +9,7 @@ import '../components/member-list.css'
 import '../components/organization-settings.css'
 import '../components/dialog.css'
 import '../components/button.css'
+import '../components/icon-button.css'
 import SessionGate from '../components/session-gate'
 import ThemeSync from '../components/theme-sync'
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css', 'src/components/button.css']
+const paths = ['src/app/globals.css', 'src/components/dashboard.css', 'src/components/account.css', 'src/components/sign-in.css', 'src/components/dialog.css', 'src/components/button.css', 'src/components/icon-button.css']
 const files = paths.map(path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'))
 const rule = (css: string, selector: string) => {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -171,17 +171,17 @@ test('custom tooltips accept the pointer and bridge the gap from their triggers'
   }
   assert.equal(value(tooltipRule('.rail-item[data-tooltip]::after'), 'pointer-events'), 'auto')
   assert.equal(value(tooltipRule('.rail-item[data-tooltip]::after'), 'visibility'), 'hidden')
-  assert.equal(value(tooltipRule('.topbar-icon-button[data-tooltip]::before'), 'top'), '100%')
-  assert.equal(value(tooltipRule('.topbar-icon-button[data-tooltip]::before'), 'height'), '8px')
+  assert.equal(value(tooltipRule('.topbar .icon-button-round[data-tooltip]::before'), 'top'), '100%')
+  assert.equal(value(tooltipRule('.topbar .icon-button-round[data-tooltip]::before'), 'height'), '8px')
   assert.equal(value(tooltipRule('.rail-item[data-tooltip]::before'), 'left'), '100%')
   assert.equal(value(tooltipRule('.rail-item[data-tooltip]::before'), 'width'), '12px')
-  for (const selector of ['.topbar-icon-button', '.rail-item']) {
+  for (const selector of ['.topbar .icon-button-round', '.rail-item']) {
     for (const pseudo of ['::before', '::after']) {
       assert.equal(value(tooltipRule(`${selector}[data-tooltip]:hover${pseudo}`), 'visibility'), 'visible')
       assert.equal(value(tooltipRule(`${selector}[data-tooltip]:focus-visible${pseudo}`), 'visibility'), 'visible')
     }
   }
-  assert.equal(value(tooltipRule(':is(.topbar-icon-button, .rail-item)[data-tooltip][data-tooltip-dismissed]::after'), 'visibility'), 'hidden')
+  assert.equal(value(tooltipRule(':is(.topbar .icon-button-round, .rail-item)[data-tooltip][data-tooltip-dismissed]::after'), 'visibility'), 'hidden')
 })
 
 
