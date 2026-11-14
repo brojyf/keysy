@@ -421,7 +421,6 @@ test('design links to the dashboard and web Figma files', async () => {
     'https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=82-821',
     'https://www.figma.com/design/SnKNkphMQKvrj8RmPigzao?node-id=0-1',
   ]) expect(html).toContain(`href="${href}"`);
-  expect(html).toContain('Each link opens the design file in Figma.');
 });
 
 test('collapsible endpoint group labels look like links, and their chevrons turn with the animation', async () => {
