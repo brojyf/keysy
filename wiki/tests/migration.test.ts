@@ -256,7 +256,7 @@ test('PRD requirements and endpoint callout content are published', async () => 
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
   expect((await matches(prd, '#content-area h3')).map((heading) => heading.id)).toEqual([
-    'members-and-roles', 'scopes-and-policies', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
+    'members-and-roles', 'scopes-and-services', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
   ]);
   expect(prd).toContain('within the Developer’s scope as it stood before the change.');
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
@@ -303,7 +303,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Account', 'GET', '/v0/me'], 10],
+    ['api', 'API', ['Account', 'GET', '/v0/me'], 9],
     ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
