@@ -365,11 +365,12 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
   expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
-test('database schema renders the implemented schema and ERD images', async () => {
+test('database schema renders the implemented schema and ERD images for both themes', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
-  for (const image of ['implemented-schema.svg', 'erd.svg']) {
-    expect(html).toContain(`src="/architecture/${image}"`);
-    expect(await Bun.file(new URL(`architecture/${image}`, output)).exists()).toBe(true);
+  for (const image of ['implemented-schema', 'erd']) {
+    const [light, dark] = [`/architecture/${image}.svg`, `/architecture/${image}-dark.svg`];
+    expect(await matches(html, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
+    for (const path of [light, dark]) expect(await Bun.file(new URL(`.${path}`, output)).exists()).toBe(true);
   }
 });
 

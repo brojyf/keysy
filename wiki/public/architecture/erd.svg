@@ -1,18 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1630" height="690" viewBox="0 0 1630 690">
 <style>
-text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#18181b}
+text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#1b1c1e}
 .title{font-size:28px;font-weight:600}
-.section{fill:#fafafa;stroke:#e4e4e7;stroke-width:1.5}
+.section{fill:#f0f1f3;stroke:#e3e4e6;stroke-width:1.5}
 .section-title{font-size:18px;font-weight:600}
-.legend{font-size:14px;fill:#52525b}
-.box{fill:#fff;stroke:#d4d4d8;stroke-width:1.5}
-.ref{fill:#fafafa;stroke:#a1a1aa;stroke-dasharray:5 4}
+.legend{font-size:14px;fill:#64666b}
+.box{fill:#ffffff;stroke:#e3e4e6;stroke-width:1.5}
+.ref{fill:#f0f1f3;stroke:#c4c5c9;stroke-dasharray:5 4}
 .name{font-size:18px}
-.ref-name{fill:#71717a}
-.line,.mark{fill:none;stroke:#71717a;stroke-width:1.5}
-.verb{font-size:14px;fill:#52525b}
+.ref-name{fill:#64666b}
+.line,.mark{fill:none;stroke:#64666b;stroke-width:1.5}
+.verb{font-size:14px;fill:#64666b}
 </style>
-<rect width="1630" height="690" fill="#fff"/>
 <line class="line" x1="40" y1="47" x2="76" y2="47"/>
 <line class="mark" x1="64.0" y1="55.0" x2="64.0" y2="39.0"/>
 <text class="legend" x="86" y="52">one</text>
@@ -88,7 +87,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 <rect class="box" x="340.0" y="564.0" width="160" height="52" rx="10"/>
 <text class="name" x="420" y="596" text-anchor="middle">Folder version</text>
 <rect class="box" x="70.0" y="564.0" width="160" height="52" rx="10"/>
-<text class="name" x="150" y="596" text-anchor="middle">Audit record</text>
+<text class="name" x="150" y="596" text-anchor="middle">Audit log</text>
 <rect class="box ref" x="860.0" y="154.0" width="160" height="52" rx="10"/>
 <text class="name ref-name" x="940" y="186" text-anchor="middle">Member</text>
 <rect class="box" x="1130.0" y="154.0" width="160" height="52" rx="10"/>

@@ -1,19 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="560" viewBox="0 0 780 560">
 <style>
-text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#18181b}
-.card{fill:#fff;stroke:#d4d4d8;stroke-width:1.5}
-.divider{stroke:#e4e4e7;stroke-width:1}
+text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#1b1c1e}
+.card{fill:#ffffff;stroke:#e3e4e6;stroke-width:1.5}
+.divider{stroke:#e3e4e6;stroke-width:1}
 .table{font-size:17px;font-weight:600}
 .column{font-size:15px}
-.type,.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;fill:#71717a}
-.ref{font-size:14px;fill:#18181b}
-.icon{fill:none;stroke:#71717a;stroke-width:1.4;stroke-linecap:round}
-.diamond{fill:#71717a;stroke:#71717a;stroke-width:1.2}
-.hollow{fill:#fff}
-.link{fill:none;stroke:#a1a1aa;stroke-width:1.5}
-.legend{font-size:13px;fill:#52525b}
+.type,.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;fill:#64666b}
+.ref{font-size:14px;fill:#1b1c1e}
+.icon{fill:none;stroke:#64666b;stroke-width:1.4;stroke-linecap:round}
+.diamond{fill:#64666b;stroke:#64666b;stroke-width:1.2}
+.hollow{fill:#ffffff}
+.link{fill:none;stroke:#64666b;stroke-width:1.5}
+.legend{font-size:13px;fill:#64666b}
 </style>
-<rect width="780" height="560" fill="#fff"/>
 <path class="link" d="M340 104.0 H384 Q390 104.0 390 110.0 V408.0 Q390 414.0 384 414.0 H340"/>
 <path class="link" d="M390 192.0 H440"/>
 <path class="link" d="M340 374.0 H440"/>
