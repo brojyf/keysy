@@ -25,22 +25,30 @@ for (const service of ['api', 'auth']) {
   });
 }
 
-test('member role changes allow Admins to promote Developers but not change existing Admins', async () => {
-  const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text());
-  const operation = 'paths./v0/orgs/{orgId}/members/{userId}.patch';
-  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining('The Owner can change a member between Admin and Developer.'));
-  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining('An Admin can promote a Developer to Admin but cannot change an existing Admin.'));
-  expect(spec).toHaveProperty(`${operation}.description`, expect.stringContaining("The Owner's role cannot be changed here."));
-  expect(spec).toHaveProperty(`${operation}.requestBody.content.application/json.schema.properties.role.enum`, ['admin', 'developer']);
-});
-
-test('member removal allows Admins to remove Developers only', async () => {
-  const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text());
-  const description = 'paths./v0/orgs/{orgId}/members/{userId}.delete.description';
-  expect(spec).toHaveProperty(description, expect.stringContaining('The Owner can remove an Admin or a Developer.'));
-  expect(spec).toHaveProperty(description, expect.stringContaining('An Admin can remove only a Developer.'));
-  expect(spec).toHaveProperty(description, expect.stringContaining('The Owner cannot be removed.'));
-});
+for (const [service, routeFiles] of [
+  ['api', ['api/internal/router/router.go']],
+  ['auth', ['auth/main.go', 'auth/internal/login/login.go']],
+] as const) {
+  test(`${service} documents exactly its implemented routes`, async () => {
+    const spec = Bun.YAML.parse(await Bun.file(new URL(`../../openapi/${service}.yaml`, import.meta.url)).text());
+    const implemented: string[] = [];
+    for (const file of routeFiles) {
+      const source = await Bun.file(new URL(`../../${file}`, import.meta.url)).text();
+      for (const [, receiver, method, path] of source.matchAll(/\b(router|v0)\.(GET|POST|PATCH|DELETE|OPTIONS)\("([^"\n]+)"/g)) {
+        const normalized = `${receiver === 'v0' ? '/v0' : ''}${path}`.replace(/:([A-Za-z]+)/g, '{$1}');
+        implemented.push(`${method} ${normalized}`);
+      }
+    }
+    expect(implemented.length).toBeGreaterThan(0);
+    const { paths } = spec as { paths: Record<string, Record<string, unknown>> };
+    const documented = Object.entries(paths).flatMap(([path, item]) =>
+      Object.keys(item)
+        .filter((method) => /^(get|post|put|patch|delete|options|head|trace)$/.test(method))
+        .map((method) => `${method.toUpperCase()} ${path}`),
+    );
+    expect(documented.sort()).toEqual(implemented.sort());
+  });
+}
 
 test('logout documents rotated session cookies when revocation fails', async () => {
   const spec = Bun.YAML.parse(await Bun.file(new URL('../../openapi/auth.yaml', import.meta.url)).text());

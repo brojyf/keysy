@@ -92,7 +92,8 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 - A Developer’s scope is the services and permission sets (named groups of services) that the Owner or an Admin assigns them. Developers can read or change secrets only within their scope.
 - The Owner and Admins can remove a Developer’s services or permission sets at any time.
 - A service’s paths set which folders it can read. A path is an exact folder or a prefix ending in `/*`, never a single secret. Services retrieve only secrets within their paths.
-- A Developer can create, change, or delete a service only if all of its paths, before and after the change, are within the Developer’s scope as it stood before the change.
+- A Developer can create or delete a service only if all of its paths are within the Developer’s scope as it stood before the operation.
+- Only the Owner and Admins can update a service’s name, paths, or assigned members.
 - Developers see every service’s name, but not paths outside their scope. They can request such a service with an optional reason. The Owner and Admins are notified, and one of them approves, which adds the service to the Developer’s scope, or declines.
 - Moving secrets updates every affected service. The move is blocked if the member cannot manage one of those services.
 
