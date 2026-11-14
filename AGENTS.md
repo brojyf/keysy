@@ -25,7 +25,7 @@
 
 - Supabase continuous deployment (CD) is configured.
 - Cloudflare Workers CD is configured for `wiki/` and `web/`.
-- Fly CD deploys the Fly app `keysy` (api, auth, dashboard, and OTel collector in one machine) after CI and the same commit's `Supabase Preview` check pass on `main`. The deployment waits up to 15 minutes for migrations and stops on failure or timeout. See `.github/workflows/fly-deploy.yml`.
+- Fly CD deploys the Fly app `keysy` (api, auth, dashboard, and OTel collector in one machine) after CI and the same commit's `Supabase Preview` check pass on `main`. A separate job waits up to 15 minutes for migrations without holding the deployment lock and blocks deployment on failure or timeout. Actual deployments run one at a time and check the tip of `main` before deploying. See `.github/workflows/fly-deploy.yml`.
 
 ## CLI tools
 
