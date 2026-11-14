@@ -102,6 +102,8 @@ jobs:
         run: python3 .github/scripts/test_discord_notification.py
       - name: Test Fly deploy checks
         run: python3 .github/scripts/test_fly_deploy.py
+      - name: Test Cloudflare deployment
+        run: python3 .github/scripts/test_cloudflare_deploy.py
       - name: Scan event commit range
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
