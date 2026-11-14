@@ -1,6 +1,6 @@
 name: Discord Merge Notification
 
-# Called before and after Fly deployment to create, then edit, one message.
+# Called before and after deployment to create, then edit, one message.
 on:
   workflow_call:
     inputs:
@@ -11,6 +11,12 @@ on:
         type: string
         default: pending
       deployed:
+        type: boolean
+        default: false
+      cloudflare_result:
+        type: string
+        default: pending
+      cloudflare_deployed:
         type: boolean
         default: false
     secrets:
@@ -46,6 +52,8 @@ jobs:
           MESSAGE_ID: ${{ inputs.message_id }}
           DEPLOY_RESULT: ${{ inputs.deploy_result }}
           DEPLOYED: ${{ inputs.deployed }}
+          CLOUDFLARE_RESULT: ${{ inputs.cloudflare_result }}
+          CLOUDFLARE_DEPLOYED: ${{ inputs.cloudflare_deployed }}
         run: |
           # First path segment of each changed file, e.g. "dashboard / wiki".
           # Falls back so an API failure does not drop the whole message.
@@ -62,17 +70,21 @@ jobs:
             --arg conclusion "$CI_CONCLUSION" \
             --arg deploy_result "$DEPLOY_RESULT" \
             --arg deployed "$DEPLOYED" \
-            '{content: ("### " + $sha + ": " + $message +
+            --arg cloudflare_result "$CLOUDFLARE_RESULT" \
+            --arg cloudflare_deployed "$CLOUDFLARE_DEPLOYED" \
+            'def status($result; $deployed):
+              if $conclusion != "success" then "⏭️ Not run (CI did not pass)"
+              elif $result == "pending" then "⏳ Pending"
+              elif $result == "failure" then "❌ Failed"
+              elif $result == "cancelled" then "🚫 Cancelled"
+              elif $result == "success" and $deployed == "true" then "✅ Succeeded"
+              else "⏭️ Skipped" end;
+            {content: ("### " + $sha + ": " + $message +
               "\nScope: " + $scope +
               "\nBy: " + $author +
               "\nCI: " + (if $conclusion == "success" then "✅ Passed" else "❌ " + $conclusion end) +
-              "\nFly deploy: " +
-              (if $conclusion != "success" then "⏭️ Not run (CI did not pass)"
-               elif $deploy_result == "pending" then "⏳ Pending"
-               elif $deploy_result == "failure" then "❌ Failed"
-               elif $deploy_result == "cancelled" then "🚫 Cancelled"
-               elif $deploy_result == "success" and $deployed == "true" then "✅ Succeeded"
-               else "⏭️ Skipped" end)),
+              "\nFly deploy: " + status($deploy_result; $deployed) +
+              "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed)),
               allowed_mentions: {parse: []}}')
 
           if [ -n "$MESSAGE_ID" ]; then

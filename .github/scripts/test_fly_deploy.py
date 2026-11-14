@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github/workflows/fly-deploy.yml"
+WORKFLOW = ROOT / ".github/workflows/deploy.yml"
 
 
 def workflow_job(name):
@@ -49,7 +49,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_the_migration_result_when_it_blocks_deployment(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy]", notification)
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare]", notification)
         self.assertIn("deploy_result: ${{ needs.migrations.result != 'success' && needs.migrations.result || needs.deploy.result }}", notification)
 
 

@@ -6,11 +6,16 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github/workflows/cloudflare-deploy.yml"
+WORKFLOW = ROOT / ".github/workflows/deploy.yml"
 
 
+def workflow_job(name):
+    return WORKFLOW.read_text().split(f"\n  {name}:\n", 1)[1].split("\n\n  ", 1)[0]
+
+
+# Both deploy jobs have a "Read the tip of main" step, so search only this job.
 def workflow_step(name):
-    return WORKFLOW.read_text().split(f"      - name: {name}\n", 1)[1].split("\n      - ", 1)[0]
+    return workflow_job("cloudflare").split(f"      - name: {name}\n", 1)[1].split("\n      - ", 1)[0]
 
 
 def step_script(name):
@@ -22,24 +27,33 @@ class DeploymentSchedulingTests(unittest.TestCase):
     def test_only_successful_main_push_ci_runs_can_deploy(self):
         workflow = WORKFLOW.read_text()
         self.assertIn("workflow_run:\n    workflows: [CI]\n    types: [completed]\n    branches: [main]", workflow)
-        self.assertIn("if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'", workflow)
+        self.assertIn("if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'", workflow_job("cloudflare"))
         self.assertNotIn("workflow_dispatch:", workflow)
         self.assertNotIn("pull_request:", workflow)
 
     def test_checks_out_the_commit_ci_tested_without_persisting_credentials(self):
-        workflow = WORKFLOW.read_text()
-        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", workflow)
-        self.assertIn("persist-credentials: false", workflow)
-        self.assertIn("permissions:\n  contents: read", workflow)
+        job = workflow_job("cloudflare")
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", job)
+        self.assertIn("persist-credentials: false", job)
+        self.assertIn("permissions:\n  contents: read", WORKFLOW.read_text())
 
     def test_deployments_are_serial_and_do_not_cancel_a_running_publish(self):
-        self.assertIn("concurrency:\n      group: cloudflare-deploy\n      cancel-in-progress: false", WORKFLOW.read_text())
+        self.assertIn("concurrency:\n      group: cloudflare-deploy\n      cancel-in-progress: false", workflow_job("cloudflare"))
 
     def test_checks_main_after_building_and_before_publishing(self):
-        workflow = WORKFLOW.read_text()
-        self.assertLess(workflow.index("- name: Build sites"), workflow.index("- name: Read the tip of main"))
-        self.assertLess(workflow.index("- name: Read the tip of main"), workflow.index("- name: Deploy sites"))
-        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Deploy sites"))
+        job = workflow_job("cloudflare")
+        self.assertLess(job.index("- name: Build sites"), job.index("- name: Read the tip of main"))
+        self.assertLess(job.index("- name: Read the tip of main"), job.index("- name: Deploy sites"))
+        self.assertLess(job.index("- name: Deploy sites"), job.index("- name: Check the sites"))
+        for step in ("Deploy sites", "Check the sites"):
+            self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step(step))
+
+    def test_notification_reports_the_cloudflare_result(self):
+        self.assertIn("deployed: ${{ steps.sites.outcome == 'success' }}", workflow_job("cloudflare"))
+        notification = workflow_job("update-notification")
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare]", notification)
+        self.assertIn("cloudflare_result: ${{ needs.cloudflare.result }}", notification)
+        self.assertIn("cloudflare_deployed: ${{ needs.cloudflare.outputs.deployed == 'true' }}", notification)
 
     def test_credentials_are_only_exposed_to_the_deploy_step(self):
         deploy = workflow_step("Deploy sites")
@@ -47,6 +61,9 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertIn("CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}", deploy)
         self.assertNotIn("CLOUDFLARE_API_TOKEN", workflow_step("Build sites"))
         self.assertNotIn("CLOUDFLARE_API_TOKEN", workflow_step("Read the tip of main"))
+        self.assertNotIn("CLOUDFLARE_API_TOKEN", workflow_step("Check the sites"))
+        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_CLIENT_SECRET"):
+            self.assertIn(f"{name}: ${{{{ secrets.{name} }}}}", workflow_step("Check the sites"))
 
     def test_tests_are_run_by_ci(self):
         self.assertIn("run: python3 .github/scripts/test_cloudflare_deploy.py", (ROOT / ".github/workflows/ci.yml").read_text())
@@ -72,6 +89,8 @@ class DeploymentScriptTests(unittest.TestCase):
             "GH_TOKEN": "test-github-token",
             "CLOUDFLARE_API_TOKEN": "test-cloudflare-token",
             "CLOUDFLARE_ACCOUNT_ID": "test-account",
+            "CF_ACCESS_CLIENT_ID": "test-client-id",
+            "CF_ACCESS_CLIENT_SECRET": "test-client-secret",
         }
 
     def tool(self, name, script):
@@ -114,13 +133,13 @@ class DeploymentScriptTests(unittest.TestCase):
         self.assertNotEqual(self.run_step("Read the tip of main").returncode, 0)
         self.assertFalse(self.output.exists())
 
-    def test_deploys_both_sites_with_the_same_pinned_wrangler(self):
+    def test_deploys_both_sites_with_the_latest_wrangler(self):
         self.tool("bunx", 'test "$CLOUDFLARE_API_TOKEN" = "test-cloudflare-token"\ntest "$CLOUDFLARE_ACCOUNT_ID" = "test-account"\nprintf "%s\\n" "$*" >> "$CALL_LOG"\n')
         result = self.run_step("Deploy sites")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.log.read_text().splitlines(), [
-            "wrangler@4.162.0 deploy --cwd web",
-            "wrangler@4.162.0 deploy --cwd wiki",
+            "wrangler@latest deploy --cwd web",
+            "wrangler@latest deploy --cwd wiki",
         ])
 
     def test_first_publish_failure_stops_the_second_publish(self):
@@ -134,6 +153,32 @@ class DeploymentScriptTests(unittest.TestCase):
             with self.subTest(name=name):
                 result = self.run_step("Deploy sites", **{name: ""})
                 self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.log.exists())
+
+    def test_checks_both_sites_through_access_without_following_redirects(self):
+        self.tool("curl", 'printf "%s\\n" "$*" >> "$CALL_LOG"\n')
+        result = self.run_step("Check the sites")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.log.read_text().splitlines()
+        self.assertEqual([call.split()[-1] for call in calls], ["https://keysy.net/", "https://wiki.keysy.net/"])
+        for call in calls:
+            self.assertIn("--fail", call.split())
+            self.assertIn("--max-redirs 0", call)
+            self.assertIn("CF-Access-Client-Id: test-client-id", call)
+            self.assertIn("CF-Access-Client-Secret: test-client-secret", call)
+
+    def test_site_check_failure_fails_the_job(self):
+        self.tool("curl", 'printf "%s\\n" "$*" >> "$CALL_LOG"\nexit 47\n')
+        self.assertNotEqual(self.run_step("Check the sites").returncode, 0)
+        self.assertEqual(len(self.log.read_text().splitlines()), 1)
+
+    def test_missing_access_credentials_fail_before_requests(self):
+        self.tool("curl", 'printf "unexpected\\n" >> "$CALL_LOG"\n')
+        for name in ("CF_ACCESS_CLIENT_ID", "CF_ACCESS_CLIENT_SECRET"):
+            with self.subTest(name=name):
+                result = self.run_step("Check the sites", **{name: ""})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(name, result.stderr)
                 self.assertFalse(self.log.exists())
 
 
