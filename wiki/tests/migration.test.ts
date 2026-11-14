@@ -255,15 +255,23 @@ test('the published client includes the patched drawer lifecycle and appearance 
 test('PRD requirements and endpoint callout content are published', async () => {
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
+  expect((await matches(prd, '#content-area h3')).map((heading) => heading.id)).toEqual([
+    'members-and-roles', 'scopes-and-policies', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
+  ]);
+  expect(prd).toContain('within the Developer’s scope as it stood before the change.');
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
   expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
+  expect(prd).toContain('The Owner can change members between Admin and Developer and remove either role.');
+  expect(prd).toContain('Admins can promote Developers to Admin, remove Developers, and change their scopes.');
+  expect(prd).toContain('Admins cannot change or remove Admins or the Owner.');
+  expect(prd).not.toContain('The Owner and Admins can add or remove Admins and Developers');
   expect(prd).toContain('Every member can view the member list, which shows each member’s name, email, and role');
   expect(prd).toContain('Developers cannot see other members’ scopes and cannot change members.');
   expect(prd).not.toContain('Super Admin');
   expect(prd).toContain('Secret values are never recorded in audit logs.');
   expect(prd).toContain('100% of concurrent read/write tests return a complete');
   expect(prd).not.toContain('Product requirements have not been documented yet.');
-  expect(prd).toContain('Notion is the source of truth for this PRD.');
+  expect(prd).not.toContain('Notion is the source of truth');
   expect(prd).toContain('Secrets are not versioned individually.');
   expect(prd).toContain('Rolling back a folder creates a new version');
   expect(prd).toContain('A folder holds either secrets or subfolders, never both.');
