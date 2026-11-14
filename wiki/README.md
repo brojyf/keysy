@@ -80,7 +80,8 @@ and wraps node descriptions beneath their labels.
 
 ## Publishing
 
-Deployments are configured in the Cloudflare dashboard. Cloudflare Workers serves
+GitHub Actions deploys the wiki after CI passes on `main`
+(see `.github/workflows/deploy.yml`). Cloudflare Workers serves
 `dist/` as static assets; `wrangler.jsonc` binds the `wiki.keysy.net` custom domain,
 serves extensionless HTML paths and returns `404.html` with HTTP 404. `siteUrl` is
 set to `https://wiki.keysy.net` for canonical links and the sitemap.

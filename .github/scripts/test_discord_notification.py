@@ -32,6 +32,8 @@ class DiscordNotificationTests(unittest.TestCase):
             "MESSAGE_ID": "",
             "DEPLOY_RESULT": "pending",
             "DEPLOYED": "false",
+            "CLOUDFLARE_RESULT": "pending",
+            "CLOUDFLARE_DEPLOYED": "false",
             "GITHUB_OUTPUT": str(self.path / "outputs"),
             "REQUEST_FILE": str(self.path / "request.json"),
         }
@@ -70,7 +72,7 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
         self.assertEqual(request["method"], "POST")
         self.assertEqual(request["url"], self.environment["WEBHOOK_URL"] + "?wait=true")
         self.assertEqual((self.path / "outputs").read_text(), "message_id=987654321\n")
-        self.assertIn("Fly deploy: ⏳ Pending", request["payload"]["content"])
+        self.assertIn("Fly deploy: ⏳ Pending\nCloudflare deploy: ⏳ Pending", request["payload"]["content"])
 
     def test_commit_details_and_mentions_are_preserved_safely(self):
         payload = self.notify()["payload"]
@@ -86,6 +88,7 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
                 content = self.notify(CI_CONCLUSION=conclusion)["payload"]["content"]
                 self.assertIn("CI: ❌ " + conclusion, content)
                 self.assertIn("Fly deploy: ⏭️ Not run (CI did not pass)", content)
+                self.assertIn("Cloudflare deploy: ⏭️ Not run (CI did not pass)", content)
 
     def test_update_edits_same_message_for_each_deploy_result(self):
         for result, deployed, status in [
@@ -105,6 +108,20 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
                 )
                 self.assertIn("Fly deploy: " + status, request["payload"]["content"])
                 self.assertEqual(request["payload"]["allowed_mentions"], {"parse": []})
+
+    def test_update_reports_each_cloudflare_result(self):
+        for result, deployed, status in [
+            ("success", "true", "✅ Succeeded"),
+            ("failure", "false", "❌ Failed"),
+            ("cancelled", "false", "🚫 Cancelled"),
+            ("success", "false", "⏭️ Skipped"),
+        ]:
+            with self.subTest(result=result, deployed=deployed):
+                content = self.notify(
+                    MESSAGE_ID="987654321", DEPLOY_RESULT="success", DEPLOYED="true",
+                    CLOUDFLARE_RESULT=result, CLOUDFLARE_DEPLOYED=deployed,
+                )["payload"]["content"]
+                self.assertIn("Fly deploy: ✅ Succeeded\nCloudflare deploy: " + status, content)
 
     def test_scope_lookup_failure_keeps_notification(self):
         self.executable("gh", "#!/bin/sh\nexit 1\n")
