@@ -256,9 +256,10 @@ test('PRD requirements and endpoint callout content are published', async () => 
   const prd = await Bun.file(new URL('prd.html', output)).text();
   expect(await matches(prd, '#content-area h2')).toHaveLength(10);
   expect((await matches(prd, '#content-area h3')).map((heading) => heading.id)).toEqual([
-    'members-and-roles', 'scopes-and-policies', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
+    'members-and-roles', 'scopes-and-services', 'secrets-and-versions', 'audit-logs', 'notifications', 'account',
   ]);
-  expect(prd).toContain('within the Developer’s scope as it stood before the change.');
+  expect(prd).toContain('within the Developer’s scope as it stood before the operation.');
+  expect(prd).toContain('Only the Owner and Admins can update a service’s name, paths, or assigned members.');
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
   expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
   expect(prd).toContain('The Owner can change members between Admin and Developer and remove either role.');
@@ -287,7 +288,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(api).toContain('This is the v0 draft, not a stable release.');
   expect(api).toContain("The implemented application API provides the signed-in user's profile.");
   expect(api).not.toContain('Roles are per org');
-  for (const operation of ['Create a secret', 'Retrieve current values under a path prefix', 'Propose an AI reorganization', 'List audit logs']) {
+  for (const operation of ['Create an org', 'Rename an org', "List an org's members"]) {
     expect(api).toContain(operation);
   }
   const auth = await Bun.file(new URL('auth.html', output)).text();
@@ -303,7 +304,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Account', 'GET', '/v0/me'], 10],
+    ['api', 'API', ['Account', 'GET', '/v0/me'], 4],
     ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
@@ -332,7 +333,7 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
 test('operation page headings show the endpoint path', async () => {
   for (const [route, path] of [
     ['api/operations/operation-v0-orgs-post', '/v0/orgs'],
-    ['api/operations/operation-v0-orgs-orgid-settings-patch', '/v0/orgs/{orgId}/settings'],
+    ['api/operations/operation-v0-orgs-orgid-patch', '/v0/orgs/{orgId}'],
     ['auth/operations/operation-v0-auth-google-get', '/v0/auth/google'],
   ]) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
@@ -342,7 +343,7 @@ test('operation page headings show the endpoint path', async () => {
 });
 
 test('response examples keep separate cards and one moving underline per status tab', async () => {
-  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-settings-patch.html', output)).text();
+  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-patch.html', output)).text();
   expect(await matches(html, '#responses details.schema-expandable')).not.toHaveLength(0);
   const tabs = await matches(html, '.response-tab');
   expect(tabs.length).toBeGreaterThan(1);
@@ -351,7 +352,7 @@ test('response examples keep separate cards and one moving underline per status 
 });
 
 test('single-column operation pages read fields and responses before terminal examples', async () => {
-  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-settings-patch.html', output)).text();
+  const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-patch.html', output)).text();
   const children = (await matches(html, '[data-sourcey-operation] > .operation-layout > *')).map(({ class: name }) => name);
   expect(children).toContain('operation-details');
   expect(children).toContain('sourcey-operation-examples');
@@ -373,14 +374,6 @@ test('database schema renders the Supabase ERD and the Aiven audit table', async
   }
 });
 
-test('versions belong to folders, addressed by path, not to individual secrets', async () => {
-  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
-  for (const path of ['/v0/orgs/{orgId}/folder-versions', '/v0/orgs/{orgId}/folder-rollbacks', '/v0/orgs/{orgId}/folder-retrievals']) {
-    expect(yaml).toContain(`\n  ${path}:\n`);
-  }
-  expect(yaml).not.toMatch(/secrets\/\{secretId\}\/(versions|retrievals)|currentVersion|SecretVersion/);
-});
-
 test('every member lists the org members by name, email, and role only', async () => {
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   const start = yaml.indexOf('operationId: listMembers\n');
@@ -393,25 +386,6 @@ test('every member lists the org members by name, email, and role only', async (
   expect(member).toContain('required: [userId, name, email, role]');
   expect(member).toContain('enum: [owner, admin, developer]');
   expect(member).not.toMatch(/avatar|access|createdAt|super_admin/i);
-});
-
-test('every member operation uses the Owner, Admin, and Developer roles', async () => {
-  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
-  const start = yaml.indexOf('  /v0/orgs/{orgId}/members:\n');
-  const members = yaml.slice(start, yaml.indexOf('\n  /v0/orgs/{orgId}/secrets:', start));
-  expect(members).toContain('/v0/orgs/{orgId}/members/{userId}:');
-  expect(members).toContain('enum: [admin, developer]');
-  expect(members).not.toMatch(/Super Admin|`user`|\[admin, user\]|memberId/);
-});
-
-test('a folder that would hold both secrets and subfolders is a conflict', async () => {
-  const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
-  for (const operationId of ['createSecret', 'updateSecret', 'rollBackFolder', 'applyReorganization']) {
-    const start = yaml.indexOf(`operationId: ${operationId}\n`);
-    const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
-    expect(operation).toContain('both secrets and subfolders');
-    expect(operation).toContain("'409':");
-  }
 });
 
 test('design links to the dashboard and web Figma files', async () => {
