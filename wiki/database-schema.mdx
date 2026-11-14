@@ -65,47 +65,7 @@ The API role cannot read schema `auth`. It calls these `SECURITY DEFINER` functi
 
 ## Planned schema (preview)
 
-This section is a plan. It is not implemented. Its tables, rules, and the Aiven audit database can change.
-
-### Supabase PostgreSQL
-
-`auth.users` belongs to Supabase Auth, and `vault.secrets` belongs to Supabase Vault.
-All other tables live in the `public` schema.
-
-#### Organizations and memberships
-
-`orgs` contains `id`, `name`, and `deleted_at`:
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| `id` | `uuid` | Primary key. Defaults to `gen_random_uuid()`. |
-| `name` | `varchar(32)` | Required. At most 32 characters, not bytes. |
-| `deleted_at` | `timestamptz` | Nullable. Null means active. |
-
-Names must contain at least one non-whitespace character. Different orgs can use the same name.
-An owner can rename an org through `PATCH /v0/orgs/{orgId}`.
-An owner can soft-delete an org through `DELETE /v0/orgs/{orgId}`. The API sets `deleted_at`,
-retains memberships and user accounts, and excludes the org from `GET /v0/orgs`.
-There are no org settings columns. Complete resource cleanup is tracked in
-[issue #120](https://github.com/brojyf/keysy/issues/120).
-
-`members` contains only `org_id`, `user_id`, and `role`:
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| `org_id` | `uuid` | Required. References `orgs.id`. |
-| `user_id` | `uuid` | Required. References `auth.users.id`. |
-| `role` | `text` | Required. Accepts only `owner`, `admin`, or `developer`. There is no default role. |
-
-The primary key is `(org_id, user_id)`. A user can join multiple orgs, but only once per org.
-A user's role can differ between orgs. There is no standalone member ID, email, or timestamp.
-Members must reference existing Auth users; pending email invitations are not part of this schema.
-The migration does not define role permissions. A partial unique index allows at most one owner per org.
-Physically deleting an org cascades to its memberships and preserves Auth users, profiles, and memberships in other orgs.
-The Auth user foreign key does not cascade deletes. Remove the user's memberships before deleting the Auth user.
-Both tables enable row level security (RLS), with no policies for direct client access.
-
-#### Domain model
+### Domain model
 
 The diagram uses the agreed `orgs` and `members` columns.
 All other domain tables in this diagram are proposals, not implemented tables.
