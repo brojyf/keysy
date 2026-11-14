@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import IconButton from '../../../components/icon-button'
 import { placeRowMenu } from '../../../lib/row-menu'
 import Button from '../../../components/button'
 import CreateOrganizationDialog from '../../../components/create-organization-dialog'
@@ -54,9 +55,9 @@ export default function OrganizationsPage() {
                 <td>{role[0].toUpperCase() + role.slice(1)}</td>
                 <td>{memberCount}</td>
                 <td className="account-table-actions">
-                  <button className="account-more" type="button" popoverTarget={`organization-menu-${id}`} aria-label={`More actions for ${name}`}>
+                  <IconButton shape="square" popoverTarget={`organization-menu-${id}`} aria-label={`More actions for ${name}`}>
                     <MoreIcon />
-                  </button>
+                  </IconButton>
                   <div id={`organization-menu-${id}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
                     <Link className="account-menu-item" href={organizationPath(id, '/secrets')}>Dashboard</Link>
                     <Link className="account-menu-item" href={organizationPath(id, '/settings')}>Settings</Link>

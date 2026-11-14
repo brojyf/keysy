@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import IconButton from '../../../components/icon-button'
 import { placeRowMenu } from '../../../lib/row-menu'
 import { useCurrentUser } from '../../../components/current-user'
 import { SessionsSkeleton } from '../../../components/loading-skeleton'
@@ -56,9 +57,9 @@ export default function SessionsPage() {
                 <td className="account-table-actions">
                   {session.current ? <span className="account-session-status">This session</span> : (
                     <>
-                      <button className="account-more" type="button" popoverTarget={`session-menu-${session.id}`} aria-label={`More actions for ${session.device}`}>
+                      <IconButton shape="square" popoverTarget={`session-menu-${session.id}`} aria-label={`More actions for ${session.device}`}>
                         <MoreIcon />
-                      </button>
+                      </IconButton>
                       <div id={`session-menu-${session.id}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
                         <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => requestRevoke(session)}>Revoke</button>
                       </div>
