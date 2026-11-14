@@ -65,9 +65,14 @@ The API role cannot read schema `auth`. It calls these `SECURITY DEFINER` functi
 
 ## Planned schema (preview)
 
-### Domain model
+### Supabase PostgreSQL
 
-The diagram uses the agreed `orgs` and `members` columns.
+`auth.users` belongs to Supabase Auth, and `vault.secrets` belongs to Supabase Vault.
+All other tables live in the `public` schema.
+
+#### Domain model
+
+The diagram uses the implemented `orgs` and `members` columns.
 All other domain tables in this diagram are proposals, not implemented tables.
 The proposed policy assignments and reorganization authors still need their membership references
 aligned with the composite primary key before implementation.

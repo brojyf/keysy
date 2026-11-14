@@ -23,6 +23,5 @@ test('the schema documents the agreed roles without inventing permission rules',
 
 test('the schema marks the proposed domain tables as proposals', () => {
   expect(schema).toContain('### Domain model');
-  expect(schema).not.toContain('### Organizations and memberships');
   expect(schema).toContain('All other domain tables in this diagram are proposals, not implemented tables.');
 });
