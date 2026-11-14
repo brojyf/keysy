@@ -12,7 +12,7 @@ export const themedImage = defineComponent<ThemedImageProps, ThemedImageProps>({
     }
     return { src, darkSrc, alt };
   },
-  resolve: ({ props }) => ({ content: [], data: props }),
+  resolve: ({ props }) => ({ content: [{ kind: 'markdown', value: `![${props.alt}](${props.src})` }], data: props }),
   renderHtml: ({ data }) => {
     const { src, darkSrc, alt } = data!;
     const themes = `data-light="${escapeAttribute(src)}" data-dark="${escapeAttribute(darkSrc)}"`;

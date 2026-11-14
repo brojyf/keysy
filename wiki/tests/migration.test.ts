@@ -365,6 +365,12 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
   expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
+test('database schema Markdown exports both diagrams with descriptive alt text', async () => {
+  const markdown = await Bun.file(new URL('database-schema.md', output)).text();
+  expect(markdown).toContain('![Implemented Supabase tables](/architecture/implemented-schema.svg)');
+  expect(markdown.slice(markdown.indexOf('## ERD'))).toContain('![Entity relationship diagram](/architecture/erd.svg)');
+});
+
 test('database schema renders the implemented schema and ERD images for both themes', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
   for (const image of ['implemented-schema', 'erd']) {
