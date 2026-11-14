@@ -17,3 +17,12 @@ go run . --help
 This prints the CLI's help output.
 
 See [API endpoints](/cli/endpoints) for the CLI's HTTP interface status.
+
+## Authentication
+
+The CLI does not yet implement `keysy login`. As of `49c7c07`, the API
+specification documents the web app's encrypted session cookie and no longer
+defines the draft Bearer authentication scheme.
+
+The CLI sign-in flow, the credential it receives, and the API endpoint used
+to verify a successful sign-in are still to be defined.
