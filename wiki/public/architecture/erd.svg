@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1630" height="690" viewBox="0 0 1630 690">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#18181b}
+.title{font-size:28px;font-weight:600}
+.section{fill:#fafafa;stroke:#e4e4e7;stroke-width:1.5}
+.section-title{font-size:18px;font-weight:600}
+.legend{font-size:14px;fill:#52525b}
+.box{fill:#fff;stroke:#d4d4d8;stroke-width:1.5}
+.ref{fill:#fafafa;stroke:#a1a1aa;stroke-dasharray:5 4}
+.name{font-size:18px}
+.ref-name{fill:#71717a}
+.line,.mark{fill:none;stroke:#71717a;stroke-width:1.5}
+.verb{font-size:14px;fill:#52525b}
+</style>
+<rect width="1630" height="690" fill="#fff"/>
+<line class="line" x1="40" y1="47" x2="76" y2="47"/>
+<line class="mark" x1="64.0" y1="55.0" x2="64.0" y2="39.0"/>
+<text class="legend" x="86" y="52">one</text>
+<line class="line" x1="160" y1="47" x2="196" y2="47"/>
+<line class="mark" x1="180.0" y1="47.0" x2="196.0" y2="56.0"/><line class="mark" x1="180.0" y1="47.0" x2="196" y2="47"/><line class="mark" x1="180.0" y1="47.0" x2="196.0" y2="38.0"/>
+<text class="legend" x="206" y="52">many</text>
+<rect class="box ref" x="280" y="35" width="36" height="24" rx="6"/>
+<text class="legend" x="326" y="52">defined in another section</text>
+<rect class="section" x="40" y="90" width="760" height="270" rx="14"/>
+<text class="section-title" x="66" y="126">People and organizations</text>
+<rect class="section" x="40" y="390" width="760" height="260" rx="14"/>
+<text class="section-title" x="66" y="426">Secrets and history</text>
+<rect class="section" x="830" y="90" width="760" height="560" rx="14"/>
+<text class="section-title" x="856" y="126">Access</text>
+<polyline class="line" points="230,180 340,180"/>
+<line class="mark" x1="242.0" y1="172.0" x2="242.0" y2="188.0"/>
+<line class="mark" x1="324.0" y1="180.0" x2="340.0" y2="189.0"/><line class="mark" x1="324.0" y1="180.0" x2="340" y2="180"/><line class="mark" x1="324.0" y1="180.0" x2="340.0" y2="171.0"/>
+<text class="verb" x="285.0" y="168" text-anchor="middle">has</text>
+<polyline class="line" points="500,180 610,180"/>
+<line class="mark" x1="516.0" y1="180.0" x2="500.0" y2="171.0"/><line class="mark" x1="516.0" y1="180.0" x2="500" y2="180"/><line class="mark" x1="516.0" y1="180.0" x2="500.0" y2="189.0"/>
+<line class="mark" x1="598.0" y1="188.0" x2="598.0" y2="172.0"/>
+<text class="verb" x="555.0" y="168" text-anchor="middle">belongs to</text>
+<polyline class="line" points="150,206 150,274"/>
+<line class="mark" x1="158.0" y1="218.0" x2="142.0" y2="218.0"/>
+<line class="mark" x1="150.0" y1="258.0" x2="141.0" y2="274.0"/><line class="mark" x1="150.0" y1="258.0" x2="150" y2="274"/><line class="mark" x1="150.0" y1="258.0" x2="159.0" y2="274.0"/>
+<text class="verb" x="140" y="245.0" text-anchor="end">has</text>
+<polyline class="line" points="230,480 340,480"/>
+<line class="mark" x1="242.0" y1="472.0" x2="242.0" y2="488.0"/>
+<line class="mark" x1="324.0" y1="480.0" x2="340.0" y2="489.0"/><line class="mark" x1="324.0" y1="480.0" x2="340" y2="480"/><line class="mark" x1="324.0" y1="480.0" x2="340.0" y2="471.0"/>
+<text class="verb" x="285.0" y="468" text-anchor="middle">has</text>
+<polyline class="line" points="500,480 610,480"/>
+<line class="mark" x1="512.0" y1="472.0" x2="512.0" y2="488.0"/>
+<line class="mark" x1="594.0" y1="480.0" x2="610.0" y2="489.0"/><line class="mark" x1="594.0" y1="480.0" x2="610" y2="480"/><line class="mark" x1="594.0" y1="480.0" x2="610.0" y2="471.0"/>
+<text class="verb" x="555.0" y="468" text-anchor="middle">contains</text>
+<polyline class="line" points="420,506 420,564"/>
+<line class="mark" x1="428.0" y1="518.0" x2="412.0" y2="518.0"/>
+<line class="mark" x1="420.0" y1="548.0" x2="411.0" y2="564.0"/><line class="mark" x1="420.0" y1="548.0" x2="420" y2="564"/><line class="mark" x1="420.0" y1="548.0" x2="429.0" y2="564.0"/>
+<text class="verb" x="410" y="540.0" text-anchor="end">has</text>
+<polyline class="line" points="150,506 150,564"/>
+<line class="mark" x1="158.0" y1="518.0" x2="142.0" y2="518.0"/>
+<line class="mark" x1="150.0" y1="548.0" x2="141.0" y2="564.0"/><line class="mark" x1="150.0" y1="548.0" x2="150" y2="564"/><line class="mark" x1="150.0" y1="548.0" x2="159.0" y2="564.0"/>
+<text class="verb" x="140" y="540.0" text-anchor="end">records</text>
+<polyline class="line" points="1020,180 1130,180"/>
+<line class="mark" x1="1036.0" y1="180.0" x2="1020.0" y2="171.0"/><line class="mark" x1="1036.0" y1="180.0" x2="1020" y2="180"/><line class="mark" x1="1036.0" y1="180.0" x2="1020.0" y2="189.0"/>
+<line class="mark" x1="1114.0" y1="180.0" x2="1130.0" y2="189.0"/><line class="mark" x1="1114.0" y1="180.0" x2="1130" y2="180"/><line class="mark" x1="1114.0" y1="180.0" x2="1130.0" y2="171.0"/>
+<text class="verb" x="1075.0" y="168" text-anchor="middle">assigned</text>
+<polyline class="line" points="1290,180 1400,180"/>
+<line class="mark" x1="1306.0" y1="180.0" x2="1290.0" y2="171.0"/><line class="mark" x1="1306.0" y1="180.0" x2="1290" y2="180"/><line class="mark" x1="1306.0" y1="180.0" x2="1290.0" y2="189.0"/>
+<line class="mark" x1="1388.0" y1="188.0" x2="1388.0" y2="172.0"/>
+<text class="verb" x="1345.0" y="168" text-anchor="middle">belongs to</text>
+<polyline class="line" points="1210,206 1210,359"/>
+<line class="mark" x1="1210.0" y1="222.0" x2="1219.0" y2="206.0"/><line class="mark" x1="1210.0" y1="222.0" x2="1210" y2="206"/><line class="mark" x1="1210.0" y1="222.0" x2="1201.0" y2="206.0"/>
+<line class="mark" x1="1210.0" y1="343.0" x2="1201.0" y2="359.0"/><line class="mark" x1="1210.0" y1="343.0" x2="1210" y2="359"/><line class="mark" x1="1210.0" y1="343.0" x2="1219.0" y2="359.0"/>
+<text class="verb" x="1200" y="287.5" text-anchor="end">covers</text>
+<polyline class="line" points="1210,411 1210,564"/>
+<line class="mark" x1="1218.0" y1="423.0" x2="1202.0" y2="423.0"/>
+<line class="mark" x1="1210.0" y1="548.0" x2="1201.0" y2="564.0"/><line class="mark" x1="1210.0" y1="548.0" x2="1210" y2="564"/><line class="mark" x1="1210.0" y1="548.0" x2="1219.0" y2="564.0"/>
+<text class="verb" x="1200" y="492.5" text-anchor="end">contains</text>
+<rect class="box" x="70.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name" x="150" y="186" text-anchor="middle">User</text>
+<rect class="box" x="340.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name" x="420" y="186" text-anchor="middle">Member</text>
+<rect class="box" x="610.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name" x="690" y="186" text-anchor="middle">Organization</text>
+<rect class="box" x="70.0" y="274.0" width="160" height="52" rx="10"/>
+<text class="name" x="150" y="306" text-anchor="middle">Session</text>
+<rect class="box ref" x="70.0" y="454.0" width="160" height="52" rx="10"/>
+<text class="name ref-name" x="150" y="486" text-anchor="middle">Organization</text>
+<rect class="box" x="340.0" y="454.0" width="160" height="52" rx="10"/>
+<text class="name" x="420" y="486" text-anchor="middle">Folder</text>
+<rect class="box" x="610.0" y="454.0" width="160" height="52" rx="10"/>
+<text class="name" x="690" y="486" text-anchor="middle">Secret</text>
+<rect class="box" x="340.0" y="564.0" width="160" height="52" rx="10"/>
+<text class="name" x="420" y="596" text-anchor="middle">Folder version</text>
+<rect class="box" x="70.0" y="564.0" width="160" height="52" rx="10"/>
+<text class="name" x="150" y="596" text-anchor="middle">Audit record</text>
+<rect class="box ref" x="860.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name ref-name" x="940" y="186" text-anchor="middle">Member</text>
+<rect class="box" x="1130.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name" x="1210" y="186" text-anchor="middle">Service</text>
+<rect class="box ref" x="1400.0" y="154.0" width="160" height="52" rx="10"/>
+<text class="name ref-name" x="1480" y="186" text-anchor="middle">Organization</text>
+<rect class="box ref" x="1130.0" y="359.0" width="160" height="52" rx="10"/>
+<text class="name ref-name" x="1210" y="391" text-anchor="middle">Folder</text>
+<rect class="box ref" x="1130.0" y="564.0" width="160" height="52" rx="10"/>
+<text class="name ref-name" x="1210" y="596" text-anchor="middle">Secret</text>
+</svg>

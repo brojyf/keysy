@@ -365,11 +365,11 @@ test('wide operation pages place the endpoint bar beside the examples', () => {
   expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
-test('database schema renders the Supabase ERD and the Aiven audit table', async () => {
+test('database schema renders the implemented schema and ERD images', async () => {
   const html = await Bun.file(new URL('database-schema.html', output)).text();
-  expect(await matches(html, '#content-area svg')).not.toHaveLength(0);
-  for (const table of ['orgs', 'members', 'secrets', 'folders', 'folder_versions', 'folder_version_changes', 'folder_retrievals', 'policies', 'services', 'service_tokens', 'reorganizations', 'outbox', 'audit_logs']) {
-    expect(html).toContain(`<code>${table}</code>`);
+  for (const image of ['implemented-schema.svg', 'erd.svg']) {
+    expect(html).toContain(`src="/architecture/${image}"`);
+    expect(await Bun.file(new URL(`architecture/${image}`, output)).exists()).toBe(true);
   }
 });
 
