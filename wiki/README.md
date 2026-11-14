@@ -65,7 +65,7 @@ color scheme; `public/favicon.ico` preserves the 16, 32 and 48 px fallback. Sour
 under [AGPL-3.0](https://github.com/sourcey/sourcey/blob/main/LICENSE); the existing
 Mintlify template license notice is retained in `LICENSE`.
 
-The PRD page contains the requirements imported from Keysy's Notion Plan Tracker.
+The PRD page is the source of truth for Keysy's product requirements.
 System design embeds the interactive Archify diagram. Its editable JSON sources
 and generated HTML live in `public/architecture/`: a compact horizontal layout and
 a vertical layout for narrow containers.
