@@ -46,6 +46,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertIn("CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}", deploy)
         self.assertIn("CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}", deploy)
         self.assertNotIn("CLOUDFLARE_API_TOKEN", workflow_step("Build sites"))
+        self.assertNotIn("CLOUDFLARE_API_TOKEN", workflow_step("Read the tip of main"))
 
     def test_tests_are_run_by_ci(self):
         self.assertIn("run: python3 .github/scripts/test_cloudflare_deploy.py", (ROOT / ".github/workflows/ci.yml").read_text())
