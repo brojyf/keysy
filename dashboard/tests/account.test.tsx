@@ -275,7 +275,7 @@ test('Sessions lists API sessions newest first and marks the current one', async
   const rows = [...container.querySelectorAll('tbody tr')]
   expect(rows[0].querySelector('button, [popover]')).toBeNull()
   expect(rows[0].querySelector('.account-session-status')?.textContent).toBe('This session')
-  expect([...container.querySelectorAll<HTMLButtonElement>('tbody button.account-more')].map((button) => button.getAttribute('aria-label'))).toEqual([
+  expect([...container.querySelectorAll<HTMLButtonElement>('tbody button.icon-button-square')].map((button) => button.getAttribute('aria-label'))).toEqual([
     'More actions for Safari on iOS',
     'More actions for Firefox on Linux',
   ])

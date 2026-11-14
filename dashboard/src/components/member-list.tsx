@@ -5,6 +5,7 @@ import { Users } from 'lucide-react'
 import { useState } from 'react'
 import { MoreIcon, SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
+import IconButton from './icon-button'
 import { MemberTableSkeleton } from './loading-skeleton'
 import { memberQueryOptions, type Member } from '../lib/member-queries'
 import { placeRowMenu } from '../lib/row-menu'
@@ -67,9 +68,9 @@ export default function MemberList() {
                     <td className="account-table-actions">
                       {canManage(viewerRole, role) && (
                         <>
-                          <button className="account-more" type="button" popoverTarget={`member-menu-${userId}`} aria-label={`More actions for ${name}`}>
+                          <IconButton shape="square" popoverTarget={`member-menu-${userId}`} aria-label={`More actions for ${name}`}>
                             <MoreIcon />
-                          </button>
+                          </IconButton>
                           <div id={`member-menu-${userId}`} className="account-menu account-row-menu member-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
                             <button className="account-menu-item" type="button">Change role</button>
                             {viewerRole === 'owner' && (
