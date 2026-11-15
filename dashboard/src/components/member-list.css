@@ -18,11 +18,3 @@
 .member-table th:nth-child(4) {
   width: 56px;
 }
-
-.account-menu.member-row-menu {
-  width: 160px;
-}
-
-.member-row-menu .account-menu-divider {
-  margin: 3px 0;
-}

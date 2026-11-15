@@ -358,6 +358,10 @@ th[aria-sort='descending'] .account-sort svg {
   transition-timing-function: ease-out;
 }
 
+.account-row-menu .account-menu-divider {
+  margin: 3px 0;
+}
+
 .account-menu.account-row-menu:popover-open {
   transition-duration: 160ms;
   transition-timing-function: ease-out;
