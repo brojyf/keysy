@@ -581,7 +581,7 @@ test('a direct link selects the second organization for the header, navigation, 
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
   expect(container.querySelector('code')?.textContent).toBe(otherOrganization.id)
   expect([...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Main"] a')].map((link) => link.getAttribute('href'))).toEqual([
-    `/orgs/${otherOrganization.id}/secrets`, `/orgs/${otherOrganization.id}/services`, `/orgs/${otherOrganization.id}/members`,
+    `/orgs/${otherOrganization.id}/secrets`, `/orgs/${otherOrganization.id}/services`, `/orgs/${otherOrganization.id}/people`,
     `/orgs/${otherOrganization.id}/audit-log`, `/orgs/${otherOrganization.id}/settings`,
   ])
   await openDelete()

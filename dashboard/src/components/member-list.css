@@ -1,14 +1,6 @@
 /* Figma 11.1–11.6 Members. */
-.dashboard-content:has(> .member-page) {
-  padding: 0;
-}
-
-.member-page {
-  display: flex;
-  flex-direction: column;
+.member-page .account-page {
   gap: 18px;
-  /* Same offsets as .account-page: the header center sits on the first rail icon. */
-  padding: 13px 32px 48px;
 }
 
 .member-page .account-table {
@@ -33,8 +25,4 @@
 
 .member-row-menu .account-menu-divider {
   margin: 3px 0;
-}
-
-@media (max-width: 700px) {
-  .member-page { padding: 20px 16px 32px; }
 }

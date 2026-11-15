@@ -7,7 +7,9 @@ import { MoreIcon, SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
 import IconButton from './icon-button'
 import { MemberTableSkeleton } from './loading-skeleton'
+import SettingsLayout from './settings-layout'
 import { memberQueryOptions, type Member } from '../lib/member-queries'
+import { organizationPath } from '../lib/organization-route'
 import { placeRowMenu } from '../lib/row-menu'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
@@ -36,11 +38,11 @@ export default function MemberList() {
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
   return (
-    <div className="member-page">
-      <header className="account-page-header">
-        <Users size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
-        <h1>Members</h1>
-      </header>
+    <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={[
+      { label: 'Members', href: organizationPath(organization?.id ?? '', '/people'), current: true },
+      { label: 'Invitations' },
+      { label: 'Permission sets' },
+    ]}>
       <TableSearch label="Search members" value={query} onChange={setQuery} />
       {memberQuery.isPending ? (
         <>
@@ -93,6 +95,6 @@ export default function MemberList() {
           </table>
         </div>
       )}
-    </div>
+    </SettingsLayout>
   )
 }
