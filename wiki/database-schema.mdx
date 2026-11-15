@@ -9,12 +9,9 @@ description: "Implemented Supabase tables, triggers, and jobs, plus the ERD."
 
 ### Triggers
 
-| Trigger | Table and event | Action |
+| Trigger | When | Action |
 | --- | --- | --- |
-| `create_profile_after_user_insert` | `auth.users`, after each insert | Calls `public.create_profile_for_new_user()`, which inserts the user's `public.profiles` row. The initial `display_name` is the trimmed Google full name, then the email local part, then `User`, cut to 32 characters. It is never synced again. `email` is copied from `auth.users.email`. |
-
-`profiles.email` copies `auth.users.email` once and is never synced again. Supabase Auth does not change `auth.users.email` when a returning user signs in with Google.
-The trigger runs in the same transaction as the Auth write. If it fails, the Auth write rolls back.
+| `create_profile_after_user_insert` | When a user account is created | Creates the user's profile with an initial display name and email address. |
 
 ### Scheduled jobs
 
@@ -23,16 +20,12 @@ The trigger runs in the same transaction as the Auth write. If it fails, the Aut
 | `delete-idle-sessions` | Daily | Deletes sessions that have not been refreshed for 30 days. |
 | `delete-old-invitations` | Daily | Deletes invitations that expired more than 30 days ago. |
 
-Invitations expire after 7 days.
-
 ### Functions for the API
-
-The API role cannot read schema `auth`. It calls these `SECURITY DEFINER` functions instead.
 
 | Function | Action |
 | --- | --- |
-| `public.list_user_sessions(target_user_id)` | Returns the user's active sessions: ID, user agent, and last used time. |
-| `public.revoke_user_session(target_user_id, target_session_id)` | Deletes one session of the user. Returns whether it deleted a row. |
+| `public.list_user_sessions(target_user_id)` | Lists the user's active sessions and when they were last used. |
+| `public.revoke_user_session(target_user_id, target_session_id)` | Deletes one of the user's sessions. |
 
 ## ERD
 
