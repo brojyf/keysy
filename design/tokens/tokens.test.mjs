@@ -44,6 +44,20 @@ test('primary button hover uses the Figma colors and meets text contrast targets
   }
 });
 
+test('danger button and hover use the Figma colors and meet text contrast targets in both modes', () => {
+  for (const [mode, values, expectedButton, expectedHover] of [
+    ['light', lightColors, '#b3261e', '#a1221b'],
+    ['dark', darkColors, '#cc3a30', '#b8342b'],
+  ]) {
+    assert.equal(values['danger-button'], expectedButton, mode);
+    assert.equal(values['danger-button-hover'], expectedHover, mode);
+    for (const background of ['danger-button', 'danger-button-hover']) {
+      const ratio = contrast(values['on-button'], values[background]);
+      assert.ok(ratio >= 4.5, `${mode} on-button/${background}: ${ratio.toFixed(3)}:1; expected 4.5:1`);
+    }
+  }
+});
+
 test('every text style has a dark weight 40 lower than its light weight', () => {
   const weights = mode => Object.keys(mode).filter(name => /^--text-[\w-]+--font-weight$/.test(name)).sort();
   assert.deepEqual(weights(dark), weights(light));

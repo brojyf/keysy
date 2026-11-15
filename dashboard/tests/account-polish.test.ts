@@ -32,7 +32,7 @@ for (const dark of [false, true]) {
       document.body.innerHTML = `
         <div class="dialog">
           <button class="button" data-focus-visible>Cancel</button>
-          <button class="button button-danger" data-focus-visible>Delete</button>
+          <button class="button button-danger-outline" data-focus-visible>Delete</button>
           <button class="button button-primary" data-focus-visible>Confirm</button>
         </div>
         <div id="account-menu">

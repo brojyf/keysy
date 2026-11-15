@@ -105,7 +105,7 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
 test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
+  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
   expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
@@ -134,13 +134,14 @@ function headerSort(name: string) {
   return [...container.querySelectorAll<HTMLTableCellElement>('th')].find((cell) => cell.textContent === name)!
 }
 
-test('General requests sign out from the Session section above the Danger zone', async () => {
+test('General shows sign out and delete rows in order in the Danger zone', async () => {
   await renderAccount('/account', <GeneralPage />)
-  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
-  expect(text('.account-sections section:nth-of-type(4) dt')).toEqual(['Sign out of this device'])
+  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
+  expect(text('.account-sections section:last-of-type dt')).toEqual(['Sign out of this device', 'Delete account'])
   const signOut = button('Sign out', container.querySelector('.account-sections')!)
   expect(signOut.textContent).toBe('Sign out')
-  expect(signOut.classList.contains('button-danger')).toBe(true)
+  expect(signOut.classList.contains('button-danger-outline')).toBe(true)
+  expect(button('Delete', container.querySelector('.account-sections')!).classList.contains('button-danger-outline')).toBe(true)
   await act(async () => signOut.click())
   expect(onSignOutRequest).toHaveBeenCalledTimes(1)
   expect(request).not.toHaveBeenCalled()
@@ -321,6 +322,7 @@ test('revoking a session confirms, deletes it, and refetches the list', async ()
   await openRevoke()
   expect(sessionsDialog().querySelector('h2')?.textContent).toBe('Revoke session?')
   expect(sessionsDialog().querySelector('p')?.textContent).toBe('Safari on iOS will be signed out.')
+  expect(button('Revoke', sessionsDialog()).classList.contains('button-danger')).toBe(true)
   await act(async () => button('Revoke', sessionsDialog()).click())
   expect([...sessionsDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Revoking...', true]])
   await act(async () => finish(new Response(null, { status: 204 })))

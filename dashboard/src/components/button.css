@@ -20,6 +20,12 @@
 }
 
 .button-danger {
+  border-color: var(--color-danger-button);
+  background: var(--color-danger-button);
+  color: var(--color-on-button);
+}
+
+.button-danger-outline {
   color: var(--color-danger);
 }
 
@@ -28,6 +34,11 @@
 }
 
 .button-danger:not(:disabled):hover {
+  border-color: var(--color-danger-button-hover);
+  background: var(--color-danger-button-hover);
+}
+
+.button-danger-outline:not(:disabled):hover {
   background: var(--color-danger-bg);
 }
 

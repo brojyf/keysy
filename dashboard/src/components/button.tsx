@@ -1,10 +1,11 @@
 import type { ComponentProps } from 'react'
 
-// Mirrors the Figma Button component set: Variant = Secondary | Primary | Danger.
+// Mirrors the Figma Button component set: Variant = Secondary | Primary | Danger | Danger outline.
 const variantClasses = {
   secondary: 'button',
   primary: 'button button-primary',
   danger: 'button button-danger',
+  dangerOutline: 'button button-danger-outline',
 }
 
 type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {

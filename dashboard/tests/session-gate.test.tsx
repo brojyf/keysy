@@ -260,7 +260,9 @@ function styledButton(scope: ParentNode, label: string, className: string) {
 }
 
 function dialogButton(label: string) {
-  return buttonNamed(signOutDialog(), label)
+  const button = buttonNamed(signOutDialog(), label)
+  if (label === 'Sign out') expect(button.classList.contains('button-danger')).toBe(true)
+  return button
 }
 
 test('shows the sign-in design and links directly to the auth origin', async () => {
@@ -888,7 +890,7 @@ test('sign out on create page ignores a late create response', async () => {
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   currentPathname = '/account'
   await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
-  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())
   await act(async () => finish(Response.json({ id: '1', name: 'Name' }, { status: 201 })))
   expect(router.push).not.toHaveBeenCalled()
@@ -1037,9 +1039,9 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
-  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Session', 'Danger zone', 'Sign out?'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Sign out?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
-  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+  await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })
@@ -1069,6 +1071,24 @@ test('pending session shows the Sessions skeleton for /account/sessions', async 
   await renderSessionGate()
   expect(container.querySelector('[data-skeleton-page="account/sessions"] .skeleton-sessions .skeleton-table')).not.toBeNull()
   expect(container.querySelectorAll('.skeleton-sessions .skeleton-table-row')).toHaveLength(4)
+})
+
+test('pending session shows four Account sections and two danger zone rows', async () => {
+  currentPathname = '/account'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  const sections = container.querySelectorAll('[data-skeleton-page="account"] .skeleton-form .skeleton-section')
+  expect(sections).toHaveLength(4)
+  const dangerSection = sections[3]!
+  expect(dangerSection.querySelector('.skeleton-section > .skeleton-bone')?.getAttribute('style')).toContain('width: 92px')
+  const rows = dangerSection.querySelectorAll('.skeleton-card-row')
+  expect(rows).toHaveLength(2)
+  expect([...rows].map((row) => [...row.querySelectorAll('.skeleton-bone')].map((bone) => bone.getAttribute('style')))).toEqual([
+    [expect.stringContaining('width: 155px'), expect.stringContaining('width: 73px; height: 28px; border-radius: 10px')],
+    [expect.stringContaining('width: 95px'), expect.stringContaining('width: 63px; height: 28px; border-radius: 10px')],
+  ])
+  expect(rows[0]!.querySelector('.skeleton-card-end')).not.toBeNull()
+  expect(rows[1]!.querySelector('.skeleton-card-end')).not.toBeNull()
 })
 
 test('pending session shows an accessible shell without page content for an unmapped path', async () => {
