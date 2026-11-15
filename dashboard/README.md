@@ -5,7 +5,7 @@ The sign-in screen is the `/signin` route. The Go auth service remains responsib
 
 ## Sign-in
 
-The screen uses [1.1 Sign in](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=112-3342)
+The screen uses [Web · Sign in › Sign in](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=112-3342)
 as its design reference.
 
 - Continue with Google navigates to `{NEXT_PUBLIC_AUTH_URL}/v0/auth/google`.
@@ -27,7 +27,7 @@ The symbols in `public/` and the dot tile `src/components/sign-in-dots.png` were
 
 ## Organization settings
 
-`/orgs/{orgId}/settings` follows Figma screens 14.1, 14.2, and 14.7. General displays the user's role
+`/orgs/{orgId}/settings` follows the Figma Settings · General section. General displays the user's role
 in that organization (Owner, Admin, or Developer). The ID copy button shows a check for 2.5 seconds
 after a successful clipboard write and reports failures for retry. The URL selects the organization
 from the verified membership list. The top bar, navigation, settings, and delete request use that same
