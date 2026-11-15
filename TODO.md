@@ -15,11 +15,11 @@ This design replaces the current model, in which an added member is active immed
 - A link to a cancelled, expired, or deleted invitation shows **Invalid invitation**.
 - Every member sees pending and expired invitations, email only. The Owner and Admins can resend or cancel any invitation, and change the role of a pending or expired invitation (GitHub allows this too).
 - An invitation expires 7 days after it is created. Resending a pending invitation does not extend it.
-- Expired invitations stay in the list as **Expired**. Resending an expired invitation restarts its 7 days.
-- A daily job deletes invitations 37 days after they are created.
+- Expired invitations stay in the list as **Expired**. Resending or re-inviting an expired invitation restarts its 7 days.
+- A daily job deletes invitations 37 days after their current 7-day period starts.
 - Deleting an org deletes all its invitations through the foreign key cascade. Org deletion becomes a hard delete in a separate change.
-- An email can have only one pending invitation per org. Inviting a member or an email with a pending invitation fails.
-- Each invitation can be resent once every 24 hours, expired or not. The first send is not a resend.
+- An email can have only one invitation per org. Inviting a member or an email with a pending invitation fails. Inviting an email with an expired invitation updates that invitation, including its role.
+- Each invitation can be resent once every 24 hours, expired or not. The first resend is possible 24 hours after the first send.
 - Each org can send at most 50 invitation emails per 24-hour window, which starts at the first send. New invitations and resends both count.
 - Audit logs record only these events: invited, invitation cancelled, invitation role changed (old and new role), and joined. Audit records are append-only: a role change adds a record and never updates the invited one. Resends and expiry are not recorded.
 - The inviter does not get an email when the invitee joins.
@@ -33,7 +33,7 @@ This design replaces the current model, in which an added member is active immed
 
 - [ ] PRD: change "add Developers" to "invite Admins and Developers" in `wiki/prd.mdx`, and state that invitees join only after they accept an invitation that expires after 7 days.
 - [ ] API: draft the invitation endpoints, then add them to `openapi/api.yaml`. Keep `GET /v0/orgs/{orgId}/members` unchanged and list pending and expired invitations with a separate `GET /v0/orgs/{orgId}/invitations`, as GitHub, GitLab, Auth0, and Clerk do.
-- [ ] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after they are created.
+- [ ] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after their current 7-day period starts (#196).
 - [ ] Auth: accept a relative `return_to` path on `/v0/auth/google`, keep it in the sealed OAuth transaction cookie, and redirect to it after the callback, so an invitee returns to the **Join {org}** page after Google sign-in. Reject absolute and protocol-relative URLs. Today the callback always redirects to the dashboard root.
 - [ ] Figma: add the **Join {org}** page. The invitation list, menu, and dialogs are in section 11 · People (11.10–11.16).
 - [ ] Email: send the invitation email from `email-worker/` (Cloudflare Worker and Resend, see `wiki/tech-stack.mdx`).
