@@ -83,7 +83,7 @@ function Services() {
     </div>
   )
 }
-// The member table of 24.7 Members; the Members page also shows it while its list loads.
+// The member table of 26.7 Members; the Members page also shows it while its list loads.
 export function MemberTableSkeleton() {
   return (
     <div className="skeleton-member-table" aria-busy="true">
@@ -165,7 +165,7 @@ function Account() {
   )
 }
 
-// The table part of 24.15 Sessions; the Sessions page also shows it while its list loads.
+// The table part of 26.15 Sessions; the Sessions page also shows it while its list loads.
 export function SessionsSkeleton() {
   return (
     <div className="skeleton-sessions">

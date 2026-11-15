@@ -1,4 +1,4 @@
-/* Figma 17.1 Account, 18.1 Organizations, 19.1 Sessions, 18.3 Row menu, 18.4 Filtered, 18.5 No results, 16.2 and 16.3 Sign out. */
+/* Figma 19.1 Account, 20.1 Organizations, 21.1 Sessions, 20.3 Row menu, 20.4 Filtered, 20.5 No results, 18.2 and 18.3 Sign out. */
 .dashboard-content:has(> .account) {
   padding: 0;
 }
