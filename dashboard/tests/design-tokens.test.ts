@@ -156,6 +156,9 @@ test('agent switch uses the shared spring and respects reduced motion', () => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.account-switch,\s*\.account-switch::after\s*\{\s*transition: none;/)
 })
 
+test('enabled agent switch uses the pointer cursor', () => {
+  assert.equal(value(rule(files[2], '.account-switch:not(:disabled)'), 'cursor'), 'pointer')
+})
 
 test('rail avatar stays at the bottom and dialog text uses body text', () => {
   assert.equal(value(rule(files[1], '.rail > .rail-item'), 'margin-top'), 'auto')
