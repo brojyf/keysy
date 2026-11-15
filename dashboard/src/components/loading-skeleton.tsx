@@ -40,11 +40,11 @@ function Table({ columns, headers, rows, sortColumn, rowHeight = 43, boneHeight 
   )
 }
 
-function Sidebar({ page }: { page: 'secrets' | 'settings' | 'account' }) {
+function Sidebar({ page }: { page: 'secrets' | 'settings' | 'account' | 'people' }) {
   return (
     <div className="skeleton-sidebar">
       <div className="skeleton-sidebar-title">
-        <Bone width={page === 'settings' ? 54 : 47} />
+        <Bone width={page === 'settings' ? 54 : page === 'people' ? 50 : 47} />
         {page === 'secrets' && <Bone width={24} height={24} radius={8} />}
       </div>
       {page === 'secrets' ? (
@@ -57,7 +57,7 @@ function Sidebar({ page }: { page: 'secrets' | 'settings' | 'account' }) {
         </>
       ) : (
         <div className="skeleton-sidebar-items">
-          {(page === 'settings' ? [47, 76, 54] : [47, 83, 54]).map((width, i) => <Bone key={i} width={width} />)}
+          {(page === 'settings' ? [47, 76, 54] : page === 'people' ? [58, 70, 98] : [47, 83, 54]).map((width, i) => <Bone key={i} width={width} />)}
         </div>
       )}
     </div>
@@ -93,11 +93,14 @@ export function MemberTableSkeleton() {
 }
 function Members() {
   return (
-    <div className="skeleton-content">
-      <PageHeader width={66} />
-      <Bone width={280} height={32} radius={10} className="skeleton-member-search" />
-      <MemberTableSkeleton />
-    </div>
+    <>
+      <Sidebar page="people" />
+      <div className="skeleton-content skeleton-account-table">
+        <PageHeader width={66} />
+        <Bone width={280} height={32} radius={10} className="skeleton-member-search" />
+        <MemberTableSkeleton />
+      </div>
+    </>
   )
 }
 function AuditLog() {

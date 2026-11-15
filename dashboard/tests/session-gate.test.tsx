@@ -303,7 +303,7 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
     ['Secrets', '/orgs/org-id/secrets'],
     ['Services', '/orgs/org-id/services'],
-    ['Members', '/orgs/org-id/members'],
+    ['People', '/orgs/org-id/members'],
     ['Audit log', '/orgs/org-id/audit-log'],
     ['Settings', '/orgs/org-id/settings'],
   ])
@@ -316,7 +316,7 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('data-tooltip'), link.hasAttribute('title')])).toEqual([
     ['Secrets', 'Secrets', false],
     ['Services', 'Services', false],
-    ['Members', 'Members', false],
+    ['People', 'People', false],
     ['Audit log', 'Audit log', false],
     ['Settings', 'Settings', false],
   ])
@@ -1052,6 +1052,16 @@ for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', '
     expect(container.querySelector(`[data-skeleton-page="${page}"]`)).not.toBeNull()
   })
 }
+
+test('pending session shows the People sidebar in the Members skeleton', async () => {
+  currentPathname = '/members'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  const sidebar = container.querySelector('[data-skeleton-page="members"] .skeleton-sidebar')!
+  expect(sidebar.querySelectorAll('.skeleton-sidebar-title .skeleton-bone')).toHaveLength(1)
+  expect(sidebar.querySelectorAll('.skeleton-sidebar-items .skeleton-bone')).toHaveLength(3)
+  expect(container.querySelector('[data-skeleton-page="members"] .skeleton-member-table')).not.toBeNull()
+})
 
 test('pending session shows the Sessions skeleton for /account/sessions', async () => {
   currentPathname = '/account/sessions'

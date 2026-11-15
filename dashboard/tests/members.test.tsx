@@ -66,6 +66,19 @@ function tableRows() {
   return [...container.querySelectorAll('tbody tr')].map((row) => [...row.querySelectorAll('td')].map((cell) => cell.textContent))
 }
 
+test('Members shows the People navigation and one page heading', async () => {
+  await renderMembers()
+  const nav = container.querySelector('nav[aria-label="People"]')!
+  expect(nav.querySelector('a')?.getAttribute('href')).toBe('/orgs/org-1/members')
+  expect(nav.querySelector('a')?.textContent).toBe('Members')
+  expect(nav.querySelector('a')?.getAttribute('aria-current')).toBe('page')
+  expect([...nav.querySelectorAll('button')].map((button) => [button.textContent, button.disabled])).toEqual([
+    ['Invitations', true],
+    ['Permission sets', true],
+  ])
+  expect([...container.querySelectorAll('h1')].map((heading) => heading.textContent)).toEqual(['Members'])
+})
+
 function rowMenus() {
   return Object.fromEntries([...container.querySelectorAll('tbody tr')].flatMap((row) => {
     const more = row.querySelector('button')
