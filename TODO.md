@@ -13,7 +13,7 @@ This design replaces the current model, in which an added member is active immed
 - If the signed-in email does not match a valid invitation, the page shows the signed-in email and a **Sign out** button, and asks the invitee to sign in with the email that received the invitation. It never shows the invited email; the API returns only whether the emails match.
 - The **Join {org}** page has only **Join**. There is no **Decline**; an ignored invitation expires.
 - A link to a cancelled, expired, or deleted invitation shows **Invalid invitation**.
-- Every member sees pending and expired invitations, email only. The Owner and Admins can resend or cancel any invitation.
+- Every member sees pending and expired invitations, email only. The Owner and Admins can resend or cancel any invitation, and change the role of a pending invitation (GitHub allows this too).
 - An invitation expires 7 days after it is created. Resending a pending invitation does not extend it.
 - Expired invitations stay in the list as **Expired**. Resending an expired invitation restarts its 7 days.
 - A daily job deletes invitations 37 days after they are created.
