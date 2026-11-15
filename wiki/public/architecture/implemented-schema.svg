@@ -59,7 +59,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 <rect class="diamond" x="75.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 80 454.0)"/>
 <text class="column" x="98" y="459.0">role</text>
 <text class="type" x="324" y="458.0" text-anchor="end">text</text>
-<rect class="card" x="440" y="310" width="300" height="164" rx="8"/>
+<rect class="card" x="440" y="310" width="300" height="124" rx="8"/>
 <g class="icon"><rect x="456" y="324.0" width="16" height="16" rx="2"/><path d="M456 329.0 H472 M461 329.0 V340.0"/></g>
 <text class="table" x="482" y="338.0">orgs</text>
 <line class="divider" x1="440" y1="354" x2="740" y2="354"/>
@@ -71,10 +71,6 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 <rect class="diamond" x="475.5" y="409.5" width="9" height="9" rx="1.5" transform="rotate(45 480 414.0)"/>
 <text class="column" x="498" y="419.0">name</text>
 <text class="type" x="724" y="418.0" text-anchor="end">varchar</text>
-<line class="divider" x1="440" y1="434" x2="740" y2="434"/>
-<rect class="diamond hollow" x="475.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 480 454.0)"/>
-<text class="column" x="498" y="459.0">deleted_at</text>
-<text class="type" x="724" y="458.0" text-anchor="end">timestamptz</text>
 <g class="icon"><circle cx="52" cy="517" r="3.5"/><path d="M49.5 519.5 L43 526 M45 524 L47 526"/></g>
 <text class="legend" x="62" y="525">Primary key</text>
 <rect class="diamond" x="163.5" y="515.5" width="9" height="9" rx="1.5" transform="rotate(45 168 520)"/>
