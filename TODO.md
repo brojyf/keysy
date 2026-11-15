@@ -9,14 +9,15 @@ This design replaces the current model, in which an added member is active immed
 - The Owner and Admins invite by email and role. Admins can invite Admins.
 - Every invitee accepts, with or without an account: email link, Google sign-in, **Join {org}**, then **Join**. A new user creates an account inside this flow.
 - The email link is the only entry. The app does not list pending invitations for the invitee.
-- The invitee must sign in with a Google account whose email exactly matches the invitation.
+- The invitee must sign in with a Google account whose email matches the invitation, ignoring case. Emails are stored in lowercase.
 - The **Join {org}** page has only **Join**. There is no **Decline**; an ignored invitation expires.
+- A link to a cancelled, expired, or deleted invitation shows **Invalid invitation**.
 - Every member sees pending and expired invitations, email only. The Owner and Admins can resend or cancel any invitation.
 - An invitation expires 7 days after it is created. Resending a pending invitation does not extend it.
 - Expired invitations stay in the list as **Expired**. Resending an expired invitation restarts its 7 days.
 - A daily job deletes invitations 37 days after they are created.
 - An email can have only one pending invitation per org. Inviting a member or an email with a pending invitation fails.
-- Each invitation can be resent once every 24 hours. The first send is not a resend.
+- Each invitation can be resent once every 24 hours, expired or not. The first send is not a resend.
 - Each org can send at most 50 invitation emails per 24-hour window, which starts at the first send. New invitations and resends both count.
 - Audit logs record only these events: invited, invitation cancelled, and joined. Resends and expiry are not recorded.
 - The inviter does not get an email when the invitee joins.
