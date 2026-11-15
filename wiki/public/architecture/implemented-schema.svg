@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="780" height="560" viewBox="0 0 780 560">
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="870" viewBox="0 0 880 870">
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;fill:#1b1c1e}
 .card{fill:#ffffff;stroke:#e3e4e6;stroke-width:1.5}
@@ -59,22 +59,59 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 <rect class="diamond" x="75.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 80 454.0)"/>
 <text class="column" x="98" y="459.0">role</text>
 <text class="type" x="324" y="458.0" text-anchor="end">text</text>
-<rect class="card" x="440" y="310" width="300" height="124" rx="8"/>
+<rect class="card" x="440" y="310" width="400" height="204" rx="8"/>
 <g class="icon"><rect x="456" y="324.0" width="16" height="16" rx="2"/><path d="M456 329.0 H472 M461 329.0 V340.0"/></g>
 <text class="table" x="482" y="338.0">orgs</text>
-<line class="divider" x1="440" y1="354" x2="740" y2="354"/>
+<line class="divider" x1="440" y1="354" x2="840" y2="354"/>
 <g class="icon"><circle cx="464" cy="371.0" r="3.5"/><path d="M461.5 373.5 L455 380.0 M457 378.0 L459 380.0"/></g>
 <rect class="diamond" x="475.5" y="369.5" width="9" height="9" rx="1.5" transform="rotate(45 480 374.0)"/>
 <text class="column" x="498" y="379.0">id</text>
-<text class="type" x="724" y="378.0" text-anchor="end">uuid</text>
-<line class="divider" x1="440" y1="394" x2="740" y2="394"/>
+<text class="type" x="824" y="378.0" text-anchor="end">uuid</text>
+<line class="divider" x1="440" y1="394" x2="840" y2="394"/>
 <rect class="diamond" x="475.5" y="409.5" width="9" height="9" rx="1.5" transform="rotate(45 480 414.0)"/>
 <text class="column" x="498" y="419.0">name</text>
-<text class="type" x="724" y="418.0" text-anchor="end">varchar</text>
-<g class="icon"><circle cx="52" cy="517" r="3.5"/><path d="M49.5 519.5 L43 526 M45 524 L47 526"/></g>
-<text class="legend" x="62" y="525">Primary key</text>
-<rect class="diamond" x="163.5" y="515.5" width="9" height="9" rx="1.5" transform="rotate(45 168 520)"/>
-<text class="legend" x="182" y="525">Non-nullable</text>
-<rect class="diamond hollow" x="293.5" y="515.5" width="9" height="9" rx="1.5" transform="rotate(45 298 520)"/>
-<text class="legend" x="312" y="525">Nullable</text>
+<text class="type" x="824" y="418.0" text-anchor="end">varchar</text>
+<line class="divider" x1="440" y1="434" x2="840" y2="434"/>
+<rect class="diamond hollow" x="475.5" y="449.5" width="9" height="9" rx="1.5" transform="rotate(45 480 454.0)"/>
+<text class="column" x="498" y="459.0">invitation_window_started_at</text>
+<text class="type" x="824" y="458.0" text-anchor="end">timestamptz</text>
+<line class="divider" x1="440" y1="474" x2="840" y2="474"/>
+<rect class="diamond" x="475.5" y="489.5" width="9" height="9" rx="1.5" transform="rotate(45 480 494.0)"/>
+<text class="column" x="498" y="499.0">invitation_window_sends</text>
+<text class="type" x="824" y="498.0" text-anchor="end">int4</text>
+<path class="link" d="M340 604.0 H404 Q410 604.0 410 598.0 V374.0"/>
+<rect class="card" x="40" y="500" width="300" height="284" rx="8"/>
+<g class="icon"><rect x="56" y="514.0" width="16" height="16" rx="2"/><path d="M56 519.0 H72 M61 519.0 V530.0"/></g>
+<text class="table" x="82" y="528.0">invitations</text>
+<line class="divider" x1="40" y1="544" x2="340" y2="544"/>
+<g class="icon"><circle cx="64" cy="561.0" r="3.5"/><path d="M61.5 563.5 L55 570.0 M57 568.0 L59 570.0"/></g>
+<rect class="diamond" x="75.5" y="559.5" width="9" height="9" rx="1.5" transform="rotate(45 80 564.0)"/>
+<text class="column" x="98" y="569.0">id</text>
+<text class="type" x="324" y="568.0" text-anchor="end">uuid</text>
+<line class="divider" x1="40" y1="584" x2="340" y2="584"/>
+<rect class="diamond" x="75.5" y="599.5" width="9" height="9" rx="1.5" transform="rotate(45 80 604.0)"/>
+<text class="column" x="98" y="609.0">org_id</text>
+<text class="type" x="324" y="608.0" text-anchor="end">uuid</text>
+<line class="divider" x1="40" y1="624" x2="340" y2="624"/>
+<rect class="diamond" x="75.5" y="639.5" width="9" height="9" rx="1.5" transform="rotate(45 80 644.0)"/>
+<text class="column" x="98" y="649.0">email</text>
+<text class="type" x="324" y="648.0" text-anchor="end">text</text>
+<line class="divider" x1="40" y1="664" x2="340" y2="664"/>
+<rect class="diamond" x="75.5" y="679.5" width="9" height="9" rx="1.5" transform="rotate(45 80 684.0)"/>
+<text class="column" x="98" y="689.0">role</text>
+<text class="type" x="324" y="688.0" text-anchor="end">text</text>
+<line class="divider" x1="40" y1="704" x2="340" y2="704"/>
+<rect class="diamond" x="75.5" y="719.5" width="9" height="9" rx="1.5" transform="rotate(45 80 724.0)"/>
+<text class="column" x="98" y="729.0">started_at</text>
+<text class="type" x="324" y="728.0" text-anchor="end">timestamptz</text>
+<line class="divider" x1="40" y1="744" x2="340" y2="744"/>
+<rect class="diamond" x="75.5" y="759.5" width="9" height="9" rx="1.5" transform="rotate(45 80 764.0)"/>
+<text class="column" x="98" y="769.0">last_sent_at</text>
+<text class="type" x="324" y="768.0" text-anchor="end">timestamptz</text>
+<g class="icon"><circle cx="52" cy="827" r="3.5"/><path d="M49.5 829.5 L43 836 M45 834 L47 836"/></g>
+<text class="legend" x="62" y="835">Primary key</text>
+<rect class="diamond" x="163.5" y="825.5" width="9" height="9" rx="1.5" transform="rotate(45 168 830)"/>
+<text class="legend" x="182" y="835">Non-nullable</text>
+<rect class="diamond hollow" x="293.5" y="825.5" width="9" height="9" rx="1.5" transform="rotate(45 298 830)"/>
+<text class="legend" x="312" y="835">Nullable</text>
 </svg>

@@ -23,6 +23,9 @@ The trigger runs in the same transaction as the Auth write. If it fails, the Aut
 | Job | Schedule | Action |
 | --- | --- | --- |
 | `delete-idle-sessions` | `0 3 * * *` (daily at 03:00) | Calls `public.delete_idle_sessions()`, which deletes `auth.sessions` rows not refreshed for 30 days. Their refresh tokens are deleted by cascade. |
+| `delete-old-invitations` | `0 3 * * *` (daily at 03:00) | Deletes `public.invitations` rows whose `started_at` is more than 37 days old. |
+
+Invitation expiry is separate from cleanup: an invitation expires 7 days after `started_at`.
 
 ### Functions for the API
 

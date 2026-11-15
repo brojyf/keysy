@@ -7,9 +7,15 @@ const diagrams = await Promise.all(['implemented-schema.svg', 'implemented-schem
 
 test('the implemented schema shows the diagram of the implemented tables', () => {
   expect(schema).toContain('<ThemedImage src="/architecture/implemented-schema.svg" darkSrc="/architecture/implemented-schema-dark.svg" alt="Implemented Supabase tables" />');
-  for (const name of ['profiles', 'orgs', 'members', 'org_id', 'user_id', 'role', 'display_name', 'agent_auto_apply', 'deleted_at', 'auth.users.id']) {
+  for (const name of ['profiles', 'orgs', 'members', 'org_id', 'user_id', 'role', 'display_name', 'agent_auto_apply', 'deleted_at', 'auth.users.id',
+    'invitations', 'started_at', 'last_sent_at', 'invitation_window_started_at', 'invitation_window_sends']) {
     for (const diagram of diagrams) expect(diagram).toContain(`>${name}</text>`);
   }
+});
+
+test('the scheduled jobs document invitation cleanup', () => {
+  expect(schema).toContain('| `delete-old-invitations` | `0 3 * * *` (daily at 03:00) | Deletes `public.invitations` rows whose `started_at` is more than 37 days old. |');
+  expect(schema).toContain('Invitation expiry is separate from cleanup: an invitation expires 7 days after `started_at`.');
 });
 
 test('the ERD section shows only the diagram', () => {
