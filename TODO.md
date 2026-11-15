@@ -17,6 +17,7 @@ This design replaces the current model, in which an added member is active immed
 - An invitation expires 7 days after it is created. Resending a pending invitation does not extend it.
 - Expired invitations stay in the list as **Expired**. Resending an expired invitation restarts its 7 days.
 - A daily job deletes invitations 37 days after they are created.
+- Deleting an org deletes all its invitations in the same transaction. Org deletion is a soft delete today, so the foreign key cascade does not run.
 - An email can have only one pending invitation per org. Inviting a member or an email with a pending invitation fails.
 - Each invitation can be resent once every 24 hours, expired or not. The first send is not a resend.
 - Each org can send at most 50 invitation emails per 24-hour window, which starts at the first send. New invitations and resends both count.
@@ -35,4 +36,4 @@ This design replaces the current model, in which an added member is active immed
 - [ ] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after they are created.
 - [ ] Auth: accept a relative `return_to` path on `/v0/auth/google`, keep it in the sealed OAuth transaction cookie, and redirect to it after the callback, so an invitee returns to the **Join {org}** page after Google sign-in. Reject absolute and protocol-relative URLs. Today the callback always redirects to the dashboard root.
 - [ ] Figma: update review section 612:11265 for pending invitations and add the **Join {org}** page.
-- [ ] Email: add the invitation email.
+- [ ] Email: send the invitation email from `email-worker/` (Cloudflare Worker and Resend, see `wiki/tech-stack.mdx`).
