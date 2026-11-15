@@ -171,6 +171,8 @@
   transition: background-color 200ms ease;
 }
 
+.account-switch:not(:disabled) { cursor: pointer; }
+
 .account-switch[aria-checked="true"] { background: var(--color-button); }
 .account-switch[aria-checked="true"]::after { transform: translateX(14px); }
 
