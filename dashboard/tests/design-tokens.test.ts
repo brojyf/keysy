@@ -140,6 +140,12 @@ test('table rows use the hover token', () => {
   assert.equal(value(rule(files[2], '.account-table tbody tr:hover td:not(.account-table-empty)'), 'background'), 'var(--color-hover)')
 })
 
+test('table sort arrows rotate smoothly and respect reduced motion', () => {
+  const css = files[2]
+  assert.equal(value(rule(css, '.account-sort svg'), 'transition'), 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)')
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.account-sort svg\s*\{\s*transition: none;/)
+})
+
 
 test('agent switch uses the shared spring and respects reduced motion', () => {
   const css = files[2]
@@ -150,6 +156,9 @@ test('agent switch uses the shared spring and respects reduced motion', () => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.account-switch,\s*\.account-switch::after\s*\{\s*transition: none;/)
 })
 
+test('enabled agent switch uses the pointer cursor', () => {
+  assert.equal(value(rule(files[2], '.account-switch:not(:disabled)'), 'cursor'), 'pointer')
+})
 
 test('rail avatar stays at the bottom and dialog text uses body text', () => {
   assert.equal(value(rule(files[1], '.rail > .rail-item'), 'margin-top'), 'auto')
