@@ -10,7 +10,7 @@ This design replaces the current model, in which an added member is active immed
 - Every invitee accepts, with or without an account: email link, Google sign-in, **Join {org}**, then **Join**. A new user creates an account inside this flow.
 - The email link is the only entry for now. An in-app notification entry is tracked in #189.
 - The invitee must sign in with a Google account whose email matches the invitation, ignoring case. Emails are stored in lowercase.
-- If the signed-in email does not match a valid invitation, the page asks the invitee to switch to the invited account.
+- If the signed-in email does not match a valid invitation, the page shows the signed-in email and a **Sign out** button, and asks the invitee to sign in with the email that received the invitation. It never shows the invited email; the API returns only whether the emails match.
 - The **Join {org}** page has only **Join**. There is no **Decline**; an ignored invitation expires.
 - A link to a cancelled, expired, or deleted invitation shows **Invalid invitation**.
 - Every member sees pending and expired invitations, email only. The Owner and Admins can resend or cancel any invitation.
