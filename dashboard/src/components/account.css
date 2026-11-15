@@ -47,6 +47,14 @@
   background: var(--color-soft);
 }
 
+/* Unbuilt sections render as disabled buttons; drop the browser button chrome. */
+.account-nav-item:disabled {
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: default;
+}
+
 .account-nav-item[aria-current='page'] {
   font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
