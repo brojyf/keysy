@@ -29,5 +29,6 @@ This design replaces the current model, in which an added member is active immed
 - [ ] PRD: change "add Developers" to "invite Admins and Developers" in `wiki/prd.mdx`, and state that invitees join only after they accept an invitation that expires after 7 days.
 - [ ] API: draft the invitation endpoints, then add them to `openapi/api.yaml`.
 - [ ] Database: add the invitations table and the one-pending-invitation-per-email-per-org constraint in a migration.
+- [ ] Auth: accept a relative `return_to` path on `/v0/auth/google`, keep it in the sealed OAuth transaction cookie, and redirect to it after the callback, so an invitee returns to the **Join {org}** page after Google sign-in. Reject absolute and protocol-relative URLs. Today the callback always redirects to the dashboard root.
 - [ ] Figma: update review section 612:11265 for pending invitations and add the **Join {org}** page.
 - [ ] Email: add the invitation email.
