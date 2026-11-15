@@ -21,15 +21,17 @@ export default function OrganizationsPage() {
     .filter(({ name }) => name.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
+  function openCreateDialog() {
+    if (!dialog.current) return
+    openDialog(dialog.current)
+    dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()
+  }
+
   if (allOrganizations.length === 0) return (
     <>
       <div className="account-organizations-empty">
         <div><h2>No organizations yet</h2><p>Create one, or ask an Admin to add you.</p></div>
-        <Button variant="primary" onClick={() => {
-          if (!dialog.current) return
-          openDialog(dialog.current)
-          dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()
-        }}>New organization</Button>
+        <Button variant="primary" onClick={openCreateDialog}>New organization</Button>
       </div>
       <CreateOrganizationDialog ref={dialog} />
     </>
@@ -37,7 +39,10 @@ export default function OrganizationsPage() {
 
   return (
     <>
-      <TableSearch label="Search organizations" value={query} onChange={setQuery} />
+      <div className="account-toolbar">
+        <TableSearch label="Search organizations" value={query} onChange={setQuery} />
+        <Button variant="primary" onClick={openCreateDialog}>New organization</Button>
+      </div>
       <div className="account-table account-orgs">
         <table>
           <thead>
@@ -69,6 +74,7 @@ export default function OrganizationsPage() {
           </tbody>
         </table>
       </div>
+      <CreateOrganizationDialog ref={dialog} />
     </>
   )
 }

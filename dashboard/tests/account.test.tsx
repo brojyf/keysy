@@ -147,6 +147,23 @@ test('General shows sign out and delete rows in order in the Danger zone', async
   expect(request).not.toHaveBeenCalled()
 })
 
+test('Organizations toolbar stays visible for filtered results and opens the create dialog', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  const toolbar = container.querySelector('.account-toolbar')!
+  expect([...toolbar.children].map((child) => child.classList.contains('account-search') ? 'search' : child.textContent)).toEqual(['search', 'New organization'])
+  const create = button('New organization', toolbar)
+  expect(create.classList.contains('button-primary')).toBe(true)
+  expect(container.querySelector('.account-table')?.parentElement).toBe(container.querySelector('.account-page'))
+  await search('acme')
+  expect(tableRows()).toEqual([['No organizations match “acme”']])
+  expect(container.querySelector('.account-toolbar')).not.toBeNull()
+  expect(button('New organization', container.querySelector('.account-toolbar')!).classList.contains('button-primary')).toBe(true)
+  await act(() => create.click())
+  const dialog = container.querySelector<HTMLDialogElement>('dialog')!
+  expect(dialog.open).toBe(true)
+  expect(document.activeElement).toBe(container.querySelector('#organization-name'))
+})
+
 test('Organizations lists the mock organizations from A to Z', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   expect(text('th')).toEqual(['Organization', 'Role', 'Members', ''])
