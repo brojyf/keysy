@@ -19,7 +19,7 @@ function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['r
   return (viewerRole === 'owner' && memberRole !== 'owner') || (viewerRole === 'admin' && memberRole === 'developer')
 }
 
-// Figma 11.P1 and 11.1–11.6 Members. The row menu items do nothing until their APIs exist.
+// Figma 11.1–11.6 Members. The row menu items do nothing until their APIs exist.
 // The member page comes later.
 export default function MemberList() {
   const { user, organization, onSignedOut } = useCurrentUser()
