@@ -164,6 +164,29 @@ test('Organizations toolbar stays visible for filtered results and opens the cre
   expect(document.activeElement).toBe(container.querySelector('#organization-name'))
 })
 
+test('creating an organization from the list closes and resets the dialog before navigation finishes', async () => {
+  const createOrganization = mock(async (name: string) => ({ id: 'org-4', name, role: 'owner' as const, memberCount: 1 }))
+  currentPathname = '/account/organizations'
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user, organizations, organization: organizations[0], createOrganization, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><OrganizationsPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => button('New organization', container.querySelector('.account-toolbar')!).click())
+  const dialog = container.querySelector<HTMLDialogElement>('dialog')!
+  const name = container.querySelector<HTMLInputElement>('#organization-name')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(name, 'acme')
+    name.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+  const finishExit = holdExitAnimation(dialog)
+  const submit = () => name.form!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+  await act(async () => submit())
+  expect(createOrganization).toHaveBeenCalledTimes(1)
+  expect(dialog.hasAttribute('data-closing')).toBe(true)
+  await act(async () => submit())
+  expect(createOrganization).toHaveBeenCalledTimes(1)
+  await act(async () => finishExit())
+  expect(dialog.open).toBe(false)
+  expect(name.value).toBe('')
+})
+
 test('Organizations lists the mock organizations from A to Z', async () => {
   await renderAccount('/account/organizations', <OrganizationsPage />)
   expect(text('th')).toEqual(['Organization', 'Role', 'Members', ''])

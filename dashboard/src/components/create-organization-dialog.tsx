@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import Button from './button'
 import Dialog from './dialog'
+import { closeDialog } from '../lib/dialog-controls'
 import { useCurrentUser } from './current-user'
 
 export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
@@ -19,12 +20,14 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!valid || submitting.current) return
+    const dialog = event.currentTarget.closest('dialog')
+    if (!valid || submitting.current || dialog?.hasAttribute('data-closing')) return
     submitting.current = true
     setPending(true)
     setError(false)
     try {
       await createOrganization(trimmed)
+      if (mounted.current && dialog) void closeDialog(dialog)
     } catch { if (mounted.current) setError(true) } finally { submitting.current = false; if (mounted.current) setPending(false) }
   }
 
