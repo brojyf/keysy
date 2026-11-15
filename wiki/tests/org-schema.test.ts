@@ -13,6 +13,11 @@ test('the implemented schema shows the diagram of the implemented tables', () =>
   }
 });
 
+test('the scheduled jobs document invitation cleanup', () => {
+  expect(schema).toContain('| `delete-old-invitations` | `0 3 * * *` (daily at 03:00) | Deletes `public.invitations` rows whose `started_at` is more than 37 days old. |');
+  expect(schema).toContain('Invitation expiry is separate from cleanup: an invitation expires 7 days after `started_at`.');
+});
+
 test('the ERD section shows only the diagram', () => {
   expect(schema.slice(schema.indexOf('## ERD'))).toBe('## ERD\n\n<ThemedImage src="/architecture/erd.svg" darkSrc="/architecture/erd-dark.svg" alt="Entity relationship diagram" />\n');
 });
