@@ -23,6 +23,11 @@ User accounts and profiles remain. Missing, deleted, and non-owner targets retur
 with `[{userId, name, email, role}]`; `name` is the profile display name and `email` is the profile email.
 Members with soft-deleted profiles are left out. The order is not specified; clients sort the list.
 Missing, deleted, and non-member targets return `404 ORG_NOT_FOUND`.
+`GET /v0/orgs/{orgId}/invitations` lets any member of an active org list its pending and expired
+invitations as `[{id, email, role, status}]`. Invitee names and profiles are not returned.
+`status` is `expired` when `started_at + 7 days` is at or before the database's current time;
+otherwise it is `pending`. The order is not specified; clients sort the list. No invitations returns `[]`.
+Missing and deleted orgs, non-members, and callers with soft-deleted profiles return `404 ORG_NOT_FOUND`.
 Permanent resource cleanup is tracked in
 [issue #120](https://github.com/brojyf/keysy/issues/120).
 All org routes reject query strings; GET and DELETE also reject request bodies.
@@ -43,7 +48,7 @@ Both routes reject query strings and request bodies.
 Copy `.env.example` to ignored `.env.local` for Air. Direct runs require exported
 variables. `PORT` defaults to 8081. `DATABASE_URL` must be a PostgreSQL URL with
 permission to SELECT and UPDATE `public.profiles`, plus SELECT, INSERT, and UPDATE on
-`public.orgs`, SELECT and INSERT on `public.members`, and EXECUTE on
+`public.orgs`, SELECT and INSERT on `public.members`, SELECT on `public.invitations`, and EXECUTE on
 `public.list_user_sessions(uuid)` and `public.revoke_user_session(uuid, uuid)`.
 These `SECURITY DEFINER` functions are the only access to `auth.sessions`. The backend role must bypass RLS because
 these org tables have RLS enabled without direct-client policies. Keep this

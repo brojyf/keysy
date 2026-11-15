@@ -3,7 +3,7 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, lets owners rename and permanently delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. It lists an org's members for any member of that org. The unauthenticated `/health` endpoint reports process liveness. Only implemented endpoints are listed.
+    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, lets owners rename and permanently delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. It lists an org's members and invitations for any member of that org. The unauthenticated `/health` endpoint reports process liveness. Only implemented endpoints are listed.
 
     CORS allows credentialed requests from the dashboard origin only. Preflight accepts GET, POST, PATCH, and DELETE with at most the `Content-Type` request header on every path, and returns 204 with `Access-Control-Allow-Methods: GET, POST, PATCH, DELETE` and `Access-Control-Allow-Headers: Content-Type`. A preflight with any other origin, method, or header returns 403 `INVALID_ORIGIN` or `INVALID_REQUEST`.
 
@@ -20,6 +20,8 @@ tags:
     description: Orgs the signed-in user belongs to, and their settings.
   - name: Members
     description: Org members and their roles.
+  - name: Invitations
+    description: Pending and expired org invitations.
   - name: Health
     description: Process liveness.
 paths:
@@ -462,6 +464,68 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v0/orgs/{orgId}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      tags: [Invitations]
+      security:
+        - accessCookie: []
+      operationId: listInvitations
+      summary: List an org's invitations
+      description: |
+        Every member of the org, whatever their role, can list its pending and expired invitations.
+        Each item contains the invitation ID, email, role, and status. No invitee name or profile is returned.
+        Status is expired when started_at + 7 days is at or before the database's current time; otherwise it is pending.
+        The order is not specified; clients sort the list. There is no pagination.
+        An org with no invitations returns an empty array. Missing and deleted orgs, non-members, and callers with deleted profiles return ORG_NOT_FOUND.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        orgId must be a UUID. No query string or request body is accepted.
+      responses:
+        '200':
+          description: The org's pending and expired invitations, or an empty array.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          description: ORG_NOT_FOUND. The org is missing or deleted, the caller is not a member, or the caller's profile is deleted. The response does not reveal which.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /health:
     get:
       tags: [Health]
@@ -608,6 +672,24 @@ components:
         role:
           type: string
           enum: [owner, admin, developer]
+    Invitation:
+      type: object
+      description: An org invitation. It does not grant membership until accepted.
+      required: [id, email, role, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, developer]
+        status:
+          type: string
+          enum: [pending, expired]
+          description: Computed from started_at and the database's current time. Expires after seven days.
     Error:
       type: object
       required: [error]

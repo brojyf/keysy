@@ -28,6 +28,7 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 		"GET /v0/me",
 		"GET /v0/me/sessions",
 		"GET /v0/orgs",
+		"GET /v0/orgs/:orgId/invitations",
 		"GET /v0/orgs/:orgId/members",
 		"PATCH /v0/me",
 		"PATCH /v0/orgs/:orgId",

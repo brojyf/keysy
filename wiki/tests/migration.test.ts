@@ -288,7 +288,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(api).toContain('This is the v0 draft, not a stable release.');
   expect(api).toContain("The implemented application API provides the signed-in user's profile.");
   expect(api).not.toContain('Roles are per org');
-  for (const operation of ['Create an org', 'Rename an org', "List an org's members"]) {
+  for (const operation of ['Create an org', 'Rename an org', "List an org's members", "List an org's invitations"]) {
     expect(api).toContain(operation);
   }
   const auth = await Bun.file(new URL('auth.html', output)).text();
@@ -304,7 +304,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
-    ['api', 'API', ['Account', 'GET', '/v0/me'], 4],
+    ['api', 'API', ['Account', 'GET', '/v0/me'], 5],
     ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
