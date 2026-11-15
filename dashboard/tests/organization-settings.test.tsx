@@ -236,7 +236,7 @@ for (const width of [360, 700]) test(`settings stacks organization fields at ${w
   expect(css('.organization-id').overflowWrap).toBe('anywhere')
 })
 
-test('organization ID text starts at the same inset as the name input text', async () => {
+test('organization ID and role text start at the same inset as the name input text', async () => {
   browser.happyDOM.setWindowSize({ width: 1280, height: 812 })
   const style = document.createElement('style')
   style.textContent = ['../../../design/tokens/tokens.css', 'account.css', 'organization-settings.css'].map((file) => readFileSync(new URL(`../src/components/${file}`, import.meta.url), 'utf8')).join('\n')
@@ -250,7 +250,9 @@ test('organization ID text starts at the same inset as the name input text', asy
   const copyButton = container.querySelector('.organization-copy')!
   const nameTextInset = px(nameInput, 'border-left-width', 'padding-left')
   const idTextInset = px(copyButton.closest('dd')!, 'padding-left') + px(copyButton, 'margin-left', 'padding-left')
+  const roleTextInset = px(container.querySelectorAll('.account-rows dd')[2], 'padding-left')
   expect(idTextInset).toBe(nameTextInset)
+  expect(roleTextInset).toBe(nameTextInset)
 })
 
 for (const role of ['admin', 'developer']) test(`${role} cannot open organization deletion`, async () => {

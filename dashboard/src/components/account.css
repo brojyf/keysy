@@ -148,7 +148,7 @@
 }
 
 .account-rows > div + div > dd:not(.account-control) {
-  padding-left: 10px;
+  padding-left: 11px;
 }
 
 .account-rows .account-control {
