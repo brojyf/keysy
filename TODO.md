@@ -17,7 +17,7 @@ This design replaces the current model, in which an added member is active immed
 - An invitation expires 7 days after it is created. Resending a pending invitation does not extend it.
 - Expired invitations stay in the list as **Expired**. Resending an expired invitation restarts its 7 days.
 - A daily job deletes invitations 37 days after they are created.
-- Deleting an org deletes all its invitations in the same transaction. Org deletion is a soft delete today, so the foreign key cascade does not run.
+- Deleting an org deletes all its invitations through the foreign key cascade. Org deletion becomes a hard delete in a separate change.
 - An email can have only one pending invitation per org. Inviting a member or an email with a pending invitation fails.
 - Each invitation can be resent once every 24 hours, expired or not. The first send is not a resend.
 - Each org can send at most 50 invitation emails per 24-hour window, which starts at the first send. New invitations and resends both count.
