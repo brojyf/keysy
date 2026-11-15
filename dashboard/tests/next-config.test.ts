@@ -25,8 +25,12 @@ test('Turbopack resolves shared files from the repository root', () => {
   assert.equal(nextConfig('phase-development-server').turbopack?.root, fileURLToPath(new URL('../..', import.meta.url)))
 })
 
-test('root redirects to /secrets with a temporary 307', async () => {
-  assert.deepEqual(await nextConfig('phase-development-server').redirects?.(), [{ source: '/', destination: '/secrets', permanent: false }])
+test('root and legacy members paths have temporary redirects', async () => {
+  assert.deepEqual(await nextConfig('phase-development-server').redirects?.(), [
+    { source: '/', destination: '/secrets', permanent: false },
+    { source: '/members', destination: '/people', permanent: false },
+    { source: '/orgs/:orgId/members', destination: '/orgs/:orgId/people', permanent: false },
+  ])
 })
 
 test('development indicator defaults to the bottom-right corner', () => {

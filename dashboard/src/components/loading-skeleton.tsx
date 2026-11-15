@@ -218,7 +218,7 @@ function SkeletonRail() {
 }
 
 // More specific paths come first.
-const pages = { secrets: Secrets, services: Services, members: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
+const pages = { secrets: Secrets, services: Services, people: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
 
 export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const pagePath = pathname.replace(/^\/orgs\/[^/]+(?=\/|$)/, '')

@@ -26,7 +26,11 @@ export default function nextConfig(phase: string): NextConfig {
       position: 'bottom-right',
     },
     async redirects() {
-      return [{ source: '/', destination: '/secrets', permanent: false }]
+      return [
+        { source: '/', destination: '/secrets', permanent: false },
+        { source: '/members', destination: '/people', permanent: false },
+        { source: '/orgs/:orgId/members', destination: '/orgs/:orgId/people', permanent: false },
+      ]
     },
   }
 }

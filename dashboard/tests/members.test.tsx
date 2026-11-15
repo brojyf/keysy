@@ -69,7 +69,7 @@ function tableRows() {
 test('Members shows the People navigation and one page heading', async () => {
   await renderMembers()
   const nav = container.querySelector('nav[aria-label="People"]')!
-  expect(nav.querySelector('a')?.getAttribute('href')).toBe('/orgs/org-1/members')
+  expect(nav.querySelector('a')?.getAttribute('href')).toBe('/orgs/org-1/people')
   expect(nav.querySelector('a')?.textContent).toBe('Members')
   expect(nav.querySelector('a')?.getAttribute('aria-current')).toBe('page')
   expect([...nav.querySelectorAll('button')].map((button) => [button.textContent, button.disabled])).toEqual([

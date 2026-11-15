@@ -9,7 +9,7 @@ import { metadata as rootMetadata } from '../src/app/layout'
 import GeneralPage from '../src/app/account/page'
 import * as secretsPage from '../src/app/secrets/page'
 import * as servicesPage from '../src/app/services/page'
-import * as membersPage from '../src/app/members/page'
+import * as membersPage from '../src/app/people/page'
 import * as auditLogPage from '../src/app/audit-log/page'
 import * as settingsPage from '../src/app/settings/page'
 import * as accountLayout from '../src/app/account/layout'
@@ -303,7 +303,7 @@ test('shows the rail and page content only after server verification', async () 
   expect(links.map((link) => [link.getAttribute('aria-label'), link.getAttribute('href')])).toEqual([
     ['Secrets', '/orgs/org-id/secrets'],
     ['Services', '/orgs/org-id/services'],
-    ['People', '/orgs/org-id/members'],
+    ['People', '/orgs/org-id/people'],
     ['Audit log', '/orgs/org-id/audit-log'],
     ['Settings', '/orgs/org-id/settings'],
   ])
@@ -1044,7 +1044,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })
 
-for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', 'account']) {
+for (const page of ['secrets', 'services', 'people', 'audit-log', 'settings', 'account']) {
   for (const suffix of ['', '/nested']) test(`pending session shows the ${page} skeleton for /${page}${suffix}`, async () => {
     currentPathname = `/${page}${suffix}`
     sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
@@ -1054,13 +1054,13 @@ for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings', '
 }
 
 test('pending session shows the People sidebar in the Members skeleton', async () => {
-  currentPathname = '/members'
+  currentPathname = '/people'
   sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
   await renderSessionGate()
-  const sidebar = container.querySelector('[data-skeleton-page="members"] .skeleton-sidebar')!
+  const sidebar = container.querySelector('[data-skeleton-page="people"] .skeleton-sidebar')!
   expect(sidebar.querySelectorAll('.skeleton-sidebar-title .skeleton-bone')).toHaveLength(1)
   expect(sidebar.querySelectorAll('.skeleton-sidebar-items .skeleton-bone')).toHaveLength(3)
-  expect(container.querySelector('[data-skeleton-page="members"] .skeleton-member-table')).not.toBeNull()
+  expect(container.querySelector('[data-skeleton-page="people"] .skeleton-member-table')).not.toBeNull()
 })
 
 test('pending session shows the Sessions skeleton for /account/sessions', async () => {
@@ -1123,7 +1123,7 @@ for (const selector of ['.icon-button-round', '.rail-item[data-tooltip]']) {
   })
 }
 
-for (const page of ['secrets', 'services', 'members', 'audit-log', 'settings']) {
+for (const page of ['secrets', 'services', 'people', 'audit-log', 'settings']) {
   test(`the legacy /${page} entry redirects to a specific organization`, async () => {
     currentPathname = `/${page}`
     sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))

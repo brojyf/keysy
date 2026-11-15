@@ -39,7 +39,7 @@ export default function MemberList() {
 
   return (
     <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={[
-      { label: 'Members', href: organizationPath(organization?.id ?? '', '/members'), current: true },
+      { label: 'Members', href: organizationPath(organization?.id ?? '', '/people'), current: true },
       { label: 'Invitations' },
       { label: 'Permission sets' },
     ]}>

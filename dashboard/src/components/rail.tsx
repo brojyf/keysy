@@ -13,7 +13,7 @@ const railGroups: { href: string; label: string; Icon: LucideIcon }[][] = [
   [{ href: '/secrets', label: 'Secrets', Icon: KeyRound }],
   [
     { href: '/services', label: 'Services', Icon: Server },
-    { href: '/members', label: 'People', Icon: Users },
+    { href: '/people', label: 'People', Icon: Users },
     { href: '/audit-log', label: 'Audit log', Icon: ScrollText },
   ],
   [{ href: '/settings', label: 'Settings', Icon: Settings }],
