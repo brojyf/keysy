@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/brojyf/keysy/api/internal/health"
+	"github.com/brojyf/keysy/api/internal/invitation"
 	"github.com/brojyf/keysy/api/internal/me"
 	"github.com/brojyf/keysy/api/internal/member"
 	"github.com/brojyf/keysy/api/internal/middleware"
@@ -46,6 +47,7 @@ func New(d Deps) *gin.Engine {
 	sessions := session.Store{DB: d.DB}
 	orgs := org.Store{DB: d.DB}
 	members := member.Store{DB: d.DB}
+	invitations := invitation.Store{DB: d.DB}
 
 	// CORS answers every preflight, so routes need no OPTIONS handler.
 	v0 := router.Group("/v0", d.Session)
@@ -58,5 +60,6 @@ func New(d Deps) *gin.Engine {
 	v0.PATCH("/orgs/:orgId", org.Rename(orgs))
 	v0.DELETE("/orgs/:orgId", org.Delete(orgs))
 	v0.GET("/orgs/:orgId/members", member.List(members))
+	v0.GET("/orgs/:orgId/invitations", invitation.List(invitations))
 	return router
 }
