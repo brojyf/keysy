@@ -36,7 +36,7 @@ falling back to another organization. Only its owner can open the delete dialog.
 An exact organization name confirmation enables `DELETE /v0/orgs/{orgId}`.
 Success removes the organization from session state and opens `/orgs/{nextOrgId}/secrets` when
 another organization remains, or `/account/organizations` otherwise. Failed requests retain the confirmation for retry.
-The API soft-deletes the organization and preserves memberships and user accounts.
+The API permanently deletes the organization and its memberships. User accounts and profiles remain.
 Only its owner can rename the organization: General shows a Save button after the name changes and calls
 `PATCH /v0/orgs/{orgId}`. Other roles see a read-only name.
 Leave, notifications, and scope controls remain unavailable.

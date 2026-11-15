@@ -76,7 +76,7 @@ func TestStoreList(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			// The user filter enforces isolation. A second order key stabilizes duplicate names.
-			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 AND orgs.deleted_at IS NULL ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
+			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
 			want := []Membership{}
 			failure := errors.New("database unavailable")
 			if scenario == "database error" {
@@ -123,32 +123,24 @@ func TestStoreCanceledContext(t *testing.T) {
 }
 
 func TestStoreDelete(t *testing.T) {
-	for _, scenario := range []string{"owner", "deleted owner", "not owner or missing", "database error"} {
+	for _, scenario := range []string{"owner", "not owner or missing", "database error"} {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			failure := errors.New("database unavailable")
-			query := mock.ExpectQuery(`WITH owned_org AS (
-				SELECT orgs.id, orgs.deleted_at FROM public.orgs AS orgs
-				WHERE orgs.id = $1 AND EXISTS (SELECT 1 FROM public.members AS members
-					WHERE members.org_id = orgs.id AND members.user_id = $2 AND members.role = 'owner')
-				FOR UPDATE OF orgs
-			), deleted_org AS (
-				UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP
-				FROM owned_org WHERE orgs.id = owned_org.id AND owned_org.deleted_at IS NULL
-				RETURNING orgs.id
-			)
-			SELECT EXISTS (SELECT 1 FROM owned_org)`).WithArgs("org-123", "user-123")
+			exec := mock.ExpectExec(`DELETE FROM public.orgs AS orgs WHERE orgs.id = $1 AND EXISTS (SELECT 1 FROM public.members AS members WHERE members.org_id = orgs.id AND members.user_id = $2 AND members.role = 'owner')`).WithArgs("org-123", "user-123")
 			if scenario == "database error" {
-				query.WillReturnError(failure)
+				exec.WillReturnError(failure)
+			} else if scenario == "owner" {
+				exec.WillReturnResult(sqlmock.NewResult(0, 1))
 			} else {
-				query.WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(scenario == "owner" || scenario == "deleted owner"))
+				exec.WillReturnResult(sqlmock.NewResult(0, 0))
 			}
 			deleted, err := store.Delete(context.Background(), "user-123", "org-123")
 			if scenario == "database error" {
 				if !errors.Is(err, failure) || deleted {
 					t.Fatalf("deleted=%v err=%v", deleted, err)
 				}
-			} else if err != nil || deleted != (scenario == "owner" || scenario == "deleted owner") {
+			} else if err != nil || deleted != (scenario == "owner") {
 				t.Fatalf("deleted=%v err=%v", deleted, err)
 			}
 		})
@@ -160,7 +152,7 @@ func TestStoreRename(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			failure := errors.New("database unavailable")
-			exec := mock.ExpectExec(`UPDATE public.orgs SET name = $1 WHERE id = $2 AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members
+			exec := mock.ExpectExec(`UPDATE public.orgs SET name = $1 WHERE id = $2 AND EXISTS (SELECT 1 FROM public.members AS members
 		WHERE members.org_id = orgs.id AND members.user_id = $3 AND members.role = 'owner')`).WithArgs("Platform", "org-123", "user-123")
 			switch scenario {
 			case "owner":
