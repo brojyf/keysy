@@ -1,0 +1,69 @@
+-- Run as a superuser against a disposable database after applying migrations.
+-- All fixtures and assertions are rolled back.
+begin;
+
+insert into public.orgs (id, name) values
+  ('60000000-0000-0000-0000-000000000001', 'Invite org'),
+  ('60000000-0000-0000-0000-000000000002', 'Other org');
+
+insert into public.invitations (org_id, email, role, started_at) values
+  ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'developer', now()),
+  ('60000000-0000-0000-0000-000000000001', 'old@example.com', 'admin', now() - interval '38 days'),
+  ('60000000-0000-0000-0000-000000000002', 'fresh@example.com', 'admin', now());
+
+do $$
+begin
+  assert (select bool_and(last_sent_at is not null) from public.invitations),
+    'The first send must set last_sent_at';
+  assert (select invitation_window_sends = 0 and invitation_window_started_at is null
+    from public.orgs where id = '60000000-0000-0000-0000-000000000001'),
+    'A new org must start without an invitation window';
+
+  begin
+    insert into public.invitations (org_id, email, role)
+    values ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'admin');
+    raise exception 'A second invitation for the same email and org must fail';
+  exception when unique_violation then null;
+  end;
+
+  begin
+    insert into public.invitations (org_id, email, role)
+    values ('60000000-0000-0000-0000-000000000001', 'Mixed@example.com', 'admin');
+    raise exception 'An email with uppercase letters must fail';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.invitations (org_id, email, role)
+    values ('60000000-0000-0000-0000-000000000001', 'owner@example.com', 'owner');
+    raise exception 'An owner invitation must fail';
+  exception when check_violation then null;
+  end;
+end;
+$$;
+
+-- Run the scheduled command itself.
+do $$
+begin
+  execute (select command from cron.job where jobname = 'delete-old-invitations');
+  assert not exists (select from public.invitations where email = 'old@example.com'),
+    'Invitations older than 37 days must be deleted';
+  assert (select count(*) = 2 from public.invitations where email = 'fresh@example.com'),
+    'Recent invitations must remain';
+end;
+$$;
+
+delete from public.orgs where id = '60000000-0000-0000-0000-000000000001';
+
+do $$
+begin
+  assert not exists (select from public.invitations
+    where org_id = '60000000-0000-0000-0000-000000000001'),
+    'Deleting an org must delete its invitations';
+  assert exists (select from public.invitations
+    where org_id = '60000000-0000-0000-0000-000000000002'),
+    'Other orgs must keep their invitations';
+end;
+$$;
+
+rollback;
