@@ -14,11 +14,10 @@ Existing access tokens of a revoked session stay valid until they expire.
 `PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
 `GET /v0/orgs/{orgId}/members` lists every member's name, email, and role for any member of an active org.
 Soft-deleted profiles are left out. The order is not specified. Missing, deleted, and non-member targets return 404.
-`DELETE /v0/orgs/{orgId}` sets deleted_at only for an active org owned by the user.
-Memberships and user accounts remain. Owner retries on deleted orgs return 204
-without another write. Missing and non-owner targets return 404.
+`DELETE /v0/orgs/{orgId}` permanently deletes an org and its memberships only for an owner.
+User accounts and profiles remain. Missing, deleted, and non-owner targets return 404.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
-INSERT on `public.orgs` and `public.members`, UPDATE on `public.orgs`, and
+INSERT on `public.orgs` and `public.members`, UPDATE and DELETE on `public.orgs`, and
 EXECUTE on `public.list_user_sessions(uuid)` and
 `public.revoke_user_session(uuid, uuid)`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,

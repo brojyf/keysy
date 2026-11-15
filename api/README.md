@@ -17,14 +17,13 @@ created in one transaction; success returns `201` with `{id, name}`.
 Only an owner of an active org can rename it. Success returns `200` with `{id, name}`; missing, deleted,
 and non-owner targets return `404 ORG_NOT_FOUND`.
 `DELETE /v0/orgs/{orgId}` accepts only an org UUID in the path. Only an owner of that org can delete it.
-It sets `orgs.deleted_at` and returns `204` without a response body. Memberships and user accounts remain.
-Owner retries on already deleted orgs return `204` without another write or a change to `deleted_at`.
-Missing and non-owner targets return `404 ORG_NOT_FOUND`, including non-owner requests for deleted orgs.
+It permanently deletes the org and its memberships, and returns `204` with no response body.
+User accounts and profiles remain. Missing, deleted, and non-owner targets return `404 ORG_NOT_FOUND`, including owner retries.
 `GET /v0/orgs/{orgId}/members` accepts only an org UUID in the path. Any member of an active org gets `200`
 with `[{userId, name, email, role}]`; `name` is the profile display name and `email` is the profile email.
 Members with soft-deleted profiles are left out. The order is not specified; clients sort the list.
 Missing, deleted, and non-member targets return `404 ORG_NOT_FOUND`.
-Deleted orgs are excluded from `GET /v0/orgs`. Permanent resource cleanup is tracked in
+Permanent resource cleanup is tracked in
 [issue #120](https://github.com/brojyf/keysy/issues/120).
 All org routes reject query strings; GET and DELETE also reject request bodies.
 

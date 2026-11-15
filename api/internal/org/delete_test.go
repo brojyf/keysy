@@ -20,7 +20,7 @@ func TestDelete(t *testing.T) {
 		status                      int
 	}{
 		{name: "owner", id: orgID, deleted: true, status: 204},
-		{name: "owner retry after deletion", id: orgID, deleted: true, status: 204},
+		{name: "owner retry after deletion", id: orgID, status: 404, code: "ORG_NOT_FOUND"},
 		{name: "not owner or missing", id: orgID, status: 404, code: "ORG_NOT_FOUND"},
 		{name: "invalid ID", id: "not-a-uuid", status: 400, code: "INVALID_REQUEST"},
 		{name: "query", id: orgID, query: "?userId=other", status: 400, code: "INVALID_REQUEST"},

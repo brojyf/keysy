@@ -40,31 +40,19 @@ func (s Store) List(ctx context.Context, userID string) ([]Membership, error) {
 	err := s.DB.WithContext(ctx).Table("public.orgs AS orgs").
 		Select("orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count").
 		Joins("JOIN public.members AS members ON members.org_id = orgs.id").
-		Where("members.user_id = ? AND orgs.deleted_at IS NULL", userID).
+		Where("members.user_id = ?", userID).
 		Order("orgs.name ASC").Order("orgs.id ASC").Find(&memberships).Error
 	return memberships, err
 }
 
 func (s Store) Delete(ctx context.Context, userID, orgID string) (bool, error) {
-	var completed bool
-	// Lock before checking deleted_at so concurrent retries do not repeat the write.
-	err := s.DB.WithContext(ctx).Raw(`WITH owned_org AS (
-		SELECT orgs.id, orgs.deleted_at FROM public.orgs AS orgs
-		WHERE orgs.id = ? AND EXISTS (SELECT 1 FROM public.members AS members
-			WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')
-		FOR UPDATE OF orgs
-	), deleted_org AS (
-		UPDATE public.orgs AS orgs SET deleted_at = CURRENT_TIMESTAMP
-		FROM owned_org WHERE orgs.id = owned_org.id AND owned_org.deleted_at IS NULL
-		RETURNING orgs.id
-	)
-	SELECT EXISTS (SELECT 1 FROM owned_org)`, orgID, userID).Scan(&completed).Error
-	return completed, err
+	result := s.DB.WithContext(ctx).Exec(`DELETE FROM public.orgs AS orgs WHERE orgs.id = ? AND EXISTS (SELECT 1 FROM public.members AS members WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')`, orgID, userID)
+	return result.RowsAffected == 1, result.Error
 }
 
 // Rename reports false when the org is missing, deleted, or the caller is not its owner.
 func (s Store) Rename(ctx context.Context, userID, orgID, name string) (bool, error) {
-	result := s.DB.WithContext(ctx).Exec(`UPDATE public.orgs SET name = ? WHERE id = ? AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.members AS members
+	result := s.DB.WithContext(ctx).Exec(`UPDATE public.orgs SET name = ? WHERE id = ? AND EXISTS (SELECT 1 FROM public.members AS members
 		WHERE members.org_id = orgs.id AND members.user_id = ? AND members.role = 'owner')`, name, orgID, userID)
 	return result.RowsAffected == 1, result.Error
 }

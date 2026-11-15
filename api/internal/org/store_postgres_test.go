@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -27,83 +28,63 @@ func TestStoreDeletePostgres(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = connection.Close() })
 	connection.SetMaxOpenConns(8)
-	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY, deleted_at timestamptz);
-		CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id), user_id text, role text, PRIMARY KEY (org_id, user_id));
-		CREATE TABLE public.org_deletion_writes (org_id uuid);
-		CREATE FUNCTION public.record_org_deletion() RETURNS trigger LANGUAGE plpgsql AS $$
-		BEGIN INSERT INTO public.org_deletion_writes VALUES (NEW.id); RETURN NEW; END $$;
-		CREATE TRIGGER record_org_deletion AFTER UPDATE ON public.orgs FOR EACH ROW EXECUTE FUNCTION public.record_org_deletion()`).Error; err != nil {
+	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY);
+ CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text, role text, PRIMARY KEY (org_id, user_id));
+ INSERT INTO public.orgs VALUES ('20000000-0000-0000-0000-000000000001');
+ INSERT INTO public.members VALUES ('20000000-0000-0000-0000-000000000001', 'owner', 'owner'), ('20000000-0000-0000-0000-000000000001', 'admin', 'admin'), ('20000000-0000-0000-0000-000000000001', 'developer', 'developer')`).Error; err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := db.Exec(`DROP TABLE public.members, public.org_deletion_writes, public.orgs; DROP FUNCTION public.record_org_deletion()`).Error; err != nil {
+		if err := db.Exec(`DROP TABLE public.members, public.orgs`).Error; err != nil {
 			t.Error(err)
 		}
 	})
 	store := Store{DB: db}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	for _, tc := range []struct {
-		name, orgID string
-		requests    int
-	}{
-		{"sequential retries", "20000000-0000-0000-0000-000000000001", 1},
-		{"concurrent retries", "20000000-0000-0000-0000-000000000002", 8},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if err := db.Exec(`INSERT INTO public.orgs (id) VALUES (?)`, tc.orgID).Error; err != nil {
-				t.Fatal(err)
+	const orgID = "20000000-0000-0000-0000-000000000001"
+	for _, userID := range []string{"admin", "developer", "stranger"} {
+		if completed, err := store.Delete(ctx, userID, orgID); err != nil || completed {
+			t.Fatalf("unauthorized deletion: user=%s completed=%v err=%v", userID, completed, err)
+		}
+	}
+	var count int64
+	if err := db.Table("public.orgs").Where("id = ?", orgID).Count(&count).Error; err != nil || count != 1 {
+		t.Fatalf("orgs=%d err=%v", count, err)
+	}
+	const n = 8
+	var completed atomic.Int32
+	var requests sync.WaitGroup
+	start := make(chan struct{})
+	for range n {
+		requests.Go(func() {
+			<-start
+			ok, err := store.Delete(ctx, "owner", orgID)
+			if err != nil {
+				t.Errorf("deletion: %v", err)
 			}
-			if err := db.Exec(`INSERT INTO public.members (org_id, user_id, role) VALUES (?, 'owner', 'owner'), (?, 'admin', 'admin'), (?, 'developer', 'developer')`, tc.orgID, tc.orgID, tc.orgID).Error; err != nil {
-				t.Fatal(err)
-			}
-			for _, userID := range []string{"admin", "developer", "stranger"} {
-				if completed, err := store.Delete(ctx, userID, tc.orgID); err != nil || completed {
-					t.Fatalf("unauthorized active deletion: user=%s completed=%v err=%v", userID, completed, err)
-				}
-			}
-			var unauthorizedDeletions int64
-			if err := db.Table("public.orgs").Where("id = ? AND deleted_at IS NOT NULL", tc.orgID).Count(&unauthorizedDeletions).Error; err != nil || unauthorizedDeletions != 0 {
-				t.Fatalf("unauthorized deletion changed the org: deleted=%d err=%v", unauthorizedDeletions, err)
-			}
-			start := make(chan struct{})
-			var requests sync.WaitGroup
-			for range tc.requests {
-				requests.Go(func() {
-					<-start
-					if completed, err := store.Delete(ctx, "owner", tc.orgID); err != nil || !completed {
-						t.Errorf("deletion: completed=%v err=%v", completed, err)
-					}
-				})
-			}
-			close(start)
-			requests.Wait()
-			var deletedAt time.Time
-			if err := db.Raw(`SELECT deleted_at FROM public.orgs WHERE id = ?`, tc.orgID).Scan(&deletedAt).Error; err != nil || deletedAt.IsZero() {
-				t.Fatalf("deleted_at=%v err=%v", deletedAt, err)
-			}
-			if completed, err := store.Delete(ctx, "owner", tc.orgID); err != nil || !completed {
-				t.Fatalf("retry: completed=%v err=%v", completed, err)
-			}
-			var afterRetry time.Time
-			if err := db.Raw(`SELECT deleted_at FROM public.orgs WHERE id = ?`, tc.orgID).Scan(&afterRetry).Error; err != nil || !afterRetry.Equal(deletedAt) {
-				t.Fatalf("retry changed deleted_at: before=%v after=%v err=%v", deletedAt, afterRetry, err)
-			}
-			var writes, memberships int64
-			if err := db.Table("public.org_deletion_writes").Where("org_id = ?", tc.orgID).Count(&writes).Error; err != nil || writes != 1 {
-				t.Fatalf("deletion writes=%d err=%v", writes, err)
-			}
-			if err := db.Table("public.members").Where("org_id = ?", tc.orgID).Count(&memberships).Error; err != nil || memberships != 3 {
-				t.Fatalf("memberships=%d err=%v", memberships, err)
-			}
-			for _, userID := range []string{"admin", "developer", "stranger"} {
-				if completed, err := store.Delete(ctx, userID, tc.orgID); err != nil || completed {
-					t.Fatalf("unauthorized deleted target: user=%s completed=%v err=%v", userID, completed, err)
-				}
+			if ok {
+				completed.Add(1)
 			}
 		})
 	}
-	if completed, err := store.Delete(ctx, "owner", "20000000-0000-0000-0000-000000000003"); err != nil || completed {
-		t.Fatalf("missing target: completed=%v err=%v", completed, err)
+	close(start)
+	requests.Wait()
+	if completed.Load() != 1 {
+		t.Fatalf("completed=%d, want 1", completed.Load())
+	}
+	for _, table := range []string{"public.orgs", "public.members"} {
+		column := "id"
+		if table == "public.members" {
+			column = "org_id"
+		}
+		if err := db.Table(table).Where(column+" = ?", orgID).Count(&count).Error; err != nil || count != 0 {
+			t.Fatalf("%s rows=%d err=%v", table, count, err)
+		}
+	}
+	for _, id := range []string{orgID, "20000000-0000-0000-0000-000000000003"} {
+		if ok, err := store.Delete(ctx, "owner", id); err != nil || ok {
+			t.Fatalf("retry or missing: completed=%v err=%v", ok, err)
+		}
 	}
 }

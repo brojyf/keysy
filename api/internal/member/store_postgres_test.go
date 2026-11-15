@@ -27,13 +27,12 @@ func TestStoreListPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = connection.Close() })
-	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY, deleted_at timestamptz);
-		CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id), user_id text, role text, PRIMARY KEY (org_id, user_id));
+	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY);
+		CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text, role text, PRIMARY KEY (org_id, user_id));
 		CREATE TABLE public.profiles (id text PRIMARY KEY, display_name text, email text, deleted_at timestamptz);
-		INSERT INTO public.orgs (id, deleted_at) VALUES
-			('20000000-0000-0000-0000-000000000001', NULL),
-			('20000000-0000-0000-0000-000000000002', NULL),
-			('20000000-0000-0000-0000-000000000003', now());
+		INSERT INTO public.orgs (id) VALUES
+			('20000000-0000-0000-0000-000000000001'),
+			('20000000-0000-0000-0000-000000000002');
 		INSERT INTO public.profiles (id, display_name, email, deleted_at) VALUES
 			('ada', 'Ada', 'ada@example.com', NULL),
 			('grace', 'Grace', 'grace@example.com', NULL),
@@ -43,8 +42,7 @@ func TestStoreListPostgres(t *testing.T) {
 			('20000000-0000-0000-0000-000000000001', 'ada', 'owner'),
 			('20000000-0000-0000-0000-000000000001', 'grace', 'developer'),
 			('20000000-0000-0000-0000-000000000001', 'gone', 'admin'),
-			('20000000-0000-0000-0000-000000000002', 'linus', 'owner'),
-			('20000000-0000-0000-0000-000000000003', 'ada', 'owner')`).Error; err != nil {
+			('20000000-0000-0000-0000-000000000002', 'linus', 'owner')`).Error; err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -70,7 +68,6 @@ func TestStoreListPostgres(t *testing.T) {
 	for _, tc := range []struct{ name, userID, orgID string }{
 		{"not a member", "linus", "20000000-0000-0000-0000-000000000001"},
 		{"deleted caller", "gone", "20000000-0000-0000-0000-000000000001"},
-		{"deleted org", "ada", "20000000-0000-0000-0000-000000000003"},
 		{"missing org", "ada", "20000000-0000-0000-0000-000000000009"},
 	} {
 		got, err := store.List(ctx, tc.userID, tc.orgID)
