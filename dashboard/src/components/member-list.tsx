@@ -14,12 +14,12 @@ import { placeRowMenu } from '../lib/row-menu'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
 
-// Figma 11.1–11.3: an Owner manages everyone but the Owner; an Admin manages Developers.
+// Figma People · Members (Owner, Admin, and Developer views): an Owner manages everyone but the Owner; an Admin manages Developers.
 function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['role']) {
   return (viewerRole === 'owner' && memberRole !== 'owner') || (viewerRole === 'admin' && memberRole === 'developer')
 }
 
-// Figma 11.1–11.6 Members. The row menu items do nothing until their APIs exist.
+// Figma People · Members. The row menu items do nothing until their APIs exist.
 // The member page comes later.
 export default function MemberList() {
   const { user, organization, onSignedOut } = useCurrentUser()
