@@ -59,12 +59,8 @@ paths:
       operationId: deleteMe
       summary: Schedule deletion of the signed-in account
       description: |
-        Sets the account deletion time and revokes all sessions. Repeated requests preserve the first deletion time and revoke sessions again.
-        Owners must transfer or delete their organizations first. Existing access tokens remain valid until they expire.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string or request body is accepted.
+        Schedules the signed-in account for deletion and revokes all its sessions. An access token already issued stays valid until it expires.
+        An owner must transfer or delete their orgs first. A repeated request keeps the first deletion time.
       responses:
         '204':
           description: Account deletion is scheduled. The response body is empty.
@@ -699,7 +695,7 @@ components:
               type: string
   responses:
     OrgOwner:
-      description: ORG_OWNER. Transfer or delete the organizations you own, then try again.
+      description: ORG_OWNER. The signed-in user still owns an org.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -714,7 +710,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     OrgCreateForbidden:
-      description: INVALID_ORIGIN or ACCOUNT_DELETING. INVALID_ORIGIN has no CORS allow headers.
+      description: INVALID_ORIGIN, or ACCOUNT_DELETING when the account is scheduled for deletion.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
