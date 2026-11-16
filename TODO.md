@@ -37,7 +37,7 @@ This is a design for #193. Do not merge this file.
 - Each send uses the outbox event ID as the Resend idempotency key.
 - The purge event keeps a deleted user's email outside the database. Delete outbox rows after the relay publishes them, and keep a short retention on the Kafka topic.
 - No reminder before the purge.
-- Open: the outbox path, `notify`, and `email-worker` do not exist yet. Decide whether account deletion can ship before them, with emails sent later, or must wait.
+- The outbox path, `notify`, and `email-worker` do not exist yet. Tracked in #210.
 
 ### Restore
 
