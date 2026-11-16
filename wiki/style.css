@@ -422,7 +422,7 @@
   }
 }
 
-/* Wide operation pages: the endpoint bar joins the left column, so the examples start beside it.
+/* Wide operation pages: the examples start beside the description, below the title.
    Sourcey's container is the operation itself, which its own queries cannot lay out, so
    #content-area hosts one, and this grid places every area itself. */
 #sourcey #content-area:has(> [data-sourcey-operation]) {
@@ -435,7 +435,6 @@
       display: grid;
       grid-template:
         'header header'
-        'endpoint examples'
         'intro examples'
         'details examples' 1fr / minmax(0, 1fr) 28rem;
       column-gap: 2rem;
@@ -443,10 +442,6 @@
 
     #sourcey [data-sourcey-operation] > header {
       grid-area: header;
-    }
-
-    #sourcey [data-sourcey-operation] > .sourcey-endpoint {
-      grid-area: endpoint;
     }
 
     #sourcey [data-sourcey-operation] > .operation-layout {
@@ -468,4 +463,33 @@
       top: calc(var(--header-height) + 2.5rem);
     }
   }
+}
+
+/* Operation pages: response headers live in the OpenAPI files only, each error is one line,
+   and examples show only in the right column. */
+#sourcey #responses .schema-expandable:has(.param-in),
+#sourcey #responses .param-item:is([id^='response-4'], [id^='response-5']) > .schema-expandable,
+#sourcey #responses .param-item:is([id^='response-4'], [id^='response-5']) .param-type,
+#sourcey .operation-details .schema-example {
+  display: none;
+}
+
+/* Operation section headings match the h2 on markdown pages. */
+#sourcey :is(#parameters, #request-body, #responses) h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+/* Operation titles: the method badge sits beside the path, which replaces the endpoint bar. */
+#sourcey [data-sourcey-operation] > header > div {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* theme-init.js marks the page before paint when it should spring its sidebar group open;
+   sidebar.js removes the mark and animates from this closed height. */
+html[data-keysy-nav-reveal] #nav details.sourcey-nav-group[open] > ul {
+  height: 0;
+  overflow: hidden;
 }
