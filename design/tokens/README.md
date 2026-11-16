@@ -10,7 +10,8 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Primary text | `text` |
 | Secondary text | `muted` |
 | Accent text, icons, landing page eyebrow labels, and inline code | `accent` |
-| Primary button and logo | `button` |
+| Primary button | `button` |
+| Logo symbol | `logo` |
 | Primary button hover | `button-hover` |
 | Primary button text | `on-button` |
 | Selected or subtle background | `soft` |
