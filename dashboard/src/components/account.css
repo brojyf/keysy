@@ -59,6 +59,13 @@
   font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
 }
 
+/* Figma People · Invitations: the count sits at the row's right end. */
+.account-nav-count {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .account-nav-item:focus-visible {
   outline: 2px solid var(--color-button);
   outline-offset: -2px;

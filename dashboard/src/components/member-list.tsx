@@ -7,9 +7,9 @@ import { SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
 import MoreMenu from './more-menu'
 import { MemberTableSkeleton } from './loading-skeleton'
+import { usePeopleNav } from './people-nav'
 import SettingsLayout from './settings-layout'
 import { memberQueryOptions, type Member } from '../lib/member-queries'
-import { organizationPath } from '../lib/organization-route'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
 
@@ -23,6 +23,7 @@ function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['r
 export default function MemberList() {
   const { user, organization, onSignedOut } = useCurrentUser()
   const memberQuery = useQuery({ ...memberQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
+  const nav = usePeopleNav('Members')
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
@@ -37,11 +38,7 @@ export default function MemberList() {
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
 
   return (
-    <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={[
-      { label: 'Members', href: organizationPath(organization?.id ?? '', '/people'), current: true },
-      { label: 'Invitations' },
-      { label: 'Permission sets' },
-    ]}>
+    <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={nav}>
       <TableSearch label="Search members" value={query} onChange={setQuery} />
       {memberQuery.isPending ? (
         <>

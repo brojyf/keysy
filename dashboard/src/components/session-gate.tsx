@@ -16,6 +16,7 @@ import SignOutDialog from './sign-out-dialog'
 import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
 import LoadingSkeleton from './loading-skeleton'
+import KeysySymbol from './keysy-symbol'
 
 function SessionGateContent({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
@@ -124,7 +125,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     return (
       <main className="auth-page" aria-labelledby="session-error-title">
         <section className="sign-in-card">
-          <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
+          <KeysySymbol size={36} />
           <div className="sign-in-copy">
             <h1 id="session-error-title">Can't reach Keysy</h1>
             <p role="alert">Your session could not be checked. Try again in a moment.</p>

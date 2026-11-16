@@ -121,11 +121,11 @@ test('dark mode defines every shadow', () => {
   assert.deepEqual(shadows(dark), shadows(light));
 });
 
-test('logo symbols use the button color of their mode', () => {
-  for (const [file, button] of [['symbol-light.svg', lightColors.button], ['symbol-dark.svg', darkColors.button]]) {
+test('logo symbols use the logo color of their mode', () => {
+  for (const [file, color] of [['symbol-light.svg', lightColors.logo], ['symbol-dark.svg', darkColors.logo]]) {
     const svg = readFileSync(new URL(`../logo/${file}`, import.meta.url), 'utf8');
     const fills = new Set([...svg.matchAll(/fill="(#[^"]+)"/g)].map(([, fill]) => fill.toLowerCase()));
-    assert.deepEqual([...fills], [button], file);
+    assert.deepEqual([...fills], [color], file);
   }
 });
 

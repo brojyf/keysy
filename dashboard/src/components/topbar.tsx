@@ -3,6 +3,7 @@
 import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
 import IconButton from './icon-button'
+import KeysySymbol from './keysy-symbol'
 import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
 // Figma icons with no lucide equivalent.
@@ -30,7 +31,7 @@ export default function Topbar() {
   return (
     <header ref={tooltipRef} className={`topbar${organizationName ? '' : ' topbar-account-only'}`}>
       <span className="topbar-logo">
-        <img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" />
+        <KeysySymbol size={24} />
       </span>
       {organizationName && (
         <>

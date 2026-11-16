@@ -18,6 +18,10 @@ const apiMembers = [
   { userId: 'user-alex', name: 'Alex Kim', email: 'alex@acme.dev', role: 'owner' },
   { userId: 'user-id', name: 'Jordan Lee', email: 'jordan@acme.dev', role: 'developer' },
 ]
+const apiInvitations = [
+  { id: 'invitation-casey', email: 'casey@acme.dev', role: 'developer', status: 'pending' },
+  { id: 'invitation-morgan', email: 'morgan@acme.dev', role: 'admin', status: 'expired' },
+]
 const originalFetch = globalThis.fetch
 const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
 const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
@@ -31,7 +35,10 @@ beforeEach(() => {
     ? Promise.resolve(Response.json(apiMembers))
     : Promise.reject(new Error(`Unexpected request ${url}`)))
   onSignedOut = mock(() => {})
-  globalThis.fetch = request
+  // The People navigation loads the invitation count; `request` sees only the member requests.
+  globalThis.fetch = ((url: string, init?: RequestInit) => url === 'https://api.keysy.net/v0/orgs/org-1/invitations'
+    ? Promise.resolve(Response.json(apiInvitations))
+    : request(url, init)) as typeof fetch
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   container = document.createElement('div')
@@ -70,11 +77,12 @@ function tableRows() {
 test('Members shows the People navigation and one page heading', async () => {
   await renderMembers()
   const nav = container.querySelector('nav[aria-label="People"]')!
-  expect(nav.querySelector('a')?.getAttribute('href')).toBe('/orgs/org-1/people')
-  expect(nav.querySelector('a')?.textContent).toBe('Members')
-  expect(nav.querySelector('a')?.getAttribute('aria-current')).toBe('page')
+  expect([...nav.querySelectorAll('a')].map((link) => [link.textContent, link.getAttribute('href'), link.getAttribute('aria-current')])).toEqual([
+    ['Members', '/orgs/org-1/people', 'page'],
+    ['Invitations2', '/orgs/org-1/people/invitations', null],
+  ])
+  expect(nav.querySelector('.account-nav-count')?.textContent).toBe('2')
   expect([...nav.querySelectorAll('button')].map((button) => [button.textContent, button.disabled])).toEqual([
-    ['Invitations', true],
     ['Permission sets', true],
   ])
   expect([...container.querySelectorAll('h1')].map((heading) => heading.textContent)).toEqual(['Members'])

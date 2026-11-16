@@ -9,3 +9,5 @@ rules:
   operation-4xx-response: off
   # Google sign-in start and callback only redirect (302 and 303).
   operation-2xx-response: off
+  # Tag names are self-explanatory; the wiki shows no tag descriptions.
+  tag-description: off

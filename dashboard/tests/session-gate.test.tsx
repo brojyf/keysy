@@ -277,8 +277,7 @@ test('shows the sign-in design and links directly to the auth origin', async () 
   expect(login?.textContent).toBe('Continue with Google')
   expect(login?.getAttribute('href')).toBe('https://auth.keysy.net/v0/auth/google')
   expect(login?.href).toBe('https://auth.keysy.net/v0/auth/google')
-  expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('width')).toBe('36')
-  expect(container.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
+  expect(container.querySelector('svg.keysy-symbol[aria-label="Keysy"]')?.getAttribute('width')).toBe('36')
   expect(login?.querySelector('img')?.getAttribute('width')).toBe('18')
   expect(login?.querySelector('img')?.getAttribute('src')).toBe('/google-symbol.svg')
   expect(container.querySelectorAll('[aria-disabled="true"]')).toHaveLength(0)
@@ -546,7 +545,7 @@ test('shows the top bar with the mock organization and action buttons', async ()
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json({ id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' })))
   await renderSessionGate()
   const topbar = container.querySelector('header.topbar')
-  expect(topbar?.querySelector('img[alt="Keysy"]')?.getAttribute('src')).toBe('/keysy-symbol.svg')
+  expect(topbar?.querySelector('svg.keysy-symbol[aria-label="Keysy"]')?.getAttribute('width')).toBe('24')
   expect(topbar?.querySelector('button.topbar-org')?.textContent).toBe('platform')
   expect([...topbar!.querySelectorAll('button')].map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual([
     'platform',
@@ -1063,6 +1062,15 @@ test('pending session shows the People sidebar in the Members skeleton', async (
   expect(sidebar.querySelectorAll('.skeleton-sidebar-title .skeleton-bone')).toHaveLength(1)
   expect(sidebar.querySelectorAll('.skeleton-sidebar-items .skeleton-bone')).toHaveLength(3)
   expect(container.querySelector('[data-skeleton-page="people"] .skeleton-member-table')).not.toBeNull()
+})
+
+test('pending session shows the Invitations skeleton for a direct /people/invitations visit', async () => {
+  currentPathname = '/orgs/org-id/people/invitations'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  const page = container.querySelector('[data-skeleton-page="people/invitations"]')!
+  expect(page.querySelector('.skeleton-sidebar')).not.toBeNull()
+  expect(page.querySelector('.skeleton-table-header')?.getAttribute('style')).toContain('minmax(0, 360fr) minmax(0, 120fr) minmax(0, 238fr)')
 })
 
 test('pending session shows the Sessions skeleton for /account/sessions', async () => {

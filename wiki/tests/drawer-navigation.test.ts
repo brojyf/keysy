@@ -30,6 +30,8 @@ function loadDrawer({ supported = true, mobile = true, reducedMotion = false } =
     ...(supported ? { CSSViewTransitionRule: class {} } : {}),
   };
   const document = {
+    documentElement: { hasAttribute: () => false },
+    addEventListener: () => {},
     getElementById: (id: string) => id === 'mobile-nav' ? dialog : null,
     querySelector: () => null,
     querySelectorAll: (selector: string) => selector === '[data-drawer-slide]' ? [{

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import AuthFooter from '../../components/auth-footer'
+import KeysySymbol from '../../components/keysy-symbol'
 import { serviceURLs } from '../../lib/service-urls'
 
 export const metadata: Metadata = { title: 'Sign in' }
@@ -9,7 +10,7 @@ export default function SignInPage() {
   return (
     <main className="auth-page" aria-labelledby="sign-in-title">
       <section className="sign-in-card">
-        <img src="/keysy-symbol.svg" width="36" height="36" alt="Keysy" />
+        <KeysySymbol size={36} />
         <div className="sign-in-copy">
           <h1 id="sign-in-title">Sign in to Keysy</h1>
         </div>
