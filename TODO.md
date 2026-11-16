@@ -12,6 +12,7 @@ This is a design for #193. Do not merge this file.
 - A member in the grace period can only be removed. They cannot be the target of any other change, such as an Owner role transfer, a role change, or a service or permission set assignment. Pickers do not list them. Each write endpoint checks `deleted_at` of the caller and of the target in its own transaction.
 - Signing in during the grace period restores the account automatically. There is no restore page or dialog. The user gets back only the memberships that still exist, with the roles and scopes they have at that time, so no permission can increase while they are away.
 - After 30 days, a daily `pg_cron` job permanently deletes the user: their membership rows first, then the `auth.users` row. The profile is deleted by cascade.
+- The user gets an email when the deletion starts and another when the purge is done.
 - After the purge, the same Google account can sign in again. It becomes a new user with a new user ID and no orgs.
 - There is no email cooldown after deletion. Keysy has no public usernames, free tier, or bans to protect, and a cooldown would keep the email with no clear benefit.
 
@@ -27,6 +28,16 @@ This is a design for #193. Do not merge this file.
 - An access token already issued stays valid until it expires (5 minutes), as after a session revoke. Write endpoints reject a caller in the grace period, so that token cannot change anything. This matters most for org creation: an org created in that window would lose its Owner at the purge.
 - Proposed: a repeated request in that window returns 204 and keeps the first `deleted_at`.
 - After 204, the dashboard calls `POST /v0/auth/logout` to clear the cookies, then opens the Account deleted page.
+
+### Emails
+
+- Two emails go through the planned outbox path: Supabase outbox, Outbox Relay, Kafka, `notify`, Cloudflare Queues, `email-worker`, Resend.
+- **Deletion scheduled**: `DELETE /v0/me` writes the outbox event in its transaction. The email gives the purge date and says that signing in before then restores the account. It also warns the user if someone else deleted the account with a stolen session.
+- **Account deleted**: the purge function writes the outbox event in the same transaction as the delete. The payload carries the email and display name, because the profile and `auth.users` row are gone after the commit.
+- Each send uses the outbox event ID as the Resend idempotency key.
+- The purge event keeps a deleted user's email outside the database. Delete outbox rows after the relay publishes them, and keep a short retention on the Kafka topic.
+- No reminder before the purge.
+- Open: the outbox path, `notify`, and `email-worker` do not exist yet. Decide whether account deletion can ship before them, with emails sent later, or must wait.
 
 ### Restore
 
@@ -44,6 +55,7 @@ This is a design for #193. Do not merge this file.
 - [ ] OpenAPI: add `DELETE /v0/me` with `ORG_OWNER`, and the member status field.
 - [ ] Database: in a migration, add the deletion function, the restore trigger, and the daily purge job. Grant `EXECUTE` on the function to `keysy_api` by hand. In production, verify that `postgres` can create a trigger on `auth.sessions` and that the `pg_cron` job can delete `auth.users` rows.
 - [ ] api: add `DELETE /v0/me`, return the member status, and reject callers in the grace period on every write endpoint.
+- [ ] Email: write the two outbox events (deletion scheduled, account deleted) and add both templates to `email-worker/`.
 - [ ] Future endpoints (invite, remove member, transfer the Owner role, change role, assign services): apply the target rule in the same transaction as the write.
 - [ ] Figma: in a review section, draw the **Deleting** badge in the People · Members row, and change the copy on Account · Delete account › Account deleted to say that signing in within 30 days restores the account.
 - [ ] Dashboard: enable **Delete**, build the Delete account dialog (Delete account · Can delete, and the list of owned orgs), the Account deleted page, and the **Deleting** badge.
