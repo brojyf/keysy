@@ -3,11 +3,19 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The implemented application API provides the signed-in user's profile. It also lists the orgs the signed-in user belongs to, creates an org with the signed-in user as its owner, lets owners rename and permanently delete their orgs. It lists the signed-in user's sessions and revokes their other sessions. It lists an org's members and invitations for any member of that org. The unauthenticated `/health` endpoint reports process liveness. Only implemented endpoints are listed.
+    The Keysy application API. Only implemented endpoints are listed. This is the v0 draft, not a stable release.
 
-    CORS allows credentialed requests from the dashboard origin only. Preflight accepts GET, POST, PATCH, and DELETE with at most the `Content-Type` request header on every path, and returns 204 with `Access-Control-Allow-Methods: GET, POST, PATCH, DELETE` and `Access-Control-Allow-Headers: Content-Type`. A preflight with any other origin, method, or header returns 403 `INVALID_ORIGIN` or `INVALID_REQUEST`.
+    Common rules for all `/v0` endpoints:
 
-    This is the v0 draft, not a stable release.
+    - Requests must send the sign-in cookie.
+    - Responses include `Cache-Control: no-store` and `X-Request-ID`.
+    - Only the dashboard origin, or a request without `Origin`, is accepted. Other origins return `INVALID_ORIGIN`.
+    - No query string is accepted. GET and DELETE accept no request body.
+    - A request body is UTF-8 JSON of at most 1024 bytes.
+    - IDs in the path must be UUIDs.
+    - Names are trimmed of surrounding whitespace, then must have 1 to 32 characters. Names must not contain null characters.
+
+    CORS preflight allows GET, POST, PATCH, and DELETE, and only the `Content-Type` request header.
 
     This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
 servers:
@@ -32,11 +40,7 @@ paths:
         - accessCookie: []
       operationId: getMe
       summary: Get the signed-in user
-      description: |
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string or request body is accepted.
+      description: Returns the signed-in user's profile.
       responses:
         '200':
           description: The signed-in user.
@@ -69,13 +73,7 @@ paths:
         - accessCookie: []
       operationId: updateMe
       summary: Update the signed-in user's profile
-      description: |
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string is accepted. The UTF-8 JSON body is limited to 1024 bytes.
-        The body must contain exactly one field, displayName or agentAutoApply. For displayName, the service trims whitespace,
-        then accepts 1 to 32 Unicode code points.
+      description: The body must contain exactly one field, `displayName` or `agentAutoApply`.
       requestBody:
         required: true
         content:
@@ -127,14 +125,7 @@ paths:
         - accessCookie: []
       operationId: listMySessions
       summary: List the signed-in user's sessions
-      description: |
-        Returns every active Supabase Auth session of the signed-in user, and no other user's session. Sessions whose not_after has passed are excluded.
-        The list includes the session that made this request, so it is not empty in practice. Clients must still accept an empty array.
-        The list is sorted by lastUsedAt descending, then by id ascending. There is no pagination.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string or request body is accepted.
+      description: Returns all active sessions of the signed-in user, including the session that made this request. Sorted by `lastUsedAt`, newest first. There is no pagination.
       responses:
         '200':
           description: The signed-in user's active sessions.
@@ -173,14 +164,8 @@ paths:
       operationId: revokeMySession
       summary: Revoke one of the signed-in user's other sessions
       description: |
-        Deletes the session and its refresh tokens, so that device can no longer refresh its access token.
-        An access token already issued to that session stays valid until it expires, up to the access token lifetime, because the api verifies access tokens locally.
-        The current session cannot be revoked here and returns CURRENT_SESSION. It ends only through POST /v0/auth/logout on the auth service.
-        Missing sessions and sessions of other users return SESSION_NOT_FOUND.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        sessionId must be a UUID. No query string or request body is accepted.
+        Deletes the session and its refresh tokens. An access token already issued to that device stays valid until it expires.
+        The current session cannot be revoked here. To end it, use `POST /v0/auth/logout` on the auth service.
       responses:
         '204':
           description: The session and its refresh tokens are deleted. The response body is empty.
@@ -214,14 +199,7 @@ paths:
         - accessCookie: []
       operationId: listOrgs
       summary: List the signed-in user's orgs
-      description: |
-        Returns every org the signed-in user belongs to, and no other org. Each memberCount is the total number of
-        rows in public.members for that org. The list is sorted by name ascending, then by id ascending. The response
-        is an empty array when the user has no membership. There is no pagination.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string or request body is accepted.
+      description: Returns all orgs the signed-in user belongs to. Sorted by name. There is no pagination.
       responses:
         '200':
           description: The orgs the signed-in user belongs to.
@@ -256,14 +234,7 @@ paths:
         - accessCookie: []
       operationId: createOrg
       summary: Create an org
-      description: |
-        Creates the org and the signed-in user's owner membership in one transaction. The new org has no other members.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        No query string is accepted. The body must be UTF-8 JSON of at most 1024 bytes.
-        The body must contain exactly one field, name. The service trims whitespace, then accepts 1 to 32 Unicode code points.
-        Names must not contain null characters because PostgreSQL text cannot store them.
+      description: Creates an org. The signed-in user becomes its owner.
       requestBody:
         required: true
         content:
@@ -313,14 +284,7 @@ paths:
         - accessCookie: []
       operationId: renameOrg
       summary: Rename an org
-      description: |
-        Only an owner of the target org can rename it. Missing, deleted, and non-owner targets return ORG_NOT_FOUND.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        orgId must be a UUID. No query string is accepted. The body must be UTF-8 JSON of at most 1024 bytes.
-        The body must contain exactly one field, name. The service trims whitespace, then accepts 1 to 32 Unicode code points.
-        Names must not contain null characters because PostgreSQL text cannot store them. Names need not be unique.
+      description: Only an owner can rename the org. Names need not be unique.
       requestBody:
         required: true
         content:
@@ -369,14 +333,7 @@ paths:
         - accessCookie: []
       operationId: deleteOrg
       summary: Permanently delete an org
-      description: |
-        Only an owner of the target org can delete it. The org and its memberships are permanently deleted.
-        User accounts and profiles remain. Missing, deleted, and non-owner targets return ORG_NOT_FOUND.
-        A repeated request returns ORG_NOT_FOUND.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        orgId must be a UUID. No query string or request body is accepted.
+      description: Only an owner can delete the org. The org and all its memberships are permanently deleted. User accounts remain.
       responses:
         '204':
           description: The org and its memberships are permanently deleted. User accounts and profiles remain. The response body is empty.
@@ -410,16 +367,7 @@ paths:
         - accessCookie: []
       operationId: listMembers
       summary: List an org's members
-      description: |
-        Every member of the org, whatever their role, can list its members. Each item shows only the member's name, email, and role.
-        Access details are not included; they belong to the member page.
-        Members whose accounts are deleted are not listed.
-        The order is not specified; clients sort the list. There is no pagination (issue #157).
-        Missing and deleted orgs, and orgs the caller is not a member of, return ORG_NOT_FOUND.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        orgId must be a UUID. No query string or request body is accepted.
+      description: Any member of the org can list its members. Members with deleted accounts are not listed. The order is not specified. There is no pagination.
       responses:
         '200':
           description: The org's members. The caller is always included.
@@ -446,7 +394,7 @@ paths:
         '403':
           $ref: '#/components/responses/InvalidOrigin'
         '404':
-          description: ORG_NOT_FOUND. The org is missing, deleted, or the caller is not a member. The response does not reveal which.
+          description: ORG_NOT_FOUND. The org is missing or deleted, or the caller is not a member.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -473,16 +421,7 @@ paths:
         - accessCookie: []
       operationId: listInvitations
       summary: List an org's invitations
-      description: |
-        Every member of the org, whatever their role, can list its pending and expired invitations.
-        Each item contains the invitation ID, email, role, and status. No invitee name or profile is returned.
-        Status is expired when started_at + 7 days is at or before the database's current time; otherwise it is pending.
-        The order is not specified; clients sort the list. There is no pagination.
-        An org with no invitations returns an empty array. Missing and deleted orgs, non-members, and callers with deleted profiles return ORG_NOT_FOUND.
-        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
-        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
-        orgId must be a UUID. No query string or request body is accepted.
+      description: Any member of the org can list its pending and expired invitations. Invitations expire after 7 days. The order is not specified. There is no pagination.
       responses:
         '200':
           description: The org's pending and expired invitations, or an empty array.
@@ -508,7 +447,7 @@ paths:
         '403':
           $ref: '#/components/responses/InvalidOrigin'
         '404':
-          description: ORG_NOT_FOUND. The org is missing or deleted, the caller is not a member, or the caller's profile is deleted. The response does not reveal which.
+          description: ORG_NOT_FOUND. The org is missing or deleted, or the caller is not a member.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -532,9 +471,7 @@ paths:
       operationId: getHealth
       security: []
       summary: Check process liveness
-      description: |
-        Reports that the process accepts requests. Does not check the database, JWKS, or other dependencies.
-        Runs before request middleware, without authentication, request IDs, CORS allow headers, or telemetry.
+      description: Reports only that the process is alive. Does not check the database or other dependencies. No sign-in is required.
       responses:
         '200':
           description: The process accepts requests.
@@ -553,7 +490,7 @@ components:
       type: apiKey
       in: cookie
       name: __Secure-keysy-access
-      description: Encrypted access token cookie. On local HTTP the name is keysy-access. The auth service sets HttpOnly, SameSite=Lax, Path=/, Secure and Domain=COOKIE_DOMAIN in HTTPS mode; Max-Age is the access token lifetime.
+      description: The encrypted access token cookie. On local HTTP its name is `keysy-access`.
   parameters:
     OrgId:
       name: orgId
@@ -571,16 +508,16 @@ components:
         format: uuid
   headers:
     RequestID:
-      description: Generated UUID; absent if ID generation fails.
+      description: A generated UUID.
       schema:
         type: string
         format: uuid
     AllowOrigin:
-      description: Set to the matching dashboard origin after CORS validation.
+      description: The matching dashboard origin.
       schema:
         type: string
     AllowCredentials:
-      description: Set to true after CORS validation.
+      description: Always `true`.
       schema:
         type: string
     NoStore:
@@ -602,7 +539,7 @@ components:
           type: boolean
         avatarUrl:
           type: string
-          description: Present only when the token contains a valid HTTPS avatar URL.
+          description: Present only when there is a valid HTTPS avatar URL.
     Session:
       type: object
       description: An active Supabase Auth session of the signed-in user.
@@ -615,18 +552,18 @@ components:
         client:
           type: string
           enum: [web]
-          description: The client that created the session. Only web exists today. CLI and browser extension values will be added when those clients ship.
+          description: The client that created the session. Only `web` exists today.
         device:
           type: string
-          description: Derived from the User-Agent recorded at sign-in or refresh, formatted as `<Browser> on <OS>`, for example `Chrome on macOS`. The value is `Unknown device` when the User-Agent is missing or cannot be parsed.
+          description: Formatted as `<Browser> on <OS>`, for example `Chrome on macOS`. `Unknown device` when it cannot be detected.
           example: Chrome on macOS
         lastUsedAt:
           type: string
           format: date-time
-          description: The last token refresh time of the session, or its creation time if it never refreshed. The value is approximate. It changes only when the access token is refreshed, so it can lag real use by up to the access token lifetime.
+          description: The last token refresh time. It is approximate and can lag real use by up to the access token lifetime.
         current:
           type: boolean
-          description: True for the session that made this request, matched by the session_id claim of the access token.
+          description: True for the session that made this request.
     Org:
       type: object
       required: [id, name]
@@ -649,7 +586,7 @@ components:
         role:
           type: string
           enum: [owner, admin, developer]
-          description: The database role. This draft does not define the permissions of each role.
+          description: The user's role in this org.
         memberCount:
           type: integer
           minimum: 1
@@ -662,10 +599,10 @@ components:
         userId:
           type: string
           format: uuid
-          description: Identifies the member within the org. The dashboard uses it to open the member page.
+          description: The member's user ID.
         name:
           type: string
-          description: The member's display name from their profile.
+          description: The member's display name.
         email:
           type: string
           format: email
@@ -689,7 +626,7 @@ components:
         status:
           type: string
           enum: [pending, expired]
-          description: Computed from started_at and the database's current time. Expires after seven days.
+          description: Becomes `expired` after 7 days.
     Error:
       type: object
       required: [error]
@@ -720,7 +657,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     SessionNotFound:
-      description: SESSION_NOT_FOUND. The session is missing or belongs to another user. The response does not reveal which.
+      description: SESSION_NOT_FOUND. The session is missing or belongs to another user.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -735,7 +672,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     CurrentSessionRevoke:
-      description: CURRENT_SESSION. sessionId is the session that made this request. The current session ends only through POST /v0/auth/logout on the auth service.
+      description: CURRENT_SESSION. The current session cannot be revoked here.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -780,7 +717,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InvalidOrigin:
-      description: INVALID_ORIGIN. This response has no CORS allow headers.
+      description: INVALID_ORIGIN.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -791,7 +728,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InternalError:
-      description: INTERNAL_ERROR. Recovery before CORS can omit CORS headers and Cache-Control.
+      description: INTERNAL_ERROR.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'

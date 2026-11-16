@@ -286,7 +286,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   const api = await Bun.file(new URL('api.html', output)).text();
   expect(api).toContain('the source of truth for the application API.');
   expect(api).toContain('This is the v0 draft, not a stable release.');
-  expect(api).toContain("The implemented application API provides the signed-in user's profile.");
+  expect(api).toContain('The Keysy application API. Only implemented endpoints are listed.');
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create an org', 'Rename an org', "List an org's members", "List an org's invitations"]) {
     expect(api).toContain(operation);
@@ -295,7 +295,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
   expect(auth).toContain('the source of truth for the authentication API.');
   expect(auth).toContain('This is the v0 draft, not a stable release.');
   expect(auth).toContain('Finish Google sign-in');
-  expect(auth).toContain('The authentication API signs users in to Keysy with Google');
+  expect(auth).toContain('It signs users in to Keysy with Google');
   // Each operation loads on its own page, so the overview stays small.
   for (const html of [api, auth]) expect(html.length).toBeLessThan(150_000);
   // The OpenAPI files keep their security contract; the wiki hides the Authentication sections.
@@ -385,8 +385,8 @@ test('every member lists the org members by name, email, and role only', async (
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   const start = yaml.indexOf('operationId: listMembers\n');
   const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
-  expect(operation).toContain('Every member of the org, whatever their role, can list its members.');
-  expect(operation).toContain('The order is not specified; clients sort the list. There is no pagination (issue #157).');
+  expect(operation).toContain('Any member of the org can list its members.');
+  expect(operation).toContain('The order is not specified. There is no pagination.');
   expect(operation).not.toMatch(/sorted by/i);
   expect(operation).not.toMatch(/avatar|cursor|nextCursor|Super Admin/i);
   const member = yaml.match(/^    Member:\n([\s\S]*?)^    \w/m)?.[1] ?? '';

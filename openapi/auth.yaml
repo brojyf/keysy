@@ -3,30 +3,30 @@ info:
   title: Keysy Auth API
   version: 0.0.0
   description: |
-    The authentication API signs users in to Keysy with Google and manages their sessions.
+    The authentication API. It signs users in to Keysy with Google and manages their sessions. This is the v0 draft, not a stable release. The dashboard is the only client today.
 
-    The dashboard is the only client today. The CLI and the browser extension are planned.
-    The dashboard serves its sign-in page at `/signin`. Its Google sign-in button navigates to `GET /v0/auth/google` on this service.
+    Sign-in flow:
 
-    Sign-in is a server-side flow. The browser visits only Keysy and Google. Only the auth service calls Supabase.
-    Session tokens stay in encrypted `HttpOnly` cookies. They never reach browser JavaScript or a response body.
+    1. The dashboard's sign-in button navigates to `GET /v0/auth/google`.
+    2. After the user signs in with Google, the browser returns to `GET /v0/auth/callback`.
+    3. The service sets the access and refresh cookies, then redirects to the dashboard.
 
-    The access cookie lives as long as the access token. When an API request returns 401, the dashboard calls `POST /v0/auth/refresh` once and retries after a successful refresh.
-    After a successful sign-out or a session check that still returns 401 after the refresh attempt, the dashboard navigates to `/signin`.
+    Tokens stay in encrypted `HttpOnly` cookies. Browser JavaScript cannot read them.
 
-    This is the v0 draft, not a stable release.
+    When an API request returns 401, the dashboard calls `POST /v0/auth/refresh` once and retries after a successful refresh. If the request still returns 401 after the refresh, or the user signed out, the dashboard navigates to `/signin`.
 
-    Except for `/health`, responses include a generated X-Request-ID, Cache-Control: no-store, and Referrer-Policy: no-referrer.
-    Recovery can return a 500 INTERNAL_ERROR. If request ID generation itself fails, X-Request-ID is absent.
-    For logout and refresh, after a valid Origin, POST requests
-    receive Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
-    Preflight receives these allow headers only after all preflight checks pass.
-    A failure before CORS runs can omit these headers.
-    All auth cookies use Path=/, HttpOnly, and SameSite=Lax. On HTTPS they use Secure.
-    The OAuth and refresh cookies are host-only. The OAuth cookie has Max-Age=600;
-    the refresh cookie is a session cookie. The access cookie uses COOKIE_DOMAIN and
-    Max-Age equal to the access token lifetime. Clearing cookies uses Max-Age=0.
-    On local HTTP localhost, cookie prefixes, Secure, and Domain are omitted.
+    Common rules, except for `/health`:
+
+    - Responses include `X-Request-ID`, `Cache-Control: no-store`, and `Referrer-Policy: no-referrer`.
+    - `User-Agent` must be printable ASCII of at most 2048 bytes.
+    - Only the callback accepts a query string. No endpoint accepts a request body.
+    - Logout and refresh require the dashboard `Origin`.
+
+    Cookies:
+
+    - All cookies use `Path=/`, `HttpOnly`, and `SameSite=Lax`. On HTTPS they also use `Secure`.
+    - The OAuth cookie expires after 10 minutes. The refresh cookie is a session cookie. The access cookie lives as long as the access token and uses `COOKIE_DOMAIN`.
+    - On local HTTP, cookies have no prefix, `Secure`, or `Domain`.
 
     This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
 servers:
@@ -47,12 +47,8 @@ paths:
       security: []
       summary: Start Google sign-in
       description: |
-        Starts the Google authorization code flow with state, PKCE S256, and an OIDC nonce.
-        The browser navigates to this path. It is not a CORS endpoint.
-
-        The request must have no body, no query parameters, and a printable ASCII `User-Agent` of at most 2048 bytes.
-        The service sets a short-lived encrypted `__Host-keysy-oauth` cookie that holds the sign-in transaction.
-        The transaction expires after 10 minutes.
+        Starts the Google authorization code flow with state, PKCE S256, and an OIDC nonce. The browser navigates here directly; it is not a CORS endpoint.
+        The service sets an encrypted sign-in transaction cookie that expires after 10 minutes.
       responses:
         '302':
           description: Redirect to Google.
@@ -83,17 +79,8 @@ paths:
       security: []
       summary: Finish Google sign-in
       description: |
-        Google redirects the browser here. The service checks the sign-in transaction cookie,
-        exchanges the authorization code with Google, and creates the Supabase session.
-
-        On success, the service sets the access and refresh cookies and redirects to the dashboard (`WEB_APP_URL`).
-        The callback handler clears the sign-in transaction cookie before it validates the request.
-        The service never returns a partial session.
-
-        The request must have no body and a printable ASCII `User-Agent` of at most 2048 bytes.
-        It must have exactly one of `code` or `error`. The query string is at most 8192 bytes.
-        Unknown or repeated query parameters are rejected. Each value must contain only printable ASCII
-        and be at most 4096 bytes. The code or error value must be nonempty and contain no spaces.
+        Google redirects the browser here. The service checks the sign-in transaction, exchanges the code for a Supabase session, sets the cookies, and redirects to the dashboard. A failure never leaves a partial session.
+        The query must have exactly one of `code` or `error`. Unknown and repeated parameters are rejected.
       parameters:
         - name: __Host-keysy-oauth
           in: cookie
@@ -209,7 +196,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Internal error. The `code` is `SIGN_IN_FAILED` or `INTERNAL_ERROR` (recovery).
+          description: Internal error. The `code` is `SIGN_IN_FAILED` or `INTERNAL_ERROR`.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -267,17 +254,9 @@ paths:
       operationId: logout
       summary: Sign out
       description: |
-        Revokes the current Supabase session (`scope=local`, so other devices stay signed in) and clears all three auth cookies.
-        Already issued access tokens can stay valid until they expire.
-
-        The request must have no body and no query parameters.
-        The `Origin` header is required and must match the dashboard origin.
-
-        Without a valid access cookie, the service uses the refresh cookie to get an access token, then revokes the session.
-        A missing, invalid, or rejected credential still clears the cookies. The User-Agent must be printable ASCII and at most 2048 bytes.
-        If Supabase is unavailable, the service keeps the session so the user can retry.
-        If the service refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
-        Otherwise, it leaves the existing cookies unchanged.
+        Revokes the current session and clears the three auth cookies. Other devices stay signed in. Access tokens already issued stay valid until they expire.
+        Without a valid access cookie, the service first uses the refresh cookie to get an access token. A missing or invalid credential still clears the cookies.
+        If Supabase is unavailable, the service keeps the session so the user can retry. If it refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
       security:
         - {}
         - accessCookie: []
@@ -326,8 +305,7 @@ paths:
         '503':
           description: |
             Supabase is unavailable. The service keeps the session. The `code` is `LOGOUT_UNAVAILABLE`.
-            If the service refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
-            Otherwise, it leaves the existing cookies unchanged.
+            If the service already refreshed the session, it sets the rotated access and refresh cookies.
           headers:
             Set-Cookie:
               description: If the service refreshed the session before revocation failed, the two rotated encrypted session cookies. Otherwise, this header is absent.
@@ -353,10 +331,7 @@ paths:
       operationId: preflightLogout
       security: []
       summary: CORS preflight for the logout route
-      description: |
-        Allows only the dashboard origin, only the `POST` method, and no custom request headers.
-        No query parameters or request body are accepted. User-Agent must be printable ASCII and at most 2048 bytes.
-        The service makes no Supabase request.
+      description: Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method
@@ -391,13 +366,7 @@ paths:
       tags: [Session]
       operationId: refreshSession
       summary: Renew the session
-      description: |
-        Exchanges the refresh cookie with Supabase and sets new access and refresh cookies.
-        Supabase rotates the refresh token on each use.
-
-        The request must have no body and no query parameters.
-        The `Origin` header is required and must match the dashboard origin.
-        The User-Agent must be printable ASCII and at most 2048 bytes.
+      description: Exchanges the refresh cookie with Supabase for new access and refresh cookies. The refresh token rotates on each use.
       security:
         - refreshCookie: []
       parameters:
@@ -488,10 +457,7 @@ paths:
       operationId: preflightRefresh
       security: []
       summary: CORS preflight for the refresh route
-      description: |
-        Allows only the dashboard origin, only the `POST` method, and no custom request headers.
-        No query parameters or request body are accepted. User-Agent must be printable ASCII and at most 2048 bytes.
-        The service makes no Supabase request.
+      description: Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method
@@ -527,9 +493,7 @@ paths:
       operationId: getHealth
       security: []
       summary: Check process liveness
-      description: |
-        Reports that the process accepts requests. Does not check Google, Supabase, or other dependencies.
-        Runs before request middleware, without authentication, request IDs, CORS allow headers, Referrer-Policy, or telemetry.
+      description: Reports only that the process is alive. Does not check Google, Supabase, or other dependencies. No sign-in is required.
       responses:
         '200':
           description: The process accepts requests.
@@ -548,30 +512,23 @@ components:
       type: apiKey
       in: cookie
       name: __Secure-keysy-access
-      description: |
-        The encrypted Supabase access token (AES-256-GCM). The service sets it at sign-in with
-        `HttpOnly; Secure; SameSite=Lax; Path=/; Domain=<COOKIE_DOMAIN>` (`keysy.net` in production). Refresh and OAuth cookies stay host-only. The cookie lives as long as the access token.
-        Clients cannot create it. Browsers send it with `credentials: 'include'`.
-
-        For local HTTP development only (`AUTH_URL=http://localhost:<port>`), the cookie drops `Secure`, Domain, and the `__Secure-` prefix, so its name is `keysy-access`.
+      description: The encrypted Supabase access token. Set at sign-in on `COOKIE_DOMAIN` (`keysy.net` in production). On local HTTP its name is `keysy-access`.
     refreshCookie:
       type: apiKey
       in: cookie
       name: __Host-keysy-refresh
-      description: |
-        The encrypted Supabase refresh token (AES-256-GCM). It is host-only on the auth origin and is a browser session cookie.
-        Browsers send it to the auth origin with `credentials: 'include'`. On HTTP localhost its name is `keysy-refresh`.
+      description: The encrypted Supabase refresh token. It is sent only to the auth origin. On local HTTP its name is `keysy-refresh`.
   parameters:
     Origin:
       name: Origin
       in: header
       required: true
-      description: Must equal the dashboard origin (`WEB_APP_URL`). Send it once.
+      description: Must equal the dashboard origin.
       schema:
         type: string
   headers:
     RequestID:
-      description: Generated UUID; absent if request ID generation fails.
+      description: A generated UUID.
       schema:
         type: string
         format: uuid
@@ -586,11 +543,11 @@ components:
         type: string
         enum: [no-referrer]
     AllowOrigin:
-      description: The dashboard origin. The service sets it only when the request has that `Origin`.
+      description: The dashboard origin.
       schema:
         type: string
     AllowCredentials:
-      description: Always `true`. The service sets it only when the request has the dashboard `Origin`.
+      description: Always `true`.
       schema:
         type: string
         enum: ['true']
@@ -637,7 +594,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InvalidOrigin:
-      description: The `Origin` header is missing, repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`. This response has no CORS allow headers.
+      description: The `Origin` header is missing, repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -667,9 +624,7 @@ components:
         Referrer-Policy:
           $ref: '#/components/headers/ReferrerPolicy'
     PreflightRejected:
-      description: |
-        The origin is not the dashboard origin (`INVALID_ORIGIN`), or the requested method is wrong
-        or the request has custom headers (`INVALID_REQUEST`). The response has no CORS allow headers.
+      description: A wrong origin returns `INVALID_ORIGIN`. A wrong method or a custom header returns `INVALID_REQUEST`.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
