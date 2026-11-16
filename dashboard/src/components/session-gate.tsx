@@ -87,9 +87,10 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const route = user ? organizationRoute(organizations.length, pathname) : null
   const organization = organizationForPath(organizations, pathname)
   const organizationScoped = pathname === '/orgs' || pathname.startsWith('/orgs/')
+  const signedOutPage = pathname === '/signin' || pathname === '/account-deleted'
   let redirect: string | null = null
-  if (user === null && pathname !== '/signin') redirect = '/signin'
-  else if (user && pathname === '/signin') redirect = organizations[0] ? organizationPath(organizations[0].id, '/secrets') : '/account/organizations'
+  if (user === null && !signedOutPage) redirect = '/signin'
+  else if (user && signedOutPage) redirect = organizations[0] ? organizationPath(organizations[0].id, '/secrets') : '/account/organizations'
   else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = organizations[0] ? organizationPath(organizations[0].id, pathname) : '/account/organizations'
   else if (route === '/account/organizations' && !organizationScoped) redirect = route
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])

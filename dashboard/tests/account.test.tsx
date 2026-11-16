@@ -56,9 +56,9 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
+async function renderAccount(pathname: string, page: ReactNode, sessionUser = user, accountOrganizations = organizations) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, organization: organizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations: accountOrganizations, organization: accountOrganizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -438,8 +438,8 @@ test('editing, discarding, and restoring the name controls the save bar', async 
 
 function deleteAccountDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
 
-async function openDeleteAccount() {
-  await renderAccount('/account', <GeneralPage />)
+async function openDeleteAccount(accountOrganizations = organizations.filter((organization) => organization.role !== 'owner')) {
+  await renderAccount('/account', <GeneralPage />, user, accountOrganizations)
   await act(() => button('Delete', container.querySelector('.account-sections')!).click())
   expect(deleteAccountDialog().open).toBe(true)
 }
@@ -466,7 +466,7 @@ test('Delete opens a dialog that needs the email typed to confirm', async () => 
   expect(request).not.toHaveBeenCalled()
 })
 
-test('confirming account deletion deletes the account, then signs out', async () => {
+test('confirming account deletion deletes the account, signs out, and opens the account deleted page', async () => {
   let finish!: (response: Response) => void
   request.mockImplementation((url: string) => url === 'https://api.keysy.net/v0/me'
     ? new Promise<Response>((resolve) => { finish = resolve })
@@ -482,16 +482,43 @@ test('confirming account deletion deletes the account, then signs out', async ()
     'DELETE https://api.keysy.net/v0/me',
     'POST https://auth.keysy.net/v0/auth/logout',
   ])
-  expect(onSignedOut).toHaveBeenCalledTimes(1)
+  expect(browser.location.pathname).toBe('/account-deleted')
 })
 
-test('account deletion signs out even when logout fails', async () => {
+test('account deletion opens the account deleted page even when logout fails', async () => {
   request.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url === 'https://api.keysy.net/v0/me' ? 204 : 503 })))
   await openDeleteAccount()
   await confirmDeleteAccount('member@example.com')
   await act(async () => button('Delete account', deleteAccountDialog()).click())
   await settle()
+  expect(browser.location.pathname).toBe('/account-deleted')
+})
+
+test('an expired session during account deletion signs out', async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
   expect(onSignedOut).toHaveBeenCalledTimes(1)
+  expect(browser.location.pathname).toBe('/')
+})
+
+test('an org owner sees the orgs to hand over instead of the confirm field', async () => {
+  await openDeleteAccount([...organizations, { id: 'org-4', name: 'a-owner', role: 'owner' as const, memberCount: 2 }])
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these organizations first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+    ['z-ownerOwner', '/orgs/org-3/settings'],
+    ['a-ownerOwner', '/orgs/org-4/settings'],
+  ])
+  expect(deleteAccountDialog().querySelector('input')).toBeNull()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+})
+
+test('an owner of one org sees the singular message', async () => {
+  await openDeleteAccount(organizations)
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete this organization first:')
+  expect(deleteAccountDialog().querySelectorAll('li')).toHaveLength(1)
 })
 
 for (const [status, message] of [

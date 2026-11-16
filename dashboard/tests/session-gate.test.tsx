@@ -5,6 +5,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
 import SignInPage, { metadata as signInMetadata } from '../src/app/signin/page'
+import AccountDeletedPage, { metadata as accountDeletedMetadata } from '../src/app/account-deleted/page'
 import { metadata as rootMetadata } from '../src/app/layout'
 import GeneralPage from '../src/app/account/page'
 import * as secretsPage from '../src/app/secrets/page'
@@ -200,6 +201,26 @@ for (const hasOrganizations of [true, false]) {
   })
 }
 
+test('signed-out users on /account-deleted see the account deleted page without redirect', async () => {
+  currentPathname = '/account-deleted'
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(accountDeletedMetadata.title).toBe('Account deleted')
+  expect(container.querySelector('h1')?.textContent).toBe('Account deleted')
+  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Thanks for building with Keysy.Changed your mind? Sign in within 30 days to cancel.')
+  const link = container.querySelector<HTMLAnchorElement>('a.button-primary')!
+  expect([link.textContent, link.getAttribute('href')]).toEqual(['Go to Keysy', 'https://keysy.net'])
+  expect(container.querySelector('.sign-in-footer')).not.toBeNull()
+})
+
+test('signed-in users on /account-deleted redirect to the dashboard', async () => {
+  currentPathname = '/account-deleted'
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(router.replace).toHaveBeenCalledWith('/orgs/org-id/secrets')
+  expect(container.querySelector('h1')?.textContent).not.toBe('Account deleted')
+})
+
 test('signed-out users on /signin see its children without redirect', async () => {
   currentPathname = '/signin'
   await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
@@ -245,7 +266,7 @@ function signOutButton() {
 
 function signOutDialog() {
   // General also renders the closed Delete account dialog; these tests use the shell's dialogs.
-  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => !dialog.querySelector('.account-delete-form'))!
+  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.querySelector('h2')?.textContent !== 'Delete account?')!
 }
 
 function buttonNamed(scope: ParentNode, label: string) {
