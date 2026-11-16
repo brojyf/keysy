@@ -284,7 +284,7 @@ test('PRD requirements and endpoint callout content are published', async () => 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
   expect(stylesheet).toMatch(/#sourcey #content-area > header \.h-5,\s*#sourcey #content-area > article > \.h-5,\s*#sourcey #content-area > article > header h1 \+ span \{\s*display: none;/);
   const api = await Bun.file(new URL('api.html', output)).text();
-  expect(api).toContain('The Keysy application API (v0 draft).');
+  expect(api).toContain('The Keysy API is the backend service behind the dashboard.');
   expect(api).toContain('openapi/api.yaml');
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create an org', 'Rename an org', "List an org's members", "List an org's invitations"]) {

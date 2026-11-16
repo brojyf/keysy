@@ -3,11 +3,9 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The Keysy application API (v0 draft).
+    The Keysy API is the backend service behind the dashboard. It manages accounts, sessions, orgs, members, and invitations. This is the v0 draft.
 
-    - Authenticate with the sign-in cookie that the auth service sets.
-    - Browser requests are accepted only from the dashboard origin.
-    - Names have 1 to 32 characters after surrounding whitespace is trimmed.
+    It does not cover sign-in or session renewal, which belong to the [auth service](/auth), or emails and notifications, which belong to the [notify service](/notify/overview).
 
     Source: `openapi/api.yaml`.
 servers:
