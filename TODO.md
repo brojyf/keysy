@@ -27,7 +27,7 @@ This is a design for #193. Do not merge this file.
   4. Delete the user's `auth.sessions` rows. Their refresh tokens are deleted by cascade.
 - Responses: 204 on success, 409 `ORG_OWNER`, and 400, 401, 403, 500, and 503 as on other endpoints.
 - An access token already issued stays valid until it expires (5 minutes), as after a session revoke. The api rejects a caller in the grace period, so that token cannot change anything. This matters most for org creation: an org created in that window would lose its Owner at the purge, so org creation also checks `deleted_at` in its transaction.
-- Proposed: a repeated request in that window returns 204 and keeps the first `deleted_at`.
+- A repeated request in that window returns 204 and keeps the first `deleted_at`.
 - After 204, the dashboard calls `POST /v0/auth/logout` to clear the cookies, then opens the Account deleted page.
 
 ### Emails
@@ -39,6 +39,7 @@ This is a design for #193. Do not merge this file.
 - The purge event keeps a deleted user's email outside the database. Delete outbox rows after the relay publishes them, and keep a short retention on the Kafka topic.
 - No reminder before the purge.
 - The outbox path, `notify`, and `email-worker` do not exist yet. Tracked in #210.
+- Account deletion ships first without emails. The emails follow when #210 is done.
 
 ### Cancel deletion
 
@@ -46,7 +47,7 @@ This is a design for #193. Do not merge this file.
 - `GET /v0/me` returns the purge date while a deletion is pending. The field name is set in the OpenAPI draft.
 - When that field is set, SessionGate opens the **Cancel deletion** page. It is a standalone page with no rail and no avatar. It shows the purge date and two buttons: **Cancel deletion** and **Sign out**.
 - **Cancel deletion** calls `POST /v0/me/cancel-deletion`. The api clears `profiles.deleted_at` with the `keysy_api` role. It accepts no body and returns 204, then the dashboard opens the app as usual.
-- Proposed: the endpoint also returns 204 when no deletion is pending, so a second tab or a retry does not fail.
+- The endpoint also returns 204 when no deletion is pending, so a second tab or a retry does not fail.
 - **Sign out** calls `POST /v0/auth/logout`. The deletion stays pending.
 - The CLI and the browser extension cannot cancel a deletion. On 403 `ACCOUNT_DELETING`, they tell the user to sign in to the dashboard to cancel it.
 - Large products also ask for an explicit choice after sign-in: Facebook (**Cancel deletion**), Discord (**Restore Account**), and Microsoft (sign in, then confirm with a code). X restores on sign-in and warns that third-party app sign-ins also restore the account, which is the risk this design avoids.
@@ -62,7 +63,7 @@ This is a design for #193. Do not merge this file.
 - [ ] OpenAPI: add `DELETE /v0/me` with `ORG_OWNER`, `POST /v0/me/cancel-deletion`, the purge date in `GET /v0/me`, `ACCOUNT_DELETING`, and the member status field.
 - [ ] Database: in a migration, add the deletion function and the daily purge job. Grant `EXECUTE` on the function to `keysy_api` by hand. In production, verify that the `pg_cron` job can delete `auth.users` rows.
 - [ ] api: add `DELETE /v0/me` and `POST /v0/me/cancel-deletion`, return the purge date and the member status, reject callers in the grace period with 403 `ACCOUNT_DELETING`, and check `deleted_at` in the org creation transaction.
-- [ ] Email: write the two outbox events (deletion scheduled, account deleted) and add both templates to `email-worker/`.
+- [ ] Email (after #210, not needed for the first release): write the two outbox events (deletion scheduled, account deleted) and add both templates to `email-worker/`.
 - [ ] Future endpoints (invite, remove member, transfer the Owner role, change role, assign services): apply the target rule in the same transaction as the write.
 - [ ] Figma: in a review section, draw the **Deleting** badge in the People · Members row and the **Cancel deletion** page, and change the copy on Account · Delete account › Account deleted to say that signing in within 30 days lets the user cancel the deletion.
 - [ ] Dashboard: enable **Delete**, build the Delete account dialog (Delete account · Can delete, and the list of owned orgs), the Account deleted page, the **Cancel deletion** page and its SessionGate rule, and the **Deleting** badge.
