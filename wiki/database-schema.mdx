@@ -19,6 +19,7 @@ description: "Implemented Supabase tables, triggers, and jobs, plus the ERD."
 | --- | --- | --- |
 | `delete-idle-sessions` | Daily | Deletes sessions that have not been refreshed for 30 days. |
 | `delete-old-invitations` | Daily | Deletes invitations that expired more than 30 days ago. |
+| `purge-deleted-accounts` | Daily | Permanently deletes accounts 30 days after their deletion was scheduled. |
 
 ### Functions for the API
 

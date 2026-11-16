@@ -13,8 +13,9 @@ test('the implemented schema shows the diagram of the implemented tables', () =>
   }
 });
 
-test('the scheduled jobs document invitation cleanup', () => {
+test('the scheduled jobs document invitation cleanup and account purging', () => {
   expect(schema).toContain('| `delete-old-invitations` | Daily | Deletes invitations that expired more than 30 days ago. |');
+  expect(schema).toContain('| `purge-deleted-accounts` | Daily | Permanently deletes accounts 30 days after their deletion was scheduled. |');
 });
 
 test('the ERD section shows only the diagram', () => {
