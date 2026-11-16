@@ -486,3 +486,10 @@
   align-items: center;
   gap: 0.75rem;
 }
+
+/* theme-init.js marks the page before paint when it should spring its sidebar group open;
+   sidebar.js removes the mark and animates from this closed height. */
+html[data-keysy-nav-reveal] #nav details.sourcey-nav-group[open] > ul {
+  height: 0;
+  overflow: hidden;
+}

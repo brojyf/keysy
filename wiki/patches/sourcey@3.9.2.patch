@@ -1,5 +1,5 @@
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b9e84da32 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..98f2ad3caa7cf485418b3b9388c44c60aa7fb005 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
 @@ -170,6 +170,47 @@
@@ -89,12 +89,43 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
      // Dropdown: toggle list visibility
      var toggle = document.getElementById('drawer-group-toggle');
      var list = document.getElementById('drawer-group-list');
-@@ -225,6 +285,10 @@
+@@ -225,6 +285,41 @@
      });
    }
 
++  // A link whose page sits in a collapsed sidebar group (an Introduction endpoint card,
++  // Previous/Next, search) asks the next page to spring that group open; theme-init.js reads it.
++  document.addEventListener('click', function (e) {
++    var link = e.target instanceof Element && e.target.closest('a[href]');
++    if (!shouldSaveForNavigation(e, link)) return;
++    var path = normalizePath(new URL(link.getAttribute('href'), window.location.href).pathname);
++    var target = Array.prototype.find.call(document.querySelectorAll('#nav a.nav-link[href]'), function (a) {
++      return normalizePath(new URL(a.getAttribute('href'), window.location.href).pathname) === path;
++    });
++    var group = target && target.closest('details.sourcey-nav-group');
++    if (group && !group.open) storageSet('keysy:nav-reveal', path);
++  });
++
++  function revealNavGroup() {
++    var root = document.documentElement;
++    if (!root.hasAttribute('data-keysy-nav-reveal')) return;
++    var list = document.querySelector('#nav details.sourcey-nav-group[open] > ul');
++    root.removeAttribute('data-keysy-nav-reveal');
++    if (!list || !list.animate) return;
++    var style = window.getComputedStyle(list);
++    var easing = style.getPropertyValue('--keysy-spring').trim();
++    list.animate(
++      { height: ['0px', list.scrollHeight + 'px'], overflow: ['hidden', 'hidden'] },
++      {
++        duration: parseFloat(style.getPropertyValue('--keysy-spring-duration')) || 300,
++        easing: window.CSS && window.CSS.supports('transition-timing-function', easing) ? easing : 'ease-out'
++      }
++    );
++  }
++
 +  // Attach now, not after idle or load, so the first click already springs.
 +  initDisclosureMotion('details.sourcey-nav-group', ':scope > ul');
++  revealNavGroup();
 +  initDisclosureMotion('#responses details.schema-expandable');
 +
    if ('requestIdleCallback' in window) {
@@ -143,10 +174,25 @@ index e9dca07cafc009138542cff1479dbdf6dd95756d..9357f948379a8470cf8b91e267de3efc
      });
 
 diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
-index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
+index d20b7092bae815e502ef06b15e5698790496da33..3c9dfae65bc9e1ab3eb0afe30fc90d1400a34486 100644
 --- a/dist/client/theme-init.js
 +++ b/dist/client/theme-init.js
-@@ -7,6 +7,7 @@
+@@ -2,11 +2,22 @@
+ (function () {
+   var root = document.documentElement;
+   root.classList.add("sourcey-js");
++  // Keysy: a link into a collapsed sidebar group asks the next page to spring that group open.
++  // Mark it here, before paint, so style.css can start the group closed without a flash.
++  try {
++    var revealPath = sessionStorage.getItem('keysy:nav-reveal');
++    sessionStorage.removeItem('keysy:nav-reveal');
++    var here = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
++    if (revealPath === here && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
++      root.setAttribute('data-keysy-nav-reveal', '');
++    }
++  } catch { /* Storage may be disabled by the browser. */ }
+   var script = document.currentScript;
+   var key = script && script.getAttribute('data-storage-key') || 'sourcey-theme';
    var initial = script && script.getAttribute('data-default') || 'system';
    var system = window.matchMedia('(prefers-color-scheme: dark)');
    var selected;
@@ -154,7 +200,7 @@ index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5
    try { selected = localStorage.getItem(key); } catch { /* Storage may be disabled by the browser. */ }
    if (selected !== 'light' && selected !== 'dark') selected = null;
    function apply() {
-@@ -32,9 +33,23 @@
+@@ -32,9 +43,23 @@
    });
    document.addEventListener('click', function (event) {
      if (!(event.target instanceof Element) || !event.target.closest('#theme-toggle')) return;

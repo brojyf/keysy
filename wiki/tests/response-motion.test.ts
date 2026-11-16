@@ -25,6 +25,8 @@ function loadResponse({ open = false, reducedMotion = false, supported = true, l
   };
   runInNewContext(sidebarScript, {
     document: {
+      documentElement: { hasAttribute: () => false },
+      addEventListener: () => {},
       getElementById: () => null,
       querySelector: () => null,
       querySelectorAll: (selector: string) => selector === '#responses details.schema-expandable' ? [group] : [],

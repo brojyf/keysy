@@ -9,7 +9,7 @@ info:
 
     **Refresh:** when the API returns 401, the dashboard calls `POST /v0/auth/refresh` once, then retries. If the refresh fails, the dashboard goes to `/signin`.
 
-    Tokens stay only in encrypted `HttpOnly` cookies.
+    The session lives in cookies that page scripts cannot read.
 
     Source: `openapi/auth.yaml`.
 servers:
@@ -26,9 +26,7 @@ paths:
       operationId: startGoogleSignIn
       security: []
       summary: Start Google sign-in
-      description: |
-        Starts the Google authorization code flow with state, PKCE S256, and an OIDC nonce. The browser navigates here directly; it is not a CORS endpoint.
-        The service sets an encrypted sign-in transaction cookie that expires after 10 minutes.
+      description: Starts Google sign-in. The dashboard's sign-in button opens this URL, and the browser goes on to Google. Sign-in must finish within 10 minutes.
       responses:
         '302':
           description: Redirect to Google.
@@ -58,9 +56,7 @@ paths:
       operationId: finishGoogleSignIn
       security: []
       summary: Finish Google sign-in
-      description: |
-        Finishes Google sign-in. Google redirects the browser here. The service checks the sign-in transaction, exchanges the code for a Supabase session, sets the cookies, and redirects to the dashboard. A failure never leaves a partial session.
-        The query must have exactly one of `code` or `error`. Unknown and repeated parameters are rejected.
+      description: Finishes Google sign-in. Google sends the browser back here, and the service signs the user in and returns them to the dashboard.
       parameters:
         - name: __Host-keysy-oauth
           in: cookie
@@ -155,11 +151,7 @@ paths:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
         '400':
-          description: |
-            The request or the sign-in was rejected. The `code` is one of:
-            `INVALID_REQUEST` (bad query, body, or `User-Agent`),
-            `INVALID_LOGIN_TRANSACTION` (the transaction cookie is missing, duplicated, invalid, expired, or does not match `state`),
-            or `SIGN_IN_FAILED` (Google returned `error`, or Google or Supabase rejected the sign-in).
+          description: INVALID_REQUEST, INVALID_LOGIN_TRANSACTION, or SIGN_IN_FAILED. The sign-in was rejected or took too long.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -176,7 +168,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Internal error. The `code` is `SIGN_IN_FAILED` or `INTERNAL_ERROR`.
+          description: SIGN_IN_FAILED or INTERNAL_ERROR.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -193,9 +185,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '502':
-          description: |
-            Google or Supabase sent an invalid response, or the session cookies are too large (over 4096 bytes).
-            The `code` is `INVALID_PROVIDER_RESPONSE` or `SIGN_IN_FAILED`.
+          description: INVALID_PROVIDER_RESPONSE or SIGN_IN_FAILED. Google or Supabase sent a bad response.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -212,7 +202,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '503':
-          description: Google or Supabase is unavailable. The `code` is `SIGN_IN_FAILED`.
+          description: SIGN_IN_FAILED. Google or Supabase is unavailable.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -234,9 +224,8 @@ paths:
       operationId: logout
       summary: Sign out
       description: |
-        Revokes the current session and clears the three auth cookies. Other devices stay signed in. Access tokens already issued stay valid until they expire.
-        Without a valid access cookie, the service first uses the refresh cookie to get an access token. A missing or invalid credential still clears the cookies.
-        If Supabase is unavailable, the service keeps the session so the user can retry. If it refreshed the session before revocation failed, it sets the rotated access and refresh cookies.
+        Signs the user out on this device and clears the sign-in cookies. Other devices stay signed in.
+        If sign-out fails, the user stays signed in and can try again; the response may set the rotated access and refresh cookies.
       security:
         - {}
         - accessCookie: []
@@ -245,7 +234,7 @@ paths:
         - $ref: '#/components/parameters/Origin'
       responses:
         '204':
-          description: Signed out. The response clears the three auth cookies.
+          description: Signed out.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -262,7 +251,7 @@ paths:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
         '400':
-          description: Invalid request, such as a query string, a body, or duplicate session cookies. The `code` is `INVALID_REQUEST`.
+          description: INVALID_REQUEST.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -283,9 +272,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
         '503':
-          description: |
-            Supabase is unavailable. The service keeps the session. The `code` is `LOGOUT_UNAVAILABLE`.
-            If the service already refreshed the session, it sets the rotated access and refresh cookies.
+          description: LOGOUT_UNAVAILABLE. The user stays signed in and can try again. The response may set the rotated access and refresh cookies.
           headers:
             Set-Cookie:
               description: If the service refreshed the session before revocation failed, the two rotated encrypted session cookies. Otherwise, this header is absent.
@@ -311,7 +298,7 @@ paths:
       operationId: preflightLogout
       security: []
       summary: CORS preflight for the logout route
-      description: Answers the CORS preflight. Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
+      description: The browser's CORS check before the request. Only the dashboard may call this endpoint.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method
@@ -325,7 +312,7 @@ paths:
         '204':
           $ref: '#/components/responses/PreflightAllowed'
         '400':
-          description: Invalid request (INVALID_REQUEST).
+          description: INVALID_REQUEST.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -346,14 +333,14 @@ paths:
       tags: [Session]
       operationId: refreshSession
       summary: Renew the session
-      description: Exchanges the refresh cookie with Supabase for new access and refresh cookies. The refresh token rotates on each use.
+      description: Renews the session so the user stays signed in. The dashboard calls it when an API request returns 401.
       security:
         - refreshCookie: []
       parameters:
         - $ref: '#/components/parameters/Origin'
       responses:
         '204':
-          description: Renewed. The response has no body.
+          description: Renewed.
           headers:
             X-Request-ID:
               $ref: '#/components/headers/RequestID'
@@ -370,7 +357,7 @@ paths:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
         '400':
-          description: Invalid request, such as a query string, a body, or duplicate refresh cookies. The `code` is `INVALID_REQUEST`.
+          description: INVALID_REQUEST.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -383,9 +370,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: |
-            The refresh cookie is missing or invalid, or Supabase rejected the refresh token. The `code` is `SESSION_EXPIRED`.
-            The response clears the three auth cookies. Sign in again.
+          description: SESSION_EXPIRED. The user must sign in again.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -406,7 +391,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
-          description: Supabase sent an invalid session, or the new cookies are too large. The service keeps the cookies. The `code` is `INVALID_PROVIDER_RESPONSE`.
+          description: INVALID_PROVIDER_RESPONSE. Supabase sent a bad response.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -419,7 +404,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '503':
-          description: Supabase is unavailable or rate limited. The service keeps the cookies. The `code` is `REFRESH_UNAVAILABLE`.
+          description: REFRESH_UNAVAILABLE. Try again later.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -437,7 +422,7 @@ paths:
       operationId: preflightRefresh
       security: []
       summary: CORS preflight for the refresh route
-      description: Answers the CORS preflight. Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
+      description: The browser's CORS check before the request. Only the dashboard may call this endpoint.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method
@@ -451,7 +436,7 @@ paths:
         '204':
           $ref: '#/components/responses/PreflightAllowed'
         '400':
-          description: Invalid request (INVALID_REQUEST).
+          description: INVALID_REQUEST.
           headers:
             Referrer-Policy:
               $ref: '#/components/headers/ReferrerPolicy'
@@ -473,10 +458,10 @@ paths:
       operationId: getHealth
       security: []
       summary: Check process liveness
-      description: Reports only that the process is alive. Does not check Google, Supabase, or other dependencies. No sign-in is required.
+      description: Reports that the service is running. It does not check Google or Supabase.
       responses:
         '200':
-          description: The process accepts requests.
+          description: The service is running.
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
@@ -548,7 +533,7 @@ components:
               description: A short message that describes this error and may suggest an action.
   responses:
     InvalidRequest:
-      description: Invalid request, such as a query string, a body, or an invalid `User-Agent`. The `code` is `INVALID_REQUEST`.
+      description: INVALID_REQUEST.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -561,7 +546,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InternalError:
-      description: Internal error. The `code` is `INTERNAL_ERROR`.
+      description: INTERNAL_ERROR.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -574,7 +559,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     InvalidOrigin:
-      description: The `Origin` header is missing, repeated, or not the dashboard origin. The `code` is `INVALID_ORIGIN`.
+      description: INVALID_ORIGIN. The request did not come from the dashboard.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -587,7 +572,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     PreflightAllowed:
-      description: The preflight is allowed. The response has no body.
+      description: Allowed.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -604,7 +589,7 @@ components:
         Referrer-Policy:
           $ref: '#/components/headers/ReferrerPolicy'
     PreflightRejected:
-      description: A wrong origin returns `INVALID_ORIGIN`. A wrong method or a custom header returns `INVALID_REQUEST`.
+      description: INVALID_ORIGIN or INVALID_REQUEST.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
