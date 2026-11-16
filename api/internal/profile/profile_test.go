@@ -83,3 +83,36 @@ func TestScheduleDeletion(t *testing.T) {
 		})
 	}
 }
+
+func TestCancelDeletion(t *testing.T) {
+	for _, scenario := range []string{"success", "database error"} {
+		t.Run(scenario, func(t *testing.T) {
+			db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			gdb, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL").WithArgs("user")
+			if scenario == "database error" {
+				update.WillReturnError(errors.New("database error"))
+			} else {
+				update.WillReturnResult(sqlmock.NewResult(0, 0))
+			}
+			got := (Store{DB: gdb}).CancelDeletion(context.Background(), "user")
+			if scenario == "database error" {
+				if got == nil || got.Error() != "database error" {
+					t.Fatalf("error = %v", got)
+				}
+			} else if got != nil {
+				t.Fatal(got)
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

@@ -69,3 +69,7 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 		return tx.Exec("SELECT public.revoke_all_user_sessions(?)", userID).Error
 	})
 }
+
+func (s Store) CancelDeletion(ctx context.Context, userID string) error {
+	return s.DB.WithContext(ctx).Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID).Error
+}

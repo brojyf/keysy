@@ -12,6 +12,7 @@ import (
 
 type Profiles interface {
 	ScheduleDeletion(context.Context, string) error
+	CancelDeletion(context.Context, string) error
 	Profile(context.Context, string) (profile.Profile, error)
 	UpdateDisplayName(context.Context, string, string) error
 	UpdateAgentAutoApply(context.Context, string, bool) error
