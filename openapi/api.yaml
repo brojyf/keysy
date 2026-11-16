@@ -52,6 +52,43 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+    delete:
+      tags: [Account]
+      security:
+        - accessCookie: []
+      operationId: deleteMe
+      summary: Schedule deletion of the signed-in account
+      description: |
+        Sets the account deletion time and revokes all sessions. Repeated requests preserve the first deletion time and revoke sessions again.
+        Owners must transfer or delete their organizations first. Existing access tokens remain valid until they expire.
+        Responses include Cache-Control: no-store and a generated X-Request-ID. Recovery before CORS can omit Cache-Control and CORS headers. ID generation can fail.
+        A matching dashboard Origin receives Access-Control-Allow-Origin and Access-Control-Allow-Credentials: true.
+        Requests without Origin are accepted; other or repeated origins return INVALID_ORIGIN.
+        No query string or request body is accepted.
+      responses:
+        '204':
+          description: Account deletion is scheduled. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '409':
+          $ref: '#/components/responses/OrgOwner'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     patch:
       tags: [Account]
       security:
@@ -256,7 +293,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
-          $ref: '#/components/responses/InvalidOrigin'
+          $ref: '#/components/responses/OrgCreateForbidden'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '500':
@@ -661,6 +698,36 @@ components:
             message:
               type: string
   responses:
+    OrgOwner:
+      description: ORG_OWNER. Transfer or delete the organizations you own, then try again.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    OrgCreateForbidden:
+      description: INVALID_ORIGIN or ACCOUNT_DELETING. INVALID_ORIGIN has no CORS allow headers.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     OrgNotFound:
       description: ORG_NOT_FOUND. The org is missing or deleted, or the caller is not an owner.
       headers:

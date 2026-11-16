@@ -3,6 +3,7 @@
 `api` is Keysy's application API (Go, Gin, GORM). Keep the service small:
 configuration, middleware, profile lookup and update, session list/revoke,
 org list/create/delete, and the org member and invitation lists.
+`DELETE /v0/me` schedules account deletion and revokes all sessions unless the user owns an org.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
 `GET /v0/me/sessions` lists the current user's active web sessions from
 `auth.sessions` and marks the current one by the JWT `session_id`.
@@ -23,7 +24,8 @@ User accounts and profiles remain. Missing, deleted, and non-owner targets retur
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
 INSERT on `public.orgs` and `public.members`, UPDATE and DELETE on `public.orgs`, SELECT on `public.invitations`, and
 EXECUTE on `public.list_user_sessions(uuid)` and
-`public.revoke_user_session(uuid, uuid)`. The backend database role must
+`public.revoke_user_session(uuid, uuid)` and `public.revoke_all_user_sessions(uuid)`.
+Profile row locks use SELECT FOR UPDATE and SELECT FOR SHARE and require UPDATE on `public.profiles`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
