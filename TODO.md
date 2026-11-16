@@ -18,7 +18,7 @@ This is a design for #193. Do not merge this file.
   - The one exception is `POST /v0/orgs`. It checks `deleted_at` in its transaction and returns 403 `ACCOUNT_DELETING`, because an org created in the grace period would lose its Owner at the purge.
 - Signing in during the grace period does not restore the account. The dashboard opens the **Cancel deletion** page, where the user can cancel the deletion or sign out. Only **Cancel deletion** restores the account. The user gets back only the memberships that still exist, with the roles and scopes they have at that time, so no permission can increase while they are away.
 - After 30 days, a daily `pg_cron` job permanently deletes the user: their membership rows first, then the `auth.users` row. The profile is deleted by cascade.
-- The user gets an email when the deletion starts and another when the purge is done.
+- The user gets an email when the deletion starts, when they cancel it, and when the purge is done.
 - After the purge, the same Google account can sign in again. It becomes a new user with a new user ID and no orgs.
 - There is no email cooldown after deletion. Keysy has no public usernames, free tier, or bans to protect, and a cooldown would keep the email with no clear benefit.
 
@@ -38,8 +38,9 @@ This is a design for #193. Do not merge this file.
 
 ### Emails
 
-- Two emails go through the planned outbox path: Supabase outbox, Outbox Relay, Kafka, `notify`, Cloudflare Queues, `email-worker`, Resend.
-- **Deletion scheduled**: `DELETE /v0/me` writes the outbox event in its transaction. The email gives the purge date and says that the user can sign in before then to cancel the deletion. It also warns the user if someone else deleted the account with a stolen session.
+- Three emails go through the planned outbox path: Supabase outbox, Outbox Relay, Kafka, `notify`, Cloudflare Queues, `email-worker`, Resend.
+- **Deletion scheduled**: `DELETE /v0/me` writes the outbox event in its transaction. The email gives the purge date and says that the user can sign in before then to cancel the deletion. It also warns the user if someone else deleted the account with a stolen session. A repeated request keeps the first `deleted_at` and writes no second event.
+- **Deletion cancelled**: `POST /v0/me/cancel-deletion` writes the outbox event in its transaction, only when it clears `deleted_at`. A request with no pending deletion writes no event. The email says the account is active again, and tells the user to revoke sessions in Account › Sessions if they did not cancel it.
 - **Account deleted**: the purge function writes the outbox event in the same transaction as the delete. The payload carries the email and display name, because the profile and `auth.users` row are gone after the commit.
 - Each send uses the outbox event ID as the Resend idempotency key.
 - The purge event keeps a deleted user's email outside the database. Delete outbox rows after the relay publishes them, and keep a short retention on the Kafka topic.
@@ -69,7 +70,7 @@ This is a design for #193. Do not merge this file.
 - [ ] OpenAPI: add `DELETE /v0/me` with `ORG_OWNER`, `POST /v0/me/cancel-deletion`, the purge date in `GET /v0/me`, `ACCOUNT_DELETING` on `POST /v0/orgs`, and the member status field.
 - [ ] Database: in a migration, add the deletion function and the daily purge job. Grant `EXECUTE` on the function to `keysy_api` by hand. In production, verify that the `pg_cron` job can delete `auth.users` rows.
 - [ ] api: add `DELETE /v0/me` and `POST /v0/me/cancel-deletion`, return the purge date and the member status, add the caller `deleted_at IS NULL` condition to every org membership check (including `GET /v0/orgs`), and lock and check the caller's `profiles` row first in the org creation transaction.
-- [ ] Email (after #210, not needed for the first release): write the two outbox events (deletion scheduled, account deleted) and add both templates to `email-worker/`.
+- [ ] Email (after #210, not needed for the first release): write the three outbox events (deletion scheduled, deletion cancelled, account deleted) and add the three templates to `email-worker/`.
 - [ ] Future endpoints (invite, remove member, transfer the Owner role, change role, assign services): apply the target rule in the same transaction as the write.
 - [ ] Figma: in a review section, draw the **Deleting** badge in the People · Members row and the **Cancel deletion** page, and change the copy on Account · Delete account › Account deleted to say that signing in within 30 days lets the user cancel the deletion.
 - [ ] Dashboard: enable **Delete**, build the Delete account dialog (Delete account · Can delete, and the list of owned orgs), the Account deleted page, the **Cancel deletion** page and its SessionGate rule, and the **Deleting** badge.
