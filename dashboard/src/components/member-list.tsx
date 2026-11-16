@@ -3,14 +3,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
 import { useState } from 'react'
-import { MoreIcon, SortableHeader, TableSearch } from './account-table-controls'
+import { SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
-import IconButton from './icon-button'
+import MoreMenu from './more-menu'
 import { MemberTableSkeleton } from './loading-skeleton'
 import SettingsLayout from './settings-layout'
 import { memberQueryOptions, type Member } from '../lib/member-queries'
 import { organizationPath } from '../lib/organization-route'
-import { placeRowMenu } from '../lib/row-menu'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
 
@@ -69,21 +68,16 @@ export default function MemberList() {
                   {hasActions && (
                     <td className="account-table-actions">
                       {canManage(viewerRole, role) && (
-                        <>
-                          <IconButton shape="square" popoverTarget={`member-menu-${userId}`} aria-label={`More actions for ${name}`}>
-                            <MoreIcon />
-                          </IconButton>
-                          <div id={`member-menu-${userId}`} className="account-menu account-row-menu member-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
-                            <button className="account-menu-item" type="button">Change role</button>
-                            {viewerRole === 'owner' && (
-                              <>
-                                <button className="account-menu-item" type="button">Transfer ownership</button>
-                                <hr className="account-menu-divider" />
-                              </>
-                            )}
-                            <button className="account-menu-item account-menu-sign-out" type="button">Remove</button>
-                          </div>
-                        </>
+                        <MoreMenu id={`member-menu-${userId}`} label={`More actions for ${name}`}>
+                          <button className="account-menu-item" type="button">Change role</button>
+                          {viewerRole === 'owner' && (
+                            <>
+                              <button className="account-menu-item" type="button">Transfer ownership</button>
+                              <hr className="account-menu-divider" />
+                            </>
+                          )}
+                          <button className="account-menu-item account-menu-sign-out" type="button">Remove</button>
+                        </MoreMenu>
                       )}
                     </td>
                   )}
