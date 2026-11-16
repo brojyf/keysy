@@ -5,8 +5,8 @@ import { themedImage } from './components/themed-image';
 import { tokenDark, tokenLight, writeWikiTheme } from './design-tokens';
 
 // Lists each operation by its path, in spec order, from the `paths` block's fixed indentation.
-// Specs with several tags get one collapsed group per tag. OPTIONS preflights are left out.
-function endpointNavigation(specPath: string) {
+// Grouped specs get one collapsed group per tag; short specs stay flat. OPTIONS preflights are left out.
+function endpointNavigation(specPath: string, grouped: boolean) {
   const spec = readFileSync(new URL(specPath, import.meta.url), 'utf8');
   const tagGroups = new Map<string, { group: string; collapsed: boolean; pages: { operation: string; label: string }[] }>();
   let path = '';
@@ -23,7 +23,7 @@ function endpointNavigation(specPath: string) {
   const groups = [...tagGroups.values()];
   return [
     { group: 'General', pages: [{ page: 'introduction', label: 'Introduction' }] },
-    { group: 'API endpoints', pages: groups.length > 1 ? groups : groups.flatMap((group) => group.pages) },
+    { group: 'API endpoints', pages: grouped ? groups : groups.flatMap((group) => group.pages) },
   ];
 }
 
@@ -61,7 +61,7 @@ export default defineConfig({
         tab: 'API',
         slug: 'api',
         source: openapi('../openapi/api.yaml'),
-        navigation: endpointNavigation('../openapi/api.yaml'),
+        navigation: endpointNavigation('../openapi/api.yaml', true),
         reference: { split: 'operations' },
         tryIt: false,
       },
@@ -69,7 +69,7 @@ export default defineConfig({
         tab: 'Auth',
         slug: 'auth',
         source: openapi('../openapi/auth.yaml'),
-        navigation: endpointNavigation('../openapi/auth.yaml'),
+        navigation: endpointNavigation('../openapi/auth.yaml', false),
         reference: { split: 'operations' },
         tryIt: false,
       },

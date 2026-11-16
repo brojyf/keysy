@@ -36,6 +36,8 @@ function loadGroup({ open = false, reducedMotion = false, linearEasing = true, l
     CSS: { supports: (_property: string, value: string) => linearEasing || !value.startsWith('linear(') },
   };
   const document = {
+    documentElement: { hasAttribute: () => false },
+    addEventListener: () => {},
     getElementById: () => null,
     querySelector: () => null,
     querySelectorAll: (selector: string) => selector === 'details.sourcey-nav-group' ? [group] : [],
