@@ -569,6 +569,10 @@ components:
         avatarUrl:
           type: string
           description: Present only when there is a valid HTTPS avatar URL.
+        purgeAt:
+          type: string
+          format: date-time
+          description: Present only while an account deletion is pending. The account is permanently deleted after this time.
     Session:
       type: object
       description: An active Supabase Auth session of the signed-in user.

@@ -67,11 +67,7 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be updated. Try again later.")
 			return
 		}
-		if _, ok := fields["agentAutoApply"]; ok {
-			name, err = profiles.DisplayName(c.Request.Context(), c.GetString("user_id"))
-		} else {
-			autoApply, err = profiles.AgentAutoApply(c.Request.Context(), c.GetString("user_id"))
-		}
+		result, err := profiles.Profile(c.Request.Context(), c.GetString("user_id"))
 		if c.Request.Context().Err() != nil {
 			return
 		}
@@ -79,6 +75,6 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be loaded. Try again later.")
 			return
 		}
-		c.JSON(http.StatusOK, response{AgentAutoApply: autoApply, ID: c.GetString("user_id"), Email: c.GetString("email"), DisplayName: name, AvatarURL: c.GetString("avatar_url")})
+		c.JSON(http.StatusOK, profileResponse(c, result))
 	}
 }
