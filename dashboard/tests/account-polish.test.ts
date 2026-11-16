@@ -90,10 +90,13 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square', '.account-row-menu .account-menu-item']) {
+        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
         }
+        const menuRing = `0 0 0 2px ${tokens.getPropertyValue('--color-menu')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
+        assert.equal(css('.account-row-menu .account-menu-item').boxShadow, menuRing, '.account-row-menu .account-menu-item')
+        if (motion === 'reduce') assert.equal(css('.account-row-menu .account-menu-item').transition, 'none', '.account-row-menu .account-menu-item')
         for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
           assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
         }
