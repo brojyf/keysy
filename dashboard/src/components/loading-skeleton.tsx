@@ -91,6 +91,15 @@ export function MemberTableSkeleton() {
     </div>
   )
 }
+
+// Figma has no Loading › Invitations; this follows the Members table skeleton with the People · Invitations columns.
+export function InvitationTableSkeleton() {
+  return (
+    <div className="skeleton-member-table" aria-busy="true">
+      <Table columns={[360, 120, 238]} headers={[34, 41, 27]} rows={[[98, 47, 61], [104, 47, 41], [110, 47, 61]]} />
+    </div>
+  )
+}
 function Members() {
   return (
     <>
