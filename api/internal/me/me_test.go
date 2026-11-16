@@ -17,6 +17,12 @@ import (
 
 func (f profileLookup) ScheduleDeletion(context.Context, string) error  { panic("unexpected deletion") }
 func (p *profileUpdate) ScheduleDeletion(context.Context, string) error { panic("unexpected deletion") }
+func (f profileLookup) CancelDeletion(context.Context, string) error {
+	panic("unexpected cancellation")
+}
+func (p *profileUpdate) CancelDeletion(context.Context, string) error {
+	panic("unexpected cancellation")
+}
 
 type profileLookup func(context.Context, string) (profile.Profile, error)
 
