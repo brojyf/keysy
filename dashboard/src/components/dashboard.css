@@ -19,6 +19,8 @@
   background: var(--color-bg);
 }
 
+.keysy-symbol { color: var(--color-logo); }
+
 /* Matches the rail: 56px wide, logo centered on the rail icons, slash centered on the rail border. */
 .topbar-logo {
   position: relative;

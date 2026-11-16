@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import KeysySymbol from './keysy-symbol'
 
 function Bone({ width, height = 12, radius, className = '' }: { width: number; height?: number; radius?: number; className?: string }) {
   return <div aria-hidden="true" className={`skeleton-bone ${className}`} style={{ width, height, borderRadius: radius ?? height / 2 }} />
@@ -212,7 +213,7 @@ function AccountSessions() {
 function SkeletonTopbar() {
   return (
     <div className="skeleton-topbar">
-      <div className="skeleton-logo"><img src="/keysy-symbol.svg" width="24" height="24" alt="Keysy" /></div>
+      <div className="skeleton-logo"><KeysySymbol size={24} /></div>
       <Bone width={72} />
       <div className="skeleton-topbar-right">
         <Bone width={220} height={30} className="skeleton-search" />
