@@ -26,12 +26,13 @@ This is a design for #193. Do not merge this file.
 
 - The endpoint is on api, next to `GET` and `PATCH /v0/me`. It accepts no query string and no body. Only the dashboard checks the confirmation text.
 - One transaction runs in a SECURITY DEFINER function, because the api role cannot access schema `auth`:
-  1. Lock the user's `auth.users` row with `FOR UPDATE`. A concurrent org creation references this row, so the two operations run one after the other.
+  1. Lock the user's `profiles` row with `SELECT … FOR UPDATE`. Org creation locks the same row first (see below), so the two operations run one after the other. The Owner check in step 2 is a separate statement after the lock, so it sees an org that a concurrent creation just committed.
   2. If the user owns an org, stop and return `ORG_OWNER`.
   3. Set `profiles.deleted_at`.
   4. Delete the user's `auth.sessions` rows. Their refresh tokens are deleted by cascade.
 - Responses: 204 on success, 409 `ORG_OWNER`, and 400, 401, 403, 500, and 503 as on other endpoints.
 - An access token already issued stays valid until it expires (5 minutes), as after a session revoke. The api rejects a caller in the grace period on org data, so that token cannot change anything in an org. This matters most for org creation: an org created in that window would lose its Owner at the purge, so org creation also checks `deleted_at` in its transaction.
+- Org creation starts its transaction with `SELECT 1 FROM profiles WHERE id = $1 AND deleted_at IS NULL FOR SHARE`. The check and the lock are one statement. No row means 403 `ACCOUNT_DELETING`. If a deletion holds the row, this statement waits, then rechecks the committed row and returns no row. Do not rely on the implicit foreign key lock on `auth.users`: a plain read before the insert would pass while a deletion is still running.
 - A repeated request in that window returns 204 and keeps the first `deleted_at`.
 - After 204, the dashboard calls `POST /v0/auth/logout` to clear the cookies, then opens the Account deleted page.
 
@@ -67,9 +68,9 @@ This is a design for #193. Do not merge this file.
 - [ ] PRD: in `wiki/prd.mdx`, change "Signing in within 30 days restores the account" to say that signing in within 30 days lets the user cancel the deletion.
 - [ ] OpenAPI: add `DELETE /v0/me` with `ORG_OWNER`, `POST /v0/me/cancel-deletion`, the purge date in `GET /v0/me`, `ACCOUNT_DELETING` on `POST /v0/orgs`, and the member status field.
 - [ ] Database: in a migration, add the deletion function and the daily purge job. Grant `EXECUTE` on the function to `keysy_api` by hand. In production, verify that the `pg_cron` job can delete `auth.users` rows.
-- [ ] api: add `DELETE /v0/me` and `POST /v0/me/cancel-deletion`, return the purge date and the member status, add the caller `deleted_at IS NULL` condition to every org membership check (including `GET /v0/orgs`), and check `deleted_at` in the org creation transaction.
+- [ ] api: add `DELETE /v0/me` and `POST /v0/me/cancel-deletion`, return the purge date and the member status, add the caller `deleted_at IS NULL` condition to every org membership check (including `GET /v0/orgs`), and lock and check the caller's `profiles` row first in the org creation transaction.
 - [ ] Email (after #210, not needed for the first release): write the two outbox events (deletion scheduled, account deleted) and add both templates to `email-worker/`.
 - [ ] Future endpoints (invite, remove member, transfer the Owner role, change role, assign services): apply the target rule in the same transaction as the write.
 - [ ] Figma: in a review section, draw the **Deleting** badge in the People · Members row and the **Cancel deletion** page, and change the copy on Account · Delete account › Account deleted to say that signing in within 30 days lets the user cancel the deletion.
 - [ ] Dashboard: enable **Delete**, build the Delete account dialog (Delete account · Can delete, and the list of owned orgs), the Account deleted page, the **Cancel deletion** page and its SessionGate rule, and the **Deleting** badge.
-- [ ] Tests (#193): delete an account; sign in within 30 days and see the Cancel deletion page; sign out from it and the deletion stays pending; cancel the deletion and get the remaining memberships back; org endpoints reject the user until they cancel, and org creation gets 403 `ACCOUNT_DELETING`; a membership removed during the grace period stays removed; the purge after 30 days; sign in after the purge as a new user and join an org; an Owner gets 409; a concurrent org creation; other users and orgs are unaffected.
+- [ ] Tests (#193): delete an account; sign in within 30 days and see the Cancel deletion page; sign out from it and the deletion stays pending; cancel the deletion and get the remaining memberships back; org endpoints reject the user until they cancel, and org creation gets 403 `ACCOUNT_DELETING`; a membership removed during the grace period stays removed; the purge after 30 days; sign in after the purge as a new user and join an org; an Owner gets 409; a concurrent org creation in both orders (deletion first gets 403 on creation, creation first gets 409 on deletion); other users and orgs are unaffected.
