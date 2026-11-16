@@ -158,8 +158,10 @@ function Account() {
         </Section>
         <Section width={42}><CardRow label={183} value={32} height={18} end /></Section>
         <Section width={83}><CardRow label={34} value={88} height={30} end /></Section>
-        <Section width={58}><CardRow label={155} value={73} height={28} radius={8} end /></Section>
-        <Section width={92}><CardRow label={95} value={63} height={28} radius={8} end /></Section>
+        <Section width={92}>
+          <CardRow label={155} value={73} height={28} radius={10} end />
+          <CardRow label={95} value={63} height={28} radius={10} end />
+        </Section>
       </div>
     </>
   )

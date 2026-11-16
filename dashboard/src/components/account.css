@@ -280,6 +280,15 @@
   opacity: 1;
 }
 
+.account-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 720px;
+}
+
 .account-search {
   display: flex;
   align-items: center;

@@ -28,7 +28,7 @@ test('renders a secondary button that does not submit forms by default', async (
   expect(button.type).toBe('button')
 })
 
-for (const [variant, className] of [['primary', 'button button-primary'], ['danger', 'button button-danger']] as const) {
+for (const [variant, className] of [['primary', 'button button-primary'], ['danger', 'button button-danger'], ['dangerOutline', 'button button-danger-outline']] as const) {
   test(`maps the Figma ${variant} variant to its class`, async () => {
     await act(() => root.render(<Button variant={variant}>Label</Button>))
     expect(container.querySelector('button')!.className).toBe(className)

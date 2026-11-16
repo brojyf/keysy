@@ -88,14 +88,12 @@ export default function GeneralPage() {
           <ThemeSwitch />
         </SettingsRow>
       </SettingsSection>
-      <SettingsSection title="Session">
-        <SettingsRow label="Sign out of this device" control>
-          <Button variant="danger" onClick={onSignOutRequest}>Sign out</Button>
-        </SettingsRow>
-      </SettingsSection>
       <SettingsSection title="Danger zone" danger>
+        <SettingsRow label="Sign out of this device" control>
+          <Button variant="dangerOutline" onClick={onSignOutRequest}>Sign out</Button>
+        </SettingsRow>
         <SettingsRow label="Delete account" control>
-          <Button variant="danger" disabled title="Coming soon">Delete</Button>
+          <Button variant="dangerOutline" disabled title="Coming soon">Delete</Button>
         </SettingsRow>
       </SettingsSection>
       {saveBar.mounted && <SaveBar saveBar={saveBar} error={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}

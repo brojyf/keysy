@@ -100,7 +100,7 @@ function buttonNamed(scope: ParentNode, label: string, className: string) {
   if (label === 'Cancel') expect(matches[0]!.classList.contains('button-danger')).toBe(false)
   return matches[0]!
 }
-function settingsButton(label: string) { return buttonNamed(container.querySelector('.organization-settings')!, label, 'button-danger') }
+function settingsButton(label: string) { return buttonNamed(container.querySelector('.organization-settings')!, label, 'button-danger-outline') }
 function dialog() { return container.querySelector<HTMLDialogElement>('.organization-settings dialog')! }
 function confirmButton() {
   const buttons = dialog().querySelectorAll<HTMLButtonElement>('.dialog-actions button[type="submit"]')
@@ -584,7 +584,7 @@ test('signing out cannot be undone by a late delete response', async () => {
   pathname = '/account'
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
   globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
-  await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+  await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
   organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
@@ -834,7 +834,7 @@ for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconcili
     pathname = '/account'
     await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
     globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
-    await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger').click())
+    await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
     await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
   } else {
     await act(() => root.unmount())

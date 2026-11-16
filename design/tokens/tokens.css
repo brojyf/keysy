@@ -16,6 +16,8 @@
   --color-table-header: #f3f4f6;
   --color-danger: #b3261e;
   --color-danger-bg: #fce8e6;
+  --color-danger-button: #b3261e;
+  --color-danger-button-hover: #a1221b;
   --color-avatar-bg: #dce6ff;
   --color-avatar-text: #2f4aa8;
   --color-glow: #a5b8ff2e;
@@ -99,6 +101,8 @@
   --color-table-header: #262626;
   --color-danger: #f4aeae;
   --color-danger-bg: #392424;
+  --color-danger-button: #cc3a30;
+  --color-danger-button-hover: #b8342b;
   --color-avatar-bg: #dce6ff;
   --color-avatar-text: #2f4aa8;
   --color-glow: #a5b8ff2e;

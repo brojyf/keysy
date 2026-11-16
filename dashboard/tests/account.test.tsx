@@ -105,7 +105,7 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
 test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
+  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
   expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
@@ -134,16 +134,57 @@ function headerSort(name: string) {
   return [...container.querySelectorAll<HTMLTableCellElement>('th')].find((cell) => cell.textContent === name)!
 }
 
-test('General requests sign out from the Session section above the Danger zone', async () => {
+test('General shows sign out and delete rows in order in the Danger zone', async () => {
   await renderAccount('/account', <GeneralPage />)
-  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Session', 'Danger zone'])
-  expect(text('.account-sections section:nth-of-type(4) dt')).toEqual(['Sign out of this device'])
+  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
+  expect(text('.account-sections section:last-of-type dt')).toEqual(['Sign out of this device', 'Delete account'])
   const signOut = button('Sign out', container.querySelector('.account-sections')!)
   expect(signOut.textContent).toBe('Sign out')
-  expect(signOut.classList.contains('button-danger')).toBe(true)
+  expect(signOut.classList.contains('button-danger-outline')).toBe(true)
+  expect(button('Delete', container.querySelector('.account-sections')!).classList.contains('button-danger-outline')).toBe(true)
   await act(async () => signOut.click())
   expect(onSignOutRequest).toHaveBeenCalledTimes(1)
   expect(request).not.toHaveBeenCalled()
+})
+
+test('Organizations toolbar stays visible for filtered results and opens the create dialog', async () => {
+  await renderAccount('/account/organizations', <OrganizationsPage />)
+  const toolbar = container.querySelector('.account-toolbar')!
+  expect([...toolbar.children].map((child) => child.classList.contains('account-search') ? 'search' : child.textContent)).toEqual(['search', 'New organization'])
+  const create = button('New organization', toolbar)
+  expect(create.classList.contains('button-primary')).toBe(true)
+  expect(container.querySelector('.account-table')?.parentElement).toBe(container.querySelector('.account-page'))
+  await search('acme')
+  expect(tableRows()).toEqual([['No organizations match “acme”']])
+  expect(container.querySelector('.account-toolbar')).not.toBeNull()
+  expect(button('New organization', container.querySelector('.account-toolbar')!).classList.contains('button-primary')).toBe(true)
+  await act(() => create.click())
+  const dialog = container.querySelector<HTMLDialogElement>('dialog')!
+  expect(dialog.open).toBe(true)
+  expect(document.activeElement).toBe(container.querySelector('#organization-name'))
+})
+
+test('creating an organization from the list closes and resets the dialog before navigation finishes', async () => {
+  const createOrganization = mock(async (name: string) => ({ id: 'org-4', name, role: 'owner' as const, memberCount: 1 }))
+  currentPathname = '/account/organizations'
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user, organizations, organization: organizations[0], createOrganization, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><OrganizationsPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => button('New organization', container.querySelector('.account-toolbar')!).click())
+  const dialog = container.querySelector<HTMLDialogElement>('dialog')!
+  const name = container.querySelector<HTMLInputElement>('#organization-name')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(name, 'acme')
+    name.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+  const finishExit = holdExitAnimation(dialog)
+  const submit = () => name.form!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+  await act(async () => submit())
+  expect(createOrganization).toHaveBeenCalledTimes(1)
+  expect(dialog.hasAttribute('data-closing')).toBe(true)
+  await act(async () => submit())
+  expect(createOrganization).toHaveBeenCalledTimes(1)
+  await act(async () => finishExit())
+  expect(dialog.open).toBe(false)
+  expect(name.value).toBe('')
 })
 
 test('Organizations lists the mock organizations from A to Z', async () => {
@@ -321,6 +362,7 @@ test('revoking a session confirms, deletes it, and refetches the list', async ()
   await openRevoke()
   expect(sessionsDialog().querySelector('h2')?.textContent).toBe('Revoke session?')
   expect(sessionsDialog().querySelector('p')?.textContent).toBe('Safari on iOS will be signed out.')
+  expect(button('Revoke', sessionsDialog()).classList.contains('button-danger')).toBe(true)
   await act(async () => button('Revoke', sessionsDialog()).click())
   expect([...sessionsDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Revoking...', true]])
   await act(async () => finish(new Response(null, { status: 204 })))
