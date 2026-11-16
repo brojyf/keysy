@@ -174,6 +174,37 @@ test('account menu rows rise bottom-up, from the avatar the panel grows out of',
   }
 })
 
+for (const dark of [false, true]) {
+  test(`menus use the menu tokens in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      style.textContent = stylesheet.replaceAll(':hover', '[data-hover]')
+      document.head.append(style)
+      document.body.innerHTML = `
+        <div id="account-menu" class="account-menu">
+          <span class="theme-switch"><span class="theme-thumb"></span></span>
+          <hr class="account-menu-divider">
+          <a class="account-menu-item" data-hover>Account</a>
+        </div>
+        <div class="account-menu account-row-menu"><a class="account-menu-item" data-hover>Settings</a></div>`
+      const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
+      const token = (name: string) => window.getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim()
+      for (const menu of ['#account-menu', '.account-row-menu']) {
+        assert.equal(css(menu).backgroundColor, token('menu'), menu)
+        assert.equal(css(`${menu} .account-menu-item`).backgroundColor, token('menu-soft'), `${menu} item hover`)
+      }
+      assert.equal(css('#account-menu .account-menu-divider').backgroundColor, token('menu-line'))
+      assert.equal(css('#account-menu .theme-switch').borderTopColor, token('menu-line'))
+      assert.equal(css('#account-menu .theme-thumb').backgroundColor, token('menu-soft'))
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+}
+
 function contrast(first: string, second: string) {
   const luminance = (hex: string) => {
     const [red, green, blue] = hex.slice(1).match(/../g)!.map(channel => {
