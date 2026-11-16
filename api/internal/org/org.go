@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime"
 	"net/http"
@@ -61,6 +62,10 @@ func Create(organizations Organizations) gin.HandlerFunc {
 		}
 		organization, err := organizations.Create(c.Request.Context(), c.GetString("user_id"), name)
 		if c.Request.Context().Err() != nil {
+			return
+		}
+		if errors.Is(err, ErrAccountDeleting) {
+			middleware.Error(c, http.StatusForbidden, "ACCOUNT_DELETING", "Your account is being deleted. Cancel the deletion to create an organization.")
 			return
 		}
 		if err != nil {
