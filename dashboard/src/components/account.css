@@ -456,6 +456,14 @@ th[aria-sort='descending'] .account-sort svg {
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
+.account-delete-form {
+  margin-top: 16px;
+}
+
+.account-delete-form label {
+  overflow-wrap: anywhere;
+}
+
 .account-sections-editing {
   flex: 1;
 }

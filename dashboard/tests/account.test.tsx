@@ -105,15 +105,14 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
 test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
+  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
   expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
-  const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
+  const controls = [...container.querySelectorAll<HTMLButtonElement>('.account-sections button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out'])
-  expect([...container.querySelectorAll<HTMLButtonElement>('button[title="Coming soon"]')].map((button) => [button.textContent, button.disabled])).toEqual([['Delete', true]])
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out', 'Delete'])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
@@ -435,6 +434,80 @@ test('editing, discarding, and restoring the name controls the save bar', async 
   await edit('Changed')
   await edit('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
+})
+
+function deleteAccountDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
+
+async function openDeleteAccount() {
+  await renderAccount('/account', <GeneralPage />)
+  await act(() => button('Delete', container.querySelector('.account-sections')!).click())
+  expect(deleteAccountDialog().open).toBe(true)
+}
+
+async function confirmDeleteAccount(value: string) {
+  const field = deleteAccountDialog().querySelector<HTMLInputElement>('input')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(field, value)
+    field.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+}
+
+test('Delete opens a dialog that needs the email typed to confirm', async () => {
+  await openDeleteAccount()
+  expect(deleteAccountDialog().querySelector('h2')?.textContent).toBe('Delete account?')
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('You’ll leave every organization. This can’t be undone.')
+  expect(deleteAccountDialog().querySelector('label')?.textContent).toBe('Type member@example.com to confirm')
+  expect(button('Delete account', deleteAccountDialog()).classList.contains('button-danger')).toBe(true)
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await confirmDeleteAccount('member@example')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await confirmDeleteAccount('member@example.com')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
+  expect(request).not.toHaveBeenCalled()
+})
+
+test('confirming account deletion deletes the account, then signs out', async () => {
+  let finish!: (response: Response) => void
+  request.mockImplementation((url: string) => url === 'https://api.keysy.net/v0/me'
+    ? new Promise<Response>((resolve) => { finish = resolve })
+    : Promise.resolve(new Response(null, { status: 204 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  expect([...deleteAccountDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Deleting...', true]])
+  expect(onSignedOut).not.toHaveBeenCalled()
+  await act(async () => finish(new Response(null, { status: 204 })))
+  await settle()
+  expect(request.mock.calls.map(([url, init]) => `${(init as RequestInit).method} ${url}`)).toEqual([
+    'DELETE https://api.keysy.net/v0/me',
+    'POST https://auth.keysy.net/v0/auth/logout',
+  ])
+  expect(onSignedOut).toHaveBeenCalledTimes(1)
+})
+
+test('account deletion signs out even when logout fails', async () => {
+  request.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url === 'https://api.keysy.net/v0/me' ? 204 : 503 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(onSignedOut).toHaveBeenCalledTimes(1)
+})
+
+for (const [status, message] of [
+  [409, 'Transfer or delete the organizations you own, then try again.'],
+  [500, 'Could not delete your account. Try again.'],
+] as const) test(`a ${status} account deletion response shows its message in the dialog`, async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  expect(deleteAccountDialog().open).toBe(true)
+  const alert = deleteAccountDialog().querySelector('[role="alert"]')!
+  expect(alert.textContent).toBe(message)
+  expect(alert.className).toBe('dialog-error')
+  expect(onSignedOut).not.toHaveBeenCalled()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
 })
 
 function holdExitAnimation(element: Element) {

@@ -244,7 +244,8 @@ function signOutButton() {
 }
 
 function signOutDialog() {
-  return container.querySelector<HTMLDialogElement>('dialog.dialog')!
+  // General also renders the closed Delete account dialog; these tests use the shell's dialogs.
+  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => !dialog.querySelector('.account-delete-form'))!
 }
 
 function buttonNamed(scope: ParentNode, label: string) {
@@ -1038,7 +1039,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
-  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Sign out?'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', 'Sign out?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())
