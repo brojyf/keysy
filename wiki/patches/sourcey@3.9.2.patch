@@ -1,5 +1,18 @@
+diff --git a/dist/client/search.js b/dist/client/search.js
+index 61d1ed39330468adbb7a4413c1f40f5b1f2bf293..52e5d89b1caff692b990a9da30664c879ea79e2d 100644
+--- a/dist/client/search.js
++++ b/dist/client/search.js
+@@ -255,6 +255,8 @@
+       if (index < 0 || index >= filtered.length) return;
+       var entry = filtered[index];
+       close();
++      // Keysy: sidebar.js listens, so a jump into a collapsed group springs it open on arrival.
++      document.dispatchEvent(new CustomEvent("keysy:navigate", { detail: { url: entry.url } }));
+       window.location.href = entry.url;
+     }
+
 diff --git a/dist/client/sidebar.js b/dist/client/sidebar.js
-index f2827cf6a8d1d693328cdef3da593e88e212e904..98f2ad3caa7cf485418b3b9388c44c60aa7fb005 100644
+index f2827cf6a8d1d693328cdef3da593e88e212e904..9c0b3f43392b6cad8daf7e4fbaf25260e66c9c70 100644
 --- a/dist/client/sidebar.js
 +++ b/dist/client/sidebar.js
 @@ -170,6 +170,47 @@
@@ -89,22 +102,28 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..98f2ad3caa7cf485418b3b9388c44c60
      // Dropdown: toggle list visibility
      var toggle = document.getElementById('drawer-group-toggle');
      var list = document.getElementById('drawer-group-list');
-@@ -225,6 +285,41 @@
+@@ -225,6 +285,47 @@
      });
    }
 
 +  // A link whose page sits in a collapsed sidebar group (an Introduction endpoint card,
 +  // Previous/Next, search) asks the next page to spring that group open; theme-init.js reads it.
-+  document.addEventListener('click', function (e) {
-+    var link = e.target instanceof Element && e.target.closest('a[href]');
-+    if (!shouldSaveForNavigation(e, link)) return;
-+    var path = normalizePath(new URL(link.getAttribute('href'), window.location.href).pathname);
++  function markNavReveal(href) {
++    var path = normalizePath(new URL(href, window.location.href).pathname);
 +    var target = Array.prototype.find.call(document.querySelectorAll('#nav a.nav-link[href]'), function (a) {
 +      return normalizePath(new URL(a.getAttribute('href'), window.location.href).pathname) === path;
 +    });
 +    var group = target && target.closest('details.sourcey-nav-group');
 +    if (group && !group.open) storageSet('keysy:nav-reveal', path);
++  }
++
++  document.addEventListener('click', function (e) {
++    var link = e.target instanceof Element && e.target.closest('a[href]');
++    if (shouldSaveForNavigation(e, link)) markNavReveal(link.getAttribute('href'));
 +  });
++
++  // Search cancels its result clicks and navigates by script, so it announces each jump instead.
++  document.addEventListener('keysy:navigate', function (e) { markNavReveal(e.detail.url); });
 +
 +  function revealNavGroup() {
 +    var root = document.documentElement;

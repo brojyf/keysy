@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 const client = new URL('../node_modules/sourcey/dist/client/', import.meta.url);
 const sidebarScript = await Bun.file(new URL('sidebar.js', client)).text();
 const themeScript = await Bun.file(new URL('theme-init.js', client)).text();
+const searchScript = await Bun.file(new URL('search.js', client)).text();
 const stylesheet = await Bun.file(new URL('../style.css', import.meta.url)).text();
 const spring = 'linear(0, 0.06, 0.186, 1)';
 type Listener = (event: Record<string, unknown>) => void;
@@ -20,7 +21,7 @@ function storage(initial: Record<string, string> = {}) {
 
 // Run Sourcey's patched sidebar script on a page whose Account group holds /api/me.
 function loadSidebar({ marked = false, groupOpen = false } = {}) {
-  let onDocumentClick: Listener = () => {};
+  const documentListeners: Record<string, Listener> = {};
   const attributes = new Set(marked ? ['data-keysy-nav-reveal'] : []);
   const list = { scrollHeight: 120, animate: mock(() => ({ onfinish: null, cancel: mock() })) };
   const group = { open: groupOpen, querySelector: () => null };
@@ -41,7 +42,7 @@ function loadSidebar({ marked = false, groupOpen = false } = {}) {
       hasAttribute: (name: string) => attributes.has(name),
       removeAttribute: (name: string) => { attributes.delete(name); },
     },
-    addEventListener: (name: string, listener: Listener) => { if (name === 'click') onDocumentClick = listener; },
+    addEventListener: (name: string, listener: Listener) => { documentListeners[name] = listener; },
     getElementById: () => null,
     querySelector: (selector: string) => selector === '#nav details.sourcey-nav-group[open] > ul' ? list : null,
     querySelectorAll: (selector: string) => selector === '#nav a.nav-link[href]' ? [navLink] : [],
@@ -49,9 +50,12 @@ function loadSidebar({ marked = false, groupOpen = false } = {}) {
   runInNewContext(sidebarScript, { window, document, URL, Element: Object });
   function clickLink(href: string) {
     const link = { getAttribute: (name: string) => ({ href })[name] ?? null, hasAttribute: () => false };
-    onDocumentClick({ target: { closest: () => link }, defaultPrevented: false, button: 0 });
+    documentListeners.click!({ target: { closest: () => link }, defaultPrevented: false, button: 0 });
   }
-  return { attributes, list, sessionStorage, clickLink };
+  function announceNavigation(url: string) {
+    documentListeners['keysy:navigate']?.({ detail: { url } });
+  }
+  return { attributes, list, sessionStorage, clickLink, announceNavigation };
 }
 
 test('a page marked before paint springs its open sidebar group from zero', () => {
@@ -77,6 +81,88 @@ test('a link into an open sidebar group asks for nothing', () => {
   const { sessionStorage, clickLink } = loadSidebar({ groupOpen: true });
   clickLink('/api/me');
   expect(sessionStorage.items['keysy:nav-reveal']).toBeUndefined();
+});
+
+test('a search jump into a collapsed sidebar group asks the next page to reveal it', () => {
+  const { sessionStorage, announceNavigation } = loadSidebar();
+  announceNavigation('/api/me');
+  expect(sessionStorage.items['keysy:nav-reveal']).toBe('/api/me');
+});
+
+// Run Sourcey's patched search script with one result, /api/me, and open its dialog.
+async function openSearch() {
+  const documentListeners: Record<string, Listener[]> = {};
+  let onResultClick: Listener = () => {};
+  const announced: unknown[] = [];
+  const location = {
+    origin: 'https://wiki.keysy.net',
+    pathname: '/api',
+    jumpedTo: '',
+    get href() { return this.jumpedTo || 'https://wiki.keysy.net/api'; },
+    set href(url: string) { this.jumpedTo = url; },
+  };
+  const dialog = {
+    open: false,
+    showModal() { this.open = true; },
+    close() { this.open = false; },
+    classList: { add: () => {}, remove: () => {} },
+    getAttribute: () => '',
+    querySelector: () => null,
+    addEventListener: () => {},
+  };
+  const elements: Record<string, unknown> = {
+    'search-dialog': dialog,
+    'search-input': { value: '', focus: () => {}, addEventListener: () => {} },
+    'search-results': {
+      addEventListener: (name: string, listener: Listener) => { if (name === 'click') onResultClick = listener; },
+      querySelector: () => null,
+      replaceChildren: () => {},
+    },
+  };
+  const document = {
+    getElementById: (id: string) => elements[id] ?? null,
+    querySelector: (selector: string) => ({
+      'meta[name="sourcey-search-module"]': { content: '/sourcey-search.js' },
+      'meta[name="sourcey-search-indexes"]': { content: '[]' },
+    })[selector] ?? null,
+    createElement: () => ({ textContent: '', get innerHTML() { return this.textContent; } }),
+    addEventListener: (name: string, listener: Listener) => { (documentListeners[name] ??= []).push(listener); },
+    removeEventListener: () => {},
+    dispatchEvent: (event: { type: string; detail: unknown }) => {
+      announced.push({ type: event.type, detail: event.detail, before: !location.jumpedTo });
+    },
+  };
+  const window = { location, innerWidth: 1280, requestIdleCallback: (run: () => void) => run() };
+  runInNewContext(searchScript, {
+    window, document, location, URL, clearTimeout,
+    CustomEvent: class { constructor(public type: string, init: { detail: unknown }) { Object.assign(this, init); } },
+  }, {
+    importModuleDynamically: (async () => ({ loadSearch: () => ({ rows: [{ url: '/api/me', title: 'Get me' }] }) })) as never,
+  });
+  function pressKey(key: string) {
+    for (const listener of [...(documentListeners.keydown ?? [])]) {
+      listener({ key, target: { tagName: 'BODY' }, preventDefault: () => {} });
+    }
+  }
+  pressKey('/');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return { announced, location, onResultClick, pressKey };
+}
+
+const searchJump = { type: 'keysy:navigate', detail: { url: '/api/me' }, before: true };
+
+test('clicking a search result announces the jump before it leaves the page', async () => {
+  const { announced, location, onResultClick } = await openSearch();
+  onResultClick({ target: { closest: () => ({ getAttribute: () => '0' }) }, preventDefault: () => {} });
+  expect(announced).toEqual([searchJump]);
+  expect(location.jumpedTo).toBe('/api/me');
+});
+
+test('pressing Enter on a search result announces the jump before it leaves the page', async () => {
+  const { announced, location, pressKey } = await openSearch();
+  pressKey('Enter');
+  expect(announced).toEqual([searchJump]);
+  expect(location.jumpedTo).toBe('/api/me');
 });
 
 // Run Sourcey's patched head script, which marks the page before paint.
