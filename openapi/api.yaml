@@ -58,7 +58,7 @@ paths:
         - accessCookie: []
       operationId: updateMe
       summary: Update the signed-in user's profile
-      description: The body must contain exactly one field, `displayName` or `agentAutoApply`.
+      description: Updates the signed-in user's profile. The body must contain exactly one field, `displayName` or `agentAutoApply`.
       requestBody:
         required: true
         content:
@@ -68,6 +68,8 @@ paths:
               additionalProperties: false
               minProperties: 1
               maxProperties: 1
+              example:
+                displayName: Ada Lovelace
               properties:
                 displayName:
                   type: string
@@ -148,7 +150,7 @@ paths:
       operationId: revokeMySession
       summary: Revoke one of the signed-in user's other sessions
       description: |
-        Deletes the session and its refresh tokens. An access token already issued to that device stays valid until it expires.
+        Revokes one of the signed-in user's other sessions by deleting it and its refresh tokens. An access token already issued to that device stays valid until it expires.
         The current session cannot be revoked here. To end it, use `POST /v0/auth/logout` on the auth service.
       responses:
         '204':
@@ -227,6 +229,8 @@ paths:
               type: object
               additionalProperties: false
               required: [name]
+              example:
+                name: Acme
               properties:
                 name:
                   type: string
@@ -268,7 +272,7 @@ paths:
         - accessCookie: []
       operationId: renameOrg
       summary: Rename an org
-      description: Only an owner can rename the org. Names need not be unique.
+      description: Renames an org. Only an owner can rename it. Names need not be unique.
       requestBody:
         required: true
         content:
@@ -277,6 +281,8 @@ paths:
               type: object
               additionalProperties: false
               required: [name]
+              example:
+                name: Acme
               properties:
                 name:
                   type: string
@@ -317,7 +323,7 @@ paths:
         - accessCookie: []
       operationId: deleteOrg
       summary: Permanently delete an org
-      description: Only an owner can delete the org. The org and all its memberships are permanently deleted. User accounts remain.
+      description: Permanently deletes an org and all its memberships. Only an owner can delete it. User accounts remain.
       responses:
         '204':
           description: The org and its memberships are permanently deleted. User accounts and profiles remain. The response body is empty.
@@ -351,7 +357,7 @@ paths:
         - accessCookie: []
       operationId: listMembers
       summary: List an org's members
-      description: Any member of the org can list its members. Members with deleted accounts are not listed. The order is not specified. There is no pagination.
+      description: Lists an org's members. Any member of the org can call it. Members with deleted accounts are not listed. The order is not specified. There is no pagination.
       responses:
         '200':
           description: The org's members. The caller is always included.
@@ -405,7 +411,7 @@ paths:
         - accessCookie: []
       operationId: listInvitations
       summary: List an org's invitations
-      description: Any member of the org can list its pending and expired invitations. Invitations expire after 7 days. The order is not specified. There is no pagination.
+      description: Lists an org's pending and expired invitations. Any member of the org can call it. Invitations expire after 7 days. The order is not specified. There is no pagination.
       responses:
         '200':
           description: The org's pending and expired invitations, or an empty array.
@@ -512,6 +518,12 @@ components:
     Me:
       type: object
       required: [id, email, displayName, agentAutoApply]
+      example:
+        id: 6f1c2a9e-3b7d-4e58-9a0c-1d2e3f4a5b6c
+        email: ada@example.com
+        displayName: Ada Lovelace
+        agentAutoApply: false
+        avatarUrl: https://lh3.googleusercontent.com/a/example
       properties:
         id:
           type: string
@@ -528,6 +540,12 @@ components:
       type: object
       description: An active Supabase Auth session of the signed-in user.
       required: [id, client, device, lastUsedAt, current]
+      example:
+        id: 2b7e4c1a-9d3f-4a6b-8c5e-7f0a1b2c3d4e
+        client: web
+        device: Chrome on macOS
+        lastUsedAt: '2026-11-15T09:30:00Z'
+        current: true
       properties:
         id:
           type: string
@@ -551,6 +569,9 @@ components:
     Org:
       type: object
       required: [id, name]
+      example:
+        id: 0c9d8e7f-6a5b-4c3d-9e2f-1a0b9c8d7e6f
+        name: Acme
       properties:
         id:
           type: string
@@ -561,6 +582,11 @@ components:
       type: object
       description: An org the signed-in user belongs to, and the user's role in that org.
       required: [id, name, role, memberCount]
+      example:
+        id: 0c9d8e7f-6a5b-4c3d-9e2f-1a0b9c8d7e6f
+        name: Acme
+        role: owner
+        memberCount: 3
       properties:
         id:
           type: string
@@ -579,6 +605,11 @@ components:
       type: object
       description: An org member as the member list shows it.
       required: [userId, name, email, role]
+      example:
+        userId: 6f1c2a9e-3b7d-4e58-9a0c-1d2e3f4a5b6c
+        name: Ada Lovelace
+        email: ada@example.com
+        role: owner
       properties:
         userId:
           type: string
@@ -597,6 +628,11 @@ components:
       type: object
       description: An org invitation. It does not grant membership until accepted.
       required: [id, email, role, status]
+      example:
+        id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        email: grace@example.com
+        role: developer
+        status: pending
       properties:
         id:
           type: string
@@ -621,7 +657,7 @@ components:
           properties:
             code:
               type: string
-              example: secret_path_conflict
+              example: INVALID_REQUEST
             message:
               type: string
   responses:

@@ -59,7 +59,7 @@ paths:
       security: []
       summary: Finish Google sign-in
       description: |
-        Google redirects the browser here. The service checks the sign-in transaction, exchanges the code for a Supabase session, sets the cookies, and redirects to the dashboard. A failure never leaves a partial session.
+        Finishes Google sign-in. Google redirects the browser here. The service checks the sign-in transaction, exchanges the code for a Supabase session, sets the cookies, and redirects to the dashboard. A failure never leaves a partial session.
         The query must have exactly one of `code` or `error`. Unknown and repeated parameters are rejected.
       parameters:
         - name: __Host-keysy-oauth
@@ -311,7 +311,7 @@ paths:
       operationId: preflightLogout
       security: []
       summary: CORS preflight for the logout route
-      description: Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
+      description: Answers the CORS preflight. Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method
@@ -437,7 +437,7 @@ paths:
       operationId: preflightRefresh
       security: []
       summary: CORS preflight for the refresh route
-      description: Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
+      description: Answers the CORS preflight. Allows only the dashboard origin and the `POST` method. Custom request headers are not allowed.
       parameters:
         - $ref: '#/components/parameters/Origin'
         - name: Access-Control-Request-Method

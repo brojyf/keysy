@@ -319,9 +319,9 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
     expect(await matches(sidebar, 'details.sourcey-nav-group[open]')).toHaveLength(0);
     expect(html).not.toContain('>Base URL<');
     const operation = await Bun.file(new URL(`.${endpointLinks[0]}.html`, output)).text();
-    expect(operation).toContain('sourcey-endpoint');
-    // style.css puts the endpoint bar in the left column so the examples start beside it.
-    expect(await matches(operation, '[data-sourcey-operation] > .sourcey-endpoint')).toHaveLength(1);
+    // The method badge sits beside the path title; the introduction already names the base URL.
+    expect(await matches(operation, '[data-sourcey-operation] > header .method-badge')).toHaveLength(1);
+    expect(operation).not.toContain('sourcey-endpoint');
     expect(await matches(operation, '[data-sourcey-operation] > .operation-layout > .sourcey-operation-examples')).toHaveLength(1);
     expect(operation).not.toContain('tryit-trigger');
     expect(operation).not.toContain('>JavaScript<');
@@ -341,13 +341,18 @@ test('operation page headings show the endpoint path', async () => {
   }
 });
 
-test('response examples keep separate cards and one moving underline per status tab', async () => {
+test('operation examples show the request and the success response only', async () => {
   const html = await Bun.file(new URL('api/operations/operation-v0-orgs-orgid-patch.html', output)).text();
-  expect(await matches(html, '#responses details.schema-expandable')).not.toHaveLength(0);
-  const tabs = await matches(html, '.response-tab');
-  expect(tabs.length).toBeGreaterThan(1);
-  expect(await matches(html, '.response-tab > .keysy-response-indicator[aria-hidden="true"]')).toHaveLength(tabs.length);
+  const examples = html.slice(html.indexOf('sourcey-operation-examples">'));
+  expect(examples).toContain('>Request<');
+  expect(examples).not.toContain('>Request Body<');
+  expect(await matches(html, '.response-tab')).toHaveLength(0);
+  expect(examples).toContain('Acme');
+  expect(examples).not.toContain('INVALID_REQUEST');
   expect(stylesheet).toMatch(/#sourcey \.sourcey-operation-examples > \.code-group \+ \.code-group\s*\{\s*margin-top: 1rem;/);
+  // Response headers stay in the OpenAPI files; each error reads as one line.
+  expect(stylesheet).toContain("#sourcey #responses .schema-expandable:has(.param-in),");
+  expect(stylesheet).toContain("#sourcey #responses .param-item:is([id^='response-4'], [id^='response-5']) > .schema-expandable,");
 });
 
 test('single-column operation pages read fields and responses before terminal examples', async () => {
@@ -358,10 +363,10 @@ test('single-column operation pages read fields and responses before terminal ex
   expect(children.indexOf('operation-details')).toBeLessThan(children.indexOf('sourcey-operation-examples'));
 });
 
-test('wide operation pages place the endpoint bar beside the examples', () => {
+test('wide operation pages place the examples beside the description', () => {
   // Sourcey's container is the operation itself, which its own queries cannot lay out, so #content-area hosts one.
   expect(stylesheet).toMatch(/#sourcey #content-area:has\(> \[data-sourcey-operation\]\) \{\s*container: keysy-operation \/ inline-size;/);
-  expect(stylesheet).toMatch(/@media \(width >= 1280px\) \{\s*@container keysy-operation \(width > 55rem\) \{\s*#sourcey \[data-sourcey-operation\] \{\s*display: grid;\s*grid-template:\s*'header header'\s*'endpoint examples'\s*'intro examples'\s*'details examples' 1fr \/ minmax\(0, 1fr\) 28rem;/);
+  expect(stylesheet).toMatch(/@media \(width >= 1280px\) \{\s*@container keysy-operation \(width > 55rem\) \{\s*#sourcey \[data-sourcey-operation\] \{\s*display: grid;\s*grid-template:\s*'header header'\s*'intro examples'\s*'details examples' 1fr \/ minmax\(0, 1fr\) 28rem;/);
   expect(stylesheet).toContain('#sourcey [data-sourcey-operation] > .operation-layout {\n      display: contents;');
 });
 
@@ -384,7 +389,7 @@ test('every member lists the org members by name, email, and role only', async (
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   const start = yaml.indexOf('operationId: listMembers\n');
   const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
-  expect(operation).toContain('Any member of the org can list its members.');
+  expect(operation).toContain("Lists an org's members. Any member of the org can call it.");
   expect(operation).toContain('The order is not specified. There is no pagination.');
   expect(operation).not.toMatch(/sorted by/i);
   expect(operation).not.toMatch(/avatar|cursor|nextCursor|Super Admin/i);

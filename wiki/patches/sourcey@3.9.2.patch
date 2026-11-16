@@ -5,7 +5,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
 @@ -170,6 +170,47 @@
      });
    }
- 
+
 +  // Spring nav groups and response fields from their current height with style.css's
 +  // --keysy-spring; reversing mid-motion stays smooth. Reduced motion keeps the native toggle.
 +  function initDisclosureMotion(selector, contentSelector) {
@@ -49,11 +49,11 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
 +
    function init() {
      initDesktopSidebarScroll();
- 
+
 @@ -177,6 +218,9 @@
      var openBtns = document.querySelectorAll('[data-drawer-slide]');
      if (!dialog) return;
- 
+
 +    // Focus the drawer itself on open, not its first link (the logo).
 +    dialog.autofocus = true;
 +
@@ -63,7 +63,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
 @@ -192,11 +236,27 @@
        if (e.target === dialog) dialog.close();
      });
- 
+
 -    // Close on nav link or close button click
 +    // Preserve the open drawer until cross-document navigation captures it.
 +    // Closing here can remove its snapshot before the outgoing slide starts.
@@ -77,7 +77,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
 +      }
        if (e.target.closest('a') || e.target.closest('[data-close-drawer]')) dialog.close();
      });
- 
+
 +    // A cached outgoing document must not restore with its drawer still open.
 +    window.addEventListener('pageshow', function (event) {
 +      if (event.persisted && dialog.open) {
@@ -92,7 +92,7 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
 @@ -225,6 +285,10 @@
      });
    }
- 
+
 +  // Attach now, not after idle or load, so the first click already springs.
 +  initDisclosureMotion('details.sourcey-nav-group', ':scope > ul');
 +  initDisclosureMotion('#responses details.schema-expandable');
@@ -101,17 +101,29 @@ index f2827cf6a8d1d693328cdef3da593e88e212e904..0f631242d7b035daf1703f9cd3609a3b
      window.requestIdleCallback(init, { timeout: 250 });
    } else {
 diff --git a/dist/client/tabs.js b/dist/client/tabs.js
+index e9dca07cafc009138542cff1479dbdf6dd95756d..9357f948379a8470cf8b91e267de3efc0dab82dd 100644
 --- a/dist/client/tabs.js
 +++ b/dist/client/tabs.js
-@@ -166 +166 @@
+@@ -163,11 +163,14 @@
+
+     document.addEventListener("click", function (e) {
+       var tab = e.target.closest(".response-tab");
 -      if (!tab) return;
 +      if (!tab || tab.classList.contains("active")) return;
-@@ -170,0 +171,3 @@
+
+       var container = tab.closest(".response-tabs");
+       var index = tab.getAttribute("data-response-index");
+       var scrollY = window.scrollY;
 +      var previous = container.querySelector('.response-tab.active > .keysy-response-indicator');
 +      var from = previous && previous.getBoundingClientRect();
 +      if (previous && previous.getAnimations) previous.getAnimations().forEach(function (motion) { motion.cancel(); });
-@@ -187,0 +191,15 @@
-+
+
+       // Update tabs
+       container.querySelectorAll(".response-tab").forEach(function (t) {
+@@ -186,6 +189,21 @@
+         d.classList.toggle("hidden", d.getAttribute("data-response-dropdown") !== index);
+       });
+
 +
 +      var indicator = tab.querySelector('.keysy-response-indicator');
 +      if (indicator && indicator.animate && from &&
@@ -126,6 +138,10 @@ diff --git a/dist/client/tabs.js b/dist/client/tabs.js
 +          }
 +        );
 +      }
++
+       window.scrollTo(0, scrollY);
+     });
+
 diff --git a/dist/client/theme-init.js b/dist/client/theme-init.js
 index d20b7092bae815e502ef06b15e5698790496da33..66b7d22a29b13b7309f39ed8a3a611d5ac9a1aec 100644
 --- a/dist/client/theme-init.js
@@ -177,6 +193,19 @@ index 762b8f21cec2272e0f26fd9a07e1ee1c25cd6ec0..5bf3c90b448f8868856f577384e1d08f
                                              ? "text-[rgb(var(--color-gray-800))] dark:text-[rgb(var(--color-gray-200))] [text-shadow:-0.2px_0_0_currentColor,0.2px_0_0_currentColor]"
                                              : "text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-400))] hover:text-[rgb(var(--color-gray-800))] dark:hover:text-[rgb(var(--color-gray-300))]"}`, children: [tab.label, isActive ? (_jsx("div", { class: "absolute bottom-0 h-[1.5px] w-full left-0 bg-[rgb(var(--color-primary))] dark:bg-[rgb(var(--color-primary-light))]" })) : (_jsx("div", { class: "absolute bottom-0 h-[1.5px] w-full left-0 group-hover:bg-[rgb(var(--color-gray-200))] dark:group-hover:bg-[rgb(var(--color-gray-700))]" }))] }, tab.slug));
                                  }) }), _jsx(ContextControls, {})] })] })] }));
+diff --git a/dist/components/openapi/CodeSamples.js b/dist/components/openapi/CodeSamples.js
+index da3e5e66d26dd84db47c306aa573dcd9ac442b38..3cc18f303c56b7a2c25440cf2849cc1ef5d0bba1 100644
+--- a/dist/components/openapi/CodeSamples.js
++++ b/dist/components/openapi/CodeSamples.js
+@@ -16,7 +16,7 @@ export function CodeSamplesExamples({ operation, codeSampleLangs }) {
+     const samples = generateCodeSamples(operation, spec.servers, codeSampleLangs, spec.securitySchemes, spec.sourceUrl ?? site?.siteUrl);
+     if (!samples.length)
+         return null;
+-    const title = operation.summary ?? `${operation.method.toUpperCase()} ${operation.path}`;
++    const title = "Request";
+     return (_jsxs("div", { class: "code-group code-samples not-prose", children: [_jsxs("div", { class: "relative flex items-center justify-between gap-2 px-3", children: [_jsx("div", { class: "flex min-w-0 items-center gap-1.5 font-medium text-xs leading-6 my-1 mb-1.5", children: _jsx("span", { class: "truncate text-[rgb(var(--color-stone-950))] dark:text-[rgb(var(--color-stone-50))]", children: title }) }), _jsxs("div", { class: "flex shrink-0 items-center justify-end gap-1.5", children: [_jsxs("div", { class: "code-lang-dropdown relative", "data-lang-sync": true, children: [_jsx("button", { type: "button", class: "code-lang-trigger group relative my-1 mb-1.5 flex items-center whitespace-nowrap font-medium leading-6 outline-0 text-[rgb(var(--color-stone-500))] dark:text-[rgb(var(--color-stone-400))] cursor-pointer text-xs", "aria-expanded": "false", "aria-haspopup": "listbox", children: _jsxs("div", { class: "z-10 flex items-center gap-1 rounded-lg px-1.5 group-hover:bg-[rgb(var(--color-stone-200)/0.5)] group-hover:text-[rgb(var(--color-primary-ink))] dark:group-hover:bg-[rgb(var(--color-stone-700)/0.7)] dark:group-hover:text-[rgb(var(--color-primary-light))]", children: [_jsx("span", { class: "code-lang-icon", dangerouslySetInnerHTML: { __html: langIcon(samples[0].lang) } }), _jsx("span", { class: "code-lang-label truncate", children: samples[0].label ?? samples[0].lang }), _jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", class: "size-3.5 shrink-0", children: [_jsx("path", { d: "m7 15 5 5 5-5" }), _jsx("path", { d: "m7 9 5-5 5 5" })] })] }) }), _jsx("div", { class: "code-lang-menu hidden absolute right-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-[rgb(var(--color-stone-200))] dark:border-[rgb(255_255_255/0.1)] bg-[rgb(var(--color-background-light))] dark:bg-[rgb(var(--color-background-dark))] shadow-lg py-1", role: "listbox", "aria-label": messages.codeLanguage, children: samples.map((sample, i) => (_jsxs("button", { role: "option", "aria-selected": i === 0 ? "true" : "false", class: `code-lang-option w-full text-left px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-[rgb(var(--color-stone-100))] dark:hover:bg-[rgb(255_255_255/0.05)] ${i === 0 ? "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]" : "text-[rgb(var(--color-stone-600))] dark:text-[rgb(var(--color-stone-400))]"}`, "data-lang-index": String(i), children: [_jsx("span", { dangerouslySetInnerHTML: { __html: langIcon(sample.lang) } }), sample.label ?? sample.lang] }, i))) })] }), _jsx(CopyButton, {})] })] }), _jsx("div", { class: "code-card-body", children: samples.map((sample, i) => {
+                     const html = highlightCode(sample.source, sample.lang);
+                     return (_jsx("div", { class: `code-lang-panel${i === 0 ? " active" : ""}`, "data-lang-panel": String(i), children: _jsx("div", { class: "relative w-full px-4 py-3.5 text-sm leading-6 bg-[rgb(var(--color-code-block-light))] dark:bg-[rgb(var(--color-code-block-dark))] overflow-x-auto", style: "font-variant-ligatures: none", children: _jsx("div", { class: "font-mono whitespace-pre text-xs leading-[1.35rem] code-block", dangerouslySetInnerHTML: { __html: html } }) }) }, i));
 diff --git a/dist/components/openapi/Introduction.js b/dist/components/openapi/Introduction.js
 index bb790d8f7fbe4b64e1edafb025c6746339185ef5..4cc39ee351feb58374d5c01a7e4a05a4c806b637 100644
 --- a/dist/components/openapi/Introduction.js
@@ -189,7 +218,7 @@ index bb790d8f7fbe4b64e1edafb025c6746339185ef5..4cc39ee351feb58374d5c01a7e4a05a4
 +    return (_jsxs("div", { id: "introduction", "data-traverse-target": "introduction", class: "mb-8", children: [_jsx(AnchorAliases, { target: "introduction" }), termsUrl && (_jsx("p", { class: "mt-4 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: _jsx("a", { href: termsUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: "Terms of Service" }) })), info.contact?.email && contactEmailUrl && (_jsxs("p", { class: "mt-2 text-sm text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: ["Contact:", " ", _jsx("a", { href: contactEmailUrl, class: "text-[rgb(var(--color-primary-ink))] dark:text-[rgb(var(--color-primary-light))]", children: info.contact.email })] })), servers.some((s) => s.url !== "/") && (_jsxs("div", { class: "mt-6 rounded-[var(--radius)] border border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)] overflow-x-auto", children: [_jsxs("div", { class: "px-4 py-2.5 text-xs font-semibold text-[rgb(var(--color-gray-600))] dark:text-[rgb(var(--color-gray-300))] border-b border-[rgb(var(--color-gray-200)/0.7)] dark:border-[rgb(var(--color-border-dark-subtle)/0.1)]", children: ["Base URL", servers.length > 1 ? "s" : ""] }), servers.map((s, i) => (_jsxs("div", { class: `px-4 py-2 ${i > 0 ? "border-t border-[rgb(var(--color-gray-100))] dark:border-[rgb(var(--color-gray-800))]" : ""}`, children: [_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-3 gap-y-0.5", children: [_jsx("code", { class: "font-mono text-sm text-[rgb(var(--color-gray-800))] dark:text-[rgb(var(--color-gray-200))]", children: s.url }), s.description && (_jsx("span", { class: "text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: s.description }))] }), s.variables && Object.keys(s.variables).length > 0 && (_jsx("dl", { class: "mt-1.5 space-y-0.5 text-xs text-[rgb(var(--color-gray-500))] dark:text-[rgb(var(--color-gray-400))]", children: Object.entries(s.variables).map(([name, variable]) => (_jsxs("div", { class: "flex flex-wrap items-baseline gap-x-1.5", children: [_jsx("dt", { children: _jsx("code", { class: "font-mono text-[rgb(var(--color-gray-700))] dark:text-[rgb(var(--color-gray-300))]", children: name }) }), _jsxs("dd", { children: [variable.default ? _jsxs(_Fragment, { children: ["default ", _jsx("code", { class: "font-mono", children: variable.default })] }) : "no default", variable.enum && variable.enum.length > 1 && _jsxs(_Fragment, { children: ["; one of ", variable.enum.map((value, index) => _jsxs(Fragment, { children: [index > 0 && ", ", _jsx("code", { class: "font-mono", children: value })] }, value))] }), variable.description && _jsxs(_Fragment, { children: [". ", variable.description] })] })] }, name))) }))] }, i)))] })), info.description && _jsx(Markdown, { content: info.description, class: "max-w-none mt-8" }), _jsx(ExternalDocsLink, { docs: spec.externalDocs })] }));
  }
 diff --git a/dist/components/openapi/Operation.js b/dist/components/openapi/Operation.js
-index f1f63e81f9af317ebe5db1ee9cf76b2110ba2144..ae1c5869692f7b8049599a697a681f65764802d1 100644
+index f1f63e81f9af317ebe5db1ee9cf76b2110ba2144..ceab07a5f2140e1203ffec697fa38895526590e3 100644
 --- a/dist/components/openapi/Operation.js
 +++ b/dist/components/openapi/Operation.js
 @@ -41,7 +41,7 @@ function OperationIdentity({ operation: op }) {
@@ -197,7 +226,7 @@ index f1f63e81f9af317ebe5db1ee9cf76b2110ba2144..ae1c5869692f7b8049599a697a681f65
      const mcp = op.mcpExtras;
      const { kind, named } = useMcpLine(op);
 -    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: op.summary ? bareName(op.summary) ? _jsx(Breakable, { text: op.summary }) : _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), !mcp ? _jsx(EndpointBar, { operation: op }) : (kind || named) && _jsx(McpEndpointBar, { method: kind ? op.method : undefined, path: op.path })] }));
-+    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [_jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: standalone && !mcp ? op.path : op.summary ? bareName(op.summary) ? _jsx(Breakable, { text: op.summary }) : _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), !mcp ? _jsx(EndpointBar, { operation: op }) : (kind || named) && _jsx(McpEndpointBar, { method: kind ? op.method : undefined, path: op.path })] }));
++    return (_jsxs(_Fragment, { children: [_jsx("header", { class: "mb-6", children: _jsxs("div", { class: "flex items-baseline gap-2 flex-wrap", children: [standalone && !mcp && _jsx(MethodBadge, { method: op.method }), _jsx(Heading, { class: `${standalone ? "reference-page-title " : ""}text-2xl sm:text-3xl text-[rgb(var(--color-gray-900))] dark:text-[rgb(var(--color-gray-200))] tracking-tight font-bold mb-2`, children: standalone && !mcp ? op.path : op.summary ? bareName(op.summary) ? _jsx(Breakable, { text: op.summary }) : _jsx(Markdown, { content: op.summary, inline: true }) : op.path }), op.deprecated && _jsx(DeprecatedBadge, {}), mcp?.annotations && _jsx(AnnotationBadges, { annotations: mcp.annotations })] }) }), !mcp ? !standalone && _jsx(EndpointBar, { operation: op }) : (kind || named) && _jsx(McpEndpointBar, { method: kind ? op.method : undefined, path: op.path })] }));
  }
  /**
   * What an MCP entry's line under its title says: its kind where its section
@@ -210,6 +239,15 @@ index f1f63e81f9af317ebe5db1ee9cf76b2110ba2144..ae1c5869692f7b8049599a697a681f65
  }
  /**
   * The full-width theme's operation: two equal columns. The left starts with
+@@ -89,7 +89,7 @@ function OperationSections({ operation: op, sectionClass }) {
+ /** The request samples, body example and response examples, with the console that opens over them. */
+ function OperationExamples({ operation: op }) {
+     const site = useContext(SiteContext);
+-    return (_jsxs(ConsoleExamples, { operation: op, children: [_jsx(CodeSamplesExamples, { operation: op, codeSampleLangs: site.codeSamples }), op.requestBody && _jsx(RequestBodyExample, { body: op.requestBody }), op.mcpExtras ? _jsx(McpReturnsExample, { schema: op.mcpExtras.outputSchema }) : _jsx(ResponsesExamples, { responses: op.responses })] }));
++    return (_jsxs(ConsoleExamples, { operation: op, children: [_jsx(CodeSamplesExamples, { operation: op, codeSampleLangs: site.codeSamples }), op.mcpExtras ? _jsx(McpReturnsExample, { schema: op.mcpExtras.outputSchema }) : _jsx(ResponsesExamples, { responses: op.responses.filter((r) => r.statusCode.startsWith("2")) })] }));
+ }
+ function useSectionId(operation) {
+     const spec = useContext(SpecContext);
 diff --git a/dist/components/openapi/Responses.js b/dist/components/openapi/Responses.js
 index ef6102a6353a25b550a4a48b3845751025999eb2..11f4fef4bcfebaf90f9b0f7f1d6496e9fa692adc 100644
 --- a/dist/components/openapi/Responses.js
