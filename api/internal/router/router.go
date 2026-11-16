@@ -54,6 +54,7 @@ func New(d Deps) *gin.Engine {
 	v0.GET("/me", me.Get(profiles))
 	v0.PATCH("/me", me.Patch(profiles))
 	v0.DELETE("/me", me.Delete(profiles))
+	v0.POST("/me/cancel-deletion", me.CancelDeletion(profiles))
 	v0.GET("/me/sessions", session.List(sessions))
 	v0.DELETE("/me/sessions/:sessionId", session.Revoke(sessions))
 	v0.GET("/orgs", org.List(orgs))

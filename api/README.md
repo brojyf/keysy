@@ -4,6 +4,7 @@ Go, Gin, and GORM service. `GET /v0/me` returns the authenticated user's ID,
 email, profile display name, agent auto-apply preference, and optional Google avatar.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
 `DELETE /v0/me` schedules account deletion and revokes all sessions. Owners must first transfer or delete their orgs. Repeated requests retain the original deletion time and revoke sessions again.
+`POST /v0/me/cancel-deletion` clears a pending account deletion; it returns 204 even when none is pending.
 Neither profile response includes memberships. A missing profile row is an
 internal error. This service does not refresh sessions.
 

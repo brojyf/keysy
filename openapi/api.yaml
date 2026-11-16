@@ -137,6 +137,36 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v0/me/cancel-deletion:
+    post:
+      tags: [Account]
+      security:
+        - accessCookie: []
+      operationId: cancelAccountDeletion
+      summary: Cancel the signed-in account's deletion
+      description: Cancels a pending account deletion. The user keeps only the org memberships that still exist. Returns 204 when no deletion is pending.
+      responses:
+        '204':
+          description: Account deletion is cancelled. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v0/me/sessions:
     get:
       tags: [Account]

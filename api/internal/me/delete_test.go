@@ -28,6 +28,10 @@ func (p *deletionProfiles) ScheduleDeletion(_ context.Context, id string) error 
 	}
 	return p.err
 }
+func (p *deletionProfiles) CancelDeletion(context.Context, string) error {
+	panic("unexpected cancellation")
+}
+
 func TestDeleteMe(t *testing.T) {
 	for _, tc := range []struct {
 		name, query, body, code, message string

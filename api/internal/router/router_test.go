@@ -33,6 +33,7 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 		"GET /v0/orgs/:orgId/members",
 		"PATCH /v0/me",
 		"PATCH /v0/orgs/:orgId",
+		"POST /v0/me/cancel-deletion",
 		"POST /v0/orgs",
 	}
 	var got []string
