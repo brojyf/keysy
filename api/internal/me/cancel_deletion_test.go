@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/brojyf/keysy/api/internal/profile"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,14 +30,11 @@ func (p *cancelDeletionProfiles) CancelDeletion(_ context.Context, userID string
 func (p *cancelDeletionProfiles) ScheduleDeletion(context.Context, string) error {
 	panic("unexpected deletion")
 }
-func (p *cancelDeletionProfiles) DisplayName(context.Context, string) (string, error) {
-	panic("unexpected display name")
+func (p *cancelDeletionProfiles) Profile(context.Context, string) (profile.Profile, error) {
+	panic("unexpected profile lookup")
 }
 func (p *cancelDeletionProfiles) UpdateDisplayName(context.Context, string, string) error {
 	panic("unexpected update")
-}
-func (p *cancelDeletionProfiles) AgentAutoApply(context.Context, string) (bool, error) {
-	panic("unexpected auto-apply lookup")
 }
 func (p *cancelDeletionProfiles) UpdateAgentAutoApply(context.Context, string, bool) error {
 	panic("unexpected auto-apply update")

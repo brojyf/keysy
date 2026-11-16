@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
+	"github.com/brojyf/keysy/api/internal/profile"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -22,14 +24,15 @@ func (p *profileUpdate) CancelDeletion(context.Context, string) error {
 	panic("unexpected cancellation")
 }
 
-type profileLookup func(context.Context, string) (string, error)
+type profileLookup func(context.Context, string) (profile.Profile, error)
 
-func (f profileLookup) DisplayName(ctx context.Context, id string) (string, error) { return f(ctx, id) }
+func (f profileLookup) Profile(ctx context.Context, id string) (profile.Profile, error) {
+	return f(ctx, id)
+}
 func (f profileLookup) UpdateDisplayName(context.Context, string, string) error {
 	panic("unexpected update")
 }
 
-func (f profileLookup) AgentAutoApply(context.Context, string) (bool, error) { return false, nil }
 func (f profileLookup) UpdateAgentAutoApply(context.Context, string, bool) error {
 	panic("unexpected update")
 }
@@ -48,18 +51,21 @@ func TestMe(t *testing.T) {
 					c.Set("avatar_url", "https://google.test/photo")
 				}
 			})
-			r.GET("/v0/me", Get(profileLookup(func(got context.Context, id string) (string, error) {
+			r.GET("/v0/me", Get(profileLookup(func(got context.Context, id string) (profile.Profile, error) {
 				if got != ctx || id != "user-123" {
 					t.Error("lost request context or user ID")
 				}
 				if scenario == "timeout" {
 					cancel()
-					return "", context.DeadlineExceeded
+					return profile.Profile{}, context.DeadlineExceeded
 				}
-				if scenario == "missing-profile" || scenario == "database-error" {
-					return "", errors.New("private database details")
+				if scenario == "missing-profile" {
+					return profile.Profile{}, gorm.ErrRecordNotFound
 				}
-				return "Member", nil
+				if scenario == "database-error" {
+					return profile.Profile{}, errors.New("private database details")
+				}
+				return profile.Profile{DisplayName: "Member", AgentAutoApply: true}, nil
 			})))
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, httptest.NewRequest("GET", "/v0/me", nil).WithContext(ctx))
@@ -97,7 +103,10 @@ func TestMe(t *testing.T) {
 func TestMeTimeout(t *testing.T) {
 	r := gin.New()
 	r.Use(middleware.Timeout())
-	r.GET("/v0/me", Get(profileLookup(func(ctx context.Context, _ string) (string, error) { <-ctx.Done(); return "", ctx.Err() })))
+	r.GET("/v0/me", Get(profileLookup(func(ctx context.Context, _ string) (profile.Profile, error) {
+		<-ctx.Done()
+		return profile.Profile{}, ctx.Err()
+	})))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	w := httptest.NewRecorder()
@@ -120,9 +129,9 @@ func TestMeRejectsUnexpectedInput(t *testing.T) {
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			r := gin.New()
-			r.GET("/v0/me", Get(profileLookup(func(context.Context, string) (string, error) {
+			r.GET("/v0/me", Get(profileLookup(func(context.Context, string) (profile.Profile, error) {
 				t.Error("looked up a profile for invalid input")
-				return "", nil
+				return profile.Profile{}, nil
 			})))
 			req := httptest.NewRequest("GET", "/v0/me"+scenario.query, strings.NewReader(scenario.body))
 			if scenario.chunked {
@@ -139,13 +148,23 @@ func TestMeRejectsUnexpectedInput(t *testing.T) {
 }
 
 type profileUpdate struct {
-	called bool
-	name   string
-	err    error
-	cancel context.CancelFunc
+	called    bool
+	name      string
+	err       error
+	cancel    context.CancelFunc
+	reads     int
+	autoApply bool
+	purgeAt   *time.Time
+	readErr   error
 }
 
-func (p *profileUpdate) DisplayName(context.Context, string) (string, error) { return "", nil }
+func (p *profileUpdate) Profile(_ context.Context, id string) (profile.Profile, error) {
+	p.reads++
+	if id != "user-123" {
+		panic("wrong user ID")
+	}
+	return profile.Profile{DisplayName: p.name, AgentAutoApply: p.autoApply, PurgeAt: p.purgeAt}, p.readErr
+}
 func (p *profileUpdate) UpdateDisplayName(ctx context.Context, id, name string) error {
 	p.called = true
 	p.name = name
@@ -158,9 +177,9 @@ func (p *profileUpdate) UpdateDisplayName(ctx context.Context, id, name string) 
 	return p.err
 }
 
-func (p *profileUpdate) AgentAutoApply(context.Context, string) (bool, error) { return false, nil }
 func (p *profileUpdate) UpdateAgentAutoApply(_ context.Context, id string, enabled bool) error {
 	p.called = true
+	p.autoApply = enabled
 	if id != "user-123" {
 		panic("wrong user ID")
 	}
@@ -284,5 +303,63 @@ func TestPatchAgentAutoApply(t *testing.T) {
 				t.Fatal(w.Body.String())
 			}
 		})
+	}
+}
+
+func TestProfilePurgeAtResponses(t *testing.T) {
+	purge := time.Date(2026, 12, 16, 0, 30, 0, 0, time.FixedZone("west", -8*60*60))
+	for _, tc := range []struct {
+		name, method, body string
+		pending            bool
+	}{
+		{"get pending", "GET", "", true}, {"get active", "GET", "", false},
+		{"patch name", "PATCH", `{"displayName":"Ada"}`, true}, {"patch preference", "PATCH", `{"agentAutoApply":true}`, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &profileUpdate{name: "Ada", autoApply: true}
+			if tc.pending {
+				store.purgeAt = &purge
+			}
+			r := gin.New()
+			r.Use(func(c *gin.Context) { c.Set("user_id", "user-123"); c.Set("email", "member@example.test") })
+			r.GET("/v0/me", Get(store))
+			r.PATCH("/v0/me", Patch(store))
+			req := httptest.NewRequest(tc.method, "/v0/me", strings.NewReader(tc.body))
+			if tc.method == "PATCH" {
+				req.Header.Set("Content-Type", "application/json")
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			var body map[string]any
+			if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+				t.Fatal(err)
+			}
+			if w.Code != 200 || store.reads != 1 || body["id"] != "user-123" || body["email"] != "member@example.test" || body["displayName"] != "Ada" || body["agentAutoApply"] != true {
+				t.Fatalf("status=%d reads=%d body=%v", w.Code, store.reads, body)
+			}
+			value, ok := body["purgeAt"]
+			if tc.pending && (!ok || value != "2026-12-16T08:30:00Z") {
+				t.Fatal(body)
+			}
+			if !tc.pending && ok {
+				t.Fatal(body)
+			}
+		})
+	}
+}
+
+func TestPatchProfileReadError(t *testing.T) {
+	for _, body := range []string{`{"displayName":"Ada"}`, `{"agentAutoApply":true}`} {
+		store := &profileUpdate{readErr: errors.New("private")}
+		r := gin.New()
+		r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+		r.PATCH("/v0/me", Patch(store))
+		req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if !store.called || store.reads != 1 || w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}` {
+			t.Fatalf("%d %s", w.Code, w.Body.String())
+		}
 	}
 }

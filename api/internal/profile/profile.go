@@ -3,16 +3,23 @@ package profile
 import (
 	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type Store struct{ DB *gorm.DB }
 
-func (s Store) DisplayName(ctx context.Context, userID string) (string, error) {
-	var profile struct{ DisplayName string }
-	err := s.DB.WithContext(ctx).Table("public.profiles").Select("display_name").Where("id = ?", userID).Take(&profile).Error
-	return profile.DisplayName, err
+type Profile struct {
+	DisplayName    string
+	AgentAutoApply bool
+	PurgeAt        *time.Time
+}
+
+func (s Store) Profile(ctx context.Context, userID string) (Profile, error) {
+	var result Profile
+	err := s.DB.WithContext(ctx).Raw("SELECT display_name, agent_auto_apply, deleted_at + interval '30 days' AS purge_at FROM public.profiles WHERE id = ?", userID).Take(&result).Error
+	return result, err
 }
 
 func (s Store) UpdateDisplayName(ctx context.Context, userID, name string) error {
@@ -24,12 +31,6 @@ func (s Store) UpdateDisplayName(ctx context.Context, userID, name string) error
 		return gorm.ErrRecordNotFound
 	}
 	return nil
-}
-
-func (s Store) AgentAutoApply(ctx context.Context, userID string) (bool, error) {
-	var profile struct{ AgentAutoApply bool }
-	err := s.DB.WithContext(ctx).Table("public.profiles").Select("agent_auto_apply").Where("id = ?", userID).Take(&profile).Error
-	return profile.AgentAutoApply, err
 }
 
 func (s Store) UpdateAgentAutoApply(ctx context.Context, userID string, enabled bool) error {
