@@ -284,18 +284,17 @@ test('PRD requirements and endpoint callout content are published', async () => 
 test('API and Auth tabs render their OpenAPI contracts as the source of truth', async () => {
   expect(stylesheet).toMatch(/#sourcey #content-area > header \.h-5,\s*#sourcey #content-area > article > \.h-5,\s*#sourcey #content-area > article > header h1 \+ span \{\s*display: none;/);
   const api = await Bun.file(new URL('api.html', output)).text();
-  expect(api).toContain('the source of truth for the application API.');
-  expect(api).toContain('This is the v0 draft, not a stable release.');
-  expect(api).toContain('The Keysy application API. Only implemented endpoints are listed.');
+  expect(api).toContain('The Keysy application API (v0 draft).');
+  expect(api).toContain('openapi/api.yaml');
   expect(api).not.toContain('Roles are per org');
   for (const operation of ['Create an org', 'Rename an org', "List an org's members", "List an org's invitations"]) {
     expect(api).toContain(operation);
   }
   const auth = await Bun.file(new URL('auth.html', output)).text();
-  expect(auth).toContain('the source of truth for the authentication API.');
-  expect(auth).toContain('This is the v0 draft, not a stable release.');
+  expect(auth).toContain('The Keysy authentication API (v0 draft).');
+  expect(auth).toContain('openapi/auth.yaml');
   expect(auth).toContain('Finish Google sign-in');
-  expect(auth).toContain('It signs users in to Keysy with Google');
+  expect(auth).toContain('It signs users in with Google');
   // Each operation loads on its own page, so the overview stays small.
   for (const html of [api, auth]) expect(html.length).toBeLessThan(150_000);
   // The OpenAPI files keep their security contract; the wiki hides the Authentication sections.

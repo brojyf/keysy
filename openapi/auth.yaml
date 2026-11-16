@@ -3,32 +3,15 @@ info:
   title: Keysy Auth API
   version: 0.0.0
   description: |
-    The authentication API. It signs users in to Keysy with Google and manages their sessions. This is the v0 draft, not a stable release. The dashboard is the only client today.
+    The Keysy authentication API (v0 draft). It signs users in with Google and manages their sessions.
 
-    Sign-in flow:
+    **Sign-in:** dashboard → `GET /v0/auth/google` → Google → `GET /v0/auth/callback` → cookies set → back to the dashboard.
 
-    1. The dashboard's sign-in button navigates to `GET /v0/auth/google`.
-    2. After the user signs in with Google, the browser returns to `GET /v0/auth/callback`.
-    3. The service sets the access and refresh cookies, then redirects to the dashboard.
+    **Refresh:** when the API returns 401, the dashboard calls `POST /v0/auth/refresh` once, then retries. If the refresh fails, the dashboard goes to `/signin`.
 
-    Tokens stay in encrypted `HttpOnly` cookies. Browser JavaScript cannot read them.
+    Tokens stay only in encrypted `HttpOnly` cookies.
 
-    When an API request returns 401, the dashboard calls `POST /v0/auth/refresh` once and retries after a successful refresh. If the request still returns 401 after the refresh, or the user signed out, the dashboard navigates to `/signin`.
-
-    Common rules, except for `/health`:
-
-    - Responses include `X-Request-ID`, `Cache-Control: no-store`, and `Referrer-Policy: no-referrer`.
-    - `User-Agent` must be printable ASCII of at most 2048 bytes.
-    - Only the callback accepts a query string. No endpoint accepts a request body.
-    - Logout and refresh require the dashboard `Origin`.
-
-    Cookies:
-
-    - All cookies use `Path=/`, `HttpOnly`, and `SameSite=Lax`. On HTTPS they also use `Secure`.
-    - The OAuth cookie expires after 10 minutes. The refresh cookie is a session cookie. The access cookie lives as long as the access token and uses `COOKIE_DOMAIN`.
-    - On local HTTP, cookies have no prefix, `Secure`, or `Domain`.
-
-    This reference is generated from `openapi/auth.yaml`, the source of truth for the authentication API.
+    Source: `openapi/auth.yaml`.
 servers:
   - url: https://auth.keysy.net
   - url: http://localhost:8080

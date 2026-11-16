@@ -3,21 +3,13 @@ info:
   title: Keysy API
   version: 0.0.0
   description: |
-    The Keysy application API. Only implemented endpoints are listed. This is the v0 draft, not a stable release.
+    The Keysy application API (v0 draft).
 
-    Common rules for all `/v0` endpoints:
+    - Authenticate with the sign-in cookie that the auth service sets.
+    - Browser requests are accepted only from the dashboard origin.
+    - Names have 1 to 32 characters after surrounding whitespace is trimmed.
 
-    - Requests must send the sign-in cookie.
-    - Responses include `Cache-Control: no-store` and `X-Request-ID`.
-    - Only the dashboard origin, or a request without `Origin`, is accepted. Other origins return `INVALID_ORIGIN`.
-    - No query string is accepted. GET and DELETE accept no request body.
-    - A request body is UTF-8 JSON of at most 1024 bytes.
-    - IDs in the path must be UUIDs.
-    - Names are trimmed of surrounding whitespace, then must have 1 to 32 characters. Names must not contain null characters.
-
-    CORS preflight allows GET, POST, PATCH, and DELETE, and only the `Content-Type` request header.
-
-    This reference is generated from `openapi/api.yaml`, the source of truth for the application API.
+    Source: `openapi/api.yaml`.
 servers:
   - url: https://api.keysy.net
   - url: http://localhost:8081
