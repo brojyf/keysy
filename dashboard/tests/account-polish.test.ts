@@ -94,7 +94,7 @@ for (const dark of [false, true]) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
         }
-        const menuRing = `0 0 0 2px ${tokens.getPropertyValue('--color-menu')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
+        const menuRing = `0 0 0 2px ${tokens.getPropertyValue('--color-menu')}, 0 0 0 4px ${tokens.getPropertyValue('--color-accent')}`
         assert.equal(css('.account-row-menu .account-menu-item').boxShadow, menuRing, '.account-row-menu .account-menu-item')
         if (motion === 'reduce') assert.equal(css('.account-row-menu .account-menu-item').transition, 'none', '.account-row-menu .account-menu-item')
         for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
@@ -173,3 +173,49 @@ test('account menu rows rise bottom-up, from the avatar the panel grows out of',
     await window.happyDOM.close()
   }
 })
+
+function contrast(first: string, second: string) {
+  const luminance = (hex: string) => {
+    const [red, green, blue] = hex.slice(1).match(/../g)!.map(channel => {
+      const value = parseInt(channel, 16) / 255
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    })
+    return red * 0.2126 + green * 0.7152 + blue * 0.0722
+  }
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+for (const dark of [false, true]) {
+  test(`menu focus rings reach 3:1 against the menu in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      style.textContent = stylesheet
+        .replaceAll(':focus-visible', '[data-focus-visible]')
+        // Happy DOM cannot match the descendant selector inside this :is() group.
+        .replaceAll(
+          '#account-menu :is(.account-menu-item, .theme-switch button)[data-focus-visible]',
+          '#account-menu .account-menu-item[data-focus-visible], #account-menu .theme-switch button[data-focus-visible]',
+        )
+      document.head.append(style)
+      document.body.innerHTML = `
+        <div id="account-menu">
+          <a class="account-menu-item" data-focus-visible>Account</a>
+          <span class="theme-switch"><button data-focus-visible>Theme</button></span>
+        </div>
+        <div class="account-menu account-row-menu"><a class="account-menu-item" data-focus-visible>Settings</a></div>`
+      const menu = window.getComputedStyle(document.documentElement).getPropertyValue('--color-menu').trim()
+      for (const control of document.querySelectorAll('[data-focus-visible]')) {
+        const ring = window.getComputedStyle(control).boxShadow.match(/4px (#[0-9a-f]{6})$/i)?.[1]
+        assert.ok(ring, control.outerHTML)
+        const ratio = contrast(ring, menu)
+        assert.ok(ratio >= 3, `${control.outerHTML} ring/menu: ${ratio.toFixed(2)}:1; expected 3:1`)
+      }
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+}
