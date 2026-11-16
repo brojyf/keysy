@@ -27,17 +27,18 @@ def step_script(name):
 
 
 class DeploymentSchedulingTests(unittest.TestCase):
-    def test_migration_wait_does_not_hold_the_deployment_lock(self):
+    def test_migrations_are_serial_without_holding_the_fly_deployment_lock(self):
         migrations = workflow_job("migrations")
-        self.assertIn("- name: Wait for Supabase migrations", migrations)
-        self.assertNotIn("    concurrency:", migrations)
+        self.assertIn("group: supabase-migrations\n      cancel-in-progress: false", migrations)
+        self.assertNotIn("group: fly-deploy", migrations)
         self.assertNotIn("\nconcurrency:", WORKFLOW.read_text())
-        self.assertNotIn("- name: Wait for Supabase migrations", workflow_job("deploy"))
+        self.assertNotIn("Supabase%20Preview", WORKFLOW.read_text())
 
     def test_deployment_requires_successful_migrations(self):
         deploy = workflow_job("deploy")
         self.assertIn("needs: [notify, migrations]", deploy)
         self.assertIn("!cancelled() && needs.migrations.result == 'success' &&", deploy)
+        self.assertIn("needs.migrations.outputs.migrated == 'true'", deploy)
         self.assertIn("github.event.workflow_run.event == 'push'", deploy)
         self.assertIn("github.event.workflow_run.conclusion == 'success'", deploy)
 
@@ -47,119 +48,102 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertLess(deploy.index("- name: Read the tip of main"), deploy.index("- name: Deploy\n"))
         self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Deploy"))
 
-    def test_notification_reports_the_migration_result_when_it_blocks_deployment(self):
+    def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
         self.assertIn("needs: [notify, migrations, deploy, cloudflare]", notification)
-        self.assertIn("deploy_result: ${{ needs.migrations.result != 'success' && needs.migrations.result || needs.deploy.result }}", notification)
+        self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
+        self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
+        self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)
 
 
-class MigrationGateTests(unittest.TestCase):
+class MigrationDeploymentTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         path = Path(directory.name)
         self.call_log = path / "calls"
-        gh = path / "gh"
-        gh.write_text('''#!/usr/bin/env python3
+        supabase = path / "supabase"
+        supabase.write_text('''#!/usr/bin/env python3
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
-assert sys.argv[1:3] == ["api", "repos/test/keysy/commits/tested-commit/check-runs?check_name=Supabase%20Preview"]
-assert sys.argv[3] == "--jq"
-assert os.environ["GH_TOKEN"] == "test-token"
-log = Path(os.environ["MIGRATION_CALL_LOG"])
-calls = log.read_text().splitlines() if log.exists() else []
-attempt = calls.count("gh")
-with log.open("a") as output:
-    output.write("gh\\n")
-if os.environ.get("GH_API_FAILURE"):
-    sys.exit(1)
-conclusions = json.loads(os.environ["MIGRATION_CONCLUSIONS"])
-response = conclusions[min(attempt, len(conclusions) - 1)]
-if isinstance(response, str):
-    response = {"check_runs": [{"conclusion": None if response == "pending" else response}]}
-sys.exit(subprocess.run(["jq", "-r", sys.argv[4]], input=json.dumps(response), text=True).returncode)
+assert os.environ["SUPABASE_ACCESS_TOKEN"] == "test-access-token"
+assert os.environ["SUPABASE_DB_PASSWORD"] == "test-database-password"
+with Path(os.environ["MIGRATION_CALL_LOG"]).open("a") as output:
+    output.write(json.dumps(sys.argv[1:]) + "\\n")
+command = "link" if sys.argv[1] == "link" else "dry-run" if "--dry-run" in sys.argv else "push"
+sys.exit(1 if command == os.environ.get("FAIL_COMMAND") else 0)
 ''')
-        gh.chmod(0o755)
-        sleep = path / "sleep"
-        sleep.write_text('#!/bin/sh\nprintf "sleep\\n" >> "$MIGRATION_CALL_LOG"\n')
-        sleep.chmod(0o755)
+        supabase.chmod(0o755)
         self.environment = {
             **os.environ,
             "PATH": f"{path}:{os.environ['PATH']}",
             "MIGRATION_CALL_LOG": str(self.call_log),
-            "GH_TOKEN": "test-token",
-            "GITHUB_REPOSITORY": "test/keysy",
-            # workflow_run's GITHUB_SHA can differ from the commit CI tested.
-            "GITHUB_SHA": "workflow-default-commit",
-            "COMMIT_SHA": "tested-commit",
+            "SUPABASE_ACCESS_TOKEN": "test-access-token",
+            "SUPABASE_DB_PASSWORD": "test-database-password",
+            "SUPABASE_PROJECT_ID": "abcdefghijklmnopqrst",
         }
 
-    def run_gate(self, conclusions, **environment):
-        self.call_log.unlink(missing_ok=True)
+    def run_migrations(self, **environment):
         return subprocess.run(
-            ["bash", "-e", "-o", "pipefail", "-c", step_script("Wait for Supabase migrations")],
-            env={**self.environment, "MIGRATION_CONCLUSIONS": json.dumps(conclusions), **environment},
+            ["bash", "-e", "-o", "pipefail", "-c", step_script("Apply Supabase migrations")],
+            env={**self.environment, **environment},
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=10,
         )
 
-    def test_waits_for_migrations_on_the_commit_ci_tested(self):
-        result = self.run_gate(["pending", "success"])
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh", "sleep", "gh"])
+    def calls(self):
+        return [json.loads(line) for line in self.call_log.read_text().splitlines()] if self.call_log.exists() else []
 
-    def test_migration_environment_uses_the_ci_commit(self):
-        block = workflow_step("Wait for Supabase migrations")
-        self.assertIn("COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}", block)
-        self.assertIn("GH_TOKEN: ${{ github.token }}", block)
+    def test_checks_out_the_ci_commit_and_requires_successful_push_ci(self):
+        migrations = workflow_job("migrations")
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", migrations)
+        self.assertIn("persist-credentials: false", migrations)
+        self.assertIn("github.event.workflow_run.event == 'push'", migrations)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", migrations)
+        self.assertIn("supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb", migrations)
+        self.assertIn("version: 3.1.0", migrations)
 
-    def test_completed_migrations_do_not_wait(self):
-        result = self.run_gate(["success"])
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
+    def test_stale_commits_skip_setup_and_migrations(self):
+        migrations = workflow_job("migrations")
+        self.assertLess(migrations.index("- name: Read the tip of main"), migrations.index("- name: Apply Supabase migrations"))
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Apply Supabase migrations"))
+        self.assertIn("migrated: ${{ steps.migrate.outcome == 'success' }}", migrations)
 
-    def test_parses_successful_check_response(self):
-        result = self.run_gate([{"check_runs": [{"status": "completed", "conclusion": "success"}]}])
+    def test_credentials_come_from_repository_settings(self):
+        block = workflow_step("Apply Supabase migrations")
+        for name in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD"):
+            self.assertIn(f"{name}: ${{{{ secrets.{name} }}}}", block)
+        self.assertIn("SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}", block)
+
+    def test_links_and_previews_before_applying_without_seed_roles_or_vault(self):
+        result = self.run_migrations()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
-
-    def test_empty_check_runs_wait_for_a_successful_check(self):
-        result = self.run_gate([
-            {"check_runs": []},
-            {"check_runs": [{"status": "completed", "conclusion": "success"}]},
+        self.assertEqual(self.calls(), [
+            ["link", "--project-ref", "abcdefghijklmnopqrst"],
+            ["db", "push", "--remote", "--dry-run", "--skip-vault"],
+            ["db", "push", "--remote", "--yes", "--skip-vault"],
         ])
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh", "sleep", "gh"])
+        for name in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD"):
+            self.assertNotIn(self.environment[name], result.stdout + result.stderr)
 
-    def test_null_conclusion_waits_for_a_successful_check(self):
-        result = self.run_gate([
-            {"check_runs": [{"status": "in_progress", "conclusion": None}]},
-            {"check_runs": [{"status": "completed", "conclusion": "success"}]},
-        ])
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh", "sleep", "gh"])
-
-    def test_unsuccessful_migrations_block_deployment(self):
-        for conclusion in ("failure", "cancelled", "timed_out", "action_required", "neutral", "skipped", "stale"):
-            with self.subTest(conclusion=conclusion):
-                result = self.run_gate([conclusion])
+    def test_missing_credentials_fail_before_any_supabase_command(self):
+        for name in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", "SUPABASE_PROJECT_ID"):
+            with self.subTest(name=name):
+                result = self.run_migrations(**{name: ""})
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn(conclusion, result.stdout)
-                self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
+                self.assertIn(name, result.stderr)
+                self.assertEqual(self.calls(), [])
 
-    def test_api_errors_block_deployment(self):
-        self.assertNotEqual(self.run_gate(["success"], GH_API_FAILURE="1").returncode, 0)
-        self.assertEqual(self.call_log.read_text().splitlines(), ["gh"])
-
-    def test_pending_migrations_time_out(self):
-        result = self.run_gate(["pending"])
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("15 minutes", result.stdout)
-        self.assertEqual(self.call_log.read_text().splitlines().count("gh"), 60)
+    def test_command_failures_stop_later_commands(self):
+        for command, count in [("link", 1), ("dry-run", 2), ("push", 3)]:
+            with self.subTest(command=command):
+                self.call_log.unlink(missing_ok=True)
+                result = self.run_migrations(FAIL_COMMAND=command)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(len(self.calls()), count)
 
 
 class FlyDeployTests(unittest.TestCase):
