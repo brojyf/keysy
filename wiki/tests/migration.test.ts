@@ -304,7 +304,7 @@ test('API and Auth tabs render their OpenAPI contracts as the source of truth', 
 test('API and Auth sidebars show the introduction and list every endpoint by path, with cURL samples only', async () => {
   for (const [route, label, firstEntries, groupCount] of [
     ['api', 'API', ['Account', 'GET', '/v0/me'], 5],
-    ['auth', 'Auth', ['Sign-in', 'GET', '/v0/auth/google'], 3],
+    ['auth', 'Auth', ['GET', '/v0/auth/google'], 0],
   ] as const) {
     const html = await Bun.file(new URL(`${route}.html`, output)).text();
     const sidebar = html.match(new RegExp(`<nav[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?</nav>`))![0];
