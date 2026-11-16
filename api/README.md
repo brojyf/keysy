@@ -1,8 +1,9 @@
 # Keysy API
 
 Go, Gin, and GORM service. `GET /v0/me` returns the authenticated user's ID,
-email, profile display name, agent auto-apply preference, and optional Google avatar.
-`PATCH /v0/me` updates the display name or agent auto-apply preference.
+email, profile display name, agent auto-apply preference, optional Google avatar, and
+purge time while account deletion is pending. `PATCH /v0/me` updates the display
+name or agent auto-apply preference and returns the same profile.
 `DELETE /v0/me` schedules account deletion and revokes all sessions. Owners must first transfer or delete their orgs. Repeated requests retain the original deletion time and revoke sessions again.
 Neither profile response includes memberships. A missing profile row is an
 internal error. This service does not refresh sessions.
