@@ -90,10 +90,13 @@ for (const dark of [false, true]) {
         const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
         const tokens = window.getComputedStyle(document.documentElement)
         const expectedRing = `0 0 0 2px ${tokens.getPropertyValue('--color-raised')}, 0 0 0 4px ${tokens.getPropertyValue('--color-button')}`
-        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square', '.account-row-menu .account-menu-item']) {
+        for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
           assert.equal(css(selector).boxShadow, expectedRing, selector)
           if (motion === 'reduce') assert.equal(css(selector).transition, 'none', selector)
         }
+        const menuRing = `0 0 0 2px ${tokens.getPropertyValue('--color-menu')}, 0 0 0 4px ${tokens.getPropertyValue('--color-accent')}`
+        assert.equal(css('.account-row-menu .account-menu-item').boxShadow, menuRing, '.account-row-menu .account-menu-item')
+        if (motion === 'reduce') assert.equal(css('.account-row-menu .account-menu-item').transition, 'none', '.account-row-menu .account-menu-item')
         for (const selector of ['.account-sections .theme-switch button', '.icon-button-square']) {
           assert.equal(css(selector).scale, motion === 'reduce' ? '1' : '0.97', selector)
         }
@@ -170,3 +173,80 @@ test('account menu rows rise bottom-up, from the avatar the panel grows out of',
     await window.happyDOM.close()
   }
 })
+
+for (const dark of [false, true]) {
+  test(`menus use the menu tokens in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      style.textContent = stylesheet.replaceAll(':hover', '[data-hover]')
+      document.head.append(style)
+      document.body.innerHTML = `
+        <div id="account-menu" class="account-menu">
+          <span class="theme-switch"><span class="theme-thumb"></span></span>
+          <hr class="account-menu-divider">
+          <a class="account-menu-item" data-hover>Account</a>
+        </div>
+        <div class="account-menu account-row-menu"><a class="account-menu-item" data-hover>Settings</a></div>`
+      const css = (selector: string) => window.getComputedStyle(document.querySelector(selector)!)
+      const token = (name: string) => window.getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim()
+      for (const menu of ['#account-menu', '.account-row-menu']) {
+        assert.equal(css(menu).backgroundColor, token('menu'), menu)
+        assert.equal(css(`${menu} .account-menu-item`).backgroundColor, token('menu-soft'), `${menu} item hover`)
+      }
+      assert.equal(css('#account-menu .account-menu-divider').backgroundColor, token('menu-line'))
+      assert.equal(css('#account-menu .theme-switch').borderTopColor, token('menu-line'))
+      assert.equal(css('#account-menu .theme-thumb').backgroundColor, token('menu-soft'))
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+}
+
+function contrast(first: string, second: string) {
+  const luminance = (hex: string) => {
+    const [red, green, blue] = hex.slice(1).match(/../g)!.map(channel => {
+      const value = parseInt(channel, 16) / 255
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    })
+    return red * 0.2126 + green * 0.7152 + blue * 0.0722
+  }
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+for (const dark of [false, true]) {
+  test(`menu focus rings reach 3:1 against the menu in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      style.textContent = stylesheet
+        .replaceAll(':focus-visible', '[data-focus-visible]')
+        // Happy DOM cannot match the descendant selector inside this :is() group.
+        .replaceAll(
+          '#account-menu :is(.account-menu-item, .theme-switch button)[data-focus-visible]',
+          '#account-menu .account-menu-item[data-focus-visible], #account-menu .theme-switch button[data-focus-visible]',
+        )
+      document.head.append(style)
+      document.body.innerHTML = `
+        <div id="account-menu">
+          <a class="account-menu-item" data-focus-visible>Account</a>
+          <span class="theme-switch"><button data-focus-visible>Theme</button></span>
+        </div>
+        <div class="account-menu account-row-menu"><a class="account-menu-item" data-focus-visible>Settings</a></div>`
+      const menu = window.getComputedStyle(document.documentElement).getPropertyValue('--color-menu').trim()
+      for (const control of document.querySelectorAll('[data-focus-visible]')) {
+        const ring = window.getComputedStyle(control).boxShadow.match(/4px (#[0-9a-f]{6})$/i)?.[1]
+        assert.ok(ring, control.outerHTML)
+        const ratio = contrast(ring, menu)
+        assert.ok(ratio >= 3, `${control.outerHTML} ring/menu: ${ratio.toFixed(2)}:1; expected 3:1`)
+      }
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+}

@@ -301,10 +301,9 @@
   width: 220px;
   margin: 0;
   padding: 4px;
-  border: 1px solid var(--color-line);
   border-radius: 12px;
   color: var(--color-text);
-  background: var(--color-raised);
+  background: var(--color-menu);
   box-shadow: var(--shadow-md);
   transform-origin: left bottom;
   transition:
@@ -356,7 +355,7 @@
   height: 1px;
   margin: 2px 0 0;
   border: 0;
-  background: var(--color-line);
+  background: var(--color-menu-line);
 }
 
 .account-menu-email {
@@ -469,7 +468,7 @@
 }
 
 .account-menu-item:hover {
-  background: var(--color-soft);
+  background: var(--color-menu-soft);
 }
 
 .account-menu-item:focus-visible {
@@ -488,6 +487,14 @@
     transform 160ms ease-out,
     overlay 160ms allow-discrete,
     display 160ms allow-discrete;
+}
+
+#account-menu .theme-switch {
+  border-color: var(--color-menu-line);
+}
+
+#account-menu .theme-thumb {
+  background: var(--color-menu-soft);
 }
 
 #account-menu:popover-open {
@@ -513,7 +520,7 @@
 #account-menu :is(.account-menu-item, .theme-switch button):focus-visible {
   outline: 2px solid transparent;
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-raised), 0 0 0 4px var(--color-button);
+  box-shadow: 0 0 0 2px var(--color-menu), 0 0 0 4px var(--color-accent);
 }
 
 @media (prefers-reduced-motion: no-preference) {

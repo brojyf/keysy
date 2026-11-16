@@ -104,6 +104,18 @@ test('raised layers stand above panels, and selected items stay visible on them'
   assert.ok(luminance(darkColors.raised) < luminance(darkColors.soft));
 });
 
+test('dark menus stand above the page and meet text contrast targets', () => {
+  assert.ok(luminance(darkColors.surface) < luminance(darkColors.menu));
+  assert.ok(luminance(darkColors.menu) < luminance(darkColors['menu-soft']));
+  for (const foreground of ['text', 'muted', 'accent']) {
+    for (const background of ['menu', 'menu-soft']) {
+      const ratio = contrast(darkColors[foreground], darkColors[background]);
+      const minimum = foreground === 'text' ? 7 : 4.5;
+      assert.ok(ratio >= minimum, `${foreground}/${background}: ${ratio.toFixed(3)}:1; expected ${minimum}:1`);
+    }
+  }
+});
+
 test('dark mode defines every shadow', () => {
   const shadows = mode => Object.keys(mode).filter(name => name.startsWith('--shadow-')).sort();
   assert.deepEqual(shadows(dark), shadows(light));

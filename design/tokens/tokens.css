@@ -15,6 +15,9 @@
   --color-line-strong: #e3e4e6;
   --color-hover: #f7f7fa;
   --color-table-header: #f3f4f6;
+  --color-menu: #ffffff;
+  --color-menu-soft: #f0f1f3;
+  --color-menu-line: #e3e4e6;
   --color-danger: #b3261e;
   --color-danger-bg: #fce8e6;
   --color-danger-button: #b3261e;
@@ -101,6 +104,9 @@
   --color-line-strong: #6c6c6c;
   --color-hover: #222222;
   --color-table-header: #262626;
+  --color-menu: #313131;
+  --color-menu-soft: #3d3d3d;
+  --color-menu-line: #414141;
   --color-danger: #f4aeae;
   --color-danger-bg: #392424;
   --color-danger-button: #cc3a30;

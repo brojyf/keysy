@@ -6,7 +6,8 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | --- | --- |
 | Page background | `bg` |
 | Panel background | `surface` |
-| Menu, popover, and dialog background | `raised` |
+| Menu background | `menu` |
+| Popover and dialog background | `raised` |
 | Primary text | `text` |
 | Secondary text | `muted` |
 | Accent text, icons, landing page eyebrow labels, and inline code | `accent` |
@@ -15,7 +16,9 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Primary button hover | `button-hover` |
 | Primary button text | `on-button` |
 | Selected or subtle background | `soft` |
+| Selected or hover background in a menu | `menu-soft` |
 | Decorative divider | `line` |
+| Divider and border in a menu | `menu-line` |
 | Input border and path separator | `line-strong` |
 | Table row hover background | `hover` |
 | Table header background | `table-header` |
@@ -28,10 +31,11 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 Text input borders and `/` separators use `line-strong`. Card and table dividers
 use `line`.
 
-Menus, popovers, and dialogs use `raised` with a shadow. In dark mode, `raised`
-is lighter than `surface`, so the layer reads above the page without the shadow.
+Menus use `menu`. Popovers and dialogs use `raised`. All of them have a shadow.
+In dark mode, `menu` and `raised` are lighter than `surface`, so the layer reads
+above the page without the shadow.
 Segmented controls have no track fill and a `line` border. The selected segment
-uses `soft`, with no shadow.
+uses `soft`, with no shadow. In a menu, they use `menu-line` and `menu-soft`.
 
 Navigation group labels use `text`. Selected sidebar items use `text` on `soft`,
 with no blue text or background tint. Dashboard section headings use `text`, so
