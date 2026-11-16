@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-export type SettingsNavItem = { label: string; href?: string; current?: boolean }
+export type SettingsNavItem = { label: string; href?: string; current?: boolean; count?: number }
 
 type SettingsLayoutProps = {
   title: string
@@ -19,8 +19,13 @@ export default function SettingsLayout({ title, nav, Icon, heading, className, c
       <aside className="account-sidebar">
         <p className="account-sidebar-title">{title}</p>
         <nav className="account-nav" aria-label={title}>
-          {nav.map(({ label, href, current }) => href
-            ? <Link key={label} className="account-nav-item" href={href} aria-current={current ? 'page' : undefined}>{label}</Link>
+          {nav.map(({ label, href, current, count }) => href
+            ? (
+              <Link key={label} className="account-nav-item" href={href} aria-current={current ? 'page' : undefined}>
+                {label}
+                {count !== undefined && <span className="account-nav-count">{count}</span>}
+              </Link>
+            )
             : <button key={label} className="account-nav-item" type="button" disabled title="Coming soon">{label}</button>)}
         </nav>
       </aside>

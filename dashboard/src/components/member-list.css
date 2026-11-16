@@ -18,3 +18,35 @@
 .member-table th:nth-child(4) {
   width: 56px;
 }
+
+/* Figma People · Invitations. */
+.invitation-table th:first-child {
+  width: 360px;
+}
+
+.invitation-table th:nth-child(2) {
+  width: 120px;
+}
+
+.invitation-table th:nth-child(4) {
+  width: 56px;
+}
+
+.invitation-status {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font: var(--text-badge--font-weight) var(--text-badge)/var(--text-badge--line-height) var(--font-sans);
+}
+
+.invitation-status-pending {
+  background: var(--color-soft);
+  color: var(--color-muted);
+}
+
+.invitation-status-expired {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}

@@ -91,6 +91,15 @@ export function MemberTableSkeleton() {
     </div>
   )
 }
+
+// Figma has no Loading › Invitations; this follows the Members table skeleton with the People · Invitations columns.
+export function InvitationTableSkeleton() {
+  return (
+    <div className="skeleton-member-table" aria-busy="true">
+      <Table columns={[360, 120, 238]} headers={[34, 41, 27]} rows={[[98, 47, 61], [104, 47, 41], [110, 47, 61]]} />
+    </div>
+  )
+}
 function Members() {
   return (
     <>
@@ -99,6 +108,18 @@ function Members() {
         <PageHeader width={66} />
         <Bone width={280} height={32} radius={10} className="skeleton-member-search" />
         <MemberTableSkeleton />
+      </div>
+    </>
+  )
+}
+function Invitations() {
+  return (
+    <>
+      <Sidebar page="people" />
+      <div className="skeleton-content skeleton-account-table">
+        <PageHeader width={78} />
+        <Bone width={280} height={32} radius={10} className="skeleton-member-search" />
+        <InvitationTableSkeleton />
       </div>
     </>
   )
@@ -220,7 +241,7 @@ function SkeletonRail() {
 }
 
 // More specific paths come first.
-const pages = { secrets: Secrets, services: Services, people: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
+const pages = { secrets: Secrets, services: Services, 'people/invitations': Invitations, people: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
 
 export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const pagePath = pathname.replace(/^\/orgs\/[^/]+(?=\/|$)/, '')
