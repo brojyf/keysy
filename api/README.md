@@ -3,6 +3,7 @@
 Go, Gin, and GORM service. `GET /v0/me` returns the authenticated user's ID,
 email, profile display name, agent auto-apply preference, and optional Google avatar.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
+`DELETE /v0/me` schedules account deletion and revokes all sessions. Owners must first transfer or delete their orgs. Repeated requests retain the original deletion time and revoke sessions again.
 Neither profile response includes memberships. A missing profile row is an
 internal error. This service does not refresh sessions.
 
@@ -12,7 +13,7 @@ Results are sorted by name and then ID ascending. No memberships returns `[]`.
 `POST /v0/orgs` accepts only `{name}` in a UTF-8 JSON body of at most 1024 bytes.
 Names are trimmed, then must contain 1 to 32 Unicode code points without null
 characters. Duplicate names are allowed. The org and the current user's `owner` membership are
-created in one transaction; success returns `201` with `{id, name}`.
+created in one transaction; accounts scheduled for deletion receive `403 ACCOUNT_DELETING`. Success returns `201` with `{id, name}`.
 `PATCH /v0/orgs/{orgId}` renames an org. The body has one field, `name`, with the same rules as create.
 Only an owner of an active org can rename it. Success returns `200` with `{id, name}`; missing, deleted,
 and non-owner targets return `404 ORG_NOT_FOUND`.
@@ -49,7 +50,8 @@ Copy `.env.example` to ignored `.env.local` for Air. Direct runs require exporte
 variables. `PORT` defaults to 8081. `DATABASE_URL` must be a PostgreSQL URL with
 permission to SELECT and UPDATE `public.profiles`, plus SELECT, INSERT, and UPDATE on
 `public.orgs`, SELECT and INSERT on `public.members`, SELECT on `public.invitations`, and EXECUTE on
-`public.list_user_sessions(uuid)` and `public.revoke_user_session(uuid, uuid)`.
+`public.list_user_sessions(uuid)`, `public.revoke_user_session(uuid, uuid)`, and
+`public.revoke_all_user_sessions(uuid)`. Profile SELECT FOR UPDATE and SELECT FOR SHARE row locks require UPDATE on `public.profiles`.
 These `SECURITY DEFINER` functions are the only access to `auth.sessions`. The backend role must bypass RLS because
 these org tables have RLS enabled without direct-client policies. Keep this
 connection server-side; org queries enforce the authenticated user ID.

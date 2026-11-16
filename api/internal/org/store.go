@@ -2,6 +2,7 @@ package org
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -18,11 +19,21 @@ type Membership struct {
 	MemberCount int    `json:"memberCount"`
 }
 
+var ErrAccountDeleting = errors.New("account is being deleted")
+
 type Store struct{ DB *gorm.DB }
 
 func (s Store) Create(ctx context.Context, userID, name string) (Organization, error) {
 	organization := Organization{Name: name}
 	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var locked int
+		result := tx.Raw("SELECT 1 FROM public.profiles WHERE id = ? AND deleted_at IS NULL FOR SHARE", userID).Scan(&locked)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrAccountDeleting
+		}
 		if err := tx.Table("public.orgs").Create(&organization).Error; err != nil {
 			return err
 		}
