@@ -1065,6 +1065,15 @@ test('pending session shows the People sidebar in the Members skeleton', async (
   expect(container.querySelector('[data-skeleton-page="people"] .skeleton-member-table')).not.toBeNull()
 })
 
+test('pending session shows the Invitations skeleton for a direct /people/invitations visit', async () => {
+  currentPathname = '/orgs/org-id/people/invitations'
+  sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
+  await renderSessionGate()
+  const page = container.querySelector('[data-skeleton-page="people/invitations"]')!
+  expect(page.querySelector('.skeleton-sidebar')).not.toBeNull()
+  expect(page.querySelector('.skeleton-table-header')?.getAttribute('style')).toContain('minmax(0, 360fr) minmax(0, 120fr) minmax(0, 238fr)')
+})
+
 test('pending session shows the Sessions skeleton for /account/sessions', async () => {
   currentPathname = '/account/sessions'
   sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))

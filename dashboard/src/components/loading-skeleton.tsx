@@ -112,6 +112,18 @@ function Members() {
     </>
   )
 }
+function Invitations() {
+  return (
+    <>
+      <Sidebar page="people" />
+      <div className="skeleton-content skeleton-account-table">
+        <PageHeader width={78} />
+        <Bone width={280} height={32} radius={10} className="skeleton-member-search" />
+        <InvitationTableSkeleton />
+      </div>
+    </>
+  )
+}
 function AuditLog() {
   return (
     <div className="skeleton-content">
@@ -229,7 +241,7 @@ function SkeletonRail() {
 }
 
 // More specific paths come first.
-const pages = { secrets: Secrets, services: Services, people: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
+const pages = { secrets: Secrets, services: Services, 'people/invitations': Invitations, people: Members, 'audit-log': AuditLog, settings: Settings, 'account/sessions': AccountSessions, account: Account }
 
 export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const pagePath = pathname.replace(/^\/orgs\/[^/]+(?=\/|$)/, '')
