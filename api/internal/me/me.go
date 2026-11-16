@@ -9,6 +9,7 @@ import (
 )
 
 type Profiles interface {
+	ScheduleDeletion(context.Context, string) error
 	DisplayName(context.Context, string) (string, error)
 	UpdateDisplayName(context.Context, string, string) error
 	AgentAutoApply(context.Context, string) (bool, error)

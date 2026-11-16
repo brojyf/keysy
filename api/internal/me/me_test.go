@@ -13,6 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
+func (f profileLookup) ScheduleDeletion(context.Context, string) error  { panic("unexpected deletion") }
+func (p *profileUpdate) ScheduleDeletion(context.Context, string) error { panic("unexpected deletion") }
+
 type profileLookup func(context.Context, string) (string, error)
 
 func (f profileLookup) DisplayName(ctx context.Context, id string) (string, error) { return f(ctx, id) }

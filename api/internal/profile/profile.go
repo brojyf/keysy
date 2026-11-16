@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -40,4 +41,30 @@ func (s Store) UpdateAgentAutoApply(ctx context.Context, userID string, enabled 
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+var ErrOrgOwner = errors.New("user owns an organization")
+
+func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var locked int
+		result := tx.Raw("SELECT 1 FROM public.profiles WHERE id = ? FOR UPDATE", userID).Scan(&locked)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		var owner bool
+		if err := tx.Raw("SELECT EXISTS (SELECT 1 FROM public.members WHERE user_id = ? AND role = 'owner')", userID).Scan(&owner).Error; err != nil {
+			return err
+		}
+		if owner {
+			return ErrOrgOwner
+		}
+		if err := tx.Exec("UPDATE public.profiles SET deleted_at = now() WHERE id = ? AND deleted_at IS NULL", userID).Error; err != nil {
+			return err
+		}
+		return tx.Exec("SELECT public.revoke_all_user_sessions(?)", userID).Error
+	})
 }

@@ -40,6 +40,7 @@ func TestStoreCreate(t *testing.T) {
 			if scenario == "begin failure" {
 				begin.WillReturnError(failure)
 			} else {
+				mock.ExpectQuery(`SELECT 1 FROM public.profiles WHERE id = $1 AND deleted_at IS NULL FOR SHARE`).WithArgs("user-123").WillReturnRows(sqlmock.NewRows([]string{"?column?"}).AddRow(1))
 				insert := mock.ExpectQuery(`INSERT INTO "public"."orgs" ("name") VALUES ($1) RETURNING "id"`).WithArgs("Platform")
 				if scenario == "org failure" {
 					insert.WillReturnError(failure)

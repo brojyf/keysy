@@ -22,6 +22,7 @@ func newTestRouter(sessionCalls *int) *gin.Engine {
 
 func TestNewRegistersEveryRoute(t *testing.T) {
 	want := []string{
+		"DELETE /v0/me",
 		"DELETE /v0/me/sessions/:sessionId",
 		"DELETE /v0/orgs/:orgId",
 		"GET /health",

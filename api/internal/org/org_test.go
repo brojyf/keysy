@@ -65,6 +65,7 @@ func TestCreate(t *testing.T) {
 		{name: "wrong content type", body: `{}`, contentType: "text/plain", status: 415, code: "UNSUPPORTED_MEDIA_TYPE"},
 		{name: "missing content type", body: `{}`, status: 415, code: "UNSUPPORTED_MEDIA_TYPE"},
 		{name: "query", body: `{"name":"Platform"}`, contentType: "application/json", query: "?userId=someone-else", status: 400, code: "INVALID_REQUEST"},
+		{name: "account deleting", body: `{"name":"Platform"}`, contentType: "application/json", status: 403, code: "ACCOUNT_DELETING", storeErr: ErrAccountDeleting},
 		{name: "store error", body: `{"name":"Platform"}`, contentType: "application/json", status: 500, code: "INTERNAL_ERROR", storeErr: errors.New("private database details")},
 		{name: "canceled", body: `{"name":"Platform"}`, contentType: "application/json", cancel: true},
 	} {
@@ -111,7 +112,7 @@ func TestCreate(t *testing.T) {
 				if !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) || strings.Contains(w.Body.String(), "private") {
 					t.Fatal(w.Body.String())
 				}
-				if called != (tc.status == 500) {
+				if called != (tc.status == 500 || tc.status == 403) {
 					t.Fatalf("store called = %v", called)
 				}
 				return
