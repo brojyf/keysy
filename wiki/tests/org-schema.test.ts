@@ -13,8 +13,22 @@ test('the implemented schema shows the diagram of the implemented tables', () =>
   }
 });
 
-test('the scheduled jobs document invitation cleanup', () => {
+test('the scheduled jobs document invitation cleanup and account purging', () => {
   expect(schema).toContain('| `delete-old-invitations` | Daily | Deletes invitations that expired more than 30 days ago. |');
+  expect(schema).toContain('| `purge-deleted-accounts` | Daily | Permanently deletes accounts 30 days after their deletion was scheduled. |');
+});
+
+test('the API functions state their schema once before the table', () => {
+  const functions = schema.slice(schema.indexOf('### Functions for the API'), schema.indexOf('## ERD'));
+  expect(functions).toContain('All functions below are in the `public` schema.\n\n| Function | Action |');
+  for (const signature of [
+    'list_user_sessions(target_user_id)',
+    'revoke_user_session(target_user_id, target_session_id)',
+    'revoke_all_user_sessions(target_user_id)',
+  ]) {
+    expect(functions).toContain(`| \`${signature}\` |`);
+    expect(functions).not.toContain(`public.${signature}`);
+  }
 });
 
 test('the ERD section shows only the diagram', () => {
