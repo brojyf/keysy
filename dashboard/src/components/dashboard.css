@@ -299,7 +299,6 @@
   width: 220px;
   margin: 0;
   padding: 4px;
-  border: 1px solid var(--color-menu-line);
   border-radius: 12px;
   color: var(--color-text);
   background: var(--color-menu);
