@@ -6,6 +6,8 @@ name: Deploy
 # deploy token: fly tokens create deploy -a keysy
 # Cloudflare needs the CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable.
 # Disconnect Cloudflare Git builds to avoid duplicate production deploys.
+# Supabase needs SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD repository secrets,
+# plus the SUPABASE_PROJECT_ID variable. Disable its native Deploy to production option.
 # Dashboard and site checks also need CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET,
 # authorized by Cloudflare Access Service Auth policies for dashboard.keysy.net,
 # keysy.net and wiki.keysy.net.
@@ -30,33 +32,49 @@ jobs:
     if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      checks: read
+    outputs:
+      migrated: ${{ steps.migrate.outcome == 'success' }}
+    concurrency:
+      group: supabase-migrations
+      cancel-in-progress: false
     steps:
       # Schema first, then code. Check the commit CI tested, not workflow_run's GITHUB_SHA.
-      # Wait outside the deployment lock so an older migration check cannot block a newer deploy.
-      - name: Wait for Supabase migrations
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      # An older CI run must not apply migrations after a newer main commit.
+      - name: Read the tip of main
+        id: main
         env:
           GH_TOKEN: ${{ github.token }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          for _ in $(seq 60); do
-            conclusion=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA/check-runs?check_name=Supabase%20Preview" \
-              --jq '.check_runs[0] | if . == null then "pending" else (.conclusion // "pending") end')
-            case "$conclusion" in
-              success) exit 0 ;;
-              pending) sleep 15 ;;
-              *) echo "::error::Supabase migrations finished with: $conclusion"; exit 1 ;;
-            esac
-          done
-          echo "::error::Supabase migrations did not finish within 15 minutes"
-          exit 1
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "sha=$tip" >> "$GITHUB_OUTPUT"
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        with:
+          version: 3.1.0
+      - name: Apply Supabase migrations
+        id: migrate
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+        run: |
+          : "${SUPABASE_ACCESS_TOKEN:?Set the SUPABASE_ACCESS_TOKEN repository secret}"
+          : "${SUPABASE_DB_PASSWORD:?Set the SUPABASE_DB_PASSWORD repository secret}"
+          : "${SUPABASE_PROJECT_ID:?Set the SUPABASE_PROJECT_ID repository variable}"
+          supabase link --project-ref "$SUPABASE_PROJECT_ID"
+          supabase db push --remote --dry-run --skip-vault
+          supabase db push --remote --yes --skip-vault
 
   deploy:
     name: Deploy
     needs: [notify, migrations]
     # A notification failure must not block deployment.
-    if: ${{ !cancelled() && needs.migrations.result == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ !cancelled() && needs.migrations.result == 'success' && needs.migrations.outputs.migrated == 'true' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -191,7 +209,9 @@ jobs:
     uses: ./.github/workflows/discord-merge.yml
     with:
       message_id: ${{ needs.notify.outputs.message_id }}
-      deploy_result: ${{ needs.migrations.result != 'success' && needs.migrations.result || needs.deploy.result }}
+      migrations_result: ${{ needs.migrations.result }}
+      migrated: ${{ needs.migrations.outputs.migrated == 'true' }}
+      deploy_result: ${{ needs.deploy.result }}
       deployed: ${{ needs.deploy.outputs.deployed == 'true' }}
       cloudflare_result: ${{ needs.cloudflare.result }}
       cloudflare_deployed: ${{ needs.cloudflare.outputs.deployed == 'true' }}

@@ -7,6 +7,12 @@ on:
       message_id:
         type: string
         default: ''
+      migrations_result:
+        type: string
+        default: pending
+      migrated:
+        type: boolean
+        default: false
       deploy_result:
         type: string
         default: pending
@@ -50,6 +56,8 @@ jobs:
           COMMIT_AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
           CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           MESSAGE_ID: ${{ inputs.message_id }}
+          MIGRATIONS_RESULT: ${{ inputs.migrations_result }}
+          MIGRATED: ${{ inputs.migrated }}
           DEPLOY_RESULT: ${{ inputs.deploy_result }}
           DEPLOYED: ${{ inputs.deployed }}
           CLOUDFLARE_RESULT: ${{ inputs.cloudflare_result }}
@@ -68,6 +76,8 @@ jobs:
             --arg scope "$scope" \
             --arg author "$COMMIT_AUTHOR" \
             --arg conclusion "$CI_CONCLUSION" \
+            --arg migrations_result "$MIGRATIONS_RESULT" \
+            --arg migrated "$MIGRATED" \
             --arg deploy_result "$DEPLOY_RESULT" \
             --arg deployed "$DEPLOYED" \
             --arg cloudflare_result "$CLOUDFLARE_RESULT" \
@@ -83,6 +93,7 @@ jobs:
               "\nScope: " + $scope +
               "\nBy: " + $author +
               "\nCI: " + (if $conclusion == "success" then "✅ Passed" else "❌ " + $conclusion end) +
+              "\nSupabase migrations: " + status($migrations_result; $migrated) +
               "\nFly deploy: " + status($deploy_result; $deployed) +
               "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed)),
               allowed_mentions: {parse: []}}')
