@@ -2,9 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { MoreIcon, SortableHeader, TableSearch } from '../../../components/account-table-controls'
-import IconButton from '../../../components/icon-button'
-import { placeRowMenu } from '../../../lib/row-menu'
+import { SortableHeader, TableSearch } from '../../../components/account-table-controls'
+import MoreMenu from '../../../components/more-menu'
 import { useCurrentUser } from '../../../components/current-user'
 import { SessionsSkeleton } from '../../../components/loading-skeleton'
 import RevokeSessionDialog from '../../../components/revoke-session-dialog'
@@ -56,14 +55,9 @@ export default function SessionsPage() {
                 <td>{formatLastUsed(session.lastUsedAt, session.current)}</td>
                 <td className="account-table-actions">
                   {session.current ? <span className="account-session-status">This session</span> : (
-                    <>
-                      <IconButton shape="square" popoverTarget={`session-menu-${session.id}`} aria-label={`More actions for ${session.device}`}>
-                        <MoreIcon />
-                      </IconButton>
-                      <div id={`session-menu-${session.id}`} className="account-menu account-row-menu" popover="auto" onBeforeToggle={placeRowMenu}>
-                        <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => requestRevoke(session)}>Revoke</button>
-                      </div>
-                    </>
+                    <MoreMenu id={`session-menu-${session.id}`} label={`More actions for ${session.device}`}>
+                      <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => requestRevoke(session)}>Revoke</button>
+                    </MoreMenu>
                   )}
                 </td>
               </tr>
