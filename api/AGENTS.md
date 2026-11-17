@@ -20,8 +20,8 @@ and callers scheduled for deletion, return 404.
 `DELETE /v0/orgs/{orgId}/members/{userId}` lets owners remove admins and developers and admins remove developers.
 Members scheduled for deletion can be removed. Self, owner, and other disallowed targets return 403;
 non-member targets return 404 MEMBER_NOT_FOUND. One transaction locks both member rows in user_id order, then deletes.
-Removal is the only write allowed on a member scheduled for deletion. Owner transfer, role changes, and service or
-permission set assignments must check the target's `profiles.deleted_at` in their own transaction and reject that target.
+Owner transfer, role changes, and scope changes must reject members scheduled for deletion: check the target's
+`profiles.deleted_at` in the write transaction.
 `GET /v0/orgs/{orgId}/invitations` lists pending and expired invitations for any org member.
 Each item contains id, email, role, and status. Seven days after started_at, status becomes expired.
 The order is not specified. No invitations returns an empty array. Missing and deleted orgs,
