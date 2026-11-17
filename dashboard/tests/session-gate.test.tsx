@@ -1188,3 +1188,60 @@ for (const page of ['secrets', 'services', 'people', 'audit-log', 'settings']) {
     expect(container.querySelector(`[data-skeleton-page="${page}"]`)).not.toBeNull()
   })
 }
+
+const deletingUser = { ...validUser, purgeAt: '2026-12-15T12:00:00Z' }
+
+test('a user with a scheduled deletion sees only the cancel deletion page', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  expect(container.querySelector('h1')?.textContent).toBe('Account scheduled for deletion')
+  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Keysy will permanently delete your account on Dec 15, 2026.Cancel the deletion to keep your account.')
+  expect([...container.querySelectorAll('button')].map((button) => button.textContent)).toEqual(['Sign out', 'Cancel deletion'])
+  expect(container.textContent).not.toContain('Dashboard content')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  expect(organizationsRequest).not.toHaveBeenCalled()
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('cancel deletion clears the deletion and opens Account General', async () => {
+  let cancelled = false
+  sessionRequest.mockImplementation((url: string, init: RequestInit) => {
+    if (url.endsWith('/v0/me/cancel-deletion')) {
+      expect(init.method).toBe('POST')
+      cancelled = true
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    return Promise.resolve(Response.json(cancelled ? validUser : deletingUser))
+  })
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const cancel = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Cancel deletion')!
+  await act(async () => cancel.click())
+  await settleOrganizationRequests()
+  expect(cancelled).toBe(true)
+  expect(router.replace).toHaveBeenCalledWith('/account')
+  expect(container.textContent).toContain('Dashboard content')
+  expect(container.querySelector('h1')?.textContent).not.toBe('Account scheduled for deletion')
+})
+
+test('a failed cancel deletion shows an error and keeps the page', async () => {
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/v0/me/cancel-deletion') ? new Response(null, { status: 500 }) : Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const cancel = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Cancel deletion')!
+  await act(async () => cancel.click())
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not cancel the deletion. Try again.')
+  expect(container.querySelector('h1')?.textContent).toBe('Account scheduled for deletion')
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('sign out from the cancel deletion page goes to sign in', async () => {
+  const requests: string[] = []
+  sessionRequest.mockImplementation((url: string) => {
+    requests.push(url)
+    return Promise.resolve(url.endsWith('/v0/auth/logout') ? new Response(null, { status: 204 }) : Response.json(deletingUser))
+  })
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const signOut = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Sign out')!
+  await act(async () => signOut.click())
+  expect(requests).toContain('https://auth.keysy.net/v0/auth/logout')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
+})

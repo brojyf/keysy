@@ -17,6 +17,7 @@ import { openDialog } from '../lib/dialog-controls'
 import Topbar from './topbar'
 import LoadingSkeleton from './loading-skeleton'
 import KeysySymbol from './keysy-symbol'
+import CancelDeletion from './cancel-deletion'
 
 function SessionGateContent({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
@@ -50,7 +51,8 @@ function SessionGateContent({ children }: { children: ReactNode }) {
         }
         if (!response.ok) throw new Error('Session check failed')
         const session = parseSessionUser(await response.json())
-        await queryClient.query(organizationQueryOptions(session.id, controller.signal, () => signedOut(controller)))
+        // A user with a scheduled deletion sees only the cancel deletion page, which needs no orgs.
+        if (!session.purgeAt) await queryClient.query(organizationQueryOptions(session.id, controller.signal, () => signedOut(controller)))
         if (!controller.signal.aborted) { setCurrentSession(controller); setUser(session) }
       } catch {
         // Only a 401 means signed out; any other failure must not show sign-in.
@@ -62,7 +64,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   }, [authURL, sessionCheck, queryClient, signedOut])
 
   const onSignedOut = () => signedOut(currentSession)
-  const organizationQuery = useQuery({ ...organizationQueryOptions(user?.id ?? '', currentSession?.signal, onSignedOut), enabled: !!user })
+  const organizationQuery = useQuery({ ...organizationQueryOptions(user?.id ?? '', currentSession?.signal, onSignedOut), enabled: !!user && !user.purgeAt })
   const organizations = organizationQuery.data ?? []
   const { createOrganization: addOrganization, renameOrganization, deleteOrganization: removeOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
 
@@ -90,6 +92,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const signedOutPage = pathname === '/signin' || pathname === '/account-deleted'
   let redirect: string | null = null
   if (user === null && !signedOutPage) redirect = '/signin'
+  else if (user?.purgeAt) redirect = null
   else if (user && signedOutPage) redirect = organizations[0] ? organizationPath(organizations[0].id, '/secrets') : '/account/organizations'
   else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = organizations[0] ? organizationPath(organizations[0].id, pathname) : '/account/organizations'
   else if (route === '/account/organizations' && !organizationScoped) redirect = route
@@ -99,6 +102,11 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     setSessionError(false)
     setUser(undefined)
     setSessionCheck((count) => count + 1)
+  }
+
+  function deletionCancelled() {
+    router.replace('/account')
+    retrySessionCheck()
   }
 
   function requestSignOut() {
@@ -139,6 +147,10 @@ function SessionGateContent({ children }: { children: ReactNode }) {
 
   if (user === undefined || redirect) {
     return <LoadingSkeleton pathname={pathname} />
+  }
+
+  if (user?.purgeAt) {
+    return <CancelDeletion purgeAt={user.purgeAt} signOutStatus={logoutStatus} onSignOut={() => void logout()} onCancelled={deletionCancelled} onSignedOut={onSignedOut} />
   }
 
   if (user) {

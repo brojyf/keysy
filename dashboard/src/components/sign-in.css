@@ -134,6 +134,22 @@
   text-decoration: none;
 }
 
+.cancel-deletion-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.cancel-deletion-actions .button {
+  flex: 1;
+}
+
+.cancel-deletion-error {
+  margin: 0;
+  color: var(--color-danger);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-button {
     transition: none;
