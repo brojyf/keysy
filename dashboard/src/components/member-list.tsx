@@ -13,7 +13,8 @@ import { memberQueryOptions, type Member } from '../lib/member-queries'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
 
-// Figma People · Members (Owner, Admin, and Developer views): an Owner manages everyone but the Owner; an Admin manages Developers.
+// Figma People · Members (Owner, Admin, and Developer views), Members · Deleting member, and More menu · Deleting member.
+// An Owner manages everyone but the Owner; an Admin manages Developers.
 function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['role']) {
   return (viewerRole === 'owner' && memberRole !== 'owner') || (viewerRole === 'admin' && memberRole === 'developer')
 }
@@ -57,20 +58,24 @@ export default function MemberList() {
               </tr>
             </thead>
             <tbody>
-              {members.map(({ userId, name, email, role }) => (
+              {members.map(({ userId, name, email, role, deleting }) => (
                 <tr key={userId}>
-                  <td>{name}</td>
+                  <td>{name}{deleting && <span className="member-deleting">Deleting</span>}</td>
                   <td>{email}</td>
                   <td>{roleLabels[role]}</td>
                   {hasActions && (
                     <td className="account-table-actions">
                       {canManage(viewerRole, role) && (
                         <MoreMenu id={`member-menu-${userId}`} label={`More actions for ${name}`}>
-                          <button className="account-menu-item" type="button">Change role</button>
-                          {viewerRole === 'owner' && (
+                          {!deleting && (
                             <>
-                              <button className="account-menu-item" type="button">Transfer ownership</button>
-                              <hr className="account-menu-divider" />
+                              <button className="account-menu-item" type="button">Change role</button>
+                              {viewerRole === 'owner' && (
+                                <>
+                                  <button className="account-menu-item" type="button">Transfer ownership</button>
+                                  <hr className="account-menu-divider" />
+                                </>
+                              )}
                             </>
                           )}
                           <button className="account-menu-item account-menu-sign-out" type="button">Remove</button>
