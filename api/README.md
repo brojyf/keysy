@@ -12,6 +12,7 @@ internal error. This service does not refresh sessions.
 `GET /v0/orgs` returns an array of `{id, name, role, memberCount}` for the
 current user's memberships in active orgs. `memberCount` counts all members in each org.
 Results are sorted by name and then ID ascending. No memberships returns `[]`.
+Accounts scheduled for deletion get an empty array.
 `POST /v0/orgs` accepts only `{name}` in a UTF-8 JSON body of at most 1024 bytes.
 Names are trimmed, then must contain 1 to 32 Unicode code points without null
 characters. Duplicate names are allowed. The org and the current user's `owner` membership are
