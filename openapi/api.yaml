@@ -465,6 +465,54 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v0/orgs/{orgId}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/UserId'
+    delete:
+      tags: [Members]
+      security:
+        - accessCookie: []
+      operationId: removeMember
+      summary: Remove a member from an org
+      description: Owners can remove admins and developers. Admins can remove developers. Developers cannot remove members. No one can remove the owner or themselves. Members whose accounts are scheduled for deletion can be removed. A repeated request returns 404 MEMBER_NOT_FOUND.
+      responses:
+        '204':
+          description: The member was removed. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberRemoveForbidden'
+        '404':
+          description: ORG_NOT_FOUND if the org is missing, the caller is not a member, or the caller's account is scheduled for deletion. MEMBER_NOT_FOUND if the target is not a member.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v0/orgs/{orgId}/invitations:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -547,6 +595,13 @@ components:
   parameters:
     OrgId:
       name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserId:
+      name: userId
       in: path
       required: true
       schema:
@@ -781,6 +836,21 @@ components:
             $ref: '#/components/schemas/OrgOwnerError'
     OrgCreateForbidden:
       description: INVALID_ORIGIN, or ACCOUNT_DELETING when the account is scheduled for deletion.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    MemberRemoveForbidden:
+      description: INVALID_ORIGIN, or MEMBER_REMOVE_FORBIDDEN when the caller cannot remove the target or targets themselves.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'

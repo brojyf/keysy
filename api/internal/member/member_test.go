@@ -17,6 +17,8 @@ func (list memberStore) List(ctx context.Context, userID, orgID string) ([]Membe
 	return list(ctx, userID, orgID)
 }
 
+func (list memberStore) Remove(context.Context, string, string, string) error { return nil }
+
 func TestList(t *testing.T) {
 	const orgID = "20000000-0000-0000-0000-000000000001"
 	ada := Member{UserID: "user-123", Name: "Ada", Email: "ada@example.com", Role: "owner"}
@@ -82,5 +84,92 @@ func TestList(t *testing.T) {
 				t.Fatal(w.Body.String())
 			}
 		})
+	}
+}
+
+type removeStore func(context.Context, string, string, string) error
+
+func (remove removeStore) List(context.Context, string, string) ([]Member, error) { return nil, nil }
+func (remove removeStore) Remove(ctx context.Context, callerID, orgID, targetID string) error {
+	return remove(ctx, callerID, orgID, targetID)
+}
+
+func TestRemove(t *testing.T) {
+	const orgID = "20000000-0000-0000-0000-000000000001"
+	const targetID = "30000000-0000-0000-0000-000000000001"
+	for _, tc := range []struct {
+		name, org, target, query, body, code string
+		storeErr                             error
+		status                               int
+		cancel, chunked                      bool
+	}{
+		{name: "success", org: orgID, target: targetID, status: 204},
+		{name: "forbidden", org: orgID, target: targetID, storeErr: ErrRemoveForbidden, status: 403, code: "MEMBER_REMOVE_FORBIDDEN"},
+		{name: "missing org", org: orgID, target: targetID, storeErr: ErrOrgNotFound, status: 404, code: "ORG_NOT_FOUND"},
+		{name: "missing member", org: orgID, target: targetID, storeErr: ErrMemberNotFound, status: 404, code: "MEMBER_NOT_FOUND"},
+		{name: "invalid org", org: "invalid", target: targetID, status: 400, code: "INVALID_REQUEST"},
+		{name: "invalid user", org: orgID, target: "invalid", status: 400, code: "INVALID_REQUEST"},
+		{name: "query", org: orgID, target: targetID, query: "?x=1", status: 400, code: "INVALID_REQUEST"},
+		{name: "body", org: orgID, target: targetID, body: "{}", status: 400, code: "INVALID_REQUEST"},
+		{name: "chunked", org: orgID, target: targetID, chunked: true, status: 400, code: "INVALID_REQUEST"},
+		{name: "database error", org: orgID, target: targetID, storeErr: errors.New("private database details"), status: 500, code: "INTERNAL_ERROR"},
+		{name: "canceled", org: orgID, target: targetID, cancel: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			called := false
+			store := removeStore(func(got context.Context, caller, org, target string) error {
+				called = true
+				if got != ctx || caller != "user-123" || org != orgID || target != targetID {
+					t.Fatal("lost request context or IDs")
+				}
+				if tc.cancel {
+					cancel()
+					return ctx.Err()
+				}
+				return tc.storeErr
+			})
+			r := gin.New()
+			r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+			r.DELETE("/v0/orgs/:orgId/members/:userId", Remove(store))
+			req := httptest.NewRequest(http.MethodDelete, "/v0/orgs/"+tc.org+"/members/"+tc.target+tc.query, strings.NewReader(tc.body)).WithContext(ctx)
+			if tc.chunked {
+				req.ContentLength = -1
+				req.TransferEncoding = []string{"chunked"}
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Header().Get("Cache-Control") != "no-store" {
+				t.Fatal("missing no-store")
+			}
+			if tc.cancel {
+				if !called || w.Body.Len() != 0 || w.Flushed {
+					t.Fatal("handler wrote a canceled response")
+				}
+				return
+			}
+			if w.Code != tc.status || called != (tc.status != 400) || strings.Contains(w.Body.String(), "private") {
+				t.Fatalf("status=%d called=%v body=%s", w.Code, called, w.Body.String())
+			}
+			if tc.code != "" && !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) {
+				t.Fatal(w.Body.String())
+			}
+			if tc.status == 204 && w.Body.Len() != 0 {
+				t.Fatal(w.Body.String())
+			}
+		})
+	}
+}
+
+func TestCanRemove(t *testing.T) {
+	roles := []string{"owner", "admin", "developer"}
+	want := [3][3]bool{{false, true, true}, {false, false, true}, {false, false, false}}
+	for i, caller := range roles {
+		for j, target := range roles {
+			if got := canRemove(caller, target); got != want[i][j] {
+				t.Errorf("%s -> %s: got %v", caller, target, got)
+			}
+		}
 	}
 }
