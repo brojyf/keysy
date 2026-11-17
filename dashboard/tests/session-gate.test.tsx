@@ -1203,6 +1203,18 @@ test('a user with a scheduled deletion sees only the cancel deletion page', asyn
   expect(router.replace).not.toHaveBeenCalled()
 })
 
+test('a scheduled deletion on /account-deleted shows the account deleted page after a failed logout', async () => {
+  // A failed logout after the deletion leaves a valid access cookie, so the full page load is still signed in.
+  currentPathname = '/account-deleted'
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(container.querySelector('h1')?.textContent).toBe('Account deleted')
+  expect(container.textContent).not.toContain('Cancel deletion')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  expect(organizationsRequest).not.toHaveBeenCalled()
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
 test('cancel deletion clears the deletion and opens Account General', async () => {
   let cancelled = false
   // The session check after cancel resolves only inside the next act, so its updates stay wrapped.

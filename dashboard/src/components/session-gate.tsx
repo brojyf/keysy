@@ -150,6 +150,8 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   }
 
   if (user?.purgeAt) {
+    // A failed logout after a deletion can leave a valid access cookie; the deleted page still shows.
+    if (pathname === '/account-deleted') return children
     return <CancelDeletion purgeAt={user.purgeAt} signOutStatus={logoutStatus} onSignOut={() => void logout()} onCancelled={deletionCancelled} onSignedOut={onSignedOut} />
   }
 
