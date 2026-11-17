@@ -385,7 +385,7 @@ test('database schema renders the implemented schema and ERD images for both the
   }
 });
 
-test('every member lists the org members by name, email, and role only', async () => {
+test('every member lists the org members by name, email, role, and deletion status only', async () => {
   const yaml = await Bun.file(new URL('../../openapi/api.yaml', import.meta.url)).text();
   const start = yaml.indexOf('operationId: listMembers\n');
   const operation = yaml.slice(start, yaml.indexOf('operationId:', start + 1));
@@ -394,7 +394,8 @@ test('every member lists the org members by name, email, and role only', async (
   expect(operation).not.toMatch(/sorted by/i);
   expect(operation).not.toMatch(/avatar|cursor|nextCursor|Super Admin/i);
   const member = yaml.match(/^    Member:\n([\s\S]*?)^    \w/m)?.[1] ?? '';
-  expect(member).toContain('required: [userId, name, email, role]');
+  expect(member).toContain('required: [userId, name, email, role, deleting]');
+  expect(member).toMatch(/^        deleting:\n          type: boolean$/m);
   expect(member).toContain('enum: [owner, admin, developer]');
   expect(member).not.toMatch(/avatar|access|createdAt|super_admin/i);
 });
