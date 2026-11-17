@@ -5,6 +5,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
 import SignInPage, { metadata as signInMetadata } from '../src/app/signin/page'
+import AccountDeletedPage, { metadata as accountDeletedMetadata } from '../src/app/account-deleted/page'
 import { metadata as rootMetadata } from '../src/app/layout'
 import GeneralPage from '../src/app/account/page'
 import * as secretsPage from '../src/app/secrets/page'
@@ -205,6 +206,26 @@ for (const hasOrganizations of [true, false]) {
   })
 }
 
+test('signed-out users on /account-deleted see the account deleted page without redirect', async () => {
+  currentPathname = '/account-deleted'
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(accountDeletedMetadata.title).toBe('Account deleted')
+  expect(container.querySelector('h1')?.textContent).toBe('Account deleted')
+  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Thanks for building with Keysy.Changed your mind? Sign in within 30 days to cancel.')
+  const link = container.querySelector<HTMLAnchorElement>('a.button-primary')!
+  expect([link.textContent, link.getAttribute('href')]).toEqual(['Go to Keysy', 'https://keysy.net'])
+  expect(container.querySelector('.sign-in-footer')).not.toBeNull()
+})
+
+test('signed-in users on /account-deleted redirect to the dashboard', async () => {
+  currentPathname = '/account-deleted'
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(router.replace).toHaveBeenCalledWith('/orgs/org-id/secrets')
+  expect(container.querySelector('h1')?.textContent).not.toBe('Account deleted')
+})
+
 test('signed-out users on /signin see its children without redirect', async () => {
   currentPathname = '/signin'
   await act(async () => root.render(<SessionGate><p>Login content</p></SessionGate>))
@@ -249,7 +270,8 @@ function signOutButton() {
 }
 
 function signOutDialog() {
-  return container.querySelector<HTMLDialogElement>('dialog.dialog')!
+  // General also renders the closed Delete account dialog; these tests use the shell's dialogs.
+  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.querySelector('h2')?.textContent !== 'Delete account?')!
 }
 
 function buttonNamed(scope: ParentNode, label: string) {
@@ -1040,7 +1062,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
-  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Sign out?'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', 'Sign out?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())
@@ -1168,3 +1190,101 @@ for (const page of ['secrets', 'services', 'people', 'audit-log', 'settings']) {
     expect(container.querySelector(`[data-skeleton-page="${page}"]`)).not.toBeNull()
   })
 }
+
+const deletingUser = { ...validUser, purgeAt: '2026-12-15T12:00:00Z' }
+
+test('a user with a scheduled deletion sees only the cancel deletion page', async () => {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  expect(container.querySelector('h1')?.textContent).toBe('Account scheduled for deletion')
+  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Keysy will permanently delete your accounton Dec 15, 2026.')
+  expect([...container.querySelectorAll('button')].map((button) => button.textContent)).toEqual(['Sign out', 'Cancel deletion'])
+  expect(container.textContent).not.toContain('Dashboard content')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  expect(organizationsRequest).not.toHaveBeenCalled()
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('a scheduled deletion on /account-deleted shows the account deleted page after a failed logout', async () => {
+  // A failed logout after the deletion leaves a valid access cookie, so the full page load is still signed in.
+  currentPathname = '/account-deleted'
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
+  expect(container.querySelector('h1')?.textContent).toBe('Account deleted')
+  expect(container.textContent).not.toContain('Cancel deletion')
+  expect(container.querySelector('.dashboard')).toBeNull()
+  expect(organizationsRequest).not.toHaveBeenCalled()
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('cancel deletion clears the deletion and opens Account General', async () => {
+  let cancelled = false
+  // The session check after cancel resolves only inside the next act, so its updates stay wrapped.
+  const sessionCheck = Promise.withResolvers<Response>()
+  sessionRequest.mockImplementation((url: string, init: RequestInit) => {
+    if (url.endsWith('/v0/me/cancel-deletion')) {
+      expect(init.method).toBe('POST')
+      cancelled = true
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    return cancelled ? sessionCheck.promise : Promise.resolve(Response.json(deletingUser))
+  })
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const cancel = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Cancel deletion')!
+  await act(async () => cancel.click())
+  expect(cancelled).toBe(true)
+  await act(async () => sessionCheck.resolve(Response.json(validUser)))
+  await settleOrganizationRequests()
+  expect(router.replace).toHaveBeenCalledWith('/account')
+  expect(container.textContent).toContain('Dashboard content')
+  expect(container.querySelector('h1')?.textContent).not.toBe('Account scheduled for deletion')
+})
+
+test('a failed cancel deletion shows an error and keeps the page', async () => {
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(url.endsWith('/v0/me/cancel-deletion') ? new Response(null, { status: 500 }) : Response.json(deletingUser)))
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const cancel = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Cancel deletion')!
+  await act(async () => cancel.click())
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not cancel the deletion. Try again.')
+  expect(container.querySelector('h1')?.textContent).toBe('Account scheduled for deletion')
+  expect(router.replace).not.toHaveBeenCalled()
+})
+
+test('sign out from the cancel deletion page goes to sign in', async () => {
+  const requests: string[] = []
+  sessionRequest.mockImplementation((url: string) => {
+    requests.push(url)
+    return Promise.resolve(url.endsWith('/v0/auth/logout') ? new Response(null, { status: 204 }) : Response.json(deletingUser))
+  })
+  await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
+  const signOut = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Sign out')!
+  await act(async () => signOut.click())
+  expect(requests).toContain('https://auth.keysy.net/v0/auth/logout')
+  expect(router.replace).toHaveBeenCalledWith('/signin')
+})
+
+test('a 409 with owned orgs refreshes the org list so the listed org settings open', async () => {
+  currentPathname = '/account'
+  const developerOrganization = { id: 'org-id', name: 'platform', role: 'developer', memberCount: 3 }
+  const newOrganization = { id: 'org-9', name: 'new-owner', role: 'owner', memberCount: 1 }
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) => Promise.resolve(init.method === 'DELETE'
+    ? Response.json({ error: { code: 'ORG_OWNER', message: 'Transfer or delete the organizations you own, then try again.', organizations: [{ id: newOrganization.id, name: newOrganization.name }] } }, { status: 409 })
+    : Response.json(validUser)))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([developerOrganization])))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([developerOrganization, newOrganization])))
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  await act(() => [...container.querySelectorAll<HTMLButtonElement>('.account-sections button')].find((button) => button.textContent === 'Delete')!.click())
+  const dialog = [...container.querySelectorAll('dialog')].find((item) => item.querySelector('h2')?.textContent === 'Delete account?')!
+  const field = dialog.querySelector<HTMLInputElement>('input')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(field, 'member@example.com')
+    field.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+  await act(async () => [...dialog.querySelectorAll('button')].find((button) => button.textContent === 'Delete account')!.click())
+  await settleOrganizationRequests()
+  expect(organizationsRequest).toHaveBeenCalledTimes(2)
+  currentPathname = '/orgs/org-9/settings'
+  await act(async () => root.render(<SessionGate><p>Organization settings</p></SessionGate>))
+  expect(container.textContent).toContain('Organization settings')
+  expect(container.querySelector('#organization-unavailable-title')).toBeNull()
+})

@@ -115,6 +115,41 @@
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
+.account-deleted-card {
+  padding-top: 36px;
+}
+
+.account-deleted-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-text);
+  background: var(--color-soft);
+}
+
+.account-deleted-link {
+  width: 100%;
+  text-decoration: none;
+}
+
+.cancel-deletion-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.cancel-deletion-actions .button {
+  flex: 1;
+}
+
+.cancel-deletion-error {
+  margin: 0;
+  color: var(--color-danger);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-button {
     transition: none;

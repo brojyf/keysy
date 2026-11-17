@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
@@ -52,7 +53,7 @@ async function renderThemeControls() {
   document.body.append(container)
   root = createRoot(container)
   const user = { id: 'id', email: 'test@example.com', displayName: 'Test', agentAutoApply: false, memberships: [] }
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user, organizations: [{ id: '1', name: 'platform', role: 'owner', memberCount: 1 }], organization: undefined, createOrganization: async () => null, deleteOrganization: async () => null, onUserChange: () => {}, onSignedOut: () => {}, onSignOutRequest: () => {} }}><GeneralPage /><AccountMenu displayName="Test" email="test@example.com" onSignOutRequest={() => {}} selected={false} /></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user, organizations: [{ id: '1', name: 'platform', role: 'owner', memberCount: 1 }], organization: undefined, createOrganization: async () => null, deleteOrganization: async () => null, onUserChange: () => {}, onSignedOut: () => {}, onSignOutRequest: () => {} }}><QueryClientProvider client={new QueryClient()}><GeneralPage /></QueryClientProvider><AccountMenu displayName="Test" email="test@example.com" onSignOutRequest={() => {}} selected={false} /></CurrentUserContext.Provider>))
   return container
 }
 

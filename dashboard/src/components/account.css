@@ -456,6 +456,52 @@ th[aria-sort='descending'] .account-sort svg {
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
+.account-delete-form {
+  margin-top: 14px;
+}
+
+.account-delete-form label {
+  overflow-wrap: anywhere;
+}
+
+.account-delete-organizations {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  list-style: none;
+  overflow: hidden;
+}
+
+.account-delete-organizations li + li {
+  border-top: 1px solid var(--color-line);
+}
+
+.account-delete-organizations a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+  text-decoration: none;
+}
+
+.account-delete-organizations a:hover {
+  background: var(--color-soft);
+}
+
+.account-delete-organizations a > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-delete-role {
+  color: var(--color-danger);
+  font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
+}
+
 .account-sections-editing {
   flex: 1;
 }

@@ -586,7 +586,7 @@ test('signing out cannot be undone by a late delete response', async () => {
   await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
   globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
   await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
-  await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
+  await act(async () => buttonNamed(container.querySelector('dialog[open]')!, 'Sign out', 'button-danger').click())
   organizations = organizations.filter((item) => item.id !== organization.id)
   await act(async () => finish(new Response(null, { status: 204 })))
   expect(router.replace).toHaveBeenCalledWith('/signin')
@@ -836,7 +836,7 @@ for (const outcome of ['signout', 'unmount'] as const) test(`a pending reconcili
     await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
     globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 204 }))) as unknown as typeof fetch
     await act(() => buttonNamed(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
-    await act(async () => buttonNamed(container.querySelector('dialog')!, 'Sign out', 'button-danger').click())
+    await act(async () => buttonNamed(container.querySelector('dialog[open]')!, 'Sign out', 'button-danger').click())
   } else {
     await act(() => root.unmount())
     root = createRoot(container)

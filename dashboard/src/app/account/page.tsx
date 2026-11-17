@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import Button from '../../components/button'
 import { useCurrentUser } from '../../components/current-user'
 import { apiFetch } from '../../lib/api-client'
@@ -9,6 +9,8 @@ import { SettingsRow, SettingsSection } from '../../components/settings-section'
 import SaveBar from '../../components/save-bar'
 import { useSaveBar } from '../../lib/use-save-bar'
 import ThemeSwitch from '../../components/theme-switch'
+import DeleteAccountDialog from '../../components/delete-account-dialog'
+import { openDialog } from '../../lib/dialog-controls'
 
 export default function GeneralPage() {
   const { user, organizations, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
@@ -21,6 +23,7 @@ export default function GeneralPage() {
   const changed = trimmed !== user.displayName
   const valid = trimmed.length > 0 && [...trimmed].length <= 32
   const saveBar = useSaveBar(changed)
+  const deleteDialog = useRef<HTMLDialogElement>(null)
   const { saving, saved, setSaveState } = saveBar
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -67,6 +70,7 @@ export default function GeneralPage() {
   }
 
   return (
+    <>
     <form className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
@@ -93,10 +97,12 @@ export default function GeneralPage() {
           <Button variant="dangerOutline" onClick={onSignOutRequest}>Sign out</Button>
         </SettingsRow>
         <SettingsRow label="Delete account" control>
-          <Button variant="dangerOutline" disabled title="Coming soon">Delete</Button>
+          <Button variant="dangerOutline" onClick={() => { if (deleteDialog.current) openDialog(deleteDialog.current) }}>Delete</Button>
         </SettingsRow>
       </SettingsSection>
       {saveBar.mounted && <SaveBar saveBar={saveBar} error={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
+    <DeleteAccountDialog ref={deleteDialog} />
+    </>
   )
 }

@@ -56,9 +56,9 @@ afterEach(async () => {
   await browser.happyDOM.close()
 })
 
-async function renderAccount(pathname: string, page: ReactNode, sessionUser = user) {
+async function renderAccount(pathname: string, page: ReactNode, sessionUser = user, accountOrganizations = organizations) {
   currentPathname = pathname
-  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations, organization: organizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout>{page}</AccountLayout></CurrentUserContext.Provider>))
+  await act(async () => root.render(<CurrentUserContext.Provider value={{ user: sessionUser, organizations: accountOrganizations, organization: accountOrganizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><QueryClientProvider client={new QueryClient()}><AccountLayout>{page}</AccountLayout></QueryClientProvider></CurrentUserContext.Provider>))
 }
 
 function text(selector: string) {
@@ -105,15 +105,14 @@ for (const width of [320, 375, 700]) test(`account uses stacked navigation and c
 test('General shows the session profile', async () => {
   await renderAccount('/account', <GeneralPage />)
   expect(container.querySelector('h1')?.textContent).toBe('General')
-  expect(text('h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
+  expect(text('.account-sections h2')).toEqual(['Profile', 'Agent', 'Appearance', 'Danger zone'])
   expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
   expect(container.querySelector('[role="status"]')).toBeNull()
-  const controls = [...container.querySelectorAll<HTMLButtonElement>('button')]
+  const controls = [...container.querySelectorAll<HTMLButtonElement>('.account-sections button')]
   expect(controls.length).toBeGreaterThan(0)
-  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out'])
-  expect([...container.querySelectorAll<HTMLButtonElement>('button[title="Coming soon"]')].map((button) => [button.textContent, button.disabled])).toEqual([['Delete', true]])
+  expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out', 'Delete'])
   expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   expect(container.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('System')
 })
@@ -437,6 +436,153 @@ test('editing, discarding, and restoring the name controls the save bar', async 
   expect(container.querySelector('[role="status"]')).toBeNull()
 })
 
+function deleteAccountDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
+
+async function openDeleteAccount(accountOrganizations = organizations.filter((organization) => organization.role !== 'owner')) {
+  await renderAccount('/account', <GeneralPage />, user, accountOrganizations)
+  await act(() => button('Delete', container.querySelector('.account-sections')!).click())
+  expect(deleteAccountDialog().open).toBe(true)
+}
+
+async function confirmDeleteAccount(value: string) {
+  const field = deleteAccountDialog().querySelector<HTMLInputElement>('input')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(field, value)
+    field.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+}
+
+test('Delete opens a dialog that needs the email typed to confirm', async () => {
+  await openDeleteAccount()
+  expect(deleteAccountDialog().querySelector('h2')?.textContent).toBe('Delete account?')
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('You’ll leave every organization. This can’t be undone.')
+  expect(deleteAccountDialog().querySelector('label')?.textContent).toBe('Type member@example.com to confirm')
+  expect(button('Delete account', deleteAccountDialog()).classList.contains('button-danger')).toBe(true)
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await confirmDeleteAccount('member@example')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await confirmDeleteAccount('member@example.com')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
+  expect(request).not.toHaveBeenCalled()
+})
+
+test('confirming account deletion deletes the account, signs out, and opens the account deleted page', async () => {
+  let finish!: (response: Response) => void
+  request.mockImplementation((url: string) => url === 'https://api.keysy.net/v0/me'
+    ? new Promise<Response>((resolve) => { finish = resolve })
+    : Promise.resolve(new Response(null, { status: 204 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  expect([...deleteAccountDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Deleting...', true]])
+  expect(onSignedOut).not.toHaveBeenCalled()
+  await act(async () => finish(new Response(null, { status: 204 })))
+  await settle()
+  expect(request.mock.calls.map(([url, init]) => `${(init as RequestInit).method} ${url}`)).toEqual([
+    'DELETE https://api.keysy.net/v0/me',
+    'POST https://auth.keysy.net/v0/auth/logout',
+  ])
+  expect(browser.location.pathname).toBe('/account-deleted')
+})
+
+test('account deletion opens the account deleted page even when logout fails', async () => {
+  request.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url === 'https://api.keysy.net/v0/me' ? 204 : 503 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(browser.location.pathname).toBe('/account-deleted')
+})
+
+for (const [outcome, deleteResponse] of [
+  ['a lost response', () => Promise.reject(new TypeError('Failed to fetch'))],
+  ['a 503', () => Promise.resolve(new Response(null, { status: 503 }))],
+] as const) test(`after ${outcome}, a scheduled deletion from GET /v0/me opens the account deleted page`, async () => {
+  request.mockImplementation((url: string, init: RequestInit) => {
+    if (url !== 'https://api.keysy.net/v0/me') return Promise.resolve(new Response(null, { status: 204 }))
+    return init.method === 'DELETE' ? deleteResponse() : Promise.resolve(Response.json({ ...user, purgeAt: '2026-12-16T12:00:00Z' }))
+  })
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(request.mock.calls.map(([url, init]) => `${(init as RequestInit).method ?? 'GET'} ${url}`)).toEqual([
+    'DELETE https://api.keysy.net/v0/me',
+    'GET https://api.keysy.net/v0/me',
+    'POST https://auth.keysy.net/v0/auth/logout',
+  ])
+  expect(browser.location.pathname).toBe('/account-deleted')
+})
+
+test('after a lost response, an account without a scheduled deletion shows the error', async () => {
+  request.mockImplementation((_url: string, init: RequestInit) => init.method === 'DELETE' ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve(Response.json(user)))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(deleteAccountDialog().querySelector('[role="alert"]')?.textContent).toBe('Could not delete your account. Try again.')
+  expect(browser.location.pathname).toBe('/')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
+})
+
+test('an expired session during account deletion signs out', async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(onSignedOut).toHaveBeenCalledTimes(1)
+  expect(browser.location.pathname).toBe('/')
+})
+
+test('an org owner sees the orgs to hand over instead of the confirm field', async () => {
+  await openDeleteAccount([...organizations, { id: 'org-4', name: 'a-owner', role: 'owner' as const, memberCount: 2 }])
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these organizations first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+    ['z-ownerOwner', '/orgs/org-3/settings'],
+    ['a-ownerOwner', '/orgs/org-4/settings'],
+  ])
+  expect(deleteAccountDialog().querySelector('input')).toBeNull()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+})
+
+test('an owner of one org sees the singular message', async () => {
+  await openDeleteAccount(organizations)
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete this organization first:')
+  expect(deleteAccountDialog().querySelectorAll('li')).toHaveLength(1)
+})
+
+for (const [status, message] of [
+  [409, 'Transfer or delete the organizations you own, then try again.'],
+  [500, 'Could not delete your account. Try again.'],
+] as const) test(`a ${status} account deletion response shows its message in the dialog`, async () => {
+  request.mockImplementation(() => Promise.resolve(new Response(null, { status })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  expect(deleteAccountDialog().open).toBe(true)
+  const alert = deleteAccountDialog().querySelector('[role="alert"]')!
+  expect(alert.textContent).toBe(message)
+  expect(alert.className).toBe('dialog-error')
+  expect(onSignedOut).not.toHaveBeenCalled()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
+})
+
+test('a 409 with owned orgs replaces a stale org list with the blocked view until the dialog closes', async () => {
+  request.mockImplementation(() => Promise.resolve(Response.json({ error: { code: 'ORG_OWNER', message: 'Transfer or delete the organizations you own, then try again.', organizations: [{ id: 'org-9', name: 'new-owner' }] } }, { status: 409 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete this organization first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([['new-ownerOwner', '/orgs/org-9/settings']])
+  expect(deleteAccountDialog().querySelector('input')).toBeNull()
+  expect(deleteAccountDialog().querySelector('[role="alert"]')).toBeNull()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await act(async () => deleteAccountDialog().dispatchEvent(new browser.Event('close')))
+  expect(deleteAccountDialog().querySelector('input')).not.toBeNull()
+})
+
 function holdExitAnimation(element: Element) {
   let finish = () => {}
   const finished = new Promise<void>((resolve) => { finish = resolve })
@@ -515,7 +661,7 @@ test('submits a trimmed name with Enter and updates the session after saving', a
   await act(async () => finish(Response.json(updated)))
   expect(onUserChange).toHaveBeenCalledWith(updated)
   // The provider owns the user, so simulate its state update.
-  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, organization: organizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><GeneralPage /></AccountLayout></CurrentUserContext.Provider>))
+  await act(() => root.render(<CurrentUserContext.Provider value={{ user: updated, organizations, organization: organizations[0], createOrganization: async () => null, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><QueryClientProvider client={new QueryClient()}><AccountLayout><GeneralPage /></AccountLayout></QueryClientProvider></CurrentUserContext.Provider>))
   expect(input().value).toBe('New Name')
   const saveBar = container.querySelector('.account-save-bar')!
   const finishExit = holdExitAnimation(saveBar)
