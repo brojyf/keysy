@@ -10,16 +10,15 @@ This is a design for #193. Do not merge this file.
 
 - Only Account › General has **Delete account**. An Owner must first transfer the Owner role or delete each org they own. Until then, `DELETE /v0/me` returns 409 `ORG_OWNER`, and the dialog lists those orgs from the 409 response body.
 - Deleting an account starts a 30-day grace period. `profiles.deleted_at` is set, and every session of the user is deleted, so every device is signed out. Memberships stay.
-- During the grace period, the member stays in each org's member list with a **Deleting** badge. The Owner and Admins can remove them as usual. Inviting their email fails with the existing-member error.
+- During the grace period, the member stays in each org's member list with a **Deleting** badge. The Owner and Admins can remove them as usual.
 - A member in the grace period can only be removed. They cannot be the target of any other change, such as an Owner role transfer, a role change, or a service or permission set assignment. Pickers do not list them. Each write endpoint checks `deleted_at` of the target in its own transaction.
 - A caller in the grace period cannot use org data. Every query that checks the caller's org membership also joins the caller's profile with `deleted_at IS NULL`, so the caller gets the existing not-a-member response (404 or 403). The check is part of the existing SQL in the api stores: no extra query, no middleware, and no JWT claim.
   - The condition applies only to the caller. A join that shows other members must not filter them, because the member list shows them with the **Deleting** badge.
   - `GET /v0/orgs` has no profile join yet, so it gets one and returns an empty list.
   - Owner-only endpoints (rename and delete an org) need no condition: a user in the grace period cannot be an Owner.
   - Endpoints about the caller's own account have no check: `GET /v0/me`, `PATCH /v0/me`, `POST /v0/me/cancel-deletion`, `/v0/me/sessions`, and `POST /v0/auth/logout`.
-  - Two endpoints add the caller to an org without an existing membership, so the membership check does not cover them. Each starts its transaction with the `profiles` lock statement below and returns 403 `ACCOUNT_DELETING`:
-    - `POST /v0/orgs`: an org created in the grace period would lose its Owner at the purge.
-    - Accepting an invitation: the user would join an org while their account is being deleted. Pending invitations stay as they are, so the user can still accept them after cancelling the deletion, or as a new user after the purge.
+  - `POST /v0/orgs` adds the caller to an org without an existing membership, so the membership check does not cover it. It starts its transaction with the `profiles` lock statement below and returns 403 `ACCOUNT_DELETING`: an org created in the grace period would lose its Owner at the purge.
+  - Invitation create and accept follow the same rules. They are designed in #188.
 - Signing in during the grace period does not restore the account. The dashboard opens the **Cancel deletion** page, where the user can cancel the deletion or sign out. Only **Cancel deletion** restores the account. The user gets back only the memberships that still exist, with the roles and scopes they have at that time, so no permission can increase while they are away.
 - After 30 days, a daily `pg_cron` job permanently deletes the user: their membership rows first, then the `auth.users` row. The profile is deleted by cascade.
 - The user gets an email when the deletion starts, when they cancel it, and when the purge is done.
@@ -81,8 +80,6 @@ Status on 2026-11-17 (`main` at #235):
 - [x] Figma: **Deleting** badge, **Cancel deletion** page with its error view, and the Account deleted copy (Account · Delete account, People · Members).
 - [x] Dashboard: Delete account dialog, Account deleted page, **Cancel deletion** page and its SessionGate rule (#224), **Deleting** badge (#229), and Remove for deleting members (#231).
 - [x] Remove member: allowed for a deleting target, rejected for a deleting caller (#230).
-- [ ] Invite endpoint (#188): inviting the email of a deleting member fails with the existing-member error.
-- [ ] Invitation accept endpoint (#188): lock and check the caller's `profiles` row first, and return 403 `ACCOUNT_DELETING` in the grace period.
 - [ ] Future endpoints (transfer the Owner role, change role, assign services): apply the target rule in the same transaction as the write.
 - [ ] Email (#189, not needed for the first release): write the three outbox events (deletion scheduled, deletion cancelled, account deleted) and add the three templates to `email-worker/`.
-- [ ] Tests (#193): done for delete, the Owner 409, cancel, the Cancel deletion page and sign out, org creation 403, the concurrent org creation in both orders, member removal in the grace period, and the purge with other users unaffected. Still open, because they need invitation accept: accept gets 403 `ACCOUNT_DELETING`, the invitation can still be accepted after cancelling, and a new user after the purge joins an org.
+- [x] Tests (#193): done for delete, the Owner 409, cancel, the Cancel deletion page and sign out, org creation 403, the concurrent org creation in both orders, member removal in the grace period, and the purge with other users unaffected. The tests that need invitation create or accept moved to #188.
