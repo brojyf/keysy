@@ -77,7 +77,7 @@ func TestStoreList(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			store, mock := testStore(t)
 			// The user filter enforces isolation. A second order key stabilizes duplicate names.
-			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
+			query := mock.ExpectQuery(`SELECT orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count FROM public.orgs AS orgs JOIN public.members AS members ON members.org_id = orgs.id JOIN public.profiles AS caller_profile ON caller_profile.id = members.user_id AND caller_profile.deleted_at IS NULL WHERE members.user_id = $1 ORDER BY orgs.name ASC,orgs.id ASC`).WithArgs("user-123")
 			want := []Membership{}
 			failure := errors.New("database unavailable")
 			if scenario == "database error" {

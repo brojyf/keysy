@@ -248,7 +248,7 @@ paths:
         - accessCookie: []
       operationId: listOrgs
       summary: List the signed-in user's orgs
-      description: Returns all orgs the signed-in user belongs to. Sorted by name. There is no pagination.
+      description: Returns all orgs the signed-in user belongs to. Accounts scheduled for deletion get an empty array. Sorted by name. There is no pagination.
       responses:
         '200':
           description: The orgs the signed-in user belongs to.
