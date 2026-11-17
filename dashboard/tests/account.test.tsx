@@ -494,6 +494,37 @@ test('account deletion opens the account deleted page even when logout fails', a
   expect(browser.location.pathname).toBe('/account-deleted')
 })
 
+for (const [outcome, deleteResponse] of [
+  ['a lost response', () => Promise.reject(new TypeError('Failed to fetch'))],
+  ['a 503', () => Promise.resolve(new Response(null, { status: 503 }))],
+] as const) test(`after ${outcome}, a scheduled deletion from GET /v0/me opens the account deleted page`, async () => {
+  request.mockImplementation((url: string, init: RequestInit) => {
+    if (url !== 'https://api.keysy.net/v0/me') return Promise.resolve(new Response(null, { status: 204 }))
+    return init.method === 'DELETE' ? deleteResponse() : Promise.resolve(Response.json({ ...user, purgeAt: '2026-12-16T12:00:00Z' }))
+  })
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(request.mock.calls.map(([url, init]) => `${(init as RequestInit).method ?? 'GET'} ${url}`)).toEqual([
+    'DELETE https://api.keysy.net/v0/me',
+    'GET https://api.keysy.net/v0/me',
+    'POST https://auth.keysy.net/v0/auth/logout',
+  ])
+  expect(browser.location.pathname).toBe('/account-deleted')
+})
+
+test('after a lost response, an account without a scheduled deletion shows the error', async () => {
+  request.mockImplementation((_url: string, init: RequestInit) => init.method === 'DELETE' ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve(Response.json(user)))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(deleteAccountDialog().querySelector('[role="alert"]')?.textContent).toBe('Could not delete your account. Try again.')
+  expect(browser.location.pathname).toBe('/')
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
+})
+
 test('an expired session during account deletion signs out', async () => {
   request.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
   await openDeleteAccount()

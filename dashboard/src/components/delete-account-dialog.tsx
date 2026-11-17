@@ -9,6 +9,7 @@ import { organizationQueryOptions } from '../lib/organization-queries'
 import { organizationPath } from '../lib/organization-route'
 import { logoutSession } from '../lib/session-refresh'
 import { serviceURLs } from '../lib/service-urls'
+import { parseSessionUser } from '../lib/session-user'
 import { useCurrentUser } from './current-user'
 import Button from './button'
 import Dialog from './dialog'
@@ -23,6 +24,16 @@ async function ownedOrganizationsFrom(response: Response): Promise<OwnedOrganiza
     if (Array.isArray(listed) && listed.every((item) => typeof item?.id === 'string' && typeof item?.name === 'string')) return listed
   } catch {}
   return []
+}
+
+// The DELETE may have committed even when its response is lost, so read the account state again.
+async function deletionScheduled() {
+  try {
+    const response = await apiFetch('/v0/me')
+    return response.ok && !!parseSessionUser(await response.json()).purgeAt
+  } catch {
+    return false
+  }
 }
 
 export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
@@ -51,7 +62,8 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
       onSignedOut()
       return
     }
-    if (response?.status === 204) {
+    const outcomeUnknown = !response || response.status >= 500
+    if (response?.status === 204 || (outcomeUnknown && await deletionScheduled())) {
       // The api revokes every session, but the access cookie stays valid until it expires, so clear it too.
       await logoutSession(serviceURLs().authURL).catch(() => {})
       // A full page load drops all signed-in state before the signed-out page shows.
