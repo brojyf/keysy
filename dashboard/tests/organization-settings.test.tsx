@@ -34,8 +34,13 @@ function confirmDeletion(url: string) {
   return Promise.resolve(new Response(null, { status: 204 }))
 }
 
-async function settleOrganizationRequests() {
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+// Run the action in the same act that waits for its mocked requests. A separate act
+// ends before the request promises settle, so their state updates land outside act.
+async function settleOrganizationRequests(action?: () => void) {
+  await act(async () => {
+    action?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
 }
 
 beforeEach(() => {
@@ -403,8 +408,7 @@ for (const failure of [404, 500, 'network', 'timeout'] as const) test(`delete ha
   deleteRequest.mockImplementation(() => typeof failure === 'number'
     ? Promise.resolve(new Response(null, { status: failure }))
     : Promise.reject(failure === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Network unavailable')))
-  await act(async () => submit())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submit())
   expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy()
   expect(dialog().querySelector('input')?.value).toBe(organization.name)
   expect(confirmButton().disabled).toBe(false)
@@ -425,8 +429,7 @@ for (const failure of ['network', 'timeout'] as const) for (const remaining of [
     organizations = remaining ? [otherOrganization] : []
     return Promise.reject(failure === 'timeout' ? new DOMException('Timed out', 'TimeoutError') : new Error('Response lost'))
   })
-  await act(async () => submit())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submit())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(deleteRequest).toHaveBeenCalledTimes(1)
   expect(dialog()).toBeNull()
@@ -440,8 +443,7 @@ for (const remaining of [false, true]) test(`retry after a lost delete response 
   await openDelete()
   await enterName(organization.name)
   deleteRequest.mockImplementation(() => Promise.reject(new Error('Response lost')))
-  await act(async () => submit())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submit())
   expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy()
   organizations = remaining ? [{ ...otherOrganization, name: 'Updated' }] : []
   deleteRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
@@ -480,8 +482,7 @@ for (const outcome of ['404', 'network'] as const) for (const failure of ['netwo
   listOrganizations.mockImplementation(() => failure === 'network'
     ? Promise.reject(new Error('Network unavailable'))
     : Promise.resolve(failure === 'invalid' ? Response.json({}) : new Response(null, { status: failure })))
-  await act(async () => submit())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submit())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(router.replace).not.toHaveBeenCalled()
@@ -952,8 +953,7 @@ test('an owner renames the organization from the save bar and the new name repla
   await typeOrganizationName('  Renamed  ')
   expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
   expect(saveButton()?.textContent).toBe('Save')
-  await act(async () => submitRename())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submitRename())
   expect(renameRequest).toHaveBeenCalledTimes(1)
   const [url, init] = renameRequest.mock.calls[0] as [string, RequestInit]
   expect(url).toBe(`https://api.keysy.net/v0/orgs/${organization.id}`)
@@ -986,8 +986,7 @@ test('a failed rename shows an error and keeps the draft', async () => {
   renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
   await renderSettings()
   await typeOrganizationName('Renamed')
-  await act(async () => submitRename())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submitRename())
   expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe('Could not save. Try again.')
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
@@ -1001,8 +1000,7 @@ for (const saved of [true, false]) test(`a lost rename response reconciles with 
   })
   await renderSettings()
   await typeOrganizationName('Renamed')
-  await act(async () => submitRename())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => submitRename())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : 'Could not save. Try again.')
   expect(container.querySelector('.topbar-org')?.textContent).toBe(saved ? 'Renamed' : organization.name)
