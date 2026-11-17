@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -155,17 +156,67 @@ func TestStoreRemovePostgres(t *testing.T) {
 			}
 		})
 	}
+	// overlap holds the lock on lockedUserID's row, which every removal locks first,
+	// until all removals wait for it, so the removals always run at the same time.
+	overlap := func(t *testing.T, lockedUserID string, removals ...func() error) []error {
+		t.Helper()
+		blocker := db.Begin()
+		if err := blocker.Exec("SELECT 1 FROM public.members WHERE org_id = 'org' AND user_id = ? FOR UPDATE", lockedUserID).Error; err != nil {
+			blocker.Rollback()
+			t.Fatal(err)
+		}
+		results := make([]error, len(removals))
+		var wg sync.WaitGroup
+		for i, remove := range removals {
+			wg.Add(1)
+			go func() { defer wg.Done(); results[i] = remove() }()
+		}
+		for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+			var waiting int
+			if err := db.Raw("SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'").Scan(&waiting).Error; err != nil {
+				blocker.Rollback()
+				t.Fatal(err)
+			}
+			if waiting >= len(removals) {
+				break
+			}
+			if time.Now().After(deadline) {
+				blocker.Rollback()
+				wg.Wait()
+				t.Fatalf("only %d of %d removals waited for the lock", waiting, len(removals))
+			}
+		}
+		if err := blocker.Commit().Error; err != nil {
+			t.Fatal(err)
+		}
+		wg.Wait()
+		return results
+	}
 	t.Run("concurrent removal", func(t *testing.T) {
 		reset(t)
-		start := make(chan struct{})
-		results := make(chan error, 2)
-		for i := 0; i < 2; i++ {
-			go func() { <-start; results <- store.Remove(ctx, "owner", "org", "dev") }()
+		remove := func() error { return store.Remove(ctx, "owner", "org", "dev") }
+		results := overlap(t, "dev", remove, remove)
+		if !((results[0] == nil && errors.Is(results[1], ErrMemberNotFound)) || (results[1] == nil && errors.Is(results[0], ErrMemberNotFound))) {
+			t.Fatalf("results: %v, %v", results[0], results[1])
 		}
-		close(start)
-		first, second := <-results, <-results
-		if !((first == nil && errors.Is(second, ErrMemberNotFound)) || (second == nil && errors.Is(first, ErrMemberNotFound))) {
-			t.Fatalf("results: %v, %v", first, second)
+	})
+	// Each request locks its caller's row and the other's row. Without one lock order, they can deadlock.
+	t.Run("owner and admin remove each other at the same time", func(t *testing.T) {
+		reset(t)
+		results := overlap(t, "admin",
+			func() error { return store.Remove(ctx, "owner", "org", "admin") },
+			func() error { return store.Remove(ctx, "admin", "org", "owner") },
+		)
+		if results[0] != nil {
+			t.Fatalf("owner removes admin: %v", results[0])
+		}
+		// The admin's request is forbidden if it runs first, or finds no caller row if it runs second.
+		if !errors.Is(results[1], ErrRemoveForbidden) && !errors.Is(results[1], ErrOrgNotFound) {
+			t.Fatalf("admin removes owner: %v", results[1])
+		}
+		var remaining []string
+		if err := db.Table("public.members").Where("org_id = 'org' AND user_id IN ('owner', 'admin')").Pluck("user_id", &remaining).Error; err != nil || !slices.Equal(remaining, []string{"owner"}) {
+			t.Fatalf("remaining=%v err=%v", remaining, err)
 		}
 	})
 }
