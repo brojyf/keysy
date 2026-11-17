@@ -420,7 +420,7 @@ paths:
         - accessCookie: []
       operationId: listMembers
       summary: List an org's members
-      description: Lists an org's members. Any member of the org can call it. Members with deleted accounts are not listed. The order is not specified. There is no pagination.
+      description: Lists an org's members. Any member of the org can call it. Members whose accounts are scheduled for deletion are listed with `deleting` set to true. The order is not specified. There is no pagination.
       responses:
         '200':
           description: The org's members. The caller is always included.
@@ -671,12 +671,13 @@ components:
     Member:
       type: object
       description: An org member as the member list shows it.
-      required: [userId, name, email, role]
+      required: [userId, name, email, role, deleting]
       example:
         userId: 6f1c2a9e-3b7d-4e58-9a0c-1d2e3f4a5b6c
         name: Ada Lovelace
         email: ada@example.com
         role: owner
+        deleting: false
       properties:
         userId:
           type: string
@@ -691,6 +692,9 @@ components:
         role:
           type: string
           enum: [owner, admin, developer]
+        deleting:
+          type: boolean
+          description: True while the member's account is scheduled for deletion.
     Invitation:
       type: object
       description: An org invitation. It does not grant membership until accepted.

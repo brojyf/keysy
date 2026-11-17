@@ -24,9 +24,10 @@ and non-owner targets return `404 ORG_NOT_FOUND`.
 It permanently deletes the org and its memberships, and returns `204` with no response body.
 User accounts and profiles remain. Missing, deleted, and non-owner targets return `404 ORG_NOT_FOUND`, including owner retries.
 `GET /v0/orgs/{orgId}/members` accepts only an org UUID in the path. Any member of an active org gets `200`
-with `[{userId, name, email, role}]`; `name` is the profile display name and `email` is the profile email.
-Members with soft-deleted profiles are left out. The order is not specified; clients sort the list.
+with `[{userId, name, email, role, deleting}]`; `name` is the profile display name and `email` is the profile email.
+Members whose profiles are scheduled for deletion are listed with `deleting: true`. The order is not specified; clients sort the list.
 Missing, deleted, and non-member targets return `404 ORG_NOT_FOUND`.
+Callers with soft-deleted profiles also get `404 ORG_NOT_FOUND`.
 `GET /v0/orgs/{orgId}/invitations` lets any member of an active org list its pending and expired
 invitations as `[{id, email, role, status}]`. Invitee names and profiles are not returned.
 `status` is `expired` when `started_at + 7 days` is at or before the database's current time;
