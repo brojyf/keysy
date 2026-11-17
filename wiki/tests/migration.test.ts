@@ -15,10 +15,12 @@ const routes = [
   ['references', 'References'],
   ['api', 'Keysy API'],
   ['auth', 'Keysy Auth API'],
-  ...['notify', 'cli', 'dashboard'].flatMap((section) => [
+  ...['notify', 'cli'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
   ]),
+  ['dashboard/overview', 'Introduction'],
+  ['dashboard/components', 'Components'],
 ];
 
 async function matches(html: string, selector: string) {
@@ -382,6 +384,25 @@ test('database schema renders the implemented schema and ERD images for both the
     const [light, dark] = [`/architecture/${image}.svg`, `/architecture/${image}-dark.svg`];
     expect(await matches(html, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
     for (const path of [light, dark]) expect(await Bun.file(new URL(`.${path}`, output)).exists()).toBe(true);
+  }
+});
+
+test('the Dashboard tab lists its introduction, then one example image per component', async () => {
+  const overview = await Bun.file(new URL('dashboard/overview.html', output)).text();
+  expect((await matches(overview, '#sidebar nav[aria-label="Dashboard"] a')).map(({ href }) => href)).toEqual([
+    '/dashboard/overview', '/dashboard/components',
+  ]);
+  const html = await Bun.file(new URL('dashboard/components.html', output)).text();
+  const components = [
+    ['Button', 'button'], ['IconButton', 'icon-button'], ['Dialog', 'dialog'], ['MoreMenu', 'more-menu'],
+    ['SaveBar', 'save-bar'], ['ThemeSwitch', 'theme-switch'], ['LoadingSkeleton', 'loading-skeleton'],
+  ];
+  const sections = html.slice(html.indexOf('<h2')).split('<h2').slice(1);
+  expect(sections).toHaveLength(components.length);
+  for (const [index, [name, slug]] of components.entries()) {
+    expect(sections[index]).toMatch(new RegExp(`^[^>]*>(?:<[^>]+>)*${name}<`));
+    const [light, dark] = [`/dashboard/components/${slug}.svg`, `/dashboard/components/${slug}-dark.svg`];
+    expect(await matches(sections[index]!, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
   }
 });
 

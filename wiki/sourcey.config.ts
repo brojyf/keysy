@@ -105,7 +105,7 @@ export default defineConfig({
           slugs: 'file',
           groups: [
             { group: 'General', pages: ['overview'] },
-            { group: 'API endpoints', pages: ['endpoints'] },
+            { group: 'Components', pages: ['components'] },
           ],
         }),
       },
