@@ -136,6 +136,17 @@ test('settings shows the current organization and marks unavailable features as 
   expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].map((button) => [button.textContent, button.disabled, button.title])).toEqual([['Notifications', true, 'Coming soon']])
 })
 
+test('disabled Settings navigation items look like Account navigation text, not buttons', async () => {
+  const style = document.createElement('style')
+  style.textContent = readFileSync(new URL('../src/components/account.css', import.meta.url), 'utf8')
+  document.head.append(style)
+  await renderSettings()
+  const item = window.getComputedStyle(container.querySelector('nav[aria-label="Settings"] button')!)
+  expect(item.borderStyle).toBe('none')
+  expect(item.backgroundColor).toBe('transparent')
+  expect(item.cursor).toBe('default')
+})
+
 for (const [role, label] of [['owner', 'Owner'], ['admin', 'Admin'], ['developer', 'Developer']]) test(`settings shows the current organization's ${role} role as read-only text`, async () => {
   organizations = [{ ...organization, role: 'owner' }, { ...otherOrganization, role }]
   pathname = `/orgs/${otherOrganization.id}/settings`

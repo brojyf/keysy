@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Window } from 'happy-dom'
-import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -84,21 +83,8 @@ test('Members shows the People navigation and one page heading', async () => {
     ['Invitations2', '/orgs/org-1/people/invitations', null],
   ])
   expect(nav.querySelector('.account-nav-count')?.textContent).toBe('2')
-  expect([...nav.querySelectorAll('button')].map((button) => [button.textContent, button.disabled])).toEqual([
-    ['Permission sets', true],
-  ])
+  expect(nav.querySelector('button')).toBeNull()
   expect([...container.querySelectorAll('h1')].map((heading) => heading.textContent)).toEqual(['Members'])
-})
-
-test('disabled People navigation items look like Account navigation text, not buttons', async () => {
-  const style = document.createElement('style')
-  style.textContent = readFileSync(new URL('../src/components/account.css', import.meta.url), 'utf8')
-  document.head.append(style)
-  await renderMembers()
-  const item = window.getComputedStyle(container.querySelector('nav[aria-label="People"] button')!)
-  expect(item.borderStyle).toBe('none')
-  expect(item.backgroundColor).toBe('transparent')
-  expect(item.cursor).toBe('default')
 })
 
 function rowMenus() {

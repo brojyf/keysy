@@ -16,6 +16,5 @@ export function usePeopleNav(current: 'Members' | 'Invitations'): SettingsNavIte
   return [
     { label: 'Members', href: organizationPath(organizationID, '/people'), current: current === 'Members' },
     { label: 'Invitations', href: organizationPath(organizationID, '/people/invitations'), current: current === 'Invitations', count: count || undefined },
-    { label: 'Permission sets' },
   ]
 }
