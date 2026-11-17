@@ -41,6 +41,7 @@ beforeEach(() => {
     ? Promise.resolve(Response.json(apiInvitations))
     : request(url, init)) as typeof fetch
   browser = new Window({ url: 'https://dashboard.keysy.net' })
+  Object.assign(browser.HTMLElement.prototype, { hidePopover() {} })
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   container = document.createElement('div')
   document.body.append(container)
@@ -250,5 +251,95 @@ test('Members hides cached members and rechecks the organizations when the organ
 test('Members signs out when the session has expired', async () => {
   request.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
   await renderMembers()
+  expect(onSignedOut).toHaveBeenCalledTimes(1)
+})
+
+function membersAPI(remove: () => Promise<Response>, deleting = false) {
+  let members = apiMembers.map((member) => ({ ...member, role: member.userId === 'user-id' ? 'owner' : member.userId === 'user-alex' ? 'admin' : member.role, deleting: deleting && member.userId === 'user-alex' }))
+  request.mockImplementation((url: string, init: RequestInit = {}) => {
+    if (url === 'https://api.keysy.net/v0/orgs/org-1/members' && !init.method) return Promise.resolve(Response.json(members))
+    if (url === 'https://api.keysy.net/v0/orgs/org-1/members/user-alex' && init.method === 'DELETE') return remove().then((response) => {
+      if (response.status === 204) members = members.filter(({ userId }) => userId !== 'user-alex')
+      return response
+    })
+    if (url === 'https://auth.keysy.net/v0/auth/refresh') return Promise.resolve(new Response(null, { status: 401 }))
+    return Promise.reject(new Error(`Unexpected request ${init.method ?? 'GET'} ${url}`))
+  })
+}
+function memberDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
+function dialogButton(label: string) { return [...memberDialog().querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === label)! }
+async function openRemove() {
+  const menu = document.getElementById('member-menu-user-alex')!
+  await act(() => [...menu.querySelectorAll('button')].find((item) => item.textContent === 'Remove')!.click())
+  expect(memberDialog().open).toBe(true)
+}
+async function settleMembers() { await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) }) }
+function memberRequests() { return request.mock.calls.map(([url, init]) => `${(init as RequestInit | undefined)?.method ?? 'GET'} ${url}`) }
+
+test('removing a member confirms, deletes, and refetches the list', async () => {
+  let finish!: (response: Response) => void
+  membersAPI(() => new Promise<Response>((resolve) => { finish = resolve }))
+  const client = new QueryClient()
+  client.setQueryData(['organizations', 'user-id'], [{ ...organization, role: 'owner' }])
+  await renderMembers('owner', client)
+  await openRemove()
+  expect(memberDialog().querySelector('h2')?.textContent).toBe('Remove Alex Kim?')
+  expect(memberDialog().querySelector('p')?.textContent).toBe('Alex Kim will lose access to platform and its secrets. You can invite Alex Kim again.')
+  expect(dialogButton('Remove').classList.contains('button-danger')).toBe(true)
+  await act(async () => dialogButton('Remove').click())
+  expect([...memberDialog().querySelectorAll('button')].map((item) => [item.textContent, item.disabled])).toEqual([['Cancel', true], ['Removing...', true]])
+  await act(async () => finish(new Response(null, { status: 204 })))
+  await settleMembers()
+  expect(memberDialog().open).toBe(false)
+  expect(memberRequests()).toEqual(['GET https://api.keysy.net/v0/orgs/org-1/members', 'DELETE https://api.keysy.net/v0/orgs/org-1/members/user-alex', 'GET https://api.keysy.net/v0/orgs/org-1/members'])
+  expect(tableRows().map((row) => row[0])).not.toContain('Alex Kim')
+  expect(client.getQueryState(['organizations', 'user-id'])?.isInvalidated).toBe(true)
+})
+
+test('a deleting member can be removed', async () => {
+  membersAPI(() => Promise.resolve(new Response(null, { status: 204 })), true)
+  await renderMembers('owner')
+  expect(document.getElementById('member-menu-user-alex')?.textContent).toBe('Remove')
+  await openRemove()
+  await act(async () => dialogButton('Remove').click())
+  await settleMembers()
+  expect(memberDialog().open).toBe(false)
+  expect(tableRows().map((row) => row[0])).not.toContain('Alex KimDeleting')
+})
+
+for (const [status, code] of [[404, 'MEMBER_NOT_FOUND'], [403, 'MEMBER_REMOVE_FORBIDDEN']] as const) test(`a ${status} removal closes the dialog and refetches members`, async () => {
+  membersAPI(() => Promise.resolve(Response.json({ error: { code } }, { status })))
+  await renderMembers('owner')
+  await openRemove()
+  await act(async () => dialogButton('Remove').click())
+  await settleMembers()
+  expect(memberDialog().open).toBe(false)
+  expect(memberRequests()).toEqual(['GET https://api.keysy.net/v0/orgs/org-1/members', 'DELETE https://api.keysy.net/v0/orgs/org-1/members/user-alex', 'GET https://api.keysy.net/v0/orgs/org-1/members'])
+})
+
+for (const [label, remove] of [
+  ['500', () => Promise.resolve(Response.json({ error: { message: 'Private API detail' } }, { status: 500 }))],
+  ['network error', () => Promise.reject(new Error('Network error'))],
+] as const) test(`a ${label} removal shows a fixed error and clears it on close`, async () => {
+  membersAPI(remove)
+  await renderMembers('owner')
+  await openRemove()
+  await act(async () => dialogButton('Remove').click())
+  expect(memberDialog().open).toBe(true)
+  const alert = memberDialog().querySelector('[role="alert"]')!
+  expect(alert.textContent).toBe('Could not remove Alex Kim. Try again.')
+  expect(alert.className).toBe('dialog-error')
+  expect([...memberDialog().querySelectorAll('button')].map((item) => item.disabled)).toEqual([false, false])
+  expect(tableRows().map((row) => row[0])).toContain('Alex Kim')
+  await act(async () => dialogButton('Cancel').click())
+  await openRemove()
+  expect(memberDialog().querySelector('[role="alert"]')).toBeNull()
+})
+
+test('an expired session during removal signs out', async () => {
+  membersAPI(() => Promise.resolve(new Response(null, { status: 401 })))
+  await renderMembers('owner')
+  await openRemove()
+  await act(async () => dialogButton('Remove').click())
   expect(onSignedOut).toHaveBeenCalledTimes(1)
 })
