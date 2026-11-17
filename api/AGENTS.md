@@ -15,10 +15,14 @@ Existing access tokens of a revoked session stay valid until they expire.
 `POST /v0/orgs` creates the org and its owner membership in one transaction.
 `PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
 `GET /v0/orgs/{orgId}/members` lists every member's name, email, and role for any member of an active org.
-Soft-deleted profiles are left out. The order is not specified. Missing, deleted, and non-member targets return 404.
+Members scheduled for deletion are listed with `deleting: true`. The order is not specified. Missing, deleted, and non-member targets,
+and callers scheduled for deletion, return 404.
 `DELETE /v0/orgs/{orgId}/members/{userId}` lets owners remove admins and developers and admins remove developers.
 Members scheduled for deletion can be removed. Self, owner, and other disallowed targets return 403;
 non-member targets return 404 MEMBER_NOT_FOUND. One transaction locks both member rows in user_id order, then deletes.
+Owner transfer, role changes, and scope changes must reject members scheduled for deletion: in the write transaction,
+select the target's profile with `deleted_at IS NULL FOR SHARE`, as `POST /v0/orgs` does. Test both orders against
+account deletion.
 `GET /v0/orgs/{orgId}/invitations` lists pending and expired invitations for any org member.
 Each item contains id, email, role, and status. Seven days after started_at, status becomes expired.
 The order is not specified. No invitations returns an empty array. Missing and deleted orgs,
