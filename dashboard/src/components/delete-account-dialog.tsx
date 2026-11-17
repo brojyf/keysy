@@ -11,6 +11,18 @@ import { useCurrentUser } from './current-user'
 import Button from './button'
 import Dialog from './dialog'
 
+type OwnedOrganization = { id: string; name: string }
+
+// A 409 ORG_OWNER lists the orgs the user owns; any other body gives an empty list.
+async function ownedOrganizationsFrom(response: Response): Promise<OwnedOrganization[]> {
+  try {
+    const { error } = await response.json() as { error?: { organizations?: unknown } }
+    const listed = error?.organizations
+    if (Array.isArray(listed) && listed.every((item) => typeof item?.id === 'string' && typeof item?.name === 'string')) return listed
+  } catch {}
+  return []
+}
+
 export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
   const formID = useId()
   const confirmationID = useId()
@@ -18,10 +30,12 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const [listedOrganizations, setListedOrganizations] = useState<OwnedOrganization[] | null>(null)
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   // The api refuses to delete an org owner, so show what to hand over first.
-  const ownedOrganizations = organizations.filter((organization) => organization.role === 'owner')
+  // The api list replaces the dashboard list when that one is out of date.
+  const ownedOrganizations = listedOrganizations ?? organizations.filter((organization) => organization.role === 'owner')
   const valid = ownedOrganizations.length === 0 && confirmation === user.email
 
   async function remove(event: FormEvent<HTMLFormElement>) {
@@ -41,13 +55,15 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
       window.location.replace('/account-deleted')
       return
     }
+    const listed = response?.status === 409 ? await ownedOrganizationsFrom(response) : []
     if (!mounted.current) return
-    setError(response?.status === 409 ? 'Transfer or delete the organizations you own, then try again.' : 'Could not delete your account. Try again.')
+    if (listed.length > 0) setListedOrganizations(listed)
+    else setError(response?.status === 409 ? 'Transfer or delete the organizations you own, then try again.' : 'Could not delete your account. Try again.')
     setPending(false)
   }
 
   return (
-    <Dialog ref={ref} title="Delete account?" closable={!pending} onClose={() => { setConfirmation(''); setError('') }} action={
+    <Dialog ref={ref} title="Delete account?" closable={!pending} onClose={() => { setConfirmation(''); setError(''); setListedOrganizations(null) }} action={
       <Button variant="danger" type="submit" form={formID} disabled={!valid || pending}>{pending ? 'Deleting...' : 'Delete account'}</Button>
     }>
       {ownedOrganizations.length > 0 ? (

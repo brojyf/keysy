@@ -537,6 +537,21 @@ for (const [status, message] of [
   expect(button('Delete account', deleteAccountDialog()).disabled).toBe(false)
 })
 
+test('a 409 with owned orgs replaces a stale org list with the blocked view until the dialog closes', async () => {
+  request.mockImplementation(() => Promise.resolve(Response.json({ error: { code: 'ORG_OWNER', message: 'Transfer or delete the organizations you own, then try again.', organizations: [{ id: 'org-9', name: 'new-owner' }] } }, { status: 409 })))
+  await openDeleteAccount()
+  await confirmDeleteAccount('member@example.com')
+  await act(async () => button('Delete account', deleteAccountDialog()).click())
+  await settle()
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete this organization first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([['new-ownerOwner', '/orgs/org-9/settings']])
+  expect(deleteAccountDialog().querySelector('input')).toBeNull()
+  expect(deleteAccountDialog().querySelector('[role="alert"]')).toBeNull()
+  expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+  await act(async () => deleteAccountDialog().dispatchEvent(new browser.Event('close')))
+  expect(deleteAccountDialog().querySelector('input')).not.toBeNull()
+})
+
 function holdExitAnimation(element: Element) {
   let finish = () => {}
   const finished = new Promise<void>((resolve) => { finish = resolve })
