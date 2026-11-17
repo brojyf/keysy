@@ -2,6 +2,7 @@ package member
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -30,4 +31,51 @@ func (s Store) List(ctx context.Context, userID, orgID string) ([]Member, error)
 			JOIN public.profiles AS caller_profile ON caller_profile.id = caller.user_id AND caller_profile.deleted_at IS NULL
 			WHERE caller.org_id = members.org_id AND caller.user_id = ?)`, orgID, userID).Scan(&members).Error
 	return members, err
+}
+
+var (
+	ErrOrgNotFound     = errors.New("organization not found")
+	ErrMemberNotFound  = errors.New("member not found")
+	ErrRemoveForbidden = errors.New("member removal forbidden")
+)
+
+func canRemove(callerRole, targetRole string) bool {
+	return callerRole == "owner" && (targetRole == "admin" || targetRole == "developer") || callerRole == "admin" && targetRole == "developer"
+}
+
+func (s Store) Remove(ctx context.Context, callerID, orgID, targetID string) error {
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var members []struct{ UserID, Role string }
+		// Consistent order prevents deadlocks. Lock rows because deletion and future role or owner changes write them.
+		if err := tx.Raw(`SELECT members.user_id, members.role
+			FROM public.members AS members
+			JOIN public.profiles AS profiles ON profiles.id = members.user_id
+			WHERE members.org_id = ? AND members.user_id IN (?, ?)
+			AND (members.user_id <> ? OR profiles.deleted_at IS NULL)
+			ORDER BY members.user_id FOR UPDATE OF members`, orgID, callerID, targetID, callerID).Scan(&members).Error; err != nil {
+			return err
+		}
+		var callerRole, targetRole string
+		for _, member := range members {
+			if member.UserID == callerID {
+				callerRole = member.Role
+			}
+			if member.UserID == targetID {
+				targetRole = member.Role
+			}
+		}
+		if callerRole == "" {
+			return ErrOrgNotFound
+		}
+		if callerID == targetID {
+			return ErrRemoveForbidden
+		}
+		if targetRole == "" {
+			return ErrMemberNotFound
+		}
+		if !canRemove(callerRole, targetRole) {
+			return ErrRemoveForbidden
+		}
+		return tx.Exec("DELETE FROM public.members WHERE org_id = ? AND user_id = ?", orgID, targetID).Error
+	})
 }

@@ -62,6 +62,7 @@ func New(d Deps) *gin.Engine {
 	v0.PATCH("/orgs/:orgId", org.Rename(orgs))
 	v0.DELETE("/orgs/:orgId", org.Delete(orgs))
 	v0.GET("/orgs/:orgId/members", member.List(members))
+	v0.DELETE("/orgs/:orgId/members/:userId", member.Remove(members))
 	v0.GET("/orgs/:orgId/invitations", invitation.List(invitations))
 	return router
 }
