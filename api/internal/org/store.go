@@ -51,6 +51,7 @@ func (s Store) List(ctx context.Context, userID string) ([]Membership, error) {
 	err := s.DB.WithContext(ctx).Table("public.orgs AS orgs").
 		Select("orgs.id, orgs.name, members.role, (SELECT count(*) FROM public.members AS org_members WHERE org_members.org_id = orgs.id) AS member_count").
 		Joins("JOIN public.members AS members ON members.org_id = orgs.id").
+		Joins("JOIN public.profiles AS caller_profile ON caller_profile.id = members.user_id AND caller_profile.deleted_at IS NULL").
 		Where("members.user_id = ?", userID).
 		Order("orgs.name ASC").Order("orgs.id ASC").Find(&memberships).Error
 	return memberships, err

@@ -88,3 +88,68 @@ func TestStoreDeletePostgres(t *testing.T) {
 		}
 	}
 }
+
+func TestStoreListPostgres(t *testing.T) {
+	databaseURL := os.Getenv("KEYSY_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
+	}
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = connection.Close() })
+	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY, name text);
+ CREATE TABLE public.profiles (id text PRIMARY KEY, deleted_at timestamptz);
+ CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text, role text, PRIMARY KEY (org_id, user_id));
+ INSERT INTO public.orgs VALUES
+ ('20000000-0000-0000-0000-000000000001', 'Zulu'),
+ ('20000000-0000-0000-0000-000000000002', 'Alpha');
+ INSERT INTO public.profiles VALUES ('active', NULL), ('deleting', now()), ('other', NULL);
+ INSERT INTO public.members VALUES
+ ('20000000-0000-0000-0000-000000000001', 'active', 'admin'),
+ ('20000000-0000-0000-0000-000000000002', 'active', 'owner'),
+ ('20000000-0000-0000-0000-000000000002', 'deleting', 'developer')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := db.Exec(`DROP TABLE public.members, public.profiles, public.orgs`).Error; err != nil {
+			t.Error(err)
+		}
+	})
+	store := Store{DB: db}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	got, err := store.List(ctx, "active")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("active memberships=%v, want 2", got)
+	}
+	if got[0].Name != "Alpha" || got[0].Role != "owner" || got[1].Name != "Zulu" || got[1].Role != "admin" {
+		t.Fatalf("active memberships=%+v, want name order and roles", got)
+	}
+	if got[0].MemberCount != 2 {
+		t.Fatalf("memberCount=%d, want 2 including deleting member", got[0].MemberCount)
+	}
+	got, err = store.List(ctx, "deleting")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || len(got) != 0 {
+		t.Fatalf("deleting caller memberships=%v, want non-nil empty list", got)
+	}
+	got, err = store.List(ctx, "no-memberships")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || len(got) != 0 {
+		t.Fatalf("no-membership caller memberships=%v, want non-nil empty list", got)
+	}
+}
