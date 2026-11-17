@@ -2,13 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { SortableHeader, TableSearch } from './account-table-controls'
 import { useCurrentUser } from './current-user'
 import MoreMenu from './more-menu'
 import { MemberTableSkeleton } from './loading-skeleton'
 import { usePeopleNav } from './people-nav'
+import RemoveMemberDialog from './remove-member-dialog'
 import SettingsLayout from './settings-layout'
+import { openDialog } from '../lib/dialog-controls'
 import { memberQueryOptions, type Member } from '../lib/member-queries'
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', developer: 'Developer' }
@@ -19,12 +21,14 @@ function canManage(viewerRole: Member['role'] | undefined, memberRole: Member['r
   return (viewerRole === 'owner' && memberRole !== 'owner') || (viewerRole === 'admin' && memberRole === 'developer')
 }
 
-// Figma People · Members. The row menu items do nothing until their APIs exist.
+// Figma People · Members. Change role and Transfer ownership do nothing until their APIs exist.
 // The member page comes later.
 export default function MemberList() {
   const { user, organization, onSignedOut } = useCurrentUser()
   const memberQuery = useQuery({ ...memberQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
   const nav = usePeopleNav('Members')
+  const dialog = useRef<HTMLDialogElement>(null)
+  const [removing, setRemoving] = useState<Member>()
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
@@ -37,6 +41,12 @@ export default function MemberList() {
   const members = (memberQuery.isError ? [] : memberQuery.data ?? [])
     .filter(({ name, email }) => `${name} ${email}`.toLowerCase().includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.name.localeCompare(b.name))
+
+  function requestRemove(member: Member) {
+    document.getElementById(`member-menu-${member.userId}`)?.hidePopover()
+    setRemoving(member)
+    if (dialog.current) openDialog(dialog.current)
+  }
 
   return (
     <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={nav}>
@@ -78,7 +88,7 @@ export default function MemberList() {
                               )}
                             </>
                           )}
-                          <button className="account-menu-item account-menu-sign-out" type="button">Remove</button>
+                          <button className="account-menu-item account-menu-sign-out" type="button" onClick={() => requestRemove({ userId, name, email, role, deleting })}>Remove</button>
                         </MoreMenu>
                       )}
                     </td>
@@ -91,6 +101,7 @@ export default function MemberList() {
           </table>
         </div>
       )}
+      <RemoveMemberDialog ref={dialog} member={removing} />
     </SettingsLayout>
   )
 }
