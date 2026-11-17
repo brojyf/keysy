@@ -20,6 +20,7 @@ func (list memberStore) List(ctx context.Context, userID, orgID string) ([]Membe
 func TestList(t *testing.T) {
 	const orgID = "20000000-0000-0000-0000-000000000001"
 	ada := Member{UserID: "user-123", Name: "Ada", Email: "ada@example.com", Role: "owner"}
+	deleting := Member{UserID: "user-456", Name: "Grace", Email: "grace@example.com", Role: "admin", Deleting: true}
 	for _, tc := range []struct {
 		name, id, query, body, code, want string
 		members                           []Member
@@ -27,7 +28,8 @@ func TestList(t *testing.T) {
 		storeErr                          error
 		status                            int
 	}{
-		{name: "member", id: orgID, members: []Member{ada}, status: 200, want: `[{"userId":"user-123","name":"Ada","email":"ada@example.com","role":"owner"}]`},
+		{name: "member", id: orgID, members: []Member{ada}, status: 200, want: `[{"userId":"user-123","name":"Ada","email":"ada@example.com","role":"owner","deleting":false}]`},
+		{name: "member scheduled for deletion", id: orgID, members: []Member{deleting}, status: 200, want: `[{"userId":"user-456","name":"Grace","email":"grace@example.com","role":"admin","deleting":true}]`},
 		{name: "not a member, missing, or deleted", id: orgID, status: 404, code: "ORG_NOT_FOUND"},
 		{name: "invalid ID", id: "not-a-uuid", status: 400, code: "INVALID_REQUEST"},
 		{name: "query", id: orgID, query: "?role=admin", status: 400, code: "INVALID_REQUEST"},

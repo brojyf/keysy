@@ -56,6 +56,7 @@ func TestStoreListPostgres(t *testing.T) {
 	byUserID := func(a, b Member) int { return strings.Compare(a.UserID, b.UserID) }
 	want := []Member{
 		{UserID: "ada", Name: "Ada", Email: "ada@example.com", Role: "owner"},
+		{UserID: "gone", Name: "Gone", Email: "gone@example.com", Role: "admin", Deleting: true},
 		{UserID: "grace", Name: "Grace", Email: "grace@example.com", Role: "developer"},
 	}
 	for _, userID := range []string{"ada", "grace"} {
