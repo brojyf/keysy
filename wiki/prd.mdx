@@ -17,12 +17,12 @@ The Owner, Admins, and Developers are an org’s members.
 
 - **Owner:** One per org. Has every Admin ability, and is the only member who can rename or delete the org or transfer the Owner role.
 - **Admins:** Manage Developers and their scopes, and can promote Developers to Admin. Have full access to every secret and service. Cannot change or remove Admins or the Owner.
-- **Developers:** Manage secrets and services within the scope the Owner or an Admin assigns them through services and permission sets.
+- **Developers:** Manage secrets and services within the scope the Owner or an Admin assigns them through services.
 - **Services:** Retrieve authorized secrets at runtime using their own identities.
 
 ## Use cases
 
-- **Manage members:** The Owner and Admins add Developers, set each Developer’s scope with services and permission sets, and review access requests. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin and remove Developers. The Owner transfers the Owner role to another member.
+- **Manage members:** The Owner and Admins add Developers, set each Developer’s scope with services, and review access requests. The Owner can change members between Admin and Developer and remove either role. Admins can promote Developers to Admin and remove Developers. The Owner transfers the Owner role to another member.
 - **Request access:** Developers see every service and request the ones they need; the Owner or an Admin approves or declines.
 - **Manage secrets:** Members create, read, update, and delete secrets within their scope through the web app or CLI, with optional notes and expiration reminders.
 - **Manage service access:** Members create services and grant them read access to paths within their scope.
@@ -51,7 +51,7 @@ The Owner, Admins, and Developers are an org’s members.
 ## Scope
 
 - **Secret management:** Create, read, update, and delete secrets, with optional notes and expiration reminders.
-- **Scoped access:** The Owner manages Admins and Developers. The Owner and Admins manage Developer scopes, built from services and reusable permission sets. Developers manage secrets and services within their scope; services retrieve only secrets within their paths.
+- **Scoped access:** The Owner manages Admins and Developers. The Owner and Admins manage Developer scopes, built from services. Developers manage secrets and services within their scope; services retrieve only secrets within their paths.
 - **AI-assisted reorganization:** Move secrets, identify and update affected services, and verify permissions.
 - **Access channels:** Web app, CLI, browser extension for saving or updating secrets, and a skill for coding agents.
 - **Version history:** View the last N previous versions of each folder, what changed in each, and when, plus each service’s last-retrieved version and time per folder. Roll a folder back to any of these versions. Older versions are permanently deleted.
@@ -89,8 +89,8 @@ Others: Reorganize a Secret with AI / Update a Secret and View Folder Version Hi
 
 ### Scopes and services
 
-- A Developer’s scope is the services and permission sets (named groups of services) that the Owner or an Admin assigns them. Developers can read or change secrets only within their scope.
-- The Owner and Admins can remove a Developer’s services or permission sets at any time.
+- A Developer’s scope is the services that the Owner or an Admin assigns them. Developers can read or change secrets only within their scope.
+- The Owner and Admins can remove a Developer’s services at any time.
 - A service’s paths set which folders it can read. A path is an exact folder or a prefix ending in `/*`, never a single secret. Services retrieve only secrets within their paths.
 - A Developer can create or delete a service only if all of its paths are within the Developer’s scope as it stood before the operation.
 - Only the Owner and Admins can update a service’s name, paths, or assigned members.
