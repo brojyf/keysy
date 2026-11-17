@@ -45,6 +45,11 @@ func canRemove(callerRole, targetRole string) bool {
 
 func (s Store) Remove(ctx context.Context, callerID, orgID, targetID string) error {
 	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Lock the org row first so org deletion, which cascades to member rows in its own order, waits for this removal or makes it wait.
+		// FOR KEY SHARE does not block renames.
+		if err := tx.Exec("SELECT 1 FROM public.orgs WHERE id = ? FOR KEY SHARE", orgID).Error; err != nil {
+			return err
+		}
 		var members []struct{ UserID, Role string }
 		// Consistent order prevents deadlocks. Lock rows because deletion and future role or owner changes write them.
 		if err := tx.Raw(`SELECT members.user_id, members.role

@@ -13,6 +13,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/brojyf/keysy/api/internal/org"
 )
 
 func TestStoreListPostgres(t *testing.T) {
@@ -96,7 +98,7 @@ func TestStoreRemovePostgres(t *testing.T) {
 	t.Cleanup(func() { _ = connection.Close() })
 	if err := db.Exec(`CREATE TABLE public.orgs (id text PRIMARY KEY);
 		CREATE TABLE public.profiles (id text PRIMARY KEY, deleted_at timestamptz);
-		CREATE TABLE public.members (org_id text REFERENCES public.orgs(id), user_id text REFERENCES public.profiles(id), role text, PRIMARY KEY (org_id, user_id));
+		CREATE TABLE public.members (org_id text REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text REFERENCES public.profiles(id), role text, PRIMARY KEY (org_id, user_id));
 		INSERT INTO public.orgs VALUES ('org'), ('other');
 		INSERT INTO public.profiles VALUES ('owner', NULL), ('admin', NULL), ('admin2', NULL), ('dev', NULL), ('dev2', NULL), ('deleting', now()), ('other', NULL);
 		INSERT INTO public.members VALUES ('other', 'other', 'owner'), ('other', 'dev', 'developer')`).Error; err != nil {
@@ -217,6 +219,53 @@ func TestStoreRemovePostgres(t *testing.T) {
 		var remaining []string
 		if err := db.Table("public.members").Where("org_id = 'org' AND user_id IN ('owner', 'admin')").Pluck("user_id", &remaining).Error; err != nil || !slices.Equal(remaining, []string{"owner"}) {
 			t.Fatalf("remaining=%v err=%v", remaining, err)
+		}
+	})
+	// Org deletion cascades to member rows in its own order. Removal locks member rows in user_id order.
+	// The org deletion queues for "owner" first, then the removal locks "dev" and queues behind it.
+	t.Run("org deletion and member removal at the same time", func(t *testing.T) {
+		reset(t)
+		blocker := db.Begin()
+		if err := blocker.Exec("SELECT 1 FROM public.members WHERE org_id = 'org' AND user_id = 'owner' FOR UPDATE").Error; err != nil {
+			blocker.Rollback()
+			t.Fatal(err)
+		}
+		waitForLockWaiters := func(want int) {
+			for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+				var waiting int
+				if err := db.Raw("SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'").Scan(&waiting).Error; err != nil {
+					blocker.Rollback()
+					t.Fatal(err)
+				}
+				if waiting >= want {
+					return
+				}
+				if time.Now().After(deadline) {
+					blocker.Rollback()
+					t.Fatalf("only %d of %d requests waited for a lock", waiting, want)
+				}
+			}
+		}
+		var deleted bool
+		var deleteErr, removeErr error
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() { defer wg.Done(); deleted, deleteErr = org.Store{DB: db}.Delete(ctx, "owner", "org") }()
+		waitForLockWaiters(1)
+		go func() { defer wg.Done(); removeErr = store.Remove(ctx, "owner", "org", "dev") }()
+		waitForLockWaiters(2)
+		if err := blocker.Commit().Error; err != nil {
+			t.Fatal(err)
+		}
+		wg.Wait()
+		if !deleted || deleteErr != nil {
+			t.Fatalf("delete org: deleted=%v err=%v", deleted, deleteErr)
+		}
+		if !errors.Is(removeErr, ErrOrgNotFound) {
+			t.Fatalf("remove member: %v", removeErr)
+		}
+		if err := db.Exec("INSERT INTO public.orgs VALUES ('org')").Error; err != nil {
+			t.Fatal(err)
 		}
 	})
 }
