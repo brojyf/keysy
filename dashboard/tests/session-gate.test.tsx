@@ -1205,19 +1205,22 @@ test('a user with a scheduled deletion sees only the cancel deletion page', asyn
 
 test('cancel deletion clears the deletion and opens Account General', async () => {
   let cancelled = false
+  // The session check after cancel resolves only inside the next act, so its updates stay wrapped.
+  const sessionCheck = Promise.withResolvers<Response>()
   sessionRequest.mockImplementation((url: string, init: RequestInit) => {
     if (url.endsWith('/v0/me/cancel-deletion')) {
       expect(init.method).toBe('POST')
       cancelled = true
       return Promise.resolve(new Response(null, { status: 204 }))
     }
-    return Promise.resolve(Response.json(cancelled ? validUser : deletingUser))
+    return cancelled ? sessionCheck.promise : Promise.resolve(Response.json(deletingUser))
   })
   await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
   const cancel = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Cancel deletion')!
   await act(async () => cancel.click())
-  await settleOrganizationRequests()
   expect(cancelled).toBe(true)
+  await act(async () => sessionCheck.resolve(Response.json(validUser)))
+  await settleOrganizationRequests()
   expect(router.replace).toHaveBeenCalledWith('/account')
   expect(container.textContent).toContain('Dashboard content')
   expect(container.querySelector('h1')?.textContent).not.toBe('Account scheduled for deletion')
