@@ -36,7 +36,7 @@ export default function CancelDeletion({ purgeAt, signOutStatus, onSignOut, onCa
         <span className="account-deleted-badge"><CircleAlert size={20} strokeWidth={2} aria-hidden /></span>
         <div className="sign-in-copy">
           <h1 id="cancel-deletion-title">Account scheduled for deletion</h1>
-          <p>Keysy will permanently delete your account on {purgeDate}.<br />Cancel the deletion to keep your account.</p>
+          <p>Keysy will permanently delete your account<br />on {purgeDate}.</p>
         </div>
         {error && <p className="cancel-deletion-error" role="alert">{error}</p>}
         <div className="cancel-deletion-actions">

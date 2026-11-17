@@ -1195,7 +1195,7 @@ test('a user with a scheduled deletion sees only the cancel deletion page', asyn
   sessionRequest.mockImplementation(() => Promise.resolve(Response.json(deletingUser)))
   await act(async () => root.render(<SessionGate><p>Dashboard content</p></SessionGate>))
   expect(container.querySelector('h1')?.textContent).toBe('Account scheduled for deletion')
-  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Keysy will permanently delete your account on Dec 15, 2026.Cancel the deletion to keep your account.')
+  expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Keysy will permanently delete your accounton Dec 15, 2026.')
   expect([...container.querySelectorAll('button')].map((button) => button.textContent)).toEqual(['Sign out', 'Cancel deletion'])
   expect(container.textContent).not.toContain('Dashboard content')
   expect(container.querySelector('.dashboard')).toBeNull()
