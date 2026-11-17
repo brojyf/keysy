@@ -9,9 +9,10 @@ export function readRecentOrganizationIDs(userID: string): string[] {
   }
 }
 
-export function rememberOrganization(userID: string, organizationID: string) {
+export function rememberOrganization(userID: string, organizationID: string, organizations: Organization[]) {
   try {
-    const ids = [organizationID, ...readRecentOrganizationIDs(userID)]
+    const available = new Set(organizations.map((organization) => organization.id))
+    const ids = [organizationID, ...readRecentOrganizationIDs(userID)].filter((id) => available.has(id))
     localStorage.setItem(`keysy-recent-orgs:${userID}`, JSON.stringify([...new Set(ids)].slice(0, 3)))
   } catch {
     // Storage can be unavailable.

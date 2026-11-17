@@ -102,8 +102,8 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const userID = user?.id
   const organizationID = organization?.id
   useEffect(() => {
-    if (userID && organizationScoped && organizationID) rememberOrganization(userID, organizationID)
-  }, [userID, organizationScoped, organizationID])
+    if (userID && organizationScoped && organizationID && organizationQuery.data) rememberOrganization(userID, organizationID, organizationQuery.data)
+  }, [userID, organizationScoped, organizationID, organizationQuery.data])
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {

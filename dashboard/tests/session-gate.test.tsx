@@ -1328,7 +1328,7 @@ test('organization menu shows current and recent memberships and records visits'
     expect(rows[1]!.getAttribute('href')).toBe('/orgs/d/people')
     expect(menu.textContent).toContain('All organizations')
     expect(menu.textContent).toContain('New organization')
-    expect(JSON.parse(browser.localStorage.getItem('keysy-recent-orgs:user-id')!)).toEqual(['a', 'missing', 'd'])
+    expect(JSON.parse(browser.localStorage.getItem('keysy-recent-orgs:user-id')!)).toEqual(['a', 'd', 'b'])
   } finally { restore() }
 })
 
