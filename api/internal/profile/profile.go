@@ -2,7 +2,6 @@ package profile
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -44,7 +43,13 @@ func (s Store) UpdateAgentAutoApply(ctx context.Context, userID string, enabled 
 	return nil
 }
 
-var ErrOrgOwner = errors.New("user owns an organization")
+// OwnedOrg is an org the user owns.
+type OwnedOrg struct{ ID, Name string }
+
+// OrgOwnerError blocks account deletion and lists the orgs to hand over first.
+type OrgOwnerError struct{ Orgs []OwnedOrg }
+
+func (*OrgOwnerError) Error() string { return "user owns an organization" }
 
 func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -56,12 +61,12 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 		if result.RowsAffected == 0 {
 			return gorm.ErrRecordNotFound
 		}
-		var owner bool
-		if err := tx.Raw("SELECT EXISTS (SELECT 1 FROM public.members WHERE user_id = ? AND role = 'owner')", userID).Scan(&owner).Error; err != nil {
+		var owned []OwnedOrg
+		if err := tx.Raw("SELECT orgs.id, orgs.name FROM public.members AS members JOIN public.orgs AS orgs ON orgs.id = members.org_id WHERE members.user_id = ? AND members.role = 'owner' ORDER BY orgs.name, orgs.id", userID).Scan(&owned).Error; err != nil {
 			return err
 		}
-		if owner {
-			return ErrOrgOwner
+		if len(owned) > 0 {
+			return &OrgOwnerError{Orgs: owned}
 		}
 		if err := tx.Exec("UPDATE public.profiles SET deleted_at = now() WHERE id = ? AND deleted_at IS NULL", userID).Error; err != nil {
 			return err

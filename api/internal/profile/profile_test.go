@@ -3,6 +3,7 @@ package profile
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -32,11 +33,15 @@ func TestScheduleDeletion(t *testing.T) {
 				lock.WillReturnRows(sqlmock.NewRows([]string{"?column?"}))
 			} else {
 				lock.WillReturnRows(sqlmock.NewRows([]string{"?column?"}).AddRow(1))
-				owner := mock.ExpectQuery("SELECT EXISTS (SELECT 1 FROM public.members WHERE user_id = $1 AND role = 'owner')").WithArgs("user")
+				owner := mock.ExpectQuery("SELECT orgs.id, orgs.name FROM public.members AS members JOIN public.orgs AS orgs ON orgs.id = members.org_id WHERE members.user_id = $1 AND members.role = 'owner' ORDER BY orgs.name, orgs.id").WithArgs("user")
 				if scenario == "owner query error" {
 					owner.WillReturnError(failure)
 				} else {
-					owner.WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(scenario == "owner"))
+					rows := sqlmock.NewRows([]string{"id", "name"})
+					if scenario == "owner" {
+						rows.AddRow("org-1", "platform").AddRow("org-2", "web")
+					}
+					owner.WillReturnRows(rows)
 					if scenario != "owner" {
 						update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL").WithArgs("user")
 						if scenario == "update error" {
@@ -65,7 +70,8 @@ func TestScheduleDeletion(t *testing.T) {
 					t.Fatal(got)
 				}
 			case "owner":
-				if !errors.Is(got, ErrOrgOwner) {
+				var owner *OrgOwnerError
+				if !errors.As(got, &owner) || !reflect.DeepEqual(owner.Orgs, []OwnedOrg{{ID: "org-1", Name: "platform"}, {ID: "org-2", Name: "web"}}) {
 					t.Fatal(got)
 				}
 			case "missing":

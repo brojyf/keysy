@@ -34,13 +34,13 @@ func (p *deletionProfiles) CancelDeletion(context.Context, string) error {
 
 func TestDeleteMe(t *testing.T) {
 	for _, tc := range []struct {
-		name, query, body, code, message string
-		err                              error
-		status, calls                    int
-		cancel                           bool
+		name, query, body, code, message, want string
+		err                                    error
+		status, calls                          int
+		cancel                                 bool
 	}{
 		{name: "success", status: 204, calls: 2},
-		{name: "owner", status: 409, calls: 1, err: profile.ErrOrgOwner, code: "ORG_OWNER", message: "Transfer or delete the organizations you own, then try again."},
+		{name: "owner", status: 409, calls: 1, err: &profile.OrgOwnerError{Orgs: []profile.OwnedOrg{{ID: "org-1", Name: "platform"}, {ID: "org-2", Name: "web"}}}, want: `{"error":{"code":"ORG_OWNER","message":"Transfer or delete the organizations you own, then try again.","organizations":[{"id":"org-1","name":"platform"},{"id":"org-2","name":"web"}]}}`},
 		{name: "store error", status: 500, calls: 1, err: errors.New("private"), code: "INTERNAL_ERROR", message: "Your account could not be deleted. Try again later."},
 		{name: "query", query: "?x=1", status: 400, code: "INVALID_REQUEST"},
 		{name: "body", body: "x", status: 400, code: "INVALID_REQUEST"},
@@ -68,7 +68,7 @@ func TestDeleteMe(t *testing.T) {
 					}
 					break
 				}
-				if w.Code != tc.status || (tc.code != "" && !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`)) || (tc.message != "" && !strings.Contains(w.Body.String(), tc.message)) || (tc.status == 204 && w.Body.Len() != 0) {
+				if w.Code != tc.status || (tc.code != "" && !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`)) || (tc.message != "" && !strings.Contains(w.Body.String(), tc.message)) || (tc.want != "" && w.Body.String() != tc.want) || (tc.status == 204 && w.Body.Len() != 0) {
 					t.Fatalf("%d %s", w.Code, w.Body.String())
 				}
 			}

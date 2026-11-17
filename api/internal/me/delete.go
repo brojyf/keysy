@@ -9,6 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ownedOrganization struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 func Delete(profiles Profiles) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
@@ -20,8 +25,13 @@ func Delete(profiles Profiles) gin.HandlerFunc {
 		if c.Request.Context().Err() != nil {
 			return
 		}
-		if errors.Is(err, profile.ErrOrgOwner) {
-			middleware.Error(c, http.StatusConflict, "ORG_OWNER", "Transfer or delete the organizations you own, then try again.")
+		var owner *profile.OrgOwnerError
+		if errors.As(err, &owner) {
+			organizations := make([]ownedOrganization, len(owner.Orgs))
+			for i, org := range owner.Orgs {
+				organizations[i] = ownedOrganization{ID: org.ID, Name: org.Name}
+			}
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": gin.H{"code": "ORG_OWNER", "message": "Transfer or delete the organizations you own, then try again.", "organizations": organizations}})
 			return
 		}
 		if err != nil {
