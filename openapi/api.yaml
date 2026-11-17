@@ -727,9 +727,41 @@ components:
               example: INVALID_REQUEST
             message:
               type: string
+    OrgOwnerError:
+      type: object
+      required: [error]
+      example:
+        error:
+          code: ORG_OWNER
+          message: Transfer or delete the organizations you own, then try again.
+          organizations:
+            - id: 7f3a1c2e-4b5d-4e6f-8a9b-0c1d2e3f4a5b
+              name: platform
+      properties:
+        error:
+          type: object
+          required: [code, message, organizations]
+          properties:
+            code:
+              type: string
+              enum: [ORG_OWNER]
+            message:
+              type: string
+            organizations:
+              type: array
+              description: The orgs the user owns, sorted by name.
+              items:
+                type: object
+                required: [id, name]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
   responses:
     OrgOwner:
-      description: ORG_OWNER. The signed-in user still owns an org.
+      description: ORG_OWNER. The signed-in user still owns an org. The body lists those orgs.
       headers:
         X-Request-ID:
           $ref: '#/components/headers/RequestID'
@@ -742,7 +774,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/OrgOwnerError'
     OrgCreateForbidden:
       description: INVALID_ORIGIN, or ACCOUNT_DELETING when the account is scheduled for deletion.
       headers:

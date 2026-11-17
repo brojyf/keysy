@@ -70,7 +70,8 @@ func TestDeletionAndOrgCreationPostgres(t *testing.T) {
 	if !first.Equal(second) {
 		t.Fatalf("deletion time changed: %v %v", first, second)
 	}
-	if err := deletion.ScheduleDeletion(ctx, owner); !errors.Is(err, profile.ErrOrgOwner) {
+	var ownerErr *profile.OrgOwnerError
+	if err := deletion.ScheduleDeletion(ctx, owner); !errors.As(err, &ownerErr) || len(ownerErr.Orgs) != 1 || ownerErr.Orgs[0] != (profile.OwnedOrg{ID: "20000000-0000-0000-0000-000000000001", Name: "Existing"}) {
 		t.Fatalf("owner: %v", err)
 	}
 	var n int64
@@ -140,7 +141,7 @@ func TestDeletionAndOrgCreationPostgres(t *testing.T) {
 				if tc.deleteFirst && !errors.Is(err, org.ErrAccountDeleting) {
 					t.Fatalf("create: %v", err)
 				}
-				if !tc.deleteFirst && !errors.Is(err, profile.ErrOrgOwner) {
+				if ownerErr := (*profile.OrgOwnerError)(nil); !tc.deleteFirst && !errors.As(err, &ownerErr) {
 					t.Fatalf("delete: %v", err)
 				}
 			case <-ctx.Done():
