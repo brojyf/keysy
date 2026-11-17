@@ -19,6 +19,8 @@ This design replaces the current model, in which an added member is active immed
 - A daily job deletes invitations 37 days after their current 7-day period starts.
 - Deleting an org deletes all its invitations through the foreign key cascade. Org deletion becomes a hard delete in a separate change.
 - An email can have only one invitation per org. Inviting a member or an email with a pending invitation fails. Inviting an email with an expired invitation updates that invitation, including its role.
+- A member whose account is scheduled for deletion is still a member, so inviting their email fails with the existing-member error (account deletion, #193).
+- A user whose account is scheduled for deletion cannot accept an invitation, because they would join an org while their account is being deleted. The accept transaction starts with `SELECT 1 FROM profiles WHERE id = $1 AND deleted_at IS NULL FOR SHARE`, the same lock as org creation, and no row returns 403 `ACCOUNT_DELETING`. Pending invitations stay, so the user can accept after cancelling the deletion, or as a new user after the purge.
 - Each invitation can be resent once every 24 hours, expired or not. The first resend is possible 24 hours after the first send.
 - Each org can send at most 50 invitation emails per 24-hour window, which starts at the first send. New invitations and resends both count.
 - Audit logs record only these events: invited, invitation cancelled, invitation role changed (old and new role), and joined. Audit records are append-only: a role change adds a record and never updates the invited one. Resends and expiry are not recorded.
@@ -36,4 +38,5 @@ This design replaces the current model, in which an added member is active immed
 - [ ] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after their current 7-day period starts (#196).
 - [ ] Auth: accept a relative `return_to` path on `/v0/auth/google`, keep it in the sealed OAuth transaction cookie, and redirect to it after the callback, so an invitee returns to the **Join {org}** page after Google sign-in. Reject absolute and protocol-relative URLs. Today the callback always redirects to the dashboard root.
 - [ ] Figma: add the **Join {org}** page. The invitation list, menu, and dialogs are in section 11 · People (11.10–11.16).
+- [ ] Tests (account deletion, #193): inviting the email of a member scheduled for deletion fails with the existing-member error; accepting during the grace period returns 403 `ACCOUNT_DELETING`; the same invitation can be accepted after cancelling the deletion; after the purge, the same Google account signs in as a new user and joins an org.
 - [ ] Email: send the invitation email from `email-worker/` (Cloudflare Worker and Resend, see `wiki/tech-stack.mdx`).
