@@ -2,15 +2,16 @@ import { queryOptions } from '@tanstack/react-query'
 import { apiFetch } from './api-client'
 import type { Organization } from './organization'
 
-export type Member = { userId: string; name: string; email: string; role: Organization['role'] }
+export type Member = { userId: string; name: string; email: string; role: Organization['role']; deleting: boolean }
 
 export function parseMembers(value: unknown): Member[] {
   if (!Array.isArray(value)) throw new Error('Invalid members')
   return value.map((item: unknown) => {
     const member = (item ?? {}) as Record<string, unknown>
     if (typeof member.userId !== 'string' || !member.userId || typeof member.name !== 'string' || typeof member.email !== 'string'
+      || typeof member.deleting !== 'boolean'
       || (member.role !== 'owner' && member.role !== 'admin' && member.role !== 'developer')) throw new Error('Invalid member')
-    return { userId: member.userId, name: member.name, email: member.email, role: member.role }
+    return { userId: member.userId, name: member.name, email: member.email, role: member.role, deleting: member.deleting }
   })
 }
 

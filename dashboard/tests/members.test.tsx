@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client'
 
 const { CurrentUserContext } = await import('../src/components/current-user')
 const { default: MemberList } = await import('../src/components/member-list')
+const { parseMembers } = await import('../src/lib/member-queries')
 
 let browser: Window
 let root: Root
@@ -14,9 +15,9 @@ let container: HTMLDivElement
 const organization = { id: 'org-1', name: 'platform', role: 'developer' as const, memberCount: 3 }
 const user = { id: 'user-id', email: 'jordan@acme.dev', displayName: 'Jordan Lee', agentAutoApply: false, memberships: [] }
 const apiMembers = [
-  { userId: 'user-sam', name: 'Sam Rivera', email: 'sam@acme.dev', role: 'developer' },
-  { userId: 'user-alex', name: 'Alex Kim', email: 'alex@acme.dev', role: 'owner' },
-  { userId: 'user-id', name: 'Jordan Lee', email: 'jordan@acme.dev', role: 'developer' },
+  { userId: 'user-sam', name: 'Sam Rivera', email: 'sam@acme.dev', role: 'developer', deleting: false },
+  { userId: 'user-alex', name: 'Alex Kim', email: 'alex@acme.dev', role: 'owner', deleting: false },
+  { userId: 'user-id', name: 'Jordan Lee', email: 'jordan@acme.dev', role: 'developer', deleting: false },
 ]
 const apiInvitations = [
   { id: 'invitation-casey', email: 'casey@acme.dev', role: 'developer', status: 'pending' },
@@ -144,6 +145,18 @@ test('Members lists the org members by name with their roles', async () => {
   expect(nameHeader().getAttribute('aria-sort')).toBe('ascending')
 })
 
+test('Members shows the Deleting badge only for members scheduled for deletion', async () => {
+  request.mockImplementation(() => Promise.resolve(Response.json(apiMembers.map((member) => ({
+    ...member,
+    deleting: member.userId === 'user-sam',
+  })))))
+  await renderMembers()
+  const nameCells = [...container.querySelectorAll('tbody tr td:first-child')]
+  expect(nameCells.find((cell) => cell.querySelector('.member-deleting'))?.textContent).toBe('Sam RiveraDeleting')
+  expect(container.querySelectorAll('.member-deleting')).toHaveLength(1)
+  expect(nameCells.filter((cell) => !cell.querySelector('.member-deleting'))).toHaveLength(2)
+})
+
 test('an Owner gets a row menu on every member but the Owner', async () => {
   respondWithMembers({ 'user-id': 'owner', 'user-alex': 'admin' })
   await renderMembers('owner')
@@ -152,6 +165,24 @@ test('an Owner gets a row menu on every member but the Owner', async () => {
     'More actions for Alex Kim': ['Change role', 'Transfer ownership', 'Remove'],
     'More actions for Sam Rivera': ['Change role', 'Transfer ownership', 'Remove'],
   })
+})
+
+test('an Owner sees only Remove in a deleting member menu', async () => {
+  request.mockImplementation(() => Promise.resolve(Response.json(apiMembers.map((member) => ({
+    ...member,
+    role: member.userId === 'user-id' ? 'owner' : member.userId === 'user-alex' ? 'admin' : member.role,
+    deleting: member.userId === 'user-sam',
+  })))))
+  await renderMembers('owner')
+  expect(rowMenus()).toEqual({
+    'More actions for Alex Kim': ['Change role', 'Transfer ownership', 'Remove'],
+    'More actions for Sam Rivera': ['Remove'],
+  })
+})
+
+test('parseMembers requires a boolean deleting field', () => {
+  expect(() => parseMembers([{ userId: 'user-sam', name: 'Sam Rivera', email: 'sam@acme.dev', role: 'developer' }])).toThrow('Invalid member')
+  expect(() => parseMembers([{ userId: 'user-sam', name: 'Sam Rivera', email: 'sam@acme.dev', role: 'developer', deleting: 'true' }])).toThrow('Invalid member')
 })
 
 test('an Admin gets a row menu on Developers only', async () => {

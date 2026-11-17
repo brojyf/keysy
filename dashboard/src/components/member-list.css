@@ -32,7 +32,7 @@
   width: 56px;
 }
 
-.invitation-status {
+.invitation-status, .member-deleting {
   display: inline-flex;
   align-items: center;
   height: 20px;
@@ -46,7 +46,12 @@
   color: var(--color-muted);
 }
 
-.invitation-status-expired {
+.invitation-status-expired, .member-deleting {
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+.member-deleting {
+  margin-left: 8px;
+  vertical-align: middle;
 }
