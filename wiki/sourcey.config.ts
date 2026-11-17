@@ -98,14 +98,14 @@ export default defineConfig({
         }),
       },
       {
-        tab: 'Web',
-        slug: 'web',
+        tab: 'Dashboard',
+        slug: 'dashboard',
         source: markdown({
-          root: './web',
+          root: './dashboard',
           slugs: 'file',
           groups: [
             { group: 'General', pages: ['overview'] },
-            { group: 'API endpoints', pages: ['endpoints'] },
+            { group: 'Components', pages: ['components'] },
           ],
         }),
       },

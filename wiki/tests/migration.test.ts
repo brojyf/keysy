@@ -15,10 +15,12 @@ const routes = [
   ['references', 'References'],
   ['api', 'Keysy API'],
   ['auth', 'Keysy Auth API'],
-  ...['notify', 'cli', 'web'].flatMap((section) => [
+  ...['notify', 'cli'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
   ]),
+  ['dashboard/overview', 'Introduction'],
+  ['dashboard/components', 'Components'],
 ];
 
 async function matches(html: string, selector: string) {
@@ -30,7 +32,7 @@ async function matches(html: string, selector: string) {
 }
 
 test('navigation preserves the six original sections and includes references under Overview', async () => {
-  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Web']);
+  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Dashboard']);
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
@@ -382,6 +384,33 @@ test('database schema renders the implemented schema and ERD images for both the
     const [light, dark] = [`/architecture/${image}.svg`, `/architecture/${image}-dark.svg`];
     expect(await matches(html, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
     for (const path of [light, dark]) expect(await Bun.file(new URL(`.${path}`, output)).exists()).toBe(true);
+  }
+});
+
+test('the Dashboard tab lists its introduction, then one example image per component', async () => {
+  const overview = await Bun.file(new URL('dashboard/overview.html', output)).text();
+  expect((await matches(overview, '#sidebar nav[aria-label="Dashboard"] a')).map(({ href }) => href)).toEqual([
+    '/dashboard/overview', '/dashboard/components',
+  ]);
+  const html = await Bun.file(new URL('dashboard/components.html', output)).text();
+  const components = [
+    ['Button', 'button', 'Secondary, primary, danger, and danger outline buttons.'],
+    ['IconButton', 'icon-button', 'Round help button and square more-options button.'],
+    ['Dialog', 'dialog', 'Revoke session? Jordan-mbp will be signed out of the CLI. Cancel and Revoke actions.'],
+    ['MoreMenu', 'more-menu', 'More-options button with an open menu containing two items.'],
+    ['SaveBar', 'save-bar', 'Save bar states: 1 unsaved change with Discard and Save; saving with disabled Discard and a spinner; error with Discard and Try again.'],
+    ['ThemeSwitch', 'theme-switch', 'Three theme switches with System, Light, and Dark selected in turn, using monitor, sun, and moon icons.'],
+    ['LoadingSkeleton', 'loading-skeleton', 'Two rounded placeholder bars for loading content.'],
+  ];
+  const sections = html.slice(html.indexOf('<h2')).split('<h2').slice(1);
+  expect(sections).toHaveLength(components.length);
+  const markdown = await Bun.file(new URL('dashboard/components.md', output)).text();
+  for (const [index, [name, slug, alt]] of components.entries()) {
+    expect(sections[index]).toMatch(new RegExp(`^[^>]*>(?:<[^>]+>)*${name}<`));
+    const [light, dark] = [`/dashboard/components/${slug}.svg`, `/dashboard/components/${slug}-dark.svg`];
+    expect(await matches(sections[index]!, `picture[data-sourcey-picture] source[data-light="${light}"][data-dark="${dark}"]`)).toHaveLength(2);
+    expect((await matches(sections[index]!, 'picture img')).map((image) => image.alt)).toEqual([alt]);
+    expect(markdown).toContain(`![${alt}](${light})`);
   }
 });
 
