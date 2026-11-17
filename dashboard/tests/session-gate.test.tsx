@@ -54,8 +54,13 @@ function rejectWhenAborted(_url: string, init: RequestInit) {
   })
 }
 
-async function settleOrganizationRequests() {
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+// Run the action in the same act that waits for its mocked requests. A separate act
+// ends before the request promises settle, so their state updates land outside act.
+async function settleOrganizationRequests(action?: () => void) {
+  await act(async () => {
+    action?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
 }
 
 beforeEach(() => {
@@ -867,8 +872,7 @@ for (const failure of ['500', 'malformed', '401']) {
     sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })))
     organizationsRequest.mockImplementation(() => Promise.resolve(failure === 'malformed' ? Response.json({ id: 42 }, { status: 201 }) : new Response(null, { status: Number(failure) })))
     await act(() => setOrganizationName('Name'))
-    await act(async () => submitOrganization())
-    await settleOrganizationRequests()
+    await settleOrganizationRequests(() => submitOrganization())
     if (failure === '401') expect(router.replace).toHaveBeenCalledWith('/signin')
     else {
       expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
@@ -940,8 +944,7 @@ test('overlapping creates do not duplicate an organization already accepted from
   await act(async () => finishFirst(Response.json(first, { status: 201 })))
   expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
   organizationsRequest.mockImplementationOnce(() => Promise.reject(new Error('Refresh unavailable')))
-  await act(async () => finishSecond(Response.json({ id: second.id, name: 'Second' }, { status: 201 })))
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => finishSecond(Response.json({ id: second.id, name: 'Second' }, { status: 201 })))
   expect(organizationsRequest).toHaveBeenCalledTimes(5)
   expect(queryClient.getQueryState(['organizations', 'user-id'])?.status).toBe('error')
   expect(queryClient.getQueryData(['organizations', 'user-id'])).toEqual([first, second])
@@ -961,8 +964,7 @@ for (const status of [204, 404, 'network'] as const) test(`deletion exposes a bu
     ? Promise.reject(new Error('Response lost'))
     : Promise.resolve(new Response(null, { status })))
   organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([])))
-  await act(async () => container.querySelector('button')!.click())
-  await settleOrganizationRequests()
+  await settleOrganizationRequests(() => container.querySelector('button')!.click())
   expect(onResult).toHaveBeenCalledWith({ outcome: status === 204 ? 'completed' : 'unavailable', organizations: [] })
 })
 
