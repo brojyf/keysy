@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from './api-client'
 import type { Organization } from './organization'
 
@@ -13,6 +13,25 @@ export function parseMembers(value: unknown): Member[] {
       || (member.role !== 'owner' && member.role !== 'admin' && member.role !== 'developer')) throw new Error('Invalid member')
     return { userId: member.userId, name: member.name, email: member.email, role: member.role, deleting: member.deleting }
   })
+}
+
+export function useRemoveMember(userID: string, organizationID: string, onSignedOut: () => void) {
+  const queryClient = useQueryClient()
+  const { queryKey } = memberQueryOptions(userID, organizationID, onSignedOut)
+  const remove = useMutation({
+    mutationKey: [...queryKey, 'remove'],
+    mutationFn: async (member: Member) => {
+      const message = `Could not remove ${member.name}. Try again.`
+      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organizationID)}/members/${encodeURIComponent(member.userId)}`, { method: 'DELETE' }).catch(() => { throw new Error(message) })
+      if (response.status === 401) { onSignedOut(); return }
+      if (response.status !== 204 && response.status !== 403 && response.status !== 404) throw new Error(message)
+      void queryClient.invalidateQueries({ queryKey, exact: true })
+      void queryClient.invalidateQueries({ queryKey: ['organizations', userID], exact: true })
+    },
+    retry: false,
+    networkMode: 'always',
+  })
+  return (member: Member) => remove.mutateAsync(member)
 }
 
 export function memberQueryOptions(userID: string, organizationID: string, onSignedOut: () => void) {
