@@ -1248,3 +1248,29 @@ test('sign out from the cancel deletion page goes to sign in', async () => {
   expect(requests).toContain('https://auth.keysy.net/v0/auth/logout')
   expect(router.replace).toHaveBeenCalledWith('/signin')
 })
+
+test('a 409 with owned orgs refreshes the org list so the listed org settings open', async () => {
+  currentPathname = '/account'
+  const developerOrganization = { id: 'org-id', name: 'platform', role: 'developer', memberCount: 3 }
+  const newOrganization = { id: 'org-9', name: 'new-owner', role: 'owner', memberCount: 1 }
+  sessionRequest.mockImplementation((_url: string, init: RequestInit) => Promise.resolve(init.method === 'DELETE'
+    ? Response.json({ error: { code: 'ORG_OWNER', message: 'Transfer or delete the organizations you own, then try again.', organizations: [{ id: newOrganization.id, name: newOrganization.name }] } }, { status: 409 })
+    : Response.json(validUser)))
+  organizationsRequest.mockImplementationOnce(() => Promise.resolve(Response.json([developerOrganization])))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json([developerOrganization, newOrganization])))
+  await act(async () => root.render(<SessionGate><GeneralPage /></SessionGate>))
+  await act(() => [...container.querySelectorAll<HTMLButtonElement>('.account-sections button')].find((button) => button.textContent === 'Delete')!.click())
+  const dialog = [...container.querySelectorAll('dialog')].find((item) => item.querySelector('h2')?.textContent === 'Delete account?')!
+  const field = dialog.querySelector<HTMLInputElement>('input')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(field, 'member@example.com')
+    field.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+  await act(async () => [...dialog.querySelectorAll('button')].find((button) => button.textContent === 'Delete account')!.click())
+  await settleOrganizationRequests()
+  expect(organizationsRequest).toHaveBeenCalledTimes(2)
+  currentPathname = '/orgs/org-9/settings'
+  await act(async () => root.render(<SessionGate><p>Organization settings</p></SessionGate>))
+  expect(container.textContent).toContain('Organization settings')
+  expect(container.querySelector('#organization-unavailable-title')).toBeNull()
+})

@@ -3,7 +3,9 @@
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../lib/api-client'
+import { organizationQueryOptions } from '../lib/organization-queries'
 import { organizationPath } from '../lib/organization-route'
 import { logoutSession } from '../lib/session-refresh'
 import { serviceURLs } from '../lib/service-urls'
@@ -27,6 +29,7 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
   const formID = useId()
   const confirmationID = useId()
   const { user, organizations, onSignedOut } = useCurrentUser()
+  const queryClient = useQueryClient()
   const [confirmation, setConfirmation] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -56,6 +59,8 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
       return
     }
     const listed = response?.status === 409 ? await ownedOrganizationsFrom(response) : []
+    // The session gate checks org routes against the shared org list, so refresh it to open the listed orgs.
+    if (listed.length > 0) void queryClient.invalidateQueries({ queryKey: organizationQueryOptions(user.id, undefined, onSignedOut).queryKey, exact: true })
     if (!mounted.current) return
     if (listed.length > 0) setListedOrganizations(listed)
     else setError(response?.status === 409 ? 'Transfer or delete the organizations you own, then try again.' : 'Could not delete your account. Try again.')
