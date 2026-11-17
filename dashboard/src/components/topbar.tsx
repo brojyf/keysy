@@ -1,8 +1,9 @@
 'use client'
 
-import { Bell, Bug, ChevronsUpDown, Search } from 'lucide-react'
+import { Bell, Bug, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
 import IconButton from './icon-button'
+import OrganizationMenu from './organization-menu'
 import KeysySymbol from './keysy-symbol'
 import { useTooltipDismissal } from '../lib/use-tooltip-dismissal'
 
@@ -35,10 +36,7 @@ export default function Topbar() {
       </span>
       {organizationName && (
         <>
-          <button className="topbar-org" type="button">
-            {organizationName}
-            <ChevronsUpDown size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
-          </button>
+          <OrganizationMenu />
           <button className="topbar-search" type="button" aria-label="Search">
             <Search size={14} strokeWidth={1.17} absoluteStrokeWidth aria-hidden />
             <span className="topbar-search-placeholder">Search</span>

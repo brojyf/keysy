@@ -4,8 +4,13 @@ export function organizationPath(organizationID: string, path: string): string {
   return `/orgs/${encodeURIComponent(organizationID)}${path}`
 }
 
-export function organizationForPath(organizations: Organization[], path: string): Organization | undefined {
-  if (path !== '/orgs' && !path.startsWith('/orgs/')) return organizations[0]
+export function switchOrganizationPath(organizationID: string, pathname: string): string {
+  const section = pathname.match(/^\/orgs\/[^/]+\/([^/]+)/)?.[1] ?? 'secrets'
+  return organizationPath(organizationID, `/${section}`)
+}
+
+export function organizationForPath(organizations: Organization[], path: string, preferredOrganization = organizations[0]): Organization | undefined {
+  if (path !== '/orgs' && !path.startsWith('/orgs/')) return preferredOrganization
   const id = path.match(/^\/orgs\/([^/]+)(?:\/|$)/)?.[1]
   if (!id) return undefined
   try {

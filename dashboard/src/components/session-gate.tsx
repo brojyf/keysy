@@ -8,6 +8,7 @@ import { apiFetch } from '../lib/api-client'
 import { logoutSession } from '../lib/session-refresh'
 import { parseSessionUser, type SessionUser } from '../lib/session-user'
 import { organizationForPath, organizationPath, organizationRoute } from '../lib/organization-route'
+import { readRecentOrganizationIDs, recentOrganizations, rememberOrganization } from '../lib/recent-organizations'
 import { organizationQueryOptions, useOrganizationMutations } from '../lib/organization-queries'
 import { serviceURLs } from '../lib/service-urls'
 import { CurrentUserContext } from './current-user'
@@ -71,7 +72,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   async function createOrganization(name: string) {
     const startedAt = navigation.current
     const organization = await addOrganization(name)
-    if (organization && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && startedAt.pathname === '/account/organizations') {
+    if (organization && currentSession && !currentSession.signal.aborted && navigation.current === startedAt) {
       router.push(organizationPath(organization.id, '/secrets'))
     }
     return organization
@@ -81,21 +82,28 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     const startedAt = navigation.current
     const result = await removeOrganization(organizationID)
     if (result && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && !result.organizations.some((item) => item.id === organizationID)) {
-      router.replace(result.organizations[0] ? organizationPath(result.organizations[0].id, '/secrets') : '/account/organizations')
+      const next = recentOrganizations(result.organizations, readRecentOrganizationIDs(user!.id))[0]
+      router.replace(next ? organizationPath(next.id, '/secrets') : '/account/organizations')
     }
     return result
   }
 
   const route = user ? organizationRoute(organizations.length, pathname) : null
-  const organization = organizationForPath(organizations, pathname)
+  const preferredOrganization = user ? recentOrganizations(organizations, readRecentOrganizationIDs(user.id))[0] : undefined
+  const organization = organizationForPath(organizations, pathname, preferredOrganization)
   const organizationScoped = pathname === '/orgs' || pathname.startsWith('/orgs/')
   const signedOutPage = pathname === '/signin' || pathname === '/account-deleted'
   let redirect: string | null = null
   if (user === null && !signedOutPage) redirect = '/signin'
   else if (user?.purgeAt) redirect = null
-  else if (user && signedOutPage) redirect = organizations[0] ? organizationPath(organizations[0].id, '/secrets') : '/account/organizations'
-  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = organizations[0] ? organizationPath(organizations[0].id, pathname) : '/account/organizations'
+  else if (user && signedOutPage) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, '/secrets') : '/account/organizations'
+  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, pathname) : '/account/organizations'
   else if (route === '/account/organizations' && !organizationScoped) redirect = route
+  const userID = user?.id
+  const organizationID = organization?.id
+  useEffect(() => {
+    if (userID && organizationScoped && organizationID) rememberOrganization(userID, organizationID)
+  }, [userID, organizationScoped, organizationID])
   useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
 
   function retrySessionCheck() {
