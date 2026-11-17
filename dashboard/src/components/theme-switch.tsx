@@ -16,7 +16,7 @@ export default function ThemeSwitch() {
       <span className="theme-thumb" aria-hidden="true" />
       {themeOptions.map(({ label, Icon }) => (
         <button key={label} type="button" aria-label={label} aria-pressed={theme === label.toLowerCase()} onClick={() => setTheme(label.toLowerCase() as Theme)}>
-          <Icon size={14} strokeWidth={2} absoluteStrokeWidth aria-hidden />
+          <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden />
         </button>
       ))}
     </div>
