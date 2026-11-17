@@ -271,7 +271,7 @@ function signOutButton() {
 
 function signOutDialog() {
   // General also renders the closed Delete account dialog; these tests use the shell's dialogs.
-  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.querySelector('h2')?.textContent !== 'Delete account?')!
+  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.open || dialog.querySelector('h2')?.textContent === 'Sign out?')!
 }
 
 function buttonNamed(scope: ParentNode, label: string) {
@@ -350,7 +350,7 @@ test('shows the rail and page content only after server verification', async () 
   ])
   expect(container.querySelector('.account-menu-name')?.textContent).toBe('Test Member')
   expect(container.querySelector('.account-menu-email')?.textContent).toBe('member@example.com')
-  expect(container.querySelector<HTMLAnchorElement>('[popover] a')?.getAttribute('href')).toBe('/account')
+  expect(container.querySelector<HTMLAnchorElement>('#account-menu a')?.getAttribute('href')).toBe('/account')
   const themeButtons = [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Theme"] button')]
   expect(themeButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('aria-pressed'), button.disabled])).toEqual([
     ['System', 'true', false],
@@ -403,7 +403,7 @@ for (const setting of ['display name', 'agent auto apply']) {
         input.value = 'Updated Member'
         input.dispatchEvent(new browser.Event('input', { bubbles: true }))
       })
-      await act(() => { container.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) })
+      await act(() => { input.form!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true })) })
     } else {
       await act(() => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click())
     }
@@ -574,7 +574,7 @@ test('shows the top bar with the mock organization and action buttons', async ()
   const topbar = container.querySelector('header.topbar')
   expect(topbar?.querySelector('svg.keysy-symbol[aria-label="Keysy"]')?.getAttribute('width')).toBe('24')
   expect(topbar?.querySelector('button.topbar-org')?.textContent).toBe('platform')
-  expect([...topbar!.querySelectorAll('button')].map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual([
+  expect([...topbar!.querySelectorAll(':scope > button')].map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual([
     'platform',
     'Search',
     'Report issue',
@@ -775,13 +775,13 @@ async function openCreateDialog() {
 }
 
 function setOrganizationName(value: string) {
-  const input = container.querySelector<HTMLInputElement>('#organization-name')!
+  const input = container.querySelector<HTMLInputElement>('dialog[open] input.account-name')!
   Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input, value)
   input.dispatchEvent(new browser.Event('input', { bubbles: true }))
 }
 
 function submitOrganization() {
-  container.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+  container.querySelector('dialog[open] form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
 }
 
 test('checks organizations after the user with credentials and a combined signal', async () => {
@@ -838,7 +838,7 @@ test('create form validates names and submits one trimmed request, then redirect
   await openCreateDialog()
   expect(container.querySelector('.dialog h2')?.textContent).toBe('Create an organization')
   expect(container.querySelector('label')?.textContent).toBe('Name')
-  expect(document.activeElement).toBe(container.querySelector('#organization-name'))
+  expect(document.activeElement).toBe(container.querySelector('dialog[open] input.account-name'))
   const button = dialogButton('Create')
   expect(button.classList.contains('button-primary')).toBe(true)
   expect(button.disabled).toBe(true)
@@ -858,7 +858,7 @@ test('create form validates names and submits one trimmed request, then redirect
   expect(init.headers).toEqual({ 'Content-Type': 'application/json' })
   expect(init.body).toBe(JSON.stringify({ name: '😀'.repeat(32) }))
   expect(button.textContent).toBe('Creating...')
-  expect(container.querySelector<HTMLInputElement>('#organization-name')!.disabled).toBe(true)
+  expect(container.querySelector<HTMLInputElement>('dialog[open] input.account-name')!.disabled).toBe(true)
   const createDialog = container.querySelector<HTMLDialogElement>('dialog')!
   await act(() => createDialog.dispatchEvent(new browser.Event('cancel', { cancelable: true })))
   expect(createDialog.open).toBe(true)
@@ -884,7 +884,7 @@ test('a create timeout shows the form error and sends one POST', async () => {
   expect(durations).toEqual([20_000, 20_000, 20_000])
   expect(organizationsRequest.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not create the organization. Try again.')
-  expect(container.querySelector<HTMLInputElement>('#organization-name')?.value).toBe('Keep this name')
+  expect(container.querySelector<HTMLInputElement>('dialog[open] input.account-name')?.value).toBe('Keep this name')
 })
 
 for (const failure of ['500', 'malformed', '401']) {
@@ -1042,7 +1042,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('table')).toBeNull()
   expect(container.querySelector('.account-search')).toBeNull()
   await openCreateDialog()
-  expect(document.activeElement).toBe(container.querySelector('#organization-name'))
+  expect(document.activeElement).toBe(container.querySelector('dialog[open] input.account-name'))
   await act(() => setOrganizationName('Discard this'))
   const cancel = dialogButton('Cancel')
   expect(cancel.classList.contains('button')).toBe(true)
@@ -1050,11 +1050,11 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(cancel.classList.contains('button-danger')).toBe(false)
   await act(async () => cancel.click())
   await openCreateDialog()
-  expect(container.querySelector<HTMLInputElement>('#organization-name')?.value).toBe('')
+  expect(container.querySelector<HTMLInputElement>('dialog[open] input.account-name')?.value).toBe('')
   await act(() => setOrganizationName('Discard with Escape'))
   await act(async () => container.querySelector<HTMLDialogElement>('dialog')!.dispatchEvent(new browser.Event('cancel', { cancelable: true })))
   await openCreateDialog()
-  expect(container.querySelector<HTMLInputElement>('#organization-name')?.value).toBe('')
+  expect(container.querySelector<HTMLInputElement>('dialog[open] input.account-name')?.value).toBe('')
   currentPathname = '/account'
   await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
   expect(container.querySelector('button.topbar-org')).toBeNull()
@@ -1287,4 +1287,118 @@ test('a 409 with owned orgs refreshes the org list so the listed org settings op
   await act(async () => root.render(<SessionGate><p>Organization settings</p></SessionGate>))
   expect(container.textContent).toContain('Organization settings')
   expect(container.querySelector('#organization-unavailable-title')).toBeNull()
+})
+
+const switcherOrganizations = [
+  { id: 'a', name: 'Alpha', role: 'owner', memberCount: 1 },
+  { id: 'b', name: 'Bravo', role: 'owner', memberCount: 1 },
+  { id: 'c', name: 'Charlie', role: 'owner', memberCount: 1 },
+  { id: 'd', name: 'Delta', role: 'owner', memberCount: 1 },
+  { id: 'e', name: 'Echo', role: 'owner', memberCount: 1 },
+]
+
+function useTestStorage(ids: string[]) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  browser.localStorage.setItem('keysy-recent-orgs:user-id', JSON.stringify(ids))
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: browser.localStorage })
+  return () => {
+    if (original) Object.defineProperty(globalThis, 'localStorage', original)
+    else Reflect.deleteProperty(globalThis, 'localStorage')
+  }
+}
+
+function setupSwitcher() {
+  sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+  organizationsRequest.mockImplementation(() => Promise.resolve(Response.json(switcherOrganizations)))
+}
+
+test('organization menu shows current and recent memberships and records visits', async () => {
+  const restore = useTestStorage(['missing', 'd', 'b', 'c'])
+  try {
+    currentPathname = '/orgs/a/people/invitations'
+    setupSwitcher()
+    await renderSessionGate()
+    const menu = container.querySelector('.organization-menu')!
+    expect(menu.querySelector('.organization-menu-label')?.textContent).toBe('Organizations')
+    const rows = [...menu.querySelectorAll<HTMLAnchorElement>('.organization-menu-org')]
+    expect(rows.map((row) => row.textContent)).toEqual(['Alpha', 'Delta', 'Bravo'])
+    expect(rows[0]!.getAttribute('aria-current')).toBe('true')
+    expect(rows[0]!.querySelector('svg.lucide-check')).not.toBeNull()
+    expect([rows[0]!.querySelector('svg.lucide-check')?.getAttribute('stroke-width'), menu.querySelector('svg.lucide-plus')?.getAttribute('stroke-width')]).toEqual([String(2 * 24 / 14), String(1.17 * 24 / 14)])
+    expect(rows[1]!.getAttribute('href')).toBe('/orgs/d/people')
+    expect(menu.textContent).toContain('All organizations')
+    expect(menu.textContent).toContain('New organization')
+    expect(JSON.parse(browser.localStorage.getItem('keysy-recent-orgs:user-id')!)).toEqual(['a', 'd', 'b'])
+  } finally { restore() }
+})
+
+for (const path of ['/signin', '/settings', '/account']) {
+  for (const stored of [true, false]) {
+    test(`${path} uses the ${stored ? 'recent' : 'alphabetical'} organization`, async () => {
+      const restore = useTestStorage(stored ? ['missing', 'd'] : [])
+      try {
+        currentPathname = path
+        setupSwitcher()
+        await renderSessionGate()
+        const id = stored ? 'd' : 'a'
+        if (path === '/account') expect(container.querySelector('.topbar-org')?.textContent).toBe(stored ? 'Delta' : 'Alpha')
+        else expect(router.replace).toHaveBeenCalledWith(`/orgs/${id}/${path === '/signin' ? 'secrets' : 'settings'}`)
+      } finally { restore() }
+    })
+  }
+}
+
+test('an unavailable organization does not record a visit', async () => {
+  const restore = useTestStorage(['d'])
+  try {
+    currentPathname = '/orgs/missing/secrets'
+    setupSwitcher()
+    await renderSessionGate()
+    expect(container.querySelector('h1')?.textContent).toBe('Organization unavailable')
+    expect(JSON.parse(browser.localStorage.getItem('keysy-recent-orgs:user-id')!)).toEqual(['d'])
+  } finally { restore() }
+})
+
+test('menu creates an organization and navigates from an organization page', async () => {
+  const restore = useTestStorage([])
+  try {
+    currentPathname = '/orgs/a/people'
+    setupSwitcher()
+    await renderSessionGate()
+    await act(() => container.querySelector<HTMLButtonElement>('.organization-menu-new')!.click())
+    const dialog = container.querySelector<HTMLDialogElement>('dialog[open]')!
+    expect(dialog.querySelector('h2')?.textContent).toBe('Create an organization')
+    await act(() => setOrganizationName('New team'))
+    organizationsRequest.mockImplementation((_url: string, init: RequestInit) => Promise.resolve(init.method === 'POST' ? Response.json({ id: 'new-id', name: 'New team' }, { status: 201 }) : Response.json(switcherOrganizations)))
+    await settleOrganizationRequests(() => submitOrganization())
+    expect(router.push).toHaveBeenCalledWith('/orgs/new-id/secrets')
+  } finally { restore() }
+})
+
+test('deleting the current organization chooses the most recent remaining one', async () => {
+  const restore = useTestStorage(['d', 'b'])
+  try {
+    currentPathname = '/orgs/a/settings'
+    setupSwitcher()
+    function DeleteCurrent() {
+      const { deleteOrganization } = useCurrentUser()
+      return <button onClick={() => void deleteOrganization('a')}>Delete current</button>
+    }
+    await act(async () => root.render(<SessionGate><DeleteCurrent /></SessionGate>))
+    sessionRequest.mockImplementation((_url: string, init: RequestInit) => Promise.resolve(init.method === 'DELETE' ? new Response(null, { status: 204 }) : Response.json(validUser)))
+    organizationsRequest.mockImplementation(() => Promise.resolve(Response.json(switcherOrganizations.filter((organization) => organization.id !== 'a'))))
+    await settleOrganizationRequests(() => buttonNamed(container, 'Delete current').click())
+    expect(router.replace).toHaveBeenCalledWith('/orgs/d/secrets')
+  } finally { restore() }
+})
+
+
+test('organization dialogs have unique input IDs', async () => {
+  currentPathname = '/account/organizations'
+  setupSwitcher()
+  await act(async () => root.render(<SessionGate><AccountLayout><OrganizationsPage /></AccountLayout></SessionGate>))
+  const inputs = [...container.querySelectorAll<HTMLInputElement>('dialog input.account-name')]
+  expect(inputs).toHaveLength(2)
+  expect(inputs[0]!.id).not.toBe(inputs[1]!.id)
+  for (const input of inputs) expect(input.closest('dialog')!.querySelector('label')!.htmlFor).toBe(input.id)
 })

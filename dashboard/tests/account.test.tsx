@@ -160,7 +160,7 @@ test('Organizations toolbar stays visible for filtered results and opens the cre
   await act(() => create.click())
   const dialog = container.querySelector<HTMLDialogElement>('dialog')!
   expect(dialog.open).toBe(true)
-  expect(document.activeElement).toBe(container.querySelector('#organization-name'))
+  expect(document.activeElement).toBe(container.querySelector('dialog[open] input.account-name'))
 })
 
 test('creating an organization from the list closes and resets the dialog before navigation finishes', async () => {
@@ -169,7 +169,7 @@ test('creating an organization from the list closes and resets the dialog before
   await act(async () => root.render(<CurrentUserContext.Provider value={{ user, organizations, organization: organizations[0], createOrganization, deleteOrganization: async () => null, onUserChange, onSignedOut, onSignOutRequest }}><AccountLayout><OrganizationsPage /></AccountLayout></CurrentUserContext.Provider>))
   await act(() => button('New organization', container.querySelector('.account-toolbar')!).click())
   const dialog = container.querySelector<HTMLDialogElement>('dialog')!
-  const name = container.querySelector<HTMLInputElement>('#organization-name')!
+  const name = container.querySelector<HTMLInputElement>('dialog[open] input.account-name')!
   await act(() => {
     Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(name, 'acme')
     name.dispatchEvent(new browser.Event('input', { bubbles: true }))

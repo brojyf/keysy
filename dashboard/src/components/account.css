@@ -672,3 +672,84 @@ th[aria-sort='descending'] .account-sort svg {
   .account-page { padding: 20px 16px 32px; }
   .account-organizations-empty { padding: 32px 16px; }
 }
+
+.account-menu.organization-menu {
+  inset: auto;
+  width: 220px;
+  border: 0;
+  transform-origin: left top;
+  --menu-row-offset: -4px;
+  transition-duration: 128ms;
+  transition-timing-function: ease-out;
+}
+
+.account-menu.organization-menu:popover-open {
+  transition-duration: 160ms;
+  transition-timing-function: ease-out;
+}
+
+.organization-menu .organization-menu-label {
+  padding: 6px 8px 4px;
+  color: var(--color-muted);
+  font: var(--text-button--font-weight) var(--text-button)/var(--text-button--line-height) var(--font-sans);
+}
+
+.organization-menu .account-menu-item {
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.organization-menu .account-menu-item:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-menu), 0 0 0 4px var(--color-accent);
+}
+
+.organization-menu .organization-menu-org,
+.organization-menu .organization-menu-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.organization-menu-org span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-menu-org svg { flex: none; }
+
+.organization-menu-org[aria-current] {
+  background: var(--color-menu-soft);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .account-menu.organization-menu:popover-open > :is(.account-menu-item, .organization-menu-label) {
+    animation: account-menu-row-enter 120ms ease-out backwards;
+  }
+  .account-menu.organization-menu:popover-open > :nth-child(2) { animation-delay: 20ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(3) { animation-delay: 40ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(4) { animation-delay: 60ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(5) { animation-delay: 80ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(6) { animation-delay: 100ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(7) { animation-delay: 120ms; }
+  .account-menu.organization-menu:popover-open > :nth-child(8) { animation-delay: 140ms; }
+}
+
+@starting-style {
+  .account-menu.organization-menu:popover-open {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu.organization-menu,
+  .account-menu.organization-menu .account-menu-item {
+    transition: none;
+    animation: none;
+  }
+}

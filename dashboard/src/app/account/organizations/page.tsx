@@ -23,7 +23,7 @@ export default function OrganizationsPage() {
   function openCreateDialog() {
     if (!dialog.current) return
     openDialog(dialog.current)
-    dialog.current.querySelector<HTMLInputElement>('#organization-name')?.focus()
+    dialog.current.querySelector<HTMLInputElement>('input.account-name')?.focus()
   }
 
   if (allOrganizations.length === 0) return (

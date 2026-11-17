@@ -8,6 +8,7 @@ import { useCurrentUser } from './current-user'
 
 export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
   const formId = useId()
+  const nameId = useId()
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const { createOrganization } = useCurrentUser()
@@ -37,8 +38,8 @@ export default function CreateOrganizationDialog({ ref }: { ref: Ref<HTMLDialogE
     }>
       <form id={formId} onSubmit={create}>
         <div className="dialog-field">
-          <label htmlFor="organization-name">Name</label>
-          <input id="organization-name" className="account-name" autoComplete="off" value={name} disabled={pending} onInput={(event) => { setName(event.currentTarget.value); setError(false) }} />
+          <label htmlFor={nameId}>Name</label>
+          <input id={nameId} className="account-name" autoComplete="off" value={name} disabled={pending} onInput={(event) => { setName(event.currentTarget.value); setError(false) }} />
         </div>
         {error && <p className="dialog-error" role="alert">Could not create the organization. Try again.</p>}
       </form>

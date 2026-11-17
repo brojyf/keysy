@@ -33,3 +33,18 @@ test('explicit organization paths never fall back to the first membership', () =
   assert.equal(organizationForPath(organizations, '/account'), organizations[0])
   assert.equal(organizationForPath(organizations, '/settings'), organizations[0])
 })
+
+test('switch organization keeps only the first section and encodes the ID', async () => {
+  const { switchOrganizationPath } = await import('../src/lib/organization-route.ts')
+  assert.equal(switchOrganizationPath('B', '/orgs/A/people/invitations'), '/orgs/B/people')
+  assert.equal(switchOrganizationPath('B', '/orgs/A/settings'), '/orgs/B/settings')
+  assert.equal(switchOrganizationPath('B', '/orgs/A'), '/orgs/B/secrets')
+  assert.equal(switchOrganizationPath('B', '/account/sessions'), '/orgs/B/secrets')
+  assert.equal(switchOrganizationPath('B/C', '/orgs/A/people'), '/orgs/B%2FC/people')
+})
+
+test('preferred organization applies only to non-organization paths', () => {
+  const organizations = [{ id: 'a', name: 'A', role: 'owner' as const, memberCount: 1 }, { id: 'b', name: 'B', role: 'owner' as const, memberCount: 1 }]
+  assert.equal(organizationForPath(organizations, '/account', organizations[1]), organizations[1])
+  assert.equal(organizationForPath(organizations, '/orgs/missing', organizations[1]), undefined)
+})
