@@ -4,7 +4,7 @@
 
 - Use Sourcey with Bun and TypeScript 7; configuration lives in `sourcey.config.ts`.
 - Pages are MDX files with YAML frontmatter and Sourcey-compatible components.
-- Keep the six navigation tabs and existing public page URLs stable. The API and Auth tabs render
+- Keep the six navigation tabs and existing public page URLs stable. The Web tab was renamed to Dashboard at `/dashboard`. The API and Auth tabs render
   `openapi/api.yaml` and `openapi/auth.yaml` at `/api` and `/auth`.
 - Use native Sourcey controls; keep brand overrides in `style.css`.
 - Put only intentionally public, fixed-path assets in `public/`.

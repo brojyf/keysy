@@ -15,7 +15,7 @@ const routes = [
   ['references', 'References'],
   ['api', 'Keysy API'],
   ['auth', 'Keysy Auth API'],
-  ...['notify', 'cli', 'web'].flatMap((section) => [
+  ...['notify', 'cli', 'dashboard'].flatMap((section) => [
     [`${section}/overview`, 'Introduction'],
     [`${section}/endpoints`, 'Endpoint overview'],
   ]),
@@ -30,7 +30,7 @@ async function matches(html: string, selector: string) {
 }
 
 test('navigation preserves the six original sections and includes references under Overview', async () => {
-  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Web']);
+  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Dashboard']);
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([

@@ -1,0 +1,23 @@
+---
+title: "Introduction"
+description: "Keysy's web application, built with Next.js."
+---
+
+`dashboard/` is Keysy's web application. It uses Next.js, React, and TypeScript.
+It calls the [Auth](/auth) and [API](/api) services and never calls Supabase directly.
+
+## Components
+
+The dashboard implements these shared UI components in `dashboard/src/components/`.
+
+| Component | File | Purpose |
+| --- | --- | --- |
+| `Button` | `button.tsx` | Text button. Variants: secondary, primary, danger, and danger outline. |
+| `IconButton` | `icon-button.tsx` | Icon-only button with a required label. Shapes: round and square. |
+| `Dialog` | `dialog.tsx` | Modal dialog with a title, a **Cancel** button, and one action. |
+| `MoreMenu` | `more-menu.tsx` | **⋯** trigger that opens a popover menu of row actions. |
+| `SaveBar` | `save-bar.tsx` | Bar that saves or discards staged changes. |
+| `SettingsLayout` | `settings-layout.tsx` | Page layout with a sidebar for sub-pages. |
+| `SettingsSection` | `settings-section.tsx` | Titled section of label and control rows on a settings page. |
+| `LoadingSkeleton` | `loading-skeleton.tsx` | Skeleton screens that show while the page loads. |
+| `ThemeSwitch` | `theme-switch.tsx` | System, light, and dark theme switch. |
