@@ -25,6 +25,7 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 		"DELETE /v0/me",
 		"DELETE /v0/me/sessions/:sessionId",
 		"DELETE /v0/orgs/:orgId",
+		"DELETE /v0/orgs/:orgId/members/:userId",
 		"GET /health",
 		"GET /v0/me",
 		"GET /v0/me/sessions",

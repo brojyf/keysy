@@ -16,6 +16,9 @@ Existing access tokens of a revoked session stay valid until they expire.
 `PATCH /v0/orgs/{orgId}` updates `name` only for an active org owned by the user; other targets return 404.
 `GET /v0/orgs/{orgId}/members` lists every member's name, email, and role for any member of an active org.
 Soft-deleted profiles are left out. The order is not specified. Missing, deleted, and non-member targets return 404.
+`DELETE /v0/orgs/{orgId}/members/{userId}` lets owners remove admins and developers and admins remove developers.
+Members scheduled for deletion can be removed. Self, owner, and other disallowed targets return 403;
+non-member targets return 404 MEMBER_NOT_FOUND. One transaction locks both member rows in user_id order, then deletes.
 `GET /v0/orgs/{orgId}/invitations` lists pending and expired invitations for any org member.
 Each item contains id, email, role, and status. Seven days after started_at, status becomes expired.
 The order is not specified. No invitations returns an empty array. Missing and deleted orgs,
@@ -23,7 +26,7 @@ non-members, and callers with soft-deleted profiles return 404.
 `DELETE /v0/orgs/{orgId}` permanently deletes an org and its memberships only for an owner.
 User accounts and profiles remain. Missing, deleted, and non-owner targets return 404.
 `DATABASE_URL` needs SELECT and UPDATE on `public.profiles`, plus SELECT and
-INSERT on `public.orgs` and `public.members`, UPDATE and DELETE on `public.orgs`, SELECT on `public.invitations`, and
+INSERT on `public.orgs` and `public.members`, UPDATE and DELETE on `public.orgs` and `public.members`, SELECT on `public.invitations`, and
 EXECUTE on `public.list_user_sessions(uuid)` and
 `public.revoke_user_session(uuid, uuid)` and `public.revoke_all_user_sessions(uuid)`.
 Profile row locks use SELECT FOR UPDATE and SELECT FOR SHARE and require UPDATE on `public.profiles`. The backend database role must
