@@ -7,11 +7,39 @@ const stylesheet = [
   '../../design/tokens/tokens.css',
   '../src/components/dashboard.css',
   '../src/components/account.css',
+  '../src/components/organization-settings.css',
   '../src/components/dialog.css',
   '../src/components/button.css',
   '../src/components/icon-button.css',
   '../src/components/sign-in.css',
 ].map(path => readFileSync(new URL(path, import.meta.url), 'utf8')).join('\n')
+
+for (const dark of [false, true]) {
+  test(`invalid names have a distinct focus ring in ${dark ? 'dark' : 'light'} mode`, async () => {
+    const window = new Window()
+    try {
+      const document = window.document
+      document.documentElement.classList.toggle('dark', dark)
+      const style = document.createElement('style')
+      style.textContent = stylesheet.replaceAll(':focus', '[data-focus]')
+      document.head.append(style)
+      document.body.innerHTML = `
+        <input class="account-name" aria-invalid="true">
+        <div class="organization-settings"><input class="account-name" aria-invalid="true" data-focus></div>`
+      const unfocused = window.getComputedStyle(document.querySelector('.account-name')!)
+      const focused = window.getComputedStyle(document.querySelector('.organization-settings .account-name')!)
+      const tokens = window.getComputedStyle(document.documentElement)
+      assert.notEqual(focused.boxShadow, unfocused.boxShadow)
+      assert.equal(focused.boxShadow, `0 0 0 2px ${tokens.getPropertyValue('--color-surface')}, 0 0 0 4px ${tokens.getPropertyValue('--color-danger-ring-focus')}`)
+      assert.equal(focused.outlineWidth, '2px')
+      assert.equal(focused.outlineStyle, 'solid')
+      assert.equal(focused.outlineColor, 'transparent')
+      assert.equal(focused.outlineOffset, '2px')
+    } finally {
+      await window.happyDOM.close()
+    }
+  })
+}
 
 for (const dark of [false, true]) {
   test(`polished controls retain an outline for forced-colors mode in ${dark ? 'dark' : 'light'} mode`, async () => {

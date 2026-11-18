@@ -67,7 +67,7 @@
   flex-shrink: 0;
 }
 
-.organization-settings .account-name:focus {
+.organization-settings .account-name:focus:not([aria-invalid="true"]) {
   outline: 2px solid transparent;
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-button);

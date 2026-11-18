@@ -24,6 +24,8 @@ Tokens are the design variables. The theme is their light and dark values. Figma
 | Table header background | `table-header` |
 | Destructive text, icons, and buttons | `danger` |
 | Destructive background | `danger-bg` |
+| Invalid input halo | `danger-ring` |
+| Invalid input halo while focused | `danger-ring-focus` |
 | Avatar background | `avatar-bg` |
 | Avatar text | `avatar-text` |
 | Glow | `glow` |
