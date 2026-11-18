@@ -470,7 +470,8 @@ th[aria-sort='descending'] .account-sort svg {
   border: 1px solid var(--color-line);
   border-radius: 10px;
   list-style: none;
-  overflow: hidden;
+  max-height: 222px;
+  overflow-y: auto;
 }
 
 .account-delete-organizations li + li {

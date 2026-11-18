@@ -537,7 +537,7 @@ test('an expired session during account deletion signs out', async () => {
 
 test('an org owner sees the orgs to hand over instead of the confirm field', async () => {
   await openDeleteAccount([...organizations, { id: 'org-4', name: 'a-owner', role: 'owner' as const, memberCount: 2 }])
-  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these organizations first:')
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these 2 organizations first:')
   expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
     ['z-ownerOwner', '/orgs/org-3/settings'],
     ['a-ownerOwner', '/orgs/org-4/settings'],
