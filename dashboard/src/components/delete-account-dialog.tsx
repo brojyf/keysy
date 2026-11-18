@@ -85,7 +85,7 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
     }>
       {ownedOrganizations.length > 0 ? (
         <>
-          <p>Transfer ownership or delete {ownedOrganizations.length === 1 ? 'this organization' : 'these organizations'} first:</p>
+          <p>Transfer ownership or delete {ownedOrganizations.length === 1 ? 'this organization' : `these ${ownedOrganizations.length} organizations`} first:</p>
           <ul className="account-delete-organizations">
             {ownedOrganizations.map((organization) => (
               <li key={organization.id}>
