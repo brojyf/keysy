@@ -26,14 +26,10 @@ export default function NameInput({ id, value, issue, disabled, readOnly, onInpu
         aria-invalid={issue ? true : undefined}
         aria-describedby={issue ? descriptionId : undefined}
       />
-      {issue && (
-        <>
-          <span className="account-name-error" aria-hidden="true">{hint}</span>
-          <span id={descriptionId} className="visually-hidden">
-            {issue.kind === 'required' ? 'Enter a name.' : `Name must be ${NAME_MAX_LENGTH} characters or fewer.`}
-          </span>
-        </>
-      )}
+      {issue && <span className="account-name-error" aria-hidden="true">{hint}</span>}
+      <span id={descriptionId} className="visually-hidden" role="status">
+        {issue ? (issue.kind === 'required' ? 'Enter a name.' : `Name must be ${NAME_MAX_LENGTH} characters or fewer.`) : ''}
+      </span>
     </div>
   )
 }

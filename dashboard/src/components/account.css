@@ -467,7 +467,13 @@ th[aria-sort='descending'] .account-sort svg {
 .account-name[aria-invalid="true"] {
   padding-inline-end: calc(21px + 8ch);
   border-color: transparent;
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-danger) 45%, transparent);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-danger-ring);
+}
+
+.account-name[aria-invalid="true"]:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-danger-ring-focus);
 }
 
 .account-name-error {
