@@ -2,6 +2,8 @@
   position: fixed;
   inset: calc(50% - var(--visual-center-offset)) auto auto 50%;
   width: min(440px, calc(100vw - 32px));
+  /* Centered 8dvh above the middle, the dialog fits within 84dvh; a scrollable child shrinks first, then the dialog scrolls. */
+  max-height: calc(84dvh - 32px);
   margin: 0;
   padding: 16px 20px 20px;
   border: 1px solid var(--color-line);
@@ -14,6 +16,11 @@
   transition:
     opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
     transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
 }
 
 .dialog::backdrop {

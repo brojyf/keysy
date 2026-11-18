@@ -36,7 +36,7 @@ export default function InvitationList() {
       <TableSearch label="Search invitations" value={query} onChange={setQuery} />
       {invitationQuery.isPending ? (
         <>
-          <p role="status" className="skeleton-status">Loading invitations...</p>
+          <p role="status" className="visually-hidden">Loading invitations...</p>
           <InvitationTableSkeleton />
         </>
       ) : (

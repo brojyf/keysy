@@ -443,6 +443,9 @@ th[aria-sort='descending'] .account-sort svg {
   border-radius: 10px;
   color: var(--color-text);
   background: var(--color-surface);
+}
+
+.account-name, .account-name-error {
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
@@ -454,6 +457,34 @@ th[aria-sort='descending'] .account-sort svg {
   border-color: transparent;
   outline: none;
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
+}
+
+.account-name-field {
+  position: relative;
+  display: flex;
+}
+
+.account-name[aria-invalid="true"] {
+  padding-inline-end: calc(21px + 8ch);
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-danger-ring);
+}
+
+.account-name[aria-invalid="true"]:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-danger-ring-focus);
+}
+
+.account-name-error {
+  position: absolute;
+  inset-inline-end: 11px;
+  align-self: center;
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .account-delete-form {
@@ -470,7 +501,10 @@ th[aria-sort='descending'] .account-sort svg {
   border: 1px solid var(--color-line);
   border-radius: 10px;
   list-style: none;
-  overflow: hidden;
+  /* Keep one 40px row plus borders readable; on shorter viewports the dialog itself scrolls. */
+  min-height: 42px;
+  max-height: 222px;
+  overflow-y: auto;
 }
 
 .account-delete-organizations li + li {

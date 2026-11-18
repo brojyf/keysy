@@ -109,7 +109,7 @@ test('General shows the session profile', async () => {
   expect(text('dt')).toEqual(['Name', 'Email', 'Sign-in method', 'Apply changes automatically', 'Theme', 'Sign out of this device', 'Delete account'])
   expect(text('dd').slice(0, 3)).toEqual(['', 'member@example.com', 'Google'])
   expect(input().value).toBe('Test Member')
-  expect(container.querySelector('[role="status"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar [role="status"]')).toBeNull()
   const controls = [...container.querySelectorAll<HTMLButtonElement>('.account-sections button')]
   expect(controls.length).toBeGreaterThan(0)
   expect(controls.filter((button) => !button.disabled).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Apply changes automatically', 'System', 'Light', 'Dark', 'Sign out', 'Delete'])
@@ -424,16 +424,16 @@ async function edit(value: string) {
 test('editing, discarding, and restoring the name controls the save bar', async () => {
   await renderAccount('/account', <GeneralPage />)
   await edit('New Name')
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('1 unsaved change')
+  expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
   await act(() => button('Discard').click())
   expect(input().value).toBe(user.displayName)
-  expect(container.querySelector('[role="status"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar [role="status"]')).toBeNull()
   await edit('Changed')
   await edit('  Test Member  ')
-  expect(container.querySelector('[role="status"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar [role="status"]')).toBeNull()
   await edit('Changed')
   await edit('Test Member')
-  expect(container.querySelector('[role="status"]')).toBeNull()
+  expect(container.querySelector('.account-save-bar [role="status"]')).toBeNull()
 })
 
 function deleteAccountDialog() { return container.querySelector<HTMLDialogElement>('dialog')! }
@@ -537,13 +537,21 @@ test('an expired session during account deletion signs out', async () => {
 
 test('an org owner sees the orgs to hand over instead of the confirm field', async () => {
   await openDeleteAccount([...organizations, { id: 'org-4', name: 'a-owner', role: 'owner' as const, memberCount: 2 }])
-  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these organizations first:')
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these 2 organizations first:')
   expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
     ['z-ownerOwner', '/orgs/org-3/settings'],
     ['a-ownerOwner', '/orgs/org-4/settings'],
   ])
   expect(deleteAccountDialog().querySelector('input')).toBeNull()
   expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
+})
+
+test('an owner of many orgs sees every org in the list', async () => {
+  const owned = Array.from({ length: 8 }, (_, index) => ({ id: `owned-${index + 1}`, name: `owned-${index + 1}`, role: 'owner' as const, memberCount: 2 }))
+  await openDeleteAccount(owned)
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these 8 organizations first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => link.getAttribute('href'))).toEqual(owned.map((organization) => `/orgs/${organization.id}/settings`))
+  expect(button('Cancel', deleteAccountDialog()).disabled).toBe(false)
 })
 
 test('an owner of one org sees the singular message', async () => {
@@ -621,15 +629,28 @@ test('the name input opts out of browser autofill', async () => {
   expect(input().getAttribute('autocomplete')).toBe('off')
 })
 
-test('validates names by Unicode code points', async () => {
+test('shows inline name errors after editing and clears them for valid names', async () => {
   await renderAccount('/account', <GeneralPage />)
-  for (const value of ['   ', '界'.repeat(33), '😀'.repeat(33)]) {
+  const message = () => container.querySelector('.account-name-error')?.textContent ?? null
+  expect(message()).toBeNull()
+  expect(input().hasAttribute('aria-invalid')).toBe(false)
+  for (const [value, hint, description] of [
+    ['   ', 'Required', 'Enter a name.'],
+    ['界'.repeat(33), '33/32', 'Name must be 32 characters or fewer.'],
+    [`  ${'😀'.repeat(38)}  `, '38/32', 'Name must be 32 characters or fewer.'],
+  ]) {
     await edit(value)
     expect(button('Save').disabled).toBe(true)
+    expect(message()).toBe(hint)
+    expect(input().getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(input().getAttribute('aria-describedby')!)?.textContent).toBe(description)
   }
   for (const value of ['界'.repeat(32), '😀'.repeat(32)]) {
     await edit(value)
     expect(button('Save').disabled).toBe(false)
+    expect(message()).toBeNull()
+    expect(input().hasAttribute('aria-invalid')).toBe(false)
+    expect(input().hasAttribute('aria-describedby')).toBe(false)
   }
 })
 
@@ -701,7 +722,7 @@ test('editing during the success message cancels dismissal and keeps the new dra
   expect(button('Save').dataset.saveState).toBe('idle')
   expect(button('Save').getAttribute('aria-label')).toBeNull()
   expect(button('Save').disabled).toBe(false)
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('1 unsaved change')
+  expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
 })
 
 test('save failures retain the draft and clear the alert on edit or discard', async () => {

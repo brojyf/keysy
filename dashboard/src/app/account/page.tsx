@@ -13,6 +13,8 @@ import { useSaveBar } from '../../lib/use-save-bar'
 import ThemeSwitch from '../../components/theme-switch'
 import DeleteAccountDialog from '../../components/delete-account-dialog'
 import { openDialog } from '../../lib/dialog-controls'
+import NameInput from '../../components/name-input'
+import { validateName } from '../../lib/name-validation'
 
 export default function GeneralPage() {
   const { user, organizations, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
@@ -23,7 +25,7 @@ export default function GeneralPage() {
   const [settingError, setSettingError] = useState(false)
   const trimmed = draft.trim()
   const changed = trimmed !== user.displayName
-  const valid = trimmed.length > 0 && [...trimmed].length <= 32
+  const nameIssue = validateName(draft)
   const saveBar = useSaveBar(changed)
   const deleteDialog = useRef<HTMLDialogElement>(null)
   const saveFailedDialog = useRef<HTMLDialogElement>(null)
@@ -34,7 +36,7 @@ export default function GeneralPage() {
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!changed || !valid || saving || saved || settingSaving) return
+    if (!changed || nameIssue || saving || saved || settingSaving) return
     setSaveState('saving')
     setError(false)
     try {
@@ -84,7 +86,8 @@ export default function GeneralPage() {
     <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
-          <input ref={nameInputRef} id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false); if (saved) setSaveState('idle') }} />
+          <NameInput ref={nameInputRef} id="account-name" value={draft} disabled={saving} issue={draft !== user.displayName ? nameIssue : null}
+            onInput={(value) => { setDraft(value); setError(false); if (saved) setSaveState('idle') }} />
         </SettingsRow>
         <SettingsRow label="Email">{user.email}</SettingsRow>
         <SettingsRow label="Sign-in method">Google</SettingsRow>
@@ -110,7 +113,7 @@ export default function GeneralPage() {
           <Button variant="dangerOutline" onClick={() => { if (deleteDialog.current) openDialog(deleteDialog.current) }}>Delete</Button>
         </SettingsRow>
       </SettingsSection>
-      {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
+      {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={error} saveDisabled={settingSaving || nameIssue !== null} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
     <DeleteAccountDialog ref={deleteDialog} />
     <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} nameInputRef={nameInputRef} requestId={requestId} />

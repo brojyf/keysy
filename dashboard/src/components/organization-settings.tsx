@@ -14,6 +14,8 @@ import LeaveOrganizationDialog from './leave-organization-dialog'
 import { organizationPath } from '../lib/organization-route'
 import SettingsLayout from './settings-layout'
 import { SettingsRow, SettingsSection } from './settings-section'
+import NameInput from './name-input'
+import { validateName } from '../lib/name-validation'
 
 export default function OrganizationSettings() {
   const { organization, renameOrganization } = useCurrentUser()
@@ -38,14 +40,14 @@ export default function OrganizationSettings() {
   const { saving, saved, setSaveState } = saveBar
   if (!organization) return null
   const owner = organization.role === 'owner'
-  const nameValid = trimmedName.length > 0 && [...trimmedName].length <= 32
+  const nameIssue = validateName(draftName)
   const copied = copyFeedback?.id === organization.id && copyFeedback.status === 'copied'
   const copyFailed = copyFeedback?.id === organization.id && copyFeedback.status === 'error'
   const copyLabel = copied ? 'Organization ID copied' : copyFailed ? 'Copy failed. Try again.' : 'Copy organization ID'
 
   async function rename(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!organization || !nameChanged || !nameValid || saving || saved) return
+    if (!organization || !nameChanged || nameIssue || saving || saved) return
     setSaveState('saving')
     setRenameError(false)
     try {
@@ -86,15 +88,16 @@ export default function OrganizationSettings() {
       <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={(event) => void rename(event)}>
         <SettingsSection title="Organization">
           <SettingsRow label={<label htmlFor="organization-settings-name">Name</label>}>
-            <input ref={nameInputRef} id="organization-settings-name" className="account-name" autoComplete="off" value={draftName} readOnly={!owner} disabled={saving}
-              onInput={(event) => { setNameDraft({ id: organization.id, value: event.currentTarget.value }); setRenameError(false); if (saved) setSaveState('idle') }} />
+            <NameInput ref={nameInputRef} id="organization-settings-name" value={draftName} readOnly={!owner} disabled={saving}
+              issue={owner && draftName !== organization.name ? nameIssue : null}
+              onInput={(value) => { setNameDraft({ id: organization.id, value }); setRenameError(false); if (saved) setSaveState('idle') }} />
           </SettingsRow>
           <SettingsRow label="Organization ID">
             <button className="organization-copy" type="button" aria-label={copyLabel} title={copyLabel} onClick={() => void copyOrganizationID(organization.id)}>
               <code className="organization-id">{organization.id}</code>
               {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
             </button>
-            <span className="organization-copy-status" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
+            <span className="visually-hidden" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
           </SettingsRow>
           <SettingsRow label="Role">{organization.role[0].toUpperCase() + organization.role.slice(1)}</SettingsRow>
         </SettingsSection>
@@ -108,7 +111,7 @@ export default function OrganizationSettings() {
             }}>{owner ? 'Delete' : 'Leave'}</Button>
           </SettingsRow>
         </SettingsSection>
-        {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={renameError} saveDisabled={!nameValid} onDiscard={() => { setNameDraft(null); setRenameError(false) }} />}
+        {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={renameError} saveDisabled={nameIssue !== null} onDiscard={() => { setNameDraft(null); setRenameError(false) }} />}
       </form>
       {owner
         ? <DeleteOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />

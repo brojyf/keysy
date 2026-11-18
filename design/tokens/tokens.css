@@ -20,6 +20,8 @@
   --color-menu-line: #e3e4e6;
   --color-danger: #b3261e;
   --color-danger-bg: #fce8e6;
+  --color-danger-ring: #b3261e73;
+  --color-danger-ring-focus: #b3261ea6;
   --color-danger-button: #b3261e;
   --color-danger-button-hover: #a1221b;
   --color-avatar-bg: #dce6ff;
@@ -109,6 +111,8 @@
   --color-menu-line: #414141;
   --color-danger: #f4aeae;
   --color-danger-bg: #392424;
+  --color-danger-ring: #f4aeae73;
+  --color-danger-ring-focus: #f4aeaea6;
   --color-danger-button: #cc3a30;
   --color-danger-button-hover: #b8342b;
   --color-avatar-bg: #dce6ff;

@@ -177,10 +177,10 @@ test('copies the organization ID from the URL and clears success feedback after 
   expect(writeClipboard).toHaveBeenCalledTimes(1)
   expect(writeClipboard).toHaveBeenCalledWith(otherOrganization.id)
   expect(copyButton.getAttribute('aria-label')).toBe('Organization ID copied')
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('Organization ID copied.')
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe('Organization ID copied.')
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 2550)) })
   expect(copyButton.getAttribute('aria-label')).toBe('Copy organization ID')
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe('')
 })
 
 test('a clipboard failure shows feedback and permits retry', async () => {
@@ -189,7 +189,7 @@ test('a clipboard failure shows feedback and permits retry', async () => {
   const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
   expect(copyButton).not.toBeNull()
   await act(async () => copyButton.click())
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('Could not copy. Try again.')
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe('Could not copy. Try again.')
   expect(copyButton.getAttribute('aria-label')).not.toBe('Organization ID copied')
   await act(async () => copyButton.click())
   expect(writeClipboard).toHaveBeenCalledTimes(2)
@@ -213,10 +213,10 @@ for (const olderFails of [true, false]) test(`only the latest clipboard result u
   const expectedLabel = olderFails ? 'Organization ID copied' : 'Copy failed. Try again.'
   const expectedFeedback = olderFails ? 'Organization ID copied.' : 'Could not copy. Try again.'
   expect(copyButton.getAttribute('aria-label')).toBe(expectedLabel)
-  expect(container.querySelector('[role="status"]')?.textContent).toBe(expectedFeedback)
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe(expectedFeedback)
   await act(async () => finishOlder())
   expect(copyButton.getAttribute('aria-label')).toBe(expectedLabel)
-  expect(container.querySelector('[role="status"]')?.textContent).toBe(expectedFeedback)
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe(expectedFeedback)
 })
 
 test('an unavailable clipboard reports failure without claiming success', async () => {
@@ -225,7 +225,7 @@ test('an unavailable clipboard reports failure without claiming success', async 
   const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!
   expect(copyButton).not.toBeNull()
   await act(async () => copyButton.click())
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('Could not copy. Try again.')
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe('Could not copy. Try again.')
   expect(copyButton.getAttribute('aria-label')).not.toBe('Organization ID copied')
 })
 
@@ -240,7 +240,7 @@ test('a late clipboard result cannot show success for a different organization',
   pathname = `/orgs/${otherOrganization.id}/settings`
   await renderSettings()
   await act(async () => finish())
-  expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+  expect(container.querySelector('.organization-copy ~ [role="status"]')?.textContent).toBe('')
   expect(container.querySelector('button[aria-label="Organization ID copied"]')).toBeNull()
   await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Copy organization ID"]')!.click())
   expect(writeClipboard).toHaveBeenLastCalledWith(otherOrganization.id)
@@ -1048,12 +1048,37 @@ test('discard restores the organization name and hides the save bar', async () =
   expect(renameRequest).not.toHaveBeenCalled()
 })
 
-test('rename rejects a blank name without calling the API', async () => {
+test('shows inline rename errors after editing and blocks invalid submissions', async () => {
   await renderSettings()
+  const input = container.querySelector<HTMLInputElement>('#organization-settings-name')!
+  const message = () => container.querySelector('.organization-settings .account-name-error')?.textContent ?? null
+  const status = container.querySelector('#organization-settings-name-error[role="status"]')
+  expect(status).not.toBeNull()
+  expect(status?.textContent).toBe('')
+  expect(message()).toBeNull()
+  expect(input.hasAttribute('aria-invalid')).toBe(false)
+  expect(input.hasAttribute('aria-describedby')).toBe(false)
   await typeOrganizationName('   ')
   expect(saveButton()?.disabled).toBe(true)
+  expect(message()).toBe('Required')
+  expect(input.getAttribute('aria-invalid')).toBe('true')
+  expect(status?.textContent).toBe('Enter a name.')
+  expect(document.getElementById(input.getAttribute('aria-describedby')!)?.textContent).toBe('Enter a name.')
+  await act(async () => submitRename())
+  await typeOrganizationName(`  ${'😀'.repeat(33)}  `)
+  expect(saveButton()?.disabled).toBe(true)
+  expect(message()).toBe('33/32')
+  expect(input.getAttribute('aria-invalid')).toBe('true')
+  expect(status?.textContent).toBe('Name must be 32 characters or fewer.')
+  expect(document.getElementById(input.getAttribute('aria-describedby')!)?.textContent).toBe('Name must be 32 characters or fewer.')
   await act(async () => submitRename())
   expect(renameRequest).not.toHaveBeenCalled()
+  await typeOrganizationName('  Renamed  ')
+  expect(saveButton()?.disabled).toBe(false)
+  expect(message()).toBeNull()
+  expect(input.hasAttribute('aria-invalid')).toBe(false)
+  expect(input.hasAttribute('aria-describedby')).toBe(false)
+  expect(status?.textContent).toBe('')
 })
 
 for (const saved of [true, false]) test(`a lost rename response reconciles with the refreshed name: saved ${saved}`, async () => {
