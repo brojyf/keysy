@@ -53,7 +53,7 @@ export default function MemberList() {
       <TableSearch label="Search members" value={query} onChange={setQuery} />
       {memberQuery.isPending ? (
         <>
-          <p role="status" className="skeleton-status">Loading members...</p>
+          <p role="status" className="visually-hidden">Loading members...</p>
           <MemberTableSkeleton />
         </>
       ) : (

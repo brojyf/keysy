@@ -88,7 +88,7 @@ export default function OrganizationSettings() {
               <code className="organization-id">{organization.id}</code>
               {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
             </button>
-            <span className="organization-copy-status" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
+            <span className="visually-hidden" role="status">{copied ? 'Organization ID copied.' : copyFailed ? 'Could not copy. Try again.' : ''}</span>
           </SettingsRow>
           <SettingsRow label="Role">{organization.role[0].toUpperCase() + organization.role.slice(1)}</SettingsRow>
         </SettingsSection>
