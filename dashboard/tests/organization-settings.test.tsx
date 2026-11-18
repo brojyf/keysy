@@ -1114,6 +1114,7 @@ for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, as
   expect(errorDialog.open).toBe(false)
   expect(renameRequest).toHaveBeenCalledTimes(action === 'Retry' ? 2 : 1)
   if (action === 'Close') expect(container.querySelector<HTMLInputElement>('#organization-settings-name')!.value).toBe('Draft')
+  if (action === 'Close') expect(document.activeElement).toBe(container.querySelector('#organization-settings-name'))
   if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
 })
 

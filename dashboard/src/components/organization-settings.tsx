@@ -20,6 +20,7 @@ export default function OrganizationSettings() {
   const dangerDialog = useRef<HTMLDialogElement>(null)
   const saveFailedDialog = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const [requestId, setRequestId] = useState<string | null>(null)
   const copyOperation = useRef(0)
   const [nameDraft, setNameDraft] = useState<{ id: string; value: string } | null>(null)
@@ -85,7 +86,7 @@ export default function OrganizationSettings() {
       <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={(event) => void rename(event)}>
         <SettingsSection title="Organization">
           <SettingsRow label={<label htmlFor="organization-settings-name">Name</label>}>
-            <input id="organization-settings-name" className="account-name" autoComplete="off" value={draftName} readOnly={!owner} disabled={saving}
+            <input ref={nameInputRef} id="organization-settings-name" className="account-name" autoComplete="off" value={draftName} readOnly={!owner} disabled={saving}
               onInput={(event) => { setNameDraft({ id: organization.id, value: event.currentTarget.value }); setRenameError(false); if (saved) setSaveState('idle') }} />
           </SettingsRow>
           <SettingsRow label="Organization ID">
@@ -112,7 +113,7 @@ export default function OrganizationSettings() {
       {owner
         ? <DeleteOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />
         : <LeaveOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />}
-      <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} requestId={requestId} />
+      <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} nameInputRef={nameInputRef} requestId={requestId} />
     </SettingsLayout>
   )
 }

@@ -28,6 +28,7 @@ export default function GeneralPage() {
   const deleteDialog = useRef<HTMLDialogElement>(null)
   const saveFailedDialog = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const [requestId, setRequestId] = useState<string | null>(null)
   const { saving, saved, setSaveState } = saveBar
 
@@ -83,7 +84,7 @@ export default function GeneralPage() {
     <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
-          <input id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false); if (saved) setSaveState('idle') }} />
+          <input ref={nameInputRef} id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false); if (saved) setSaveState('idle') }} />
         </SettingsRow>
         <SettingsRow label="Email">{user.email}</SettingsRow>
         <SettingsRow label="Sign-in method">Google</SettingsRow>
@@ -112,7 +113,7 @@ export default function GeneralPage() {
       {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
     <DeleteAccountDialog ref={deleteDialog} />
-    <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} requestId={requestId} />
+    <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} nameInputRef={nameInputRef} requestId={requestId} />
     </>
   )
 }

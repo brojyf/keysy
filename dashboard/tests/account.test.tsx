@@ -829,6 +829,7 @@ for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, as
   expect(errorDialog.open).toBe(false)
   expect(request).toHaveBeenCalledTimes(action === 'Retry' ? 2 : 1)
   expect(input().value).toBe('Draft')
+  if (action === 'Close') expect(document.activeElement).toBe(input())
   if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
 })
 
