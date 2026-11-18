@@ -76,3 +76,9 @@ for (const closable of [true, false]) {
     expect(dialog.open).toBe(!closable)
   })
 }
+
+test('supports a custom cancel label', async () => {
+  const ref = createRef<HTMLDialogElement>()
+  await act(() => root.render(<Dialog ref={ref} title="Title" cancelLabel="Close" action={null}>Body</Dialog>))
+  expect(ref.current!.querySelector('.dialog-actions button')?.textContent).toBe('Close')
+})

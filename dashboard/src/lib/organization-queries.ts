@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from './api-client'
+import { SaveRequestError } from './save-request-error'
 import { parseCreatedOrganization, parseOrganizations, type Organization } from './organization'
 
 export function organizationQueryOptions(userID: string, sessionSignal: AbortSignal | undefined, onSignedOut: () => void) {
@@ -67,7 +68,7 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
       })
       sessionSignal?.throwIfAborted()
       if (response.status === 401) { onSignedOut(); return null }
-      if (response.status !== 200) throw new Error('Rename failed')
+      if (response.status !== 200) throw new SaveRequestError(response)
       return parseCreatedOrganization(await response.json())
     },
     onSuccess: (renamed) => {

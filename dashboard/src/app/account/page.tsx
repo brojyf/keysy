@@ -7,6 +7,8 @@ import { apiFetch } from '../../lib/api-client'
 import { parseSessionUser } from '../../lib/session-user'
 import { SettingsRow, SettingsSection } from '../../components/settings-section'
 import SaveBar from '../../components/save-bar'
+import SaveFailedDialog from '../../components/save-failed-dialog'
+import { SaveRequestError } from '../../lib/save-request-error'
 import { useSaveBar } from '../../lib/use-save-bar'
 import ThemeSwitch from '../../components/theme-switch'
 import DeleteAccountDialog from '../../components/delete-account-dialog'
@@ -24,6 +26,9 @@ export default function GeneralPage() {
   const valid = trimmed.length > 0 && [...trimmed].length <= 32
   const saveBar = useSaveBar(changed)
   const deleteDialog = useRef<HTMLDialogElement>(null)
+  const saveFailedDialog = useRef<HTMLDialogElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const [requestId, setRequestId] = useState<string | null>(null)
   const { saving, saved, setSaveState } = saveBar
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -41,13 +46,16 @@ export default function GeneralPage() {
         onSignedOut()
         return
       }
-      if (!response.ok) throw new Error('Save failed')
+      if (!response.ok) throw new SaveRequestError(response)
       const updated = parseSessionUser(await response.json())
       setDraft(updated.displayName)
       setSaveState('saved')
       onUserChange(updated)
-    } catch {
-      setError(true)
+    } catch (error) {
+      if (error instanceof SaveRequestError) {
+        setRequestId(error.requestId)
+        if (saveFailedDialog.current) openDialog(saveFailedDialog.current)
+      } else setError(true)
     } finally {
       setSaveState((state) => state === 'saving' ? 'idle' : state)
     }
@@ -71,7 +79,7 @@ export default function GeneralPage() {
 
   return (
     <>
-    <form className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
+    <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
           <input id="account-name" className="account-name" autoComplete="off" value={draft} disabled={saving} onInput={(event) => { setDraft(event.currentTarget.value); setError(false); if (saved) setSaveState('idle') }} />
@@ -100,9 +108,10 @@ export default function GeneralPage() {
           <Button variant="dangerOutline" onClick={() => { if (deleteDialog.current) openDialog(deleteDialog.current) }}>Delete</Button>
         </SettingsRow>
       </SettingsSection>
-      {saveBar.mounted && <SaveBar saveBar={saveBar} error={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
+      {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={error} saveDisabled={settingSaving || !valid} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
     <DeleteAccountDialog ref={deleteDialog} />
+    <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} requestId={requestId} />
     </>
   )
 }

@@ -557,6 +557,14 @@ th[aria-sort='descending'] .account-sort svg {
   margin-right: 24px;
 }
 
+.account-save-error {
+  margin-right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-danger);
+}
+
 .account-save-bar [role='status'] > span {
   grid-area: 1 / 1;
 }
