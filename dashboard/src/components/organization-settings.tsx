@@ -8,13 +8,14 @@ import SaveBar from './save-bar'
 import Button from './button'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
+import LeaveOrganizationDialog from './leave-organization-dialog'
 import { organizationPath } from '../lib/organization-route'
 import SettingsLayout from './settings-layout'
 import { SettingsRow, SettingsSection } from './settings-section'
 
 export default function OrganizationSettings() {
   const { organization, renameOrganization } = useCurrentUser()
-  const deleteDialog = useRef<HTMLDialogElement>(null)
+  const dangerDialog = useRef<HTMLDialogElement>(null)
   const copyOperation = useRef(0)
   const [nameDraft, setNameDraft] = useState<{ id: string; value: string } | null>(null)
   const [renameError, setRenameError] = useState(false)
@@ -90,8 +91,8 @@ export default function OrganizationSettings() {
         </SettingsSection>
         <SettingsSection title="Danger zone" danger>
           <SettingsRow label={owner ? 'Delete organization' : 'Leave organization'} control>
-            <Button variant="dangerOutline" disabled={!owner} title={owner ? undefined : 'Coming soon'} onClick={() => {
-              const dialog = deleteDialog.current
+            <Button variant="dangerOutline" onClick={() => {
+              const dialog = dangerDialog.current
               if (!dialog) return
               openDialog(dialog)
               dialog.querySelector('input')?.focus()
@@ -100,7 +101,9 @@ export default function OrganizationSettings() {
         </SettingsSection>
         {saveBar.mounted && <SaveBar saveBar={saveBar} error={renameError} saveDisabled={!nameValid} onDiscard={() => { setNameDraft(null); setRenameError(false) }} />}
       </form>
-      {owner && <DeleteOrganizationDialog key={organization.id} ref={deleteDialog} organization={organization} />}
+      {owner
+        ? <DeleteOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />
+        : <LeaveOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />}
     </SettingsLayout>
   )
 }

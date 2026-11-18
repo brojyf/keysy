@@ -12,6 +12,7 @@ type CurrentUser = {
   createOrganization: (name: string) => Promise<Organization | null>
   renameOrganization: (organizationID: string, name: string) => Promise<{ id: string; name: string } | null>
   deleteOrganization: (organizationID: string) => Promise<DeleteOrganizationResult | null>
+  leaveOrganization: (organizationID: string) => Promise<DeleteOrganizationResult | null>
   onUserChange: (user: SessionUser) => void
   onSignedOut: () => void
   onSignOutRequest: () => void
