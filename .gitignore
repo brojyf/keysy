@@ -7,7 +7,7 @@ dist/
 /api/.env.local
 /api/tmp/
 /otel/.env.local
-/.claude/worktrees/
+/.claude/
 
 # iCloud sync duplicates
 * 2
