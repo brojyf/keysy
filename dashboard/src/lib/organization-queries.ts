@@ -81,16 +81,18 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
     networkMode: 'always',
   })
 
+  // Deleting and leaving both remove the org from the user's list, so they share reconciliation.
   const remove = useMutation({
     mutationKey: [...queryKey, 'delete'],
-    mutationFn: async (organizationID: string) => {
-      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organizationID)}`, { method: 'DELETE', signal: sessionSignal })
+    mutationFn: async ({ organizationID, leave }: { organizationID: string; leave: boolean }) => {
+      const path = `/v0/orgs/${encodeURIComponent(organizationID)}`
+      const response = await apiFetch(leave ? `${path}/leave` : path, { method: leave ? 'POST' : 'DELETE', signal: sessionSignal })
       sessionSignal?.throwIfAborted()
       if (response.status === 401) { onSignedOut(); return null }
-      if (response.status !== 204 && response.status !== 404) throw new Error('Delete failed')
+      if (response.status !== 204 && response.status !== 404) throw new Error(leave ? 'Leave failed' : 'Delete failed')
       return response.status
     },
-    onSuccess: (status, organizationID) => {
+    onSuccess: (status, { organizationID }) => {
       if (!active() || status === null) return
       const revalidation = refreshOrganizations()
       if (status === 404) return revalidation.catch(() => {})
@@ -101,6 +103,23 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
     retry: false,
     networkMode: 'always',
   })
+
+  async function removeOrganization(organizationID: string, leave: boolean): Promise<DeleteOrganizationResult | null> {
+    try {
+      const status = await remove.mutateAsync({ organizationID, leave })
+      if (!active() || status === null) return null
+      if (status === 204) return { outcome: 'completed', organizations: currentOrganizations() }
+    } catch (error) {
+      if (!active()) return null
+      const reconciliation = queryClient.getQueryState(queryKey)
+      if (reconciliation?.status !== 'success' || reconciliation.isInvalidated || currentOrganizations().some((organization) => organization.id === organizationID)) throw error
+    }
+    const reconciliation = queryClient.getQueryState(queryKey)
+    if (reconciliation?.status !== 'success' || reconciliation.isInvalidated) throw reconciliation?.error ?? new Error('Organizations check failed')
+    const organizations = currentOrganizations()
+    if (organizations.some((organization) => organization.id === organizationID)) throw new Error(leave ? 'You could not leave the organization.' : 'The organization was not found, or you no longer have permission to delete it.')
+    return { outcome: 'unavailable', organizations }
+  }
 
   return {
     createOrganization: async (name: string) => {
@@ -118,21 +137,7 @@ export function useOrganizationMutations(userID: string, sessionSignal: AbortSig
         return { id: organizationID, name }
       }
     },
-    deleteOrganization: async (organizationID: string): Promise<DeleteOrganizationResult | null> => {
-      try {
-        const status = await remove.mutateAsync(organizationID)
-        if (!active() || status === null) return null
-        if (status === 204) return { outcome: 'completed', organizations: currentOrganizations() }
-      } catch (error) {
-        if (!active()) return null
-        const reconciliation = queryClient.getQueryState(queryKey)
-        if (reconciliation?.status !== 'success' || reconciliation.isInvalidated || currentOrganizations().some((organization) => organization.id === organizationID)) throw error
-      }
-      const reconciliation = queryClient.getQueryState(queryKey)
-      if (reconciliation?.status !== 'success' || reconciliation.isInvalidated) throw reconciliation?.error ?? new Error('Organizations check failed')
-      const organizations = currentOrganizations()
-      if (organizations.some((organization) => organization.id === organizationID)) throw new Error('The organization was not found, or you no longer have permission to delete it.')
-      return { outcome: 'unavailable', organizations }
-    },
+    deleteOrganization: (organizationID: string) => removeOrganization(organizationID, false),
+    leaveOrganization: (organizationID: string) => removeOrganization(organizationID, true)
   }
 }

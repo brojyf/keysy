@@ -39,7 +39,9 @@ another organization remains, or `/account/organizations` otherwise. Failed requ
 The API permanently deletes the organization and its memberships. User accounts and profiles remain.
 Only its owner can rename the organization: General shows a Save button after the name changes and calls
 `PATCH /v0/orgs/{orgId}`. Other roles see a read-only name.
-Leave, notifications, and scope controls remain unavailable.
+Admins and developers leave the organization with `POST /v0/orgs/{orgId}/leave` after a confirmation dialog.
+Success routes like deletion. Failures keep the dialog open with an inline error.
+Notifications and scope controls remain unavailable.
 
 Secrets, services, members, audit logs, and settings use `/orgs/{orgId}/...` paths.
 The legacy `/secrets`, `/services`, `/members`, `/audit-log`, and `/settings` entry paths redirect

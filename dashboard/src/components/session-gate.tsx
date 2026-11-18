@@ -67,7 +67,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const onSignedOut = () => signedOut(currentSession)
   const organizationQuery = useQuery({ ...organizationQueryOptions(user?.id ?? '', currentSession?.signal, onSignedOut), enabled: !!user && !user.purgeAt })
   const organizations = organizationQuery.data ?? []
-  const { createOrganization: addOrganization, renameOrganization, deleteOrganization: removeOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
+  const { createOrganization: addOrganization, renameOrganization, deleteOrganization: removeOrganization, leaveOrganization: exitOrganization } = useOrganizationMutations(user?.id ?? '', currentSession?.signal, onSignedOut)
 
   async function createOrganization(name: string) {
     const startedAt = navigation.current
@@ -78,9 +78,13 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     return organization
   }
 
-  async function deleteOrganization(organizationID: string) {
+  const deleteOrganization = (organizationID: string) => leaveCurrentOrganization(organizationID, removeOrganization)
+  const leaveOrganization = (organizationID: string) => leaveCurrentOrganization(organizationID, exitOrganization)
+
+  // After a deletion or a leave, move to the most recent remaining organization.
+  async function leaveCurrentOrganization(organizationID: string, remove: typeof removeOrganization) {
     const startedAt = navigation.current
-    const result = await removeOrganization(organizationID)
+    const result = await remove(organizationID)
     if (result && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && !result.organizations.some((item) => item.id === organizationID)) {
       const next = recentOrganizations(result.organizations, readRecentOrganizationIDs(user!.id))[0]
       router.replace(next ? organizationPath(next.id, '/secrets') : '/account/organizations')
@@ -173,6 +177,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
         createOrganization,
         renameOrganization,
         deleteOrganization,
+        leaveOrganization,
         onUserChange: (updated) => setUser((current) => current ? updated : current),
         onSignedOut,
         onSignOutRequest: requestSignOut,

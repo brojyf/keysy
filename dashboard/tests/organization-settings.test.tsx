@@ -24,10 +24,16 @@ let root: Root
 let container: HTMLDivElement
 let organizations: typeof organization[]
 let deleteRequest: ReturnType<typeof mock>
+let leaveRequest: ReturnType<typeof mock>
 let createRequest: ReturnType<typeof mock>
 let renameRequest: ReturnType<typeof mock>
 let listOrganizations: ReturnType<typeof mock>
 let writeClipboard: ReturnType<typeof mock>
+
+function confirmLeave(url: string) {
+  organizations = organizations.filter((organization) => !url.endsWith(`/${organization.id}/leave`))
+  return Promise.resolve(new Response(null, { status: 204 }))
+}
 
 function confirmDeletion(url: string) {
   organizations = organizations.filter((organization) => !url.endsWith(`/${organization.id}`))
@@ -49,6 +55,7 @@ beforeEach(() => {
   pathname = `/orgs/${organization.id}/settings`
   organizations = [organization]
   deleteRequest = mock(confirmDeletion)
+  leaveRequest = mock(confirmLeave)
   createRequest = mock(() => {
     const created = { ...otherOrganization, id: 'created-id', name: 'Created' }
     organizations = [...organizations, created]
@@ -71,6 +78,7 @@ beforeEach(() => {
   Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
   globalThis.fetch = mock((url: string | URL | Request, init?: RequestInit) => {
     if (init?.method === 'POST' && String(url).endsWith('/v0/orgs')) return createRequest(url, init)
+    if (init?.method === 'POST' && String(url).endsWith('/leave')) return leaveRequest(url, init)
     if (init?.method === 'DELETE') return deleteRequest(url, init)
     if (init?.method === 'PATCH' && String(url).includes('/v0/orgs/')) return renameRequest(url, init)
     if (String(url).endsWith('/v0/orgs')) return listOrganizations(url, init)
@@ -105,7 +113,7 @@ function buttonNamed(scope: ParentNode, label: string, className: string) {
   if (label === 'Cancel') expect(matches[0]!.classList.contains('button-danger')).toBe(false)
   return matches[0]!
 }
-function settingsButton(label: string) { return buttonNamed(container.querySelector('.organization-settings')!, label, 'button-danger-outline') }
+function settingsButton(label: string) { return buttonNamed(container.querySelector('.organization-settings .account-sections')!, label, 'button-danger-outline') }
 function dialog() { return container.querySelector<HTMLDialogElement>('.organization-settings dialog')! }
 function confirmButton() {
   const buttons = dialog().querySelectorAll<HTMLButtonElement>('.dialog-actions button[type="submit"]')
@@ -260,19 +268,74 @@ test('organization ID and role text start at the same inset as the name input te
   expect(roleTextInset).toBe(nameTextInset)
 })
 
-for (const role of ['admin', 'developer']) test(`${role} cannot open organization deletion`, async () => {
-  organizations = [{ ...organization, role }]
+function leaveButton() { return buttonNamed(dialog(), 'Leave', 'button-danger') }
+
+for (const role of ['admin', 'developer']) for (const remaining of [false, true]) test(`${role} leaves the organization and lands on the next organization: ${remaining}`, async () => {
+  organizations = [{ ...organization, role }, ...(remaining ? [otherOrganization] : [])]
   await renderSettings()
-  const leave = settingsButton('Leave')
-  expect(leave.textContent).toBe('Leave')
-  expect(leave.disabled).toBe(true)
-  expect(leave.title).toBe('Coming soon')
   expect([...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Settings"] button')].map((button) => [button.textContent, button.disabled, button.title])).toEqual([['Notifications', true, 'Coming soon'], ['My scope', true, 'Coming soon']])
-  const fetchCalls = (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length
+  const leave = settingsButton('Leave')
+  expect(leave.disabled).toBe(false)
+  expect(leave.title).toBe('')
   await act(() => leave.click())
-  expect((globalThis.fetch as ReturnType<typeof mock>).mock.calls).toHaveLength(fetchCalls)
-  expect(container.querySelector('.organization-settings dialog')).toBeNull()
+  expect(dialog().open).toBe(true)
+  expect(dialog().querySelector('h2')?.textContent).toBe('Leave Platform?')
+  expect(dialog().querySelector('p')?.textContent).toBe('You will lose access to Platform and its secrets.')
+  let finish!: (response: Response) => void
+  leaveRequest.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve }))
+  await act(() => { leaveButton().click(); leaveButton().click() })
+  expect(leaveRequest).toHaveBeenCalledTimes(1)
+  const [url, init] = leaveRequest.mock.calls[0]
+  expect(url).toBe(`https://api.keysy.net/v0/orgs/${organization.id}/leave`)
+  expect(init.method).toBe('POST')
+  expect(init.credentials).toBe('include')
+  expect(init.body).toBeUndefined()
+  expect(buttonNamed(dialog(), 'Leaving...', 'button-danger').disabled).toBe(true)
+  await act(() => dialog().dispatchEvent(new browser.Event('cancel', { cancelable: true })))
+  expect(dialog().open).toBe(true)
+  organizations = organizations.filter((item) => item.id !== organization.id)
+  await act(async () => finish(new Response(null, { status: 204 })))
+  expect(router.replace).toHaveBeenCalledWith(remaining ? `/orgs/${otherOrganization.id}/secrets` : '/account/organizations')
   expect(deleteRequest).not.toHaveBeenCalled()
+})
+
+test('a 404 leave refreshes organizations and lands on the next organization', async () => {
+  organizations = [{ ...organization, role: 'developer' }, otherOrganization]
+  await renderSettings()
+  await act(() => settingsButton('Leave').click())
+  organizations = [otherOrganization]
+  leaveRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 404 })))
+  await settleOrganizationRequests(() => leaveButton().click())
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(router.replace).toHaveBeenCalledWith(`/orgs/${otherOrganization.id}/secrets`)
+})
+
+for (const failure of [500, 'network'] as const) test(`a failed leave keeps the dialog open with an error and allows retry: ${failure}`, async () => {
+  organizations = [{ ...organization, role: 'admin' }]
+  await renderSettings()
+  await act(() => settingsButton('Leave').click())
+  leaveRequest.mockImplementation(() => failure === 'network' ? Promise.reject(new Error('Network unavailable')) : Promise.resolve(new Response(null, { status: failure })))
+  await settleOrganizationRequests(() => leaveButton().click())
+  expect(dialog().open).toBe(true)
+  expect(dialog().querySelector('[role="alert"]')?.textContent).toBe('Could not leave the organization. Try again.')
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(leaveButton().disabled).toBe(false)
+  leaveRequest.mockImplementation(confirmLeave)
+  await settleOrganizationRequests(() => leaveButton().click())
+  expect(router.replace).toHaveBeenCalledWith('/account/organizations')
+})
+
+test('a 409 leave refreshes the role so an owner sees deletion instead', async () => {
+  organizations = [{ ...organization, role: 'admin' }]
+  await renderSettings()
+  await act(() => settingsButton('Leave').click())
+  organizations = [organization]
+  leaveRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 409 })))
+  await settleOrganizationRequests(() => leaveButton().click())
+  expect(listOrganizations).toHaveBeenCalledTimes(2)
+  expect(settingsButton('Delete').disabled).toBe(false)
+  expect(container.querySelector('.organization-settings dialog p')?.textContent).toBe('Platform will no longer be available. You can’t undo this action.')
+  expect(router.replace).not.toHaveBeenCalled()
 })
 
 test('deletion requires the exact organization name and cancel resets confirmation', async () => {
@@ -468,7 +531,7 @@ test('a 404 refreshes changed permissions without treating it as deletion', asyn
   expect(listOrganizations).toHaveBeenCalledTimes(2)
   expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
   expect(settingsButton('Leave').textContent).toBe('Leave')
-  expect(settingsButton('Leave').disabled).toBe(true)
+  expect(settingsButton('Leave').disabled).toBe(false)
   expect(router.replace).not.toHaveBeenCalled()
 })
 
@@ -616,8 +679,8 @@ test('permissions come from the organization in the URL', async () => {
   pathname = `/orgs/${otherOrganization.id}/settings`
   await renderSettings()
   expect(container.querySelector('.topbar-org')?.textContent).toBe('Other')
-  expect(settingsButton('Leave').disabled).toBe(true)
-  expect(container.querySelector('.organization-settings dialog')).toBeNull()
+  expect(settingsButton('Leave').disabled).toBe(false)
+  expect(container.querySelector('.organization-delete-form')).toBeNull()
 })
 
 for (const available of [false, true]) test(`an unavailable organization never falls back to another organization: ${available}`, async () => {
@@ -697,7 +760,7 @@ test('an uncertain deletion after leaving settings keeps an organization that st
   await renderSettings()
   expect(container.querySelector('h1')?.textContent).toBe('General')
   expect(settingsButton('Leave').textContent).toBe('Leave')
-  expect(settingsButton('Leave').disabled).toBe(true)
+  expect(settingsButton('Leave').disabled).toBe(false)
 })
 
 for (const outcome of ['404', 'network'] as const) test(`a fresh reconciliation after another deletion removes the unavailable organization: ${outcome}`, async () => {
