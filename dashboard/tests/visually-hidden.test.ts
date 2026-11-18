@@ -20,5 +20,8 @@ test('dashboard defines one visually hidden utility and no component copies', ()
   for (const path of sourceFiles(sourceDirectory)) {
     const source = readFileSync(path, 'utf8')
     assert.doesNotMatch(source, /\b(?:skeleton-status|organization-copy-status)\b/)
+    if (path.endsWith('.css') && !path.endsWith(join('app', 'globals.css'))) {
+      assert.doesNotMatch(source, /\.visually-hidden(?![\w-])/, `${path} must not style .visually-hidden`)
+    }
   }
 })
