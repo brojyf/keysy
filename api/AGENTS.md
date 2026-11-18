@@ -20,6 +20,8 @@ and callers scheduled for deletion, return 404.
 `DELETE /v0/orgs/{orgId}/members/{userId}` lets owners remove admins and developers and admins remove developers.
 Members scheduled for deletion can be removed. Self, owner, and other disallowed targets return 403;
 non-member targets return 404 MEMBER_NOT_FOUND. One transaction locks both member rows in user_id order, then deletes.
+`POST /v0/orgs/{orgId}/leave` lets admins and developers leave; owners get 409 ORG_OWNER. Missing orgs, non-members, callers scheduled for deletion, and repeat requests return 404 ORG_NOT_FOUND.
+One transaction locks the caller's member row and deletes it without locking the org.
 Owner transfer, role changes, and scope changes must reject members scheduled for deletion: in the write transaction,
 select the target's profile with `deleted_at IS NULL FOR SHARE`, as `POST /v0/orgs` does. Test both orders against
 account deletion.

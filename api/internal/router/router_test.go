@@ -36,6 +36,7 @@ func TestNewRegistersEveryRoute(t *testing.T) {
 		"PATCH /v0/orgs/:orgId",
 		"POST /v0/me/cancel-deletion",
 		"POST /v0/orgs",
+		"POST /v0/orgs/:orgId/leave",
 	}
 	var got []string
 	for _, route := range newTestRouter(new(int)).Routes() {
