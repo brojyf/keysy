@@ -2,7 +2,7 @@
   position: fixed;
   inset: calc(50% - var(--visual-center-offset)) auto auto 50%;
   width: min(440px, calc(100vw - 32px));
-  /* Centered 8dvh above the middle, the dialog fits within 84dvh; a scrollable child shrinks to keep the title and actions in view. */
+  /* Centered 8dvh above the middle, the dialog fits within 84dvh; a scrollable child shrinks first, then the dialog scrolls. */
   max-height: calc(84dvh - 32px);
   margin: 0;
   padding: 16px 20px 20px;

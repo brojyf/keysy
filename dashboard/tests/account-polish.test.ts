@@ -271,7 +271,7 @@ test('organization menu keeps the current row weight and colors its check with t
   }
 })
 
-test('a tall dialog shrinks its scrollable list so the title and actions stay in the viewport', async () => {
+test('a tall dialog stays in the viewport and shrinks its list to one row before the dialog scrolls', async () => {
   const window = new Window()
   try {
     const document = window.document
@@ -294,7 +294,8 @@ test('a tall dialog shrinks its scrollable list so the title and actions stay in
     const list = window.getComputedStyle(document.querySelector('.account-delete-organizations')!)
     assert.equal(list.maxHeight, '222px')
     assert.equal(list.overflowY, 'auto')
-    assert.ok(['0', '0px'].includes(list.minHeight), `list min-height ${list.minHeight} must let the list shrink`)
+    // The list shrinks no further than one 40px row plus its borders; below that the dialog itself scrolls.
+    assert.equal(list.minHeight, '42px')
     for (const selector of ['.dialog h2', '.dialog p', '.dialog-actions']) {
       assert.ok(['', 'auto'].includes(window.getComputedStyle(document.querySelector(selector)!).minHeight), `${selector} must keep its content height`)
     }
