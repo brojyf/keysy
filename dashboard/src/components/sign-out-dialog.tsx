@@ -13,12 +13,12 @@ type SignOutDialogProps = {
 export default function SignOutDialog({ ref, status, onConfirm }: SignOutDialogProps) {
   const pending = status === 'pending'
   return (
-    <Dialog ref={ref} title="Sign out?" closable={!pending} action={
+    <Dialog ref={ref} title="Sign out of Keysy?" closable={!pending} action={
       <Button variant="danger" disabled={pending} onClick={onConfirm}>
         {pending ? 'Signing out...' : 'Sign out'}
       </Button>
     }>
-      <p>You'll need to sign in again on this device.</p>
+      <p>This only signs you out on this device.</p>
       {status === 'error' && <p className="dialog-error" role="alert">Could not sign out. Try again.</p>}
     </Dialog>
   )

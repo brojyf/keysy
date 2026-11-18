@@ -271,7 +271,7 @@ function signOutButton() {
 
 function signOutDialog() {
   // General also renders the closed Delete account dialog; these tests use the shell's dialogs.
-  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.open || dialog.querySelector('h2')?.textContent === 'Sign out?')!
+  return [...container.querySelectorAll<HTMLDialogElement>('dialog.dialog')].find((dialog) => dialog.open || dialog.querySelector('h2')?.textContent === 'Sign out of Keysy?')!
 }
 
 function buttonNamed(scope: ParentNode, label: string) {
@@ -559,8 +559,8 @@ test('sign out asks for confirmation and Cancel keeps the session', async () => 
   await act(async () => signOutButton()!.click())
   expect(signOutDialog().open).toBe(true)
   expect(signOutDialog().autofocus).toBe(true)
-  expect(signOutDialog().querySelector('h2')?.textContent).toBe('Sign out?')
-  expect(signOutDialog().querySelector('p')?.textContent).toBe("You'll need to sign in again on this device.")
+  expect(signOutDialog().querySelector('h2')?.textContent).toBe('Sign out of Keysy?')
+  expect(signOutDialog().querySelector('p')?.textContent).toBe("This only signs you out on this device.")
   expect(sessionRequest).toHaveBeenCalledTimes(1)
   await act(async () => dialogButton('Cancel').click())
   expect(signOutDialog().open).toBe(false)
@@ -1062,7 +1062,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
-  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', 'Sign out?'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', 'Sign out of Keysy?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())
