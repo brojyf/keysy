@@ -47,6 +47,24 @@ func TestCORS(t *testing.T) {
 		if item.origin == "https://dashboard.keysy.net" && item.status < 400 && (w.Header().Get("Access-Control-Allow-Origin") != item.origin || w.Header().Get("Access-Control-Allow-Credentials") != "true") {
 			t.Fatal("missing credentialed CORS")
 		}
+		wantExpose := item.origin == "https://dashboard.keysy.net" && item.method != "OPTIONS" && item.status == 200
+		if got := w.Header().Get("Access-Control-Expose-Headers"); (got == "X-Request-ID") != wantExpose {
+			t.Fatalf("%+v: Access-Control-Expose-Headers = %q, want present %t", item, got, wantExpose)
+		}
+	}
+}
+
+func TestCORSExposesRequestIDOnHandlerError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(RequestID(), CORS("https://dashboard.keysy.net"))
+	r.GET("/v0/me", func(c *gin.Context) { Error(c, 500, "INTERNAL_ERROR", "The request failed.") })
+	req := httptest.NewRequest("GET", "/v0/me", nil)
+	req.Header.Set("Origin", "https://dashboard.keysy.net")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != 500 || w.Header().Get("Access-Control-Expose-Headers") != "X-Request-ID" || w.Header().Get("X-Request-ID") == "" {
+		t.Fatalf("handler error did not expose request ID: status=%d headers=%v", w.Code, w.Header())
 	}
 }
 
