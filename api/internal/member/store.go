@@ -34,9 +34,10 @@ func (s Store) List(ctx context.Context, userID, orgID string) ([]Member, error)
 }
 
 var (
-	ErrOrgNotFound     = errors.New("organization not found")
-	ErrMemberNotFound  = errors.New("member not found")
-	ErrRemoveForbidden = errors.New("member removal forbidden")
+	ErrOrgNotFound      = errors.New("organization not found")
+	ErrMemberNotFound   = errors.New("member not found")
+	ErrRemoveForbidden  = errors.New("member removal forbidden")
+	ErrOwnerCannotLeave = errors.New("owner cannot leave")
 )
 
 func canRemove(callerRole, targetRole string) bool {
@@ -82,5 +83,25 @@ func (s Store) Remove(ctx context.Context, callerID, orgID, targetID string) err
 			return ErrRemoveForbidden
 		}
 		return tx.Exec("DELETE FROM public.members WHERE org_id = ? AND user_id = ?", orgID, targetID).Error
+	})
+}
+
+func (s Store) Leave(ctx context.Context, callerID, orgID string) error {
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var member struct{ Role string }
+		// Lock only this member row, so org deletion and member removal cannot deadlock with leave.
+		// A committed owner transfer is seen when this lock is acquired.
+		if err := tx.Raw(`SELECT members.role FROM public.members AS members
+			JOIN public.profiles AS profiles ON profiles.id = members.user_id AND profiles.deleted_at IS NULL
+			WHERE members.org_id = ? AND members.user_id = ? FOR UPDATE OF members`, orgID, callerID).Scan(&member).Error; err != nil {
+			return err
+		}
+		if member.Role == "" {
+			return ErrOrgNotFound
+		}
+		if member.Role == "owner" {
+			return ErrOwnerCannotLeave
+		}
+		return tx.Exec("DELETE FROM public.members WHERE org_id = ? AND user_id = ?", orgID, callerID).Error
 	})
 }

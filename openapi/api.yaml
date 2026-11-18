@@ -513,6 +513,55 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v0/orgs/{orgId}/leave:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      tags: [Members]
+      security:
+        - accessCookie: []
+      operationId: leaveOrg
+      summary: Leave an org
+      description: Admins and Developers can leave. The Owner must transfer the Owner role or delete the org first. A repeated request returns 404 ORG_NOT_FOUND.
+      responses:
+        '204':
+          description: The caller left the org. The response body is empty.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidOrigin'
+        '404':
+          description: ORG_NOT_FOUND. The org is missing, the caller is not a member, or the caller's account is scheduled for deletion.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          $ref: '#/components/responses/LeaveOrgOwner'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v0/orgs/{orgId}/invitations:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -819,6 +868,32 @@ components:
                   name:
                     type: string
   responses:
+    LeaveOrgOwner:
+      description: ORG_OWNER. Transfer the Owner role or delete the org before leaving.
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestID'
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        Access-Control-Allow-Origin:
+          $ref: '#/components/headers/AllowOrigin'
+        Access-Control-Allow-Credentials:
+          $ref: '#/components/headers/AllowCredentials'
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code, message]
+                properties:
+                  code:
+                    type: string
+                    enum: [ORG_OWNER]
+                  message:
+                    type: string
     OrgOwner:
       description: ORG_OWNER. The signed-in user still owns an org. The body lists those orgs.
       headers:

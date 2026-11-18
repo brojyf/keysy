@@ -13,6 +13,7 @@ import (
 type Members interface {
 	List(context.Context, string, string) ([]Member, error)
 	Remove(context.Context, string, string, string) error
+	Leave(context.Context, string, string) error
 }
 
 func List(members Members) gin.HandlerFunc {
@@ -62,6 +63,31 @@ func Remove(members Members) gin.HandlerFunc {
 			middleware.Error(c, http.StatusNotFound, "MEMBER_NOT_FOUND", "The member was not found.")
 		case err != nil:
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "The member could not be removed. Try again later.")
+		default:
+			c.Status(http.StatusNoContent)
+		}
+	}
+}
+
+func Leave(members Members) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		orgID, err := uuid.Parse(c.Param("orgId"))
+		if err != nil || c.Request.URL.RawQuery != "" || c.Request.ContentLength != 0 || len(c.Request.TransferEncoding) != 0 {
+			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Use a valid organization ID without a query string or request body.")
+			return
+		}
+		err = members.Leave(c.Request.Context(), c.GetString("user_id"), orgID.String())
+		if c.Request.Context().Err() != nil {
+			return
+		}
+		switch {
+		case errors.Is(err, ErrOrgNotFound):
+			middleware.Error(c, http.StatusNotFound, "ORG_NOT_FOUND", "The organization was not found.")
+		case errors.Is(err, ErrOwnerCannotLeave):
+			middleware.Error(c, http.StatusConflict, "ORG_OWNER", "Transfer the Owner role or delete the organization, then try again.")
+		case err != nil:
+			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "You could not leave the organization. Try again later.")
 		default:
 			c.Status(http.StatusNoContent)
 		}
