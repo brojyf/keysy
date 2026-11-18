@@ -546,6 +546,14 @@ test('an org owner sees the orgs to hand over instead of the confirm field', asy
   expect(button('Delete account', deleteAccountDialog()).disabled).toBe(true)
 })
 
+test('an owner of many orgs sees every org in the list', async () => {
+  const owned = Array.from({ length: 8 }, (_, index) => ({ id: `owned-${index + 1}`, name: `owned-${index + 1}`, role: 'owner' as const, memberCount: 2 }))
+  await openDeleteAccount(owned)
+  expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete these 8 organizations first:')
+  expect([...deleteAccountDialog().querySelectorAll('li a')].map((link) => link.getAttribute('href'))).toEqual(owned.map((organization) => `/orgs/${organization.id}/settings`))
+  expect(button('Cancel', deleteAccountDialog()).disabled).toBe(false)
+})
+
 test('an owner of one org sees the singular message', async () => {
   await openDeleteAccount(organizations)
   expect(deleteAccountDialog().querySelector('p')?.textContent).toBe('Transfer ownership or delete this organization first:')
