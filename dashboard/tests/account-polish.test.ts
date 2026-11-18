@@ -250,3 +250,23 @@ for (const dark of [false, true]) {
     }
   })
 }
+
+test('organization menu keeps the current row weight and colors its check with the accent', async () => {
+  const window = new Window()
+  try {
+    const document = window.document
+    const style = document.createElement('style')
+    style.textContent = stylesheet
+    document.head.append(style)
+    document.body.innerHTML = `
+      <div class="account-menu organization-menu">
+        <a class="account-menu-item organization-menu-org" href="/a" aria-current="true"><span>a</span><svg></svg></a>
+        <a class="account-menu-item organization-menu-org" href="/b"><span>b</span></a>
+      </div>`
+    const [current, other] = document.querySelectorAll('.organization-menu-org')
+    assert.equal(window.getComputedStyle(current!).fontWeight, window.getComputedStyle(other!).fontWeight)
+    assert.equal(window.getComputedStyle(current!.querySelector('svg')!).color, window.getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim())
+  } finally {
+    await window.happyDOM.close()
+  }
+})
