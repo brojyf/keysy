@@ -621,15 +621,28 @@ test('the name input opts out of browser autofill', async () => {
   expect(input().getAttribute('autocomplete')).toBe('off')
 })
 
-test('validates names by Unicode code points', async () => {
+test('shows inline name errors after editing and clears them for valid names', async () => {
   await renderAccount('/account', <GeneralPage />)
-  for (const value of ['   ', '界'.repeat(33), '😀'.repeat(33)]) {
+  const message = () => container.querySelector('.account-name-error')?.textContent ?? null
+  expect(message()).toBeNull()
+  expect(input().hasAttribute('aria-invalid')).toBe(false)
+  for (const [value, hint, description] of [
+    ['   ', 'Required', 'Enter a name.'],
+    ['界'.repeat(33), '33/32', 'Name must be 32 characters or fewer.'],
+    [`  ${'😀'.repeat(38)}  `, '38/32', 'Name must be 32 characters or fewer.'],
+  ]) {
     await edit(value)
     expect(button('Save').disabled).toBe(true)
+    expect(message()).toBe(hint)
+    expect(input().getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(input().getAttribute('aria-describedby')!)?.textContent).toBe(description)
   }
   for (const value of ['界'.repeat(32), '😀'.repeat(32)]) {
     await edit(value)
     expect(button('Save').disabled).toBe(false)
+    expect(message()).toBeNull()
+    expect(input().hasAttribute('aria-invalid')).toBe(false)
+    expect(input().hasAttribute('aria-describedby')).toBe(false)
   }
 })
 

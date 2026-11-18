@@ -1048,12 +1048,30 @@ test('discard restores the organization name and hides the save bar', async () =
   expect(renameRequest).not.toHaveBeenCalled()
 })
 
-test('rename rejects a blank name without calling the API', async () => {
+test('shows inline rename errors after editing and blocks invalid submissions', async () => {
   await renderSettings()
+  const input = container.querySelector<HTMLInputElement>('#organization-settings-name')!
+  const message = () => container.querySelector('.organization-settings .account-name-error')?.textContent ?? null
+  expect(message()).toBeNull()
+  expect(input.hasAttribute('aria-invalid')).toBe(false)
   await typeOrganizationName('   ')
   expect(saveButton()?.disabled).toBe(true)
+  expect(message()).toBe('Required')
+  expect(input.getAttribute('aria-invalid')).toBe('true')
+  expect(document.getElementById(input.getAttribute('aria-describedby')!)?.textContent).toBe('Enter a name.')
+  await act(async () => submitRename())
+  await typeOrganizationName(`  ${'😀'.repeat(33)}  `)
+  expect(saveButton()?.disabled).toBe(true)
+  expect(message()).toBe('33/32')
+  expect(input.getAttribute('aria-invalid')).toBe('true')
+  expect(document.getElementById(input.getAttribute('aria-describedby')!)?.textContent).toBe('Name must be 32 characters or fewer.')
   await act(async () => submitRename())
   expect(renameRequest).not.toHaveBeenCalled()
+  await typeOrganizationName('  Renamed  ')
+  expect(saveButton()?.disabled).toBe(false)
+  expect(message()).toBeNull()
+  expect(input.hasAttribute('aria-invalid')).toBe(false)
+  expect(input.hasAttribute('aria-describedby')).toBe(false)
 })
 
 test('a failed rename shows an error and keeps the draft', async () => {

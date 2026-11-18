@@ -443,6 +443,9 @@ th[aria-sort='descending'] .account-sort svg {
   border-radius: 10px;
   color: var(--color-text);
   background: var(--color-surface);
+}
+
+.account-name, .account-name-error {
   font: var(--text-body--font-weight) var(--text-body)/var(--text-body--line-height) var(--font-sans);
 }
 
@@ -454,6 +457,37 @@ th[aria-sort='descending'] .account-sort svg {
   border-color: transparent;
   outline: none;
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
+}
+
+.account-name-field {
+  position: relative;
+  display: flex;
+}
+
+.account-name[aria-invalid="true"] {
+  padding-inline-end: calc(21px + 8ch);
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-danger) 45%, transparent);
+}
+
+.account-name-error {
+  position: absolute;
+  inset-inline-end: 11px;
+  align-self: center;
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .account-delete-form {
