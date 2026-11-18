@@ -18,6 +18,7 @@ func (list memberStore) List(ctx context.Context, userID, orgID string) ([]Membe
 }
 
 func (list memberStore) Remove(context.Context, string, string, string) error { return nil }
+func (list memberStore) Leave(context.Context, string, string) error          { return nil }
 
 func TestList(t *testing.T) {
 	const orgID = "20000000-0000-0000-0000-000000000001"
@@ -90,6 +91,7 @@ func TestList(t *testing.T) {
 type removeStore func(context.Context, string, string, string) error
 
 func (remove removeStore) List(context.Context, string, string) ([]Member, error) { return nil, nil }
+func (remove removeStore) Leave(context.Context, string, string) error            { return nil }
 func (remove removeStore) Remove(ctx context.Context, callerID, orgID, targetID string) error {
 	return remove(ctx, callerID, orgID, targetID)
 }
@@ -171,5 +173,81 @@ func TestCanRemove(t *testing.T) {
 				t.Errorf("%s -> %s: got %v", caller, target, got)
 			}
 		}
+	}
+}
+
+type leaveStore func(context.Context, string, string) error
+
+func (leave leaveStore) List(context.Context, string, string) ([]Member, error) { return nil, nil }
+func (leave leaveStore) Remove(context.Context, string, string, string) error   { return nil }
+func (leave leaveStore) Leave(ctx context.Context, callerID, orgID string) error {
+	return leave(ctx, callerID, orgID)
+}
+
+func TestLeave(t *testing.T) {
+	const orgID = "20000000-0000-0000-0000-000000000001"
+	for _, tc := range []struct {
+		name, org, query, body, code string
+		storeErr                     error
+		status                       int
+		cancel, chunked              bool
+	}{
+		{name: "success", org: orgID, status: 204},
+		{name: "missing org", org: orgID, storeErr: ErrOrgNotFound, status: 404, code: "ORG_NOT_FOUND"},
+		{name: "owner", org: orgID, storeErr: ErrOwnerCannotLeave, status: 409, code: "ORG_OWNER"},
+		{name: "invalid org", org: "invalid", status: 400, code: "INVALID_REQUEST"},
+		{name: "query", org: orgID, query: "?x=1", status: 400, code: "INVALID_REQUEST"},
+		{name: "body", org: orgID, body: "{}", status: 400, code: "INVALID_REQUEST"},
+		{name: "chunked", org: orgID, chunked: true, status: 400, code: "INVALID_REQUEST"},
+		{name: "database error", org: orgID, storeErr: errors.New("private database details"), status: 500, code: "INTERNAL_ERROR"},
+		{name: "canceled", org: orgID, cancel: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			called := false
+			store := leaveStore(func(got context.Context, caller, org string) error {
+				called = true
+				if got != ctx || caller != "user-123" || org != orgID {
+					t.Fatal("lost request context or IDs")
+				}
+				if tc.cancel {
+					cancel()
+					return ctx.Err()
+				}
+				return tc.storeErr
+			})
+			r := gin.New()
+			r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+			r.POST("/v0/orgs/:orgId/leave", Leave(store))
+			req := httptest.NewRequest(http.MethodPost, "/v0/orgs/"+tc.org+"/leave"+tc.query, strings.NewReader(tc.body)).WithContext(ctx)
+			if tc.chunked {
+				req.ContentLength = -1
+				req.TransferEncoding = []string{"chunked"}
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Header().Get("Cache-Control") != "no-store" {
+				t.Fatal("missing no-store")
+			}
+			if tc.cancel {
+				if !called || w.Body.Len() != 0 || w.Flushed {
+					t.Fatal("handler wrote a canceled response")
+				}
+				return
+			}
+			if w.Code != tc.status || called != (tc.status != 400) || strings.Contains(w.Body.String(), "private") {
+				t.Fatalf("status=%d called=%v body=%s", w.Code, called, w.Body.String())
+			}
+			if tc.code != "" && !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) {
+				t.Fatal(w.Body.String())
+			}
+			if tc.status == 204 && w.Body.Len() != 0 {
+				t.Fatal(w.Body.String())
+			}
+			if tc.status == 409 && strings.Contains(w.Body.String(), `"organizations"`) {
+				t.Fatal(w.Body.String())
+			}
+		})
 	}
 }

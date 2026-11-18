@@ -269,3 +269,62 @@ func TestStoreRemovePostgres(t *testing.T) {
 		}
 	})
 }
+
+func TestStoreLeavePostgres(t *testing.T) {
+	databaseURL := os.Getenv("KEYSY_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
+	}
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = connection.Close() })
+	if err := db.Exec(`CREATE TABLE public.orgs (id text PRIMARY KEY);
+		CREATE TABLE public.profiles (id text PRIMARY KEY, deleted_at timestamptz);
+		CREATE TABLE public.members (org_id text REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text REFERENCES public.profiles(id), role text, PRIMARY KEY (org_id, user_id));
+		INSERT INTO public.orgs VALUES ('org'), ('other');
+		INSERT INTO public.profiles VALUES ('owner', NULL), ('admin', NULL), ('dev', NULL), ('deleting', now()), ('outsider', NULL);
+		INSERT INTO public.members VALUES ('org', 'owner', 'owner'), ('org', 'admin', 'admin'), ('org', 'dev', 'developer'), ('org', 'deleting', 'developer'), ('other', 'outsider', 'owner')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := db.Exec(`DROP TABLE public.members, public.profiles, public.orgs`).Error; err != nil {
+			t.Error(err)
+		}
+	})
+	store := Store{DB: db}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	for _, tc := range []struct {
+		name, caller, org string
+		want              error
+		remaining         int64
+	}{
+		{"developer", "dev", "org", nil, 0},
+		{"repeat", "dev", "org", ErrOrgNotFound, 0},
+		{"admin", "admin", "org", nil, 0},
+		{"owner", "owner", "org", ErrOwnerCannotLeave, 1},
+		{"nonmember", "outsider", "org", ErrOrgNotFound, 0},
+		{"missing org", "owner", "missing", ErrOrgNotFound, 0},
+		{"deleting caller", "deleting", "org", ErrOrgNotFound, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := store.Leave(ctx, tc.caller, tc.org); !errors.Is(got, tc.want) {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+			var count int64
+			if err := db.Table("public.members").Where("org_id = ? AND user_id = ?", tc.org, tc.caller).Count(&count).Error; err != nil || count != tc.remaining {
+				t.Fatalf("membership count=%d err=%v", count, err)
+			}
+		})
+	}
+	var remaining []string
+	if err := db.Table("public.members").Order("org_id, user_id").Pluck("user_id", &remaining).Error; err != nil || !slices.Equal(remaining, []string{"deleting", "owner", "outsider"}) {
+		t.Fatalf("remaining=%v err=%v", remaining, err)
+	}
+}
