@@ -707,8 +707,6 @@ test('editing during the success message cancels dismissal and keeps the new dra
 test('save failures retain the draft and clear the alert on edit or discard', async () => {
   for (const respond of [
     () => Promise.reject(new TypeError('Network error')),
-    () => Promise.resolve(new Response('invalid json', { status: 200 })),
-    () => Promise.resolve(Response.json({ id: 'invalid' })),
   ]) {
     request.mockImplementation(respond)
     await renderAccount('/account', <GeneralPage />)
@@ -809,6 +807,15 @@ for (const requestId of ['req-123', null]) test(`save server error displays requ
   expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
   expect(button('Save').textContent).toBe('Save')
   expect(input().value).toBe('Draft')
+})
+
+for (const body of ['not json', '{}']) test(`save success with an invalid body ${body} opens the server dialog`, async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(body, { status: 200, headers: { 'X-Request-ID': 'req-200' } })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-200')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
 })
 
 for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, async () => {

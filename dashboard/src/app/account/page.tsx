@@ -47,7 +47,8 @@ export default function GeneralPage() {
         return
       }
       if (!response.ok) throw new SaveRequestError(response)
-      const updated = parseSessionUser(await response.json())
+      // An unreadable 200 still came from the server, so keep its request ID.
+      const updated = await response.json().then(parseSessionUser).catch(() => { throw new SaveRequestError(response) })
       setDraft(updated.displayName)
       setSaveState('saved')
       onUserChange(updated)

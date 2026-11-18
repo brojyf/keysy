@@ -1095,6 +1095,15 @@ for (const requestId of ['req-123', null]) test(`save server error displays requ
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')!.value).toBe('Draft')
 })
 
+for (const body of ['not json', '{}']) test(`rename success with an invalid body ${body} opens the server dialog`, async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(body, { status: 200, headers: { 'X-Request-ID': 'req-200' } })))
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-200')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
 for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, async () => {
   renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
   await renderSettings()
