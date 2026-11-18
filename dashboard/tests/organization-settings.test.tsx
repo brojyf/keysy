@@ -1118,6 +1118,19 @@ for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, as
   if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
 })
 
+test('a refresh server error during rename opens the server dialog with the refresh request ID', async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })))
+  const routeRequest = globalThis.fetch
+  globalThis.fetch = ((url: string, init?: RequestInit) => String(url).endsWith('/v0/auth/refresh')
+    ? Promise.resolve(new Response(null, { status: 503, headers: { 'X-Request-ID': 'req-refresh' } }))
+    : routeRequest(url, init)) as typeof fetch
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-refresh')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
 for (const action of ['retry', 'edit']) test(`save network error and ${action}`, async () => {
   renameRequest.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
   await renderSettings()

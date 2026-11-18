@@ -833,6 +833,16 @@ for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, as
   if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
 })
 
+test('a refresh server error during save opens the server dialog with the refresh request ID', async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })))
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503, headers: { 'X-Request-ID': 'req-refresh' } })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-refresh')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
 for (const action of ['retry', 'edit']) test(`save network error and ${action}`, async () => {
   request.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
   await renderAccount('/account', <GeneralPage />)
