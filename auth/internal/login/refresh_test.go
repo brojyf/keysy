@@ -133,6 +133,7 @@ func TestRefreshUpstreamFailureKeepsCookies(t *testing.T) {
 				t.Fatalf("refresh = %d, want %d; cookies = %d", w.Code, upstream.want, len(w.Result().Cookies()))
 			}
 			assertDashboardCORS(t, w, "https://app.keysy.test")
+			assertExposesRequestID(t, w)
 		})
 	}
 }

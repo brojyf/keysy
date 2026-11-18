@@ -32,6 +32,7 @@ func (h *Handler) dashboardCORS() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
+		c.Header("Access-Control-Expose-Headers", "X-Request-ID")
 		c.Next()
 	}
 }

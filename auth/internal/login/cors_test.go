@@ -82,6 +82,7 @@ func TestDashboardRequestsAllowCredentialsOnSuccessAndErrors(t *testing.T) {
 				t.Fatalf("status = %d, want %d", w.Code, item.want)
 			}
 			assertDashboardCORS(t, w, "https://app.keysy.test")
+			assertExposesRequestID(t, w)
 		})
 	}
 }
@@ -93,6 +94,14 @@ func assertDashboardCORS(t *testing.T, w *httptest.ResponseRecorder, origin stri
 	}
 	if w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Referrer-Policy") != "no-referrer" {
 		t.Fatal("missing sensitive-response headers")
+	}
+}
+
+// The dashboard shows X-Request-ID on server errors, so it must be readable cross-origin.
+func assertExposesRequestID(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+	if got := w.Header().Values("Access-Control-Expose-Headers"); len(got) != 1 || got[0] != "X-Request-ID" {
+		t.Fatalf("Access-Control-Expose-Headers = %q, want X-Request-ID", got)
 	}
 }
 
@@ -155,7 +164,7 @@ func TestDashboardPreflightIsLimitedToSupportedRoutesAndMethods(t *testing.T) {
 			}
 			if item.want == http.StatusNoContent {
 				assertDashboardCORS(t, w, item.origin)
-				if w.Header().Get("Access-Control-Allow-Methods") != item.method || w.Header().Get("Access-Control-Allow-Headers") != "" || w.Body.Len() != 0 {
+				if w.Header().Get("Access-Control-Allow-Methods") != item.method || w.Header().Get("Access-Control-Allow-Headers") != "" || w.Header().Get("Access-Control-Expose-Headers") != "" || w.Body.Len() != 0 {
 					t.Fatalf("invalid preflight response: %v", w.Header())
 				}
 			} else if w.Header().Get("Access-Control-Allow-Origin") != "" || len(w.Header().Values("Vary")) != 0 {
