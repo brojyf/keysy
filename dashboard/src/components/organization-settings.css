@@ -67,15 +67,6 @@
   flex-shrink: 0;
 }
 
-.organization-copy-status {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .organization-settings .account-name:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
