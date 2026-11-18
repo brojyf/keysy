@@ -250,7 +250,7 @@ export default function LoadingSkeleton({ pathname }: { pathname: string }) {
   const Page = page ? pages[page] : null
   return (
     <>
-      <p role="status" className="skeleton-status">Checking your session...</p>
+      <p role="status" className="visually-hidden">Checking your session...</p>
       <div className="skeleton-page" aria-busy="true">
         <SkeletonTopbar />
         <div className="skeleton-body">
