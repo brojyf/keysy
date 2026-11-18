@@ -48,7 +48,7 @@ func TestCORS(t *testing.T) {
 			t.Fatal("missing credentialed CORS")
 		}
 		wantExpose := item.origin == "https://dashboard.keysy.net" && item.method != "OPTIONS" && item.status == 200
-		if got := w.Header().Get("Access-Control-Expose-Headers"); (got == "X-Request-ID") != wantExpose {
+		if got := w.Header().Values("Access-Control-Expose-Headers"); wantExpose && (len(got) != 1 || got[0] != "X-Request-ID") || !wantExpose && len(got) != 0 {
 			t.Fatalf("%+v: Access-Control-Expose-Headers = %q, want present %t", item, got, wantExpose)
 		}
 	}
