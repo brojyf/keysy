@@ -719,12 +719,12 @@ th[aria-sort='descending'] .account-sort svg {
   white-space: nowrap;
 }
 
-.organization-menu-org svg { flex: none; }
-
-.organization-menu-org[aria-current] {
-  background: var(--color-menu-soft);
-  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+.organization-menu-org svg {
+  flex: none;
+  color: var(--color-accent);
 }
+
+.organization-menu-org[aria-current] { background: var(--color-menu-soft); }
 
 @media (prefers-reduced-motion: no-preference) {
   .account-menu.organization-menu:popover-open > :is(.account-menu-item, .organization-menu-label) {
