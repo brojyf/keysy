@@ -270,3 +270,36 @@ test('organization menu keeps the current row weight and colors its check with t
     await window.happyDOM.close()
   }
 })
+
+test('a tall dialog stays in the viewport and shrinks its list to one row before the dialog scrolls', async () => {
+  const window = new Window()
+  try {
+    const document = window.document
+    const style = document.createElement('style')
+    style.textContent = stylesheet
+    document.head.append(style)
+    document.body.innerHTML = `
+      <dialog class="dialog" open>
+        <h2>Delete account?</h2>
+        <p>Transfer ownership or delete these 8 organizations first:</p>
+        <ul class="account-delete-organizations">${'<li><a href="/orgs/org/settings"><span>org</span></a></li>'.repeat(8)}</ul>
+        <div class="dialog-actions"><button class="button">Cancel</button></div>
+      </dialog>`
+    // Happy DOM has no layout engine. These checks guard the CSS constraints, not pixel geometry.
+    const dialog = window.getComputedStyle(document.querySelector('.dialog')!)
+    // The dialog is centered 8dvh above the middle, so it fits above the center only within 84dvh, minus a 16px margin on each side.
+    assert.equal(dialog.maxHeight, 'calc(84dvh - 32px)')
+    assert.equal(dialog.display, 'flex')
+    assert.equal(dialog.flexDirection, 'column')
+    const list = window.getComputedStyle(document.querySelector('.account-delete-organizations')!)
+    assert.equal(list.maxHeight, '222px')
+    assert.equal(list.overflowY, 'auto')
+    // The list shrinks no further than one 40px row plus its borders; below that the dialog itself scrolls.
+    assert.equal(list.minHeight, '42px')
+    for (const selector of ['.dialog h2', '.dialog p', '.dialog-actions']) {
+      assert.ok(['', 'auto'].includes(window.getComputedStyle(document.querySelector(selector)!).minHeight), `${selector} must keep its content height`)
+    }
+  } finally {
+    await window.happyDOM.close()
+  }
+})
