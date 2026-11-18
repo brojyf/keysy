@@ -1038,7 +1038,7 @@ test('empty account shell hides organization controls and shows empty organizati
   await renderEmpty('/account/organizations', <AccountLayout><OrganizationsPage /></AccountLayout>)
   expect(container.querySelector('.rail')).toBeNull()
   expect(container.querySelector('.account-organizations-empty h2')?.textContent).toBe('No organizations yet')
-  expect(container.querySelector('.account-organizations-empty p')?.textContent).toBe('Create one, or ask an Admin to add you.')
+  expect(container.querySelector('.account-organizations-empty p')?.textContent).toBe('Create an organization, or ask a teammate to invite you.')
   expect(container.querySelector('table')).toBeNull()
   expect(container.querySelector('.account-search')).toBeNull()
   await openCreateDialog()

@@ -29,7 +29,7 @@ export default function OrganizationsPage() {
   if (allOrganizations.length === 0) return (
     <>
       <div className="account-organizations-empty">
-        <div><h2>No organizations yet</h2><p>Create one, or ask an Admin to add you.</p></div>
+        <div><h2>No organizations yet</h2><p>Create an organization, or ask a teammate to invite you.</p></div>
         <Button variant="primary" onClick={openCreateDialog}>New organization</Button>
       </div>
       <CreateOrganizationDialog ref={dialog} />
