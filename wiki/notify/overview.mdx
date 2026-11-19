@@ -10,9 +10,8 @@ See [API endpoints](/notify/endpoints) for the current interface status.
 
 ## Planned integration
 
-`notify` consumes Kafka domain events and sends email only. It enqueues email
-jobs on Cloudflare Queues, and `email-worker` sends them through Resend. See
-[System design](/system-design).
+`notify` consumes `email.requested` messages from Kafka and sends each email
+through Resend. See [System design](/system-design).
 
 Keysy has no in-app notifications: no notification center, inbox, or unread
 state.

@@ -107,7 +107,7 @@ test('the architecture page reclaims the empty outline column for responsive lay
   expect(await matches(prd, 'iframe.architecture-diagram')).toHaveLength(0);
 });
 
-test('the architecture reads left to right, then email delivery turns back beneath it', async () => {
+test('the architecture reads left to right, with email delivery below notify', async () => {
   const source = await Bun.file(new URL('../public/architecture/system-architecture.json', import.meta.url)).json();
   const nodes = new Map<string, { pos: number[]; size: number[] }>(source.components.map((node: { id: string }) => [node.id, node]));
   const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify'];
@@ -116,14 +116,9 @@ test('the architecture reads left to right, then email delivery turns back benea
     const next = nodes.get(mainPath[index]!)!;
     expect(next.pos[0]!).toBeGreaterThan(previous.pos[0]! + previous.size[0]!);
   }
-  for (const [upper, lower] of [['notify', 'cfqueue'], ['worker', 'emaildlq']]) {
-    expect(nodes.get(lower!)!.pos[0]).toBe(nodes.get(upper!)!.pos[0]);
-    expect(nodes.get(lower!)!.pos[1]!).toBeGreaterThan(nodes.get(upper!)!.pos[1]! + nodes.get(upper!)!.size[1]!);
-  }
-  for (const [right, left] of [['cfqueue', 'worker'], ['worker', 'resend']]) {
-    expect(nodes.get(left!)!.pos[0]! + nodes.get(left!)!.size[0]!).toBeLessThan(nodes.get(right!)!.pos[0]!);
-    expect(nodes.get(left!)!.pos[1]).toBe(nodes.get(right!)!.pos[1]);
-  }
+  expect(nodes.get('resend')!.pos[0]).toBe(nodes.get('notify')!.pos[0]);
+  expect(nodes.get('resend')!.pos[1]!).toBeGreaterThan(nodes.get('notify')!.pos[1]! + nodes.get('notify')!.size[1]!);
+  expect(source.connections).toContainEqual(expect.objectContaining({ from: 'notify', to: 'resend', label: 'send' }));
 });
 
 test('the horizontal chart stays within five compact rows', async () => {
@@ -164,11 +159,11 @@ test('the restored vertical layout preserves the same architecture content and d
   expect(vertical.boundaries).toEqual(horizontal.boundaries);
   expect(vertical.cards).toEqual(horizontal.cards);
   const nodes = new Map<string, { pos: number[]; size: number[] }>(vertical.components.map((node: { id: string }) => [node.id, node]));
-  const worker = nodes.get('worker')!;
+  const notify = nodes.get('notify')!;
   const resend = nodes.get('resend')!;
-  expect(resend.pos[0]!).toBeGreaterThan(worker.pos[0]! + worker.size[0]!);
-  expect(resend.pos[1]).toBe(worker.pos[1]);
-  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify', 'cfqueue', 'worker', 'emaildlq'];
+  expect(resend.pos[0]).toBe(notify.pos[0]);
+  expect(resend.pos[1]!).toBeGreaterThan(notify.pos[1]! + notify.size[1]!);
+  const mainPath = ['clients', 'api', 'supabase', 'relay', 'kafka', 'notify', 'resend'];
   for (let index = 1; index < mainPath.length; index++) {
     expect(nodes.get(mainPath[index]!)!.pos[1]!).toBeGreaterThan(nodes.get(mainPath[index - 1]!)!.pos[1]!);
   }
@@ -217,7 +212,7 @@ test('tech stack names the frontend, backend, data, messaging, email and DevOps 
   const html = await Bun.file(new URL('tech-stack.html', output)).text();
   for (const choice of [
     'TypeScript', 'React', 'Go', 'Gin', 'GORM', 'Supabase', 'Dragonfly', 'Aiven', 'Kafka', 'PostgreSQL',
-    'Cloudflare Queues', 'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io', 'Grafana k6',
+    'Cloudflare Workers', 'Resend', 'Grafana', 'OpenTelemetry', 'GitHub Actions', 'Fly.io', 'Grafana k6',
   ]) expect(html).toContain(choice);
 });
 
