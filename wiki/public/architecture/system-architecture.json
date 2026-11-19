@@ -354,7 +354,7 @@
       "title": "Observability",
       "items": [
         "api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn",
-        "notify exports Resend quota usage from response headers and plan limits from its config; Grafana alerts Discord at 80% (warning) and 100% (critical) of the daily and monthly quota",
+        "notify exports Resend quota usage from response headers and plan limits from its config, and resets daily usage to 0 at 00:00 UTC and monthly usage at the start of each UTC month; Grafana alerts Discord at 80% (warning) and 100% (critical) of the monthly quota, and of the daily quota only while responses carry x-resend-daily-quota",
         "notify counts Resend failures and expired emails by reason; every DLQ message raises a Grafana alert",
         "notify's DLQ topic keeps failed and expired messages with their reason for 3 days; an operator resends from it outside the notify consumer, with the original request body and Idempotency-Key = event_id",
         "Before resending a message with an unknown send outcome more than 24 hours after its event, the operator checks Resend Logs or confirms that a duplicate is acceptable"
