@@ -5771,7 +5771,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>api writes one email.requested outbox row per recipient: template, to and variables</li>
           <li>notify sends each email through Resend with Idempotency-Key = event_id</li>
-          <li>429 and 5xx are retried with delay; rejected sends go to notify&#39;s DLQ topic</li>
+          <li>Network errors, 5xx, 429 rate_limit_exceeded and 409 concurrent_idempotent_requests are retried with backoff</li>
+          <li>Quota errors and other 4xx, including invalid_idempotent_request, go to notify&#39;s DLQ topic</li>
           <li>Bounces and complaints handled by the Resend suppression list</li>
         </ul>
       </div>
@@ -5783,7 +5784,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn</li>
-          <li>notify counts Resend failures by reason; quota and rejected sends raise a Grafana alert</li>
+          <li>notify exports Resend daily and monthly quota usage; Grafana alerts Discord at 80% (warning) and 100% (critical)</li>
+          <li>notify counts Resend failures by reason; rejected sends raise a Grafana alert</li>
           <li>notify&#39;s DLQ topic keeps rejected messages so they can be replayed</li>
         </ul>
       </div>

@@ -344,7 +344,8 @@
       "items": [
         "api writes one email.requested outbox row per recipient: template, to and variables",
         "notify sends each email through Resend with Idempotency-Key = event_id",
-        "429 and 5xx are retried with delay; rejected sends go to notify's DLQ topic",
+        "Network errors, 5xx, 429 rate_limit_exceeded and 409 concurrent_idempotent_requests are retried with backoff",
+        "Quota errors and other 4xx, including invalid_idempotent_request, go to notify's DLQ topic",
         "Bounces and complaints handled by the Resend suppression list"
       ]
     },
@@ -353,7 +354,8 @@
       "title": "Observability",
       "items": [
         "api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn",
-        "notify counts Resend failures by reason; quota and rejected sends raise a Grafana alert",
+        "notify exports Resend daily and monthly quota usage; Grafana alerts Discord at 80% (warning) and 100% (critical)",
+        "notify counts Resend failures by reason; rejected sends raise a Grafana alert",
         "notify's DLQ topic keeps rejected messages so they can be replayed"
       ]
     }
