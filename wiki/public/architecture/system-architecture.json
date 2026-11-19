@@ -333,7 +333,7 @@
       "id": "publish-event",
       "from": "relay",
       "to": "kafka",
-      "label": "publish, mark published_at",
+      "label": "publish",
       "variant": "emphasis"
     },
     {
