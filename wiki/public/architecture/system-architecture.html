@@ -5746,7 +5746,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>Successful changes commit their outbox row in the same transaction as business data</li>
           <li>Kafka keyed by aggregate ID; failed events go to a DLQ topic</li>
-          <li>notify commits its offset only after Resend accepts the email or the message goes to its DLQ topic</li>
+          <li>notify commits its offset only after Resend accepts the email or the message goes to its retry or DLQ topic</li>
           <li>Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at</li>
         </ul>
       </div>
@@ -5771,8 +5771,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>api writes one email.requested outbox row per recipient: template, to and variables</li>
           <li>notify sends each email through Resend with Idempotency-Key = event_id</li>
-          <li>Network errors, 5xx, 429 rate_limit_exceeded and 409 concurrent_idempotent_requests are retried with backoff</li>
+          <li>429 rate_limit_exceeded and 409 concurrent_idempotent_requests wait and retry in place</li>
+          <li>Network errors and 5xx go to notify&#39;s retry topic and retry with backoff for up to 12 hours, then go to its DLQ topic</li>
           <li>Quota errors and other 4xx, including invalid_idempotent_request, go to notify&#39;s DLQ topic</li>
+          <li>notify skips an email whose event is more than 24 hours old, because Resend keeps idempotency keys for 24 hours; only an operator replay sends it</li>
           <li>Bounces and complaints handled by the Resend suppression list</li>
         </ul>
       </div>
@@ -5785,8 +5787,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn</li>
           <li>notify exports Resend daily and monthly quota usage; Grafana alerts Discord at 80% (warning) and 100% (critical)</li>
-          <li>notify counts Resend failures by reason; rejected sends raise a Grafana alert</li>
-          <li>notify&#39;s DLQ topic keeps rejected messages so they can be replayed</li>
+          <li>notify counts Resend failures and skipped emails by reason; DLQ messages and skipped emails raise a Grafana alert</li>
+          <li>notify&#39;s DLQ topic keeps failed messages for operator replay</li>
         </ul>
       </div>
     </div>

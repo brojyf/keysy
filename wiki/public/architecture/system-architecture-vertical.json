@@ -325,7 +325,7 @@
       "items": [
         "Successful changes commit their outbox row in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
-        "notify commits its offset only after Resend accepts the email or the message goes to its DLQ topic",
+        "notify commits its offset only after Resend accepts the email or the message goes to its retry or DLQ topic",
         "Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at"
       ]
     },
@@ -344,8 +344,10 @@
       "items": [
         "api writes one email.requested outbox row per recipient: template, to and variables",
         "notify sends each email through Resend with Idempotency-Key = event_id",
-        "Network errors, 5xx, 429 rate_limit_exceeded and 409 concurrent_idempotent_requests are retried with backoff",
+        "429 rate_limit_exceeded and 409 concurrent_idempotent_requests wait and retry in place",
+        "Network errors and 5xx go to notify's retry topic and retry with backoff for up to 12 hours, then go to its DLQ topic",
         "Quota errors and other 4xx, including invalid_idempotent_request, go to notify's DLQ topic",
+        "notify skips an email whose event is more than 24 hours old, because Resend keeps idempotency keys for 24 hours; only an operator replay sends it",
         "Bounces and complaints handled by the Resend suppression list"
       ]
     },
@@ -355,8 +357,8 @@
       "items": [
         "api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn",
         "notify exports Resend daily and monthly quota usage; Grafana alerts Discord at 80% (warning) and 100% (critical)",
-        "notify counts Resend failures by reason; rejected sends raise a Grafana alert",
-        "notify's DLQ topic keeps rejected messages so they can be replayed"
+        "notify counts Resend failures and skipped emails by reason; DLQ messages and skipped emails raise a Grafana alert",
+        "notify's DLQ topic keeps failed messages for operator replay"
       ]
     }
   ]
