@@ -219,7 +219,6 @@ function SkeletonTopbar() {
         <Bone width={220} height={30} className="skeleton-search" />
         <Bone width={30} height={30} />
         <Bone width={30} height={30} />
-        <Bone width={30} height={30} />
         <div className="skeleton-topbar-divider" />
         <Bone width={30} height={30} />
       </div>
