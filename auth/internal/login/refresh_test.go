@@ -5,6 +5,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/brojyf/keysy/auth/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func refreshRequest(f *loginFixture, origin, refreshToken string) *http.Request {
@@ -133,6 +136,21 @@ func TestRefreshUpstreamFailureKeepsCookies(t *testing.T) {
 				t.Fatalf("refresh = %d, want %d; cookies = %d", w.Code, upstream.want, len(w.Result().Cookies()))
 			}
 			assertDashboardCORS(t, w, "https://app.keysy.test")
+			assertExposesRequestID(t, w)
 		})
 	}
+}
+
+func TestRefreshFailureExposesRequestID(t *testing.T) {
+	f := newFixture(t)
+	f.refreshStatus, f.refreshBody = 503, `{}`
+	r := gin.New()
+	r.Use(middleware.RequestID())
+	f.handler.Register(r)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, refreshRequest(f, "https://app.keysy.test", "keysy-refresh"))
+	if w.Code != http.StatusServiceUnavailable || w.Header().Get("X-Request-ID") == "" {
+		t.Fatalf("refresh = %d, X-Request-ID = %q", w.Code, w.Header().Get("X-Request-ID"))
+	}
+	assertExposesRequestID(t, w)
 }
