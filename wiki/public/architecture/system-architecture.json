@@ -110,7 +110,7 @@
       "id": "otel",
       "type": "backend",
       "label": "otel",
-      "sublabel": "OTel Collector",
+      "sublabel": "OTLP from all services",
       "pos": [
         555,
         40
@@ -256,15 +256,6 @@
       "toSide": "right"
     },
     {
-      "id": "api-telemetry",
-      "from": "api",
-      "to": "otel",
-      "label": "OTLP",
-      "variant": "dashed",
-      "fromSide": "top",
-      "toSide": "left"
-    },
-    {
       "id": "otel-export",
       "from": "otel",
       "to": "grafana",
@@ -359,7 +350,7 @@
       "dot": "cyan",
       "title": "Observability",
       "items": [
-        "api, auth, Outbox Relay, audit and notify export OTLP to otel; only the api edge is drawn",
+        "api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn",
         "notify counts Resend failures by reason; quota and rejected sends raise a Grafana alert",
         "notify's DLQ topic keeps rejected messages so they can be replayed"
       ]
