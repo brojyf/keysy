@@ -579,14 +579,12 @@ test('shows the top bar with the mock organization and action buttons', async ()
     'Search',
     'Report issue',
     'Support',
-    'Notifications',
     'Open agent',
   ])
   const iconButtons = [...topbar!.querySelectorAll<HTMLButtonElement>('.icon-button-round')]
   expect(iconButtons.map((button) => [button.getAttribute('aria-label'), button.getAttribute('data-tooltip'), button.hasAttribute('title')])).toEqual([
     ['Report issue', 'Report issue', false],
     ['Support', 'Support', false],
-    ['Notifications', 'Notifications', false],
     ['Open agent', 'Open agent', false],
   ])
 })
@@ -1074,9 +1072,8 @@ test('empty account shell hides organization controls and shows empty organizati
   await act(async () => root.render(<SessionGate><AccountLayout><GeneralPage /></AccountLayout></SessionGate>))
   expect(container.querySelector('button.topbar-org')).toBeNull()
   expect(container.querySelector('[aria-label="Search"]')).toBeNull()
-  expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
-  expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
+  expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support'])
   expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', "Couldn't save changes", 'Sign out of Keysy?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
