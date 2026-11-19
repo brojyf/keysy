@@ -82,7 +82,7 @@
       "id": "relay",
       "type": "backend",
       "label": "Outbox Relay",
-      "sublabel": "CDC / poller",
+      "sublabel": "polling goroutine in api",
       "pos": [
         240,
         460
@@ -331,13 +331,13 @@
       "id": "read-outbox",
       "from": "supabase",
       "to": "relay",
-      "label": "read outbox"
+      "label": "poll outbox"
     },
     {
       "id": "publish-event",
       "from": "relay",
       "to": "kafka",
-      "label": "publish",
+      "label": "publish, mark published_at",
       "variant": "emphasis"
     },
     {
@@ -403,7 +403,8 @@
       "items": [
         "Successful changes commit their outbox row in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
-        "notify commits its offset only after the enqueue succeeds"
+        "notify commits its offset only after the enqueue succeeds",
+        "Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at"
       ]
     },
     {

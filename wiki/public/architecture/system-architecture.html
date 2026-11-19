@@ -5287,11 +5287,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         <g data-graph-role="automatic-crossover" style="--step:8">
           <path data-graph-role="automatic-crossover-underlay" d="M 705 270 L 800 270" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="supabase" data-edge-to="relay" data-edge-label="read outbox" data-edge-key="8" data-edge-id="read-outbox" data-composition-points="705,270;800,270" data-composition-crossover="halo" data-composition-independent="true" d="M 705 270 L 800 270" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-edge-from="supabase" data-edge-to="relay" data-edge-label="poll outbox" data-edge-key="8" data-edge-id="read-outbox" data-composition-points="705,270;800,270" data-composition-crossover="halo" data-composition-independent="true" d="M 705 270 L 800 270" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:9">
-          <path data-graph-role="automatic-crossover-underlay" d="M 940 270 L 1010 270" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="relay" data-edge-to="kafka" data-edge-label="publish" data-edge-key="9" data-edge-id="publish-event" data-composition-points="940,270;1010,270" data-composition-crossover="halo" data-composition-independent="true" d="M 940 270 L 1010 270" class="a-emphasis" data-animate="edge" style="--step:9" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 870 300 L 870 316 Q 870 324 878 324 L 1072 324 Q 1080 324 1080 316 L 1080 300" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="relay" data-edge-to="kafka" data-edge-label="publish, mark published_at" data-edge-key="9" data-edge-id="publish-event" data-composition-points="870,300;870,324;1080,324;1080,300" data-composition-crossover="halo" data-composition-independent="true" d="M 870 300 L 870 316 Q 870 324 878 324 L 1072 324 Q 1080 324 1080 316 L 1080 300" class="a-emphasis" data-animate="edge" style="--step:9" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:10">
           <path data-graph-role="automatic-crossover-underlay" d="M 381 240 L 381 178 Q 381 170 389 170 L 1010 170" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
@@ -5386,15 +5386,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="625" y="284" class="t-muted" font-size="9" text-anchor="middle">Postgres + Auth + outbox</text>
         </g>
 
-        <g id="node-relay" data-node-id="relay" data-node-label="Outbox Relay" tabindex="0" role="button" aria-label="Focus Outbox Relay, CDC / poller, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="CDC / poller" data-node-context="Architecture component">
-          <title>Outbox Relay · CDC / poller · Architecture component</title>
+        <g id="node-relay" data-node-id="relay" data-node-label="Outbox Relay" tabindex="0" role="button" aria-label="Focus Outbox Relay, polling goroutine in api, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="polling goroutine in api" data-node-context="Architecture component">
+          <title>Outbox Relay · polling goroutine in api · Architecture component</title>
           <rect x="800" y="240" width="140" height="60" rx="8" class="c-mask"/>
           <rect x="800" y="240" width="140" height="60" rx="8" class="c-backend" data-animate="node" style="--step:9" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(806 246) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="870" y="268" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Outbox Relay</text>
-        <text data-detail="context" x="870" y="284" class="t-muted" font-size="9" text-anchor="middle">CDC / poller</text>
+        <text data-detail="context" x="870" y="284" class="t-muted" font-size="9" text-anchor="middle">polling goroutine in api</text>
         </g>
 
         <g id="node-redis" data-node-id="redis" data-node-label="Dragonfly" tabindex="0" role="button" aria-label="Focus Dragonfly, Redis-compatible cache, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="Redis-compatible cache" data-node-context="Architecture component">
@@ -5564,13 +5564,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <rect x="723.1" y="50" width="38.8" height="14" rx="3" class="c-mask"/>
           <text x="742.5" y="60" class="t-edge-dashed" font-size="8" text-anchor="middle">export</text>
         </g>
-        <g data-detail="context" data-edge-from="supabase" data-edge-to="relay" data-edge-label="read outbox" data-edge-key="8" data-edge-id="read-outbox">
+        <g data-detail="context" data-edge-from="supabase" data-edge-to="relay" data-edge-label="poll outbox" data-edge-key="8" data-edge-id="read-outbox">
           <rect x="721.1" y="250" width="62.8" height="14" rx="3" class="c-mask"/>
-          <text x="752.5" y="260" class="t-edge-default" font-size="8" text-anchor="middle">read outbox</text>
+          <text x="752.5" y="260" class="t-edge-default" font-size="8" text-anchor="middle">poll outbox</text>
         </g>
-        <g data-detail="context" data-edge-from="relay" data-edge-to="kafka" data-edge-label="publish" data-edge-key="9" data-edge-id="publish-event">
-          <rect x="953.2" y="250" width="43.6" height="14" rx="3" class="c-mask"/>
-          <text x="975" y="260" class="t-edge-emphasis" font-size="8" text-anchor="middle">publish</text>
+        <g data-detail="context" data-edge-from="relay" data-edge-to="kafka" data-edge-label="publish, mark published_at" data-edge-key="9" data-edge-id="publish-event">
+          <rect x="907.6" y="304" width="134.8" height="14" rx="3" class="c-mask"/>
+          <text x="975" y="314" class="t-edge-emphasis" font-size="8" text-anchor="middle">publish, mark published_at</text>
         </g>
         <g data-detail="context" data-edge-from="api" data-edge-to="audit" data-edge-label="query audit log" data-edge-key="10" data-edge-id="query-audit">
           <rect x="654.5" y="150" width="82" height="14" rx="3" class="c-mask"/>
@@ -5825,6 +5825,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>Successful changes commit their outbox row in the same transaction as business data</li>
           <li>Kafka keyed by aggregate ID; failed events go to a DLQ topic</li>
           <li>notify commits its offset only after the enqueue succeeds</li>
+          <li>Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at</li>
         </ul>
       </div>
 
