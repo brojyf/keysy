@@ -5788,7 +5788,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn</li>
           <li>notify exports Resend quota usage from response headers and plan limits from its config; Grafana alerts Discord at 80% (warning) and 100% (critical) of the daily and monthly quota</li>
           <li>notify counts Resend failures and expired emails by reason; every DLQ message raises a Grafana alert</li>
-          <li>notify&#39;s DLQ topic keeps failed and expired messages with their reason for 3 days; an operator resends from it outside the notify consumer</li>
+          <li>notify&#39;s DLQ topic keeps failed and expired messages with their reason for 3 days; an operator resends from it outside the notify consumer, with the original request body and Idempotency-Key = event_id</li>
           <li>Before resending a message with an unknown send outcome more than 24 hours after its event, the operator checks Resend Logs or confirms that a duplicate is acceptable</li>
         </ul>
       </div>
