@@ -1140,6 +1140,9 @@ test('pending session shows an accessible shell without page content for an unma
   sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))
   await renderSessionGate()
   expect(container.querySelector('[data-skeleton-page]')).toBeNull()
+  const topbarRight = [...container.querySelector('.skeleton-topbar-right')!.children]
+  const beforeDivider = topbarRight.slice(0, topbarRight.findIndex((node) => node.classList.contains('skeleton-topbar-divider')))
+  expect(beforeDivider.filter((node) => !node.classList.contains('skeleton-search'))).toHaveLength(2)
   expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
   expect(container.querySelectorAll('[role="status"]')).toHaveLength(1)
   expect(container.querySelector('[role="status"]')?.textContent).toBe('Checking your session...')
