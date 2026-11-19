@@ -10,12 +10,13 @@ type DialogProps = {
   title: string
   alert?: boolean
   closable?: boolean
+  cancelLabel?: string
   onClose?: () => void
   action: ReactNode
   children: ReactNode
 }
 
-export default function Dialog({ ref, title, alert = false, closable = true, onClose, action, children }: DialogProps) {
+export default function Dialog({ ref, title, alert = false, closable = true, cancelLabel = 'Cancel', onClose, action, children }: DialogProps) {
   const titleId = useId()
   return (
     <dialog className="dialog" ref={ref} aria-labelledby={titleId} onClose={onClose} onCancel={(event) => {
@@ -25,7 +26,7 @@ export default function Dialog({ ref, title, alert = false, closable = true, onC
       <h2 id={titleId}>{alert && <CircleAlert size={16} aria-hidden className="dialog-alert" />}{title}</h2>
       {children}
       <div className="dialog-actions">
-        <Button disabled={!closable} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>Cancel</Button>
+        <Button disabled={!closable} onClick={(event) => void closeDialog(event.currentTarget.closest('dialog')!)}>{cancelLabel}</Button>
         {action}
       </div>
     </dialog>

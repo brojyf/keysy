@@ -1,3 +1,5 @@
+import { SaveRequestError } from './save-request-error'
+
 let pendingRefresh: Promise<Response> | null = null
 let logoutPending = false
 let sessionVersion = 0
@@ -49,6 +51,7 @@ export async function fetchWithSessionRefresh(url: string, authURL: string, init
   const refresh = await refreshSession(authURL)
   if (logoutPending || requestVersion !== sessionVersion) throw new Error('Session changed')
   if (refresh.status === 401) return response
-  if (!refresh.ok) throw new Error('Session refresh failed')
+  // Keep the refresh response so callers can show its request ID as a server error.
+  if (!refresh.ok) throw new SaveRequestError(refresh)
   return fetchWithTimeout(url, { ...init, credentials: 'include' })
 }
