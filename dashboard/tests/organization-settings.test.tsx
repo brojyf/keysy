@@ -1081,17 +1081,6 @@ test('shows inline rename errors after editing and blocks invalid submissions', 
   expect(status?.textContent).toBe('')
 })
 
-test('a failed rename shows an error and keeps the draft', async () => {
-  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
-  await renderSettings()
-  await typeOrganizationName('Renamed')
-  await settleOrganizationRequests(() => submitRename())
-  expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe('Could not save. Try again.')
-  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
-  expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
-  expect(saveButton()?.disabled).toBe(false)
-})
-
 for (const saved of [true, false]) test(`a lost rename response reconciles with the refreshed name: saved ${saved}`, async () => {
   renameRequest.mockImplementationOnce((url: string, init: RequestInit) => {
     if (saved) organizations = organizations.map((item) => item.id === String(url).split('/').pop() ? { ...item, name: JSON.parse(String(init.body)).name } : item)
@@ -1101,7 +1090,7 @@ for (const saved of [true, false]) test(`a lost rename response reconciles with 
   await typeOrganizationName('Renamed')
   await settleOrganizationRequests(() => submitRename())
   expect(listOrganizations).toHaveBeenCalledTimes(2)
-  expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : 'Could not save. Try again.')
+  expect(container.querySelector('[role="alert"]')?.textContent ?? null).toBe(saved ? null : "Couldn't reach Keysy")
   expect(container.querySelector('.topbar-org')?.textContent).toBe(saved ? 'Renamed' : organization.name)
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.value).toBe('Renamed')
   expect(saveButton()?.dataset.saveState).toBe(saved ? 'saved' : 'idle')
@@ -1112,4 +1101,76 @@ for (const role of ['admin', 'developer']) test(`a ${role} cannot rename the org
   await renderSettings()
   expect(container.querySelector<HTMLInputElement>('#organization-settings-name')?.readOnly).toBe(true)
   expect(container.querySelector('.account-save-bar')).toBeNull()
+})
+
+for (const requestId of ['req-123', null]) test(`save server error displays request ID ${requestId}`, async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500, headers: requestId ? { 'X-Request-ID': requestId } : {} })))
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  const errorDialog = container.querySelector<HTMLDialogElement>('dialog[open]')!
+  expect(errorDialog?.querySelector('h2')?.textContent).toBe("Couldn't save changes")
+  expect(errorDialog.textContent).toContain('Your unsaved change is still here. Try again in a moment.')
+  expect(errorDialog.textContent?.includes('Request ID')).toBe(requestId !== null)
+  if (requestId) expect(errorDialog.textContent).toContain(requestId)
+  expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
+  expect(saveButton()!.textContent).toBe('Save')
+  expect(container.querySelector('.topbar-org')?.textContent).toBe(organization.name)
+  expect(saveButton()?.disabled).toBe(false)
+  expect(container.querySelector<HTMLInputElement>('#organization-settings-name')!.value).toBe('Draft')
+})
+
+for (const body of ['not json', '{}']) test(`rename success with an invalid body ${body} opens the server dialog`, async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(body, { status: 200, headers: { 'X-Request-ID': 'req-200' } })))
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-200')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
+for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  const errorDialog = container.querySelector<HTMLDialogElement>('dialog[open]')!
+  await act(async () => { [...errorDialog.querySelectorAll('button')].find((button) => button.textContent === action)!.click(); await new Promise((resolve) => setTimeout(resolve, 10)) })
+  expect(errorDialog.open).toBe(false)
+  expect(renameRequest).toHaveBeenCalledTimes(action === 'Retry' ? 2 : 1)
+  if (action === 'Close') expect(container.querySelector<HTMLInputElement>('#organization-settings-name')!.value).toBe('Draft')
+  if (action === 'Close') expect(document.activeElement).toBe(container.querySelector('#organization-settings-name'))
+  if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
+})
+
+test('a refresh server error during rename opens the server dialog with the refresh request ID', async () => {
+  renameRequest.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })))
+  const routeRequest = globalThis.fetch
+  globalThis.fetch = ((url: string, init?: RequestInit) => String(url).endsWith('/v0/auth/refresh')
+    ? Promise.resolve(new Response(null, { status: 503, headers: { 'X-Request-ID': 'req-refresh' } }))
+    : routeRequest(url, init)) as typeof fetch
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-refresh')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
+for (const action of ['retry', 'edit']) test(`save network error and ${action}`, async () => {
+  renameRequest.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
+  await renderSettings()
+  await typeOrganizationName('Draft')
+  await settleOrganizationRequests(() => submitRename())
+  expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe("Couldn't reach Keysy")
+  expect(container.querySelector('dialog[open]')).toBeNull()
+  const retry = container.querySelector<HTMLButtonElement>('.account-save-bar button[type="submit"]')!
+  expect(retry.textContent).toBe('Retry')
+  if (action === 'retry') {
+    await act(async () => { retry.click(); await new Promise((resolve) => setTimeout(resolve, 10)) })
+    expect(renameRequest).toHaveBeenCalledTimes(2)
+  } else {
+    await typeOrganizationName('Changed')
+    expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
+    expect(saveButton()!.textContent).toBe('Save')
+  }
 })

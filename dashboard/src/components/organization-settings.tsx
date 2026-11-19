@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { openDialog } from '../lib/dialog-controls'
 import { useSaveBar } from '../lib/use-save-bar'
 import SaveBar from './save-bar'
+import SaveFailedDialog from './save-failed-dialog'
+import { SaveRequestError } from '../lib/save-request-error'
 import Button from './button'
 import { useCurrentUser } from './current-user'
 import DeleteOrganizationDialog from './delete-organization-dialog'
@@ -18,6 +20,10 @@ import { validateName } from '../lib/name-validation'
 export default function OrganizationSettings() {
   const { organization, renameOrganization } = useCurrentUser()
   const dangerDialog = useRef<HTMLDialogElement>(null)
+  const saveFailedDialog = useRef<HTMLDialogElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const [requestId, setRequestId] = useState<string | null>(null)
   const copyOperation = useRef(0)
   const [nameDraft, setNameDraft] = useState<{ id: string; value: string } | null>(null)
   const [renameError, setRenameError] = useState(false)
@@ -48,8 +54,11 @@ export default function OrganizationSettings() {
       await renameOrganization(organization.id, trimmedName)
       setNameDraft(null)
       setSaveState('saved')
-    } catch {
-      setRenameError(true)
+    } catch (error) {
+      if (error instanceof SaveRequestError) {
+        setRequestId(error.requestId)
+        if (saveFailedDialog.current) openDialog(saveFailedDialog.current)
+      } else setRenameError(true)
       setSaveState('idle')
     }
   }
@@ -76,10 +85,10 @@ export default function OrganizationSettings() {
         ...(owner ? [] : [{ label: 'My scope' }]),
       ]}
     >
-      <form className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={(event) => void rename(event)}>
+      <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={(event) => void rename(event)}>
         <SettingsSection title="Organization">
           <SettingsRow label={<label htmlFor="organization-settings-name">Name</label>}>
-            <NameInput id="organization-settings-name" value={draftName} readOnly={!owner} disabled={saving}
+            <NameInput ref={nameInputRef} id="organization-settings-name" value={draftName} readOnly={!owner} disabled={saving}
               issue={owner && draftName !== organization.name ? nameIssue : null}
               onInput={(value) => { setNameDraft({ id: organization.id, value }); setRenameError(false); if (saved) setSaveState('idle') }} />
           </SettingsRow>
@@ -102,11 +111,12 @@ export default function OrganizationSettings() {
             }}>{owner ? 'Delete' : 'Leave'}</Button>
           </SettingsRow>
         </SettingsSection>
-        {saveBar.mounted && <SaveBar saveBar={saveBar} error={renameError} saveDisabled={nameIssue !== null} onDiscard={() => { setNameDraft(null); setRenameError(false) }} />}
+        {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={renameError} saveDisabled={nameIssue !== null} onDiscard={() => { setNameDraft(null); setRenameError(false) }} />}
       </form>
       {owner
         ? <DeleteOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />
         : <LeaveOrganizationDialog key={organization.id} ref={dangerDialog} organization={organization} />}
+      <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} nameInputRef={nameInputRef} requestId={requestId} />
     </SettingsLayout>
   )
 }

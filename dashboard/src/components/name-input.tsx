@@ -1,6 +1,8 @@
+import type { Ref } from 'react'
 import { NAME_MAX_LENGTH, type NameIssue } from '../lib/name-validation'
 
 type NameInputProps = {
+  ref?: Ref<HTMLInputElement>
   id: string
   value: string
   issue: NameIssue | null
@@ -9,13 +11,14 @@ type NameInputProps = {
   onInput: (value: string) => void
 }
 
-export default function NameInput({ id, value, issue, disabled, readOnly, onInput }: NameInputProps) {
+export default function NameInput({ ref, id, value, issue, disabled, readOnly, onInput }: NameInputProps) {
   const descriptionId = `${id}-error`
   const hint = issue?.kind === 'required' ? 'Required' : issue ? `${issue.count}/${NAME_MAX_LENGTH}` : ''
 
   return (
     <div className="account-name-field">
       <input
+        ref={ref}
         id={id}
         className="account-name"
         autoComplete="off"

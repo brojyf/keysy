@@ -727,23 +727,15 @@ test('editing during the success message cancels dismissal and keeps the new dra
 
 test('save failures retain the draft and clear the alert on edit or discard', async () => {
   for (const respond of [
-    () => Promise.resolve(new Response(null, { status: 503 })),
     () => Promise.reject(new TypeError('Network error')),
-    () => Promise.resolve(new Response('invalid json', { status: 200 })),
-    () => Promise.resolve(Response.json({ id: 'invalid' })),
   ]) {
     request.mockImplementation(respond)
     await renderAccount('/account', <GeneralPage />)
     await edit('Draft')
     await act(async () => button('Save').click())
     expect(input().value).toBe('Draft')
-    expect(button('Save').disabled).toBe(false)
-    expect(button('Save').dataset.saveState).toBe('idle')
-    expect(button('Save').getAttribute('aria-busy')).toBe('false')
-    expect(button('Save').getAttribute('aria-label')).toBeNull()
-    expect(button('Save').querySelector('.account-save-spinner')?.getAttribute('aria-hidden')).toBe('true')
-    expect(button('Save').querySelector('.account-save-check')?.getAttribute('aria-hidden')).toBe('true')
-    expect(container.querySelector('[role="alert"]')?.textContent).toBe('Could not save. Try again.')
+    expect(button('Retry', container.querySelector('.account-save-bar')!).disabled).toBe(false)
+    expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe("Couldn't reach Keysy")
     await edit('Draft changed')
     expect(button('Save').dataset.saveState).toBe('idle')
     expect(button('Save').getAttribute('aria-label')).toBeNull()
@@ -822,3 +814,71 @@ for (const agentAutoApply of [false, true]) {
     await act(async () => finish(new Response(null, { status: 503 })))
   })
 }
+
+for (const requestId of ['req-123', null]) test(`save server error displays request ID ${requestId}`, async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500, headers: requestId ? { 'X-Request-ID': requestId } : {} })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  const errorDialog = container.querySelector<HTMLDialogElement>('dialog[open]')!
+  expect(errorDialog?.querySelector('h2')?.textContent).toBe("Couldn't save changes")
+  expect(errorDialog.textContent).toContain('Your unsaved change is still here. Try again in a moment.')
+  expect(errorDialog.textContent?.includes('Request ID')).toBe(requestId !== null)
+  if (requestId) expect(errorDialog.textContent).toContain(requestId)
+  expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
+  expect(button('Save').textContent).toBe('Save')
+  expect(input().value).toBe('Draft')
+})
+
+for (const body of ['not json', '{}']) test(`save success with an invalid body ${body} opens the server dialog`, async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(body, { status: 200, headers: { 'X-Request-ID': 'req-200' } })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-200')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
+for (const action of ['Retry', 'Close']) test(`save server dialog ${action}`, async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 500 })))
+  request.mockImplementationOnce(() => Promise.resolve(Response.json({ ...user, displayName: 'Draft' })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  const errorDialog = container.querySelector<HTMLDialogElement>('dialog[open]')!
+  await act(async () => { [...errorDialog.querySelectorAll('button')].find((button) => button.textContent === action)!.click(); await new Promise((resolve) => setTimeout(resolve, 10)) })
+  expect(errorDialog.open).toBe(false)
+  expect(request).toHaveBeenCalledTimes(action === 'Retry' ? 2 : 1)
+  expect(input().value).toBe('Draft')
+  if (action === 'Close') expect(document.activeElement).toBe(input())
+  if (action === 'Retry') expect(container.querySelector('.account-save-success')?.textContent).toBe('Saved')
+})
+
+test('a refresh server error during save opens the server dialog with the refresh request ID', async () => {
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })))
+  request.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 503, headers: { 'X-Request-ID': 'req-refresh' } })))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  expect(container.querySelector('dialog[open]')?.textContent).toContain('req-refresh')
+  expect(container.querySelector('.account-save-bar [role="alert"]')).toBeNull()
+})
+
+for (const action of ['retry', 'edit']) test(`save network error and ${action}`, async () => {
+  request.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')))
+  await renderAccount('/account', <GeneralPage />)
+  await edit('Draft')
+  await act(async () => button('Save').click())
+  expect(container.querySelector('.account-save-bar [role="alert"]')?.textContent).toBe("Couldn't reach Keysy")
+  expect(container.querySelector('dialog[open]')).toBeNull()
+  const retry = container.querySelector<HTMLButtonElement>('.account-save-bar button[type="submit"]')!
+  expect(retry.textContent).toBe('Retry')
+  if (action === 'retry') {
+    await act(async () => { retry.click(); await new Promise((resolve) => setTimeout(resolve, 10)) })
+    expect(request).toHaveBeenCalledTimes(2)
+  } else {
+    await edit('Changed')
+    expect(container.querySelector('.account-save-bar [role="status"]')?.textContent).toBe('1 unsaved change')
+    expect(button('Save').textContent).toBe('Save')
+  }
+})

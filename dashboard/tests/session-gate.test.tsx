@@ -1077,7 +1077,7 @@ test('empty account shell hides organization controls and shows empty organizati
   expect(container.querySelector('[aria-label="Notifications"]')).not.toBeNull()
   expect(container.querySelector('[aria-label="Open agent"]')).toBeNull()
   expect([...container.querySelectorAll('.topbar button')].map((button) => button.getAttribute('aria-label'))).toEqual(['Report issue', 'Support', 'Notifications'])
-  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', 'Sign out of Keysy?'])
+  expect([...container.querySelectorAll('h2')].map((node) => node.textContent)).toEqual(['Profile', 'Appearance', 'Danger zone', 'Delete account?', "Couldn't save changes", 'Sign out of Keysy?'])
   sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
   await act(() => styledButton(container.querySelector('.account-sections')!, 'Sign out', 'button-danger-outline').click())
   await act(async () => dialogButton('Sign out').click())

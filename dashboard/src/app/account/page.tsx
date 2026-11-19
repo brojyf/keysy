@@ -7,6 +7,8 @@ import { apiFetch } from '../../lib/api-client'
 import { parseSessionUser } from '../../lib/session-user'
 import { SettingsRow, SettingsSection } from '../../components/settings-section'
 import SaveBar from '../../components/save-bar'
+import SaveFailedDialog from '../../components/save-failed-dialog'
+import { SaveRequestError } from '../../lib/save-request-error'
 import { useSaveBar } from '../../lib/use-save-bar'
 import ThemeSwitch from '../../components/theme-switch'
 import DeleteAccountDialog from '../../components/delete-account-dialog'
@@ -26,6 +28,10 @@ export default function GeneralPage() {
   const nameIssue = validateName(draft)
   const saveBar = useSaveBar(changed)
   const deleteDialog = useRef<HTMLDialogElement>(null)
+  const saveFailedDialog = useRef<HTMLDialogElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const [requestId, setRequestId] = useState<string | null>(null)
   const { saving, saved, setSaveState } = saveBar
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -43,13 +49,17 @@ export default function GeneralPage() {
         onSignedOut()
         return
       }
-      if (!response.ok) throw new Error('Save failed')
-      const updated = parseSessionUser(await response.json())
+      if (!response.ok) throw new SaveRequestError(response)
+      // An unreadable 200 still came from the server, so keep its request ID.
+      const updated = await response.json().then(parseSessionUser).catch(() => { throw new SaveRequestError(response) })
       setDraft(updated.displayName)
       setSaveState('saved')
       onUserChange(updated)
-    } catch {
-      setError(true)
+    } catch (error) {
+      if (error instanceof SaveRequestError) {
+        setRequestId(error.requestId)
+        if (saveFailedDialog.current) openDialog(saveFailedDialog.current)
+      } else setError(true)
     } finally {
       setSaveState((state) => state === 'saving' ? 'idle' : state)
     }
@@ -73,10 +83,10 @@ export default function GeneralPage() {
 
   return (
     <>
-    <form className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
+    <form ref={formRef} className={`account-sections${saveBar.mounted ? ' account-sections-editing' : ''}`} onSubmit={save}>
       <SettingsSection title="Profile">
         <SettingsRow label={<label htmlFor="account-name">Name</label>}>
-          <NameInput id="account-name" value={draft} disabled={saving} issue={draft !== user.displayName ? nameIssue : null}
+          <NameInput ref={nameInputRef} id="account-name" value={draft} disabled={saving} issue={draft !== user.displayName ? nameIssue : null}
             onInput={(value) => { setDraft(value); setError(false); if (saved) setSaveState('idle') }} />
         </SettingsRow>
         <SettingsRow label="Email">{user.email}</SettingsRow>
@@ -103,9 +113,10 @@ export default function GeneralPage() {
           <Button variant="dangerOutline" onClick={() => { if (deleteDialog.current) openDialog(deleteDialog.current) }}>Delete</Button>
         </SettingsRow>
       </SettingsSection>
-      {saveBar.mounted && <SaveBar saveBar={saveBar} error={error} saveDisabled={settingSaving || nameIssue !== null} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
+      {saveBar.mounted && <SaveBar saveBar={saveBar} networkError={error} saveDisabled={settingSaving || nameIssue !== null} onDiscard={() => { setDraft(user.displayName); setError(false) }} />}
     </form>
     <DeleteAccountDialog ref={deleteDialog} />
+    <SaveFailedDialog dialogRef={saveFailedDialog} formRef={formRef} nameInputRef={nameInputRef} requestId={requestId} />
     </>
   )
 }
