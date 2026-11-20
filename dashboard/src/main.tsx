@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
+import { canonicalURL } from './lib/canonical-url'
 import './app/globals.css'
 import './components/sign-in.css'
 import './components/dashboard.css'
@@ -11,6 +12,9 @@ import './components/organization-settings.css'
 import './components/dialog.css'
 import './components/button.css'
 import './components/icon-button.css'
+
+const url = canonicalURL(window.location)
+if (url) window.history.replaceState(window.history.state, '', url)
 
 const router = createRouter({ routeTree })
 
