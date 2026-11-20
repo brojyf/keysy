@@ -16,5 +16,8 @@ publishes a row again, for example because api stopped before it set
 `published_at`, the event keeps the same `event_id`. The audit table has a
 unique constraint on `event_id`, and `audit` inserts with
 `ON CONFLICT DO NOTHING`, so a republished event adds no second record.
+`audit` commits its Kafka offset only after the insert succeeds or finds the
+`event_id` already stored, so a crash before the insert leaves the event to be
+consumed again.
 
 This integration is not implemented yet.
