@@ -13,7 +13,8 @@ let container: HTMLDivElement
 
 beforeEach(() => {
   browser = new Window({ url: 'https://dashboard.keysy.net' })
-  Object.assign(globalThis, { window: browser, document: browser.document, IS_REACT_ACT_ENVIRONMENT: true })
+  // The router restores scroll with the bare global scrollTo.
+  Object.assign(globalThis, { window: browser, document: browser.document, scrollTo: () => {}, IS_REACT_ACT_ENVIRONMENT: true })
   container = document.createElement('div')
   document.body.append(container)
   root = createRoot(container)
