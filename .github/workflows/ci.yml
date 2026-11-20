@@ -303,7 +303,7 @@ jobs:
           docker build -t keysy-ci -f deploy/Dockerfile
           --build-arg NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net
           --build-arg NEXT_PUBLIC_API_URL=https://api.keysy.net .
-      - name: Test nginx and supervisor configs
+      - name: Test nginx and s6 configs
         run: docker run --rm -v "$PWD/deploy:/deploy:ro" keysy-ci node --test '/deploy/*.test.mjs'
 
   cli:

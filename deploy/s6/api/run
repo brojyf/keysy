@@ -1,0 +1,4 @@
+#!/bin/sh
+# The api exits at startup when the database is down. s6 restarts it every second, with no limit.
+export PORT=8081
+exec /usr/local/bin/keysy-api
