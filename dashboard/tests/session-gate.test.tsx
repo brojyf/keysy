@@ -1204,6 +1204,14 @@ for (const page of ['secrets', 'services', 'people', 'audit-log', 'settings']) {
     expect(router.replace).toHaveBeenCalledWith(`/orgs/org-id/${page}`)
     expect(container.querySelector('.dashboard')).toBeNull()
   })
+  test(`the legacy /${page} entry keeps the query string and hash`, async () => {
+    currentPathname = `/${page}`
+    const navigation = mock((_options: { to: string; replace?: boolean }) => {})
+    setRouterMock(() => currentPathname, navigation)
+    sessionRequest.mockImplementation(() => Promise.resolve(Response.json(validUser)))
+    await renderSessionGate()
+    expect(navigation).toHaveBeenCalledWith({ to: `/orgs/org-id/${page}`, replace: true, search: true, hash: true })
+  })
   test(`the scoped ${page} route shows its own pending skeleton`, async () => {
     currentPathname = `/orgs/org-id/${page}`
     sessionRequest.mockImplementation(() => new Promise<Response>(() => {}))

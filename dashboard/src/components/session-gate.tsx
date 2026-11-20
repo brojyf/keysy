@@ -95,17 +95,24 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const organizationScoped = pathname === '/orgs' || pathname.startsWith('/orgs/')
   const signedOutPage = pathname === '/signin' || pathname === '/account-deleted'
   let redirect: string | null = null
+  // Legacy entries keep their query string and hash on the way to the organization page.
+  let keepSuffix = false
   if (user === null && !signedOutPage) redirect = '/signin'
   else if (user?.purgeAt) redirect = null
   else if (user && signedOutPage) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, '/secrets') : '/account/organizations'
-  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, pathname) : '/account/organizations'
+  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) {
+    redirect = preferredOrganization ? organizationPath(preferredOrganization.id, pathname) : '/account/organizations'
+    keepSuffix = !!preferredOrganization
+  }
   else if (route === '/account/organizations' && !organizationScoped) redirect = route
   const userID = user?.id
   const organizationID = organization?.id
   useEffect(() => {
     if (userID && organizationScoped && organizationID && organizationQuery.data) rememberOrganization(userID, organizationID, organizationQuery.data)
   }, [userID, organizationScoped, organizationID, organizationQuery.data])
-  useEffect(() => { if (redirect) void navigate({ to: redirect, replace: true }) }, [redirect, navigate])
+  useEffect(() => {
+    if (redirect) void navigate({ to: redirect, replace: true, ...(keepSuffix && { search: true, hash: true }) })
+  }, [redirect, keepSuffix, navigate])
 
   function retrySessionCheck() {
     setSessionError(false)
