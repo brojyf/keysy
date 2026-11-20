@@ -86,6 +86,15 @@ export default defineConfig({
         }),
       },
       {
+        tab: 'Audit',
+        slug: 'audit',
+        source: markdown({
+          root: './audit',
+          slugs: 'file',
+          groups: [{ group: 'General', pages: ['overview'] }],
+        }),
+      },
+      {
         tab: 'CLI',
         slug: 'cli',
         source: markdown({

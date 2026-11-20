@@ -15,10 +15,11 @@ const routes = [
   ['references', 'References'],
   ['api', 'Keysy API'],
   ['auth', 'Keysy Auth API'],
-  ...['notify', 'cli'].flatMap((section) => [
-    [`${section}/overview`, 'Introduction'],
-    [`${section}/endpoints`, 'Endpoint overview'],
-  ]),
+  ['notify/overview', 'Introduction'],
+  ['notify/endpoints', 'Endpoint overview'],
+  ['audit/overview', 'Introduction'],
+  ['cli/overview', 'Introduction'],
+  ['cli/endpoints', 'Endpoint overview'],
   ['dashboard/overview', 'Introduction'],
   ['dashboard/components', 'Components'],
 ];
@@ -31,8 +32,8 @@ async function matches(html: string, selector: string) {
   return attributes;
 }
 
-test('navigation preserves the six original sections and includes references under Overview', async () => {
-  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'CLI', 'Dashboard']);
+test('navigation gives each service a section and includes references under Overview', async () => {
+  expect(config.navigation.tabs.map((tab) => tab.tab)).toEqual(['Overview', 'API', 'Auth', 'Notify', 'Audit', 'CLI', 'Dashboard']);
   expect(config.prettyUrls).toBe('strip');
   const html = await Bun.file(new URL('index.html', output)).text();
   expect((await matches(html, '#sidebar nav[aria-label="Overview"] a')).map(({ href }) => href)).toEqual([
@@ -180,7 +181,7 @@ for (const [route, title] of routes) {
     expect(canonical?.href).toBe(publicUrl);
     expect(document?.lang).toBe('en');
     expect(await matches(html, 'link[rel="alternate"][hreflang]')).toHaveLength(0);
-    expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(6);
+    expect(await matches(html, '.sourcey-section-tabs > a')).toHaveLength(7);
     const [activeTab] = await matches(html, '.sourcey-section-tabs > a[aria-current="page"]');
     const activeTabHref = ['api', 'auth'].includes(route!) ? `/${route}` : route!.includes('/') ? `/${route!.split('/')[0]}/overview` : '/';
     expect(activeTab?.href).toBe(activeTabHref);
@@ -195,9 +196,12 @@ for (const [route, title] of routes) {
     expect(await matches(html, '#theme-toggle svg g')).toHaveLength(1);
     if (!['api', 'auth'].includes(route!)) {
       expect(await matches(html, '#content-area > header .h-5')).toHaveLength(1);
-      const [pagination] = await matches(html, '#content-area > nav');
-      expect(pagination?.['aria-label']).toBe('Previous and next page');
-      expect(stylesheet).toContain(`#sourcey #content-area > nav[aria-label='${pagination!['aria-label']}']`);
+      // The Audit tab has one page, so it has no previous or next page.
+      if (route !== 'audit/overview') {
+        const [pagination] = await matches(html, '#content-area > nav');
+        expect(pagination?.['aria-label']).toBe('Previous and next page');
+        expect(stylesheet).toContain(`#sourcey #content-area > nav[aria-label='${pagination!['aria-label']}']`);
+      }
       expect(await matches(html, '#content-area > div a[href="https://sourcey.com/docs"]')).toHaveLength(1);
     }
     expect(html).not.toContain('mobile-navigation.js');
