@@ -18,13 +18,6 @@ Email templates live in Resend, with `from` and `subject` as template defaults.
 (`id` and `variables`). Automatic retries and manual resends rebuild the same
 body, so a request with the same Idempotency-Key matches the first one.
 
-A send that times out, fails on the network, returns 5xx or returns 409
-`concurrent_idempotent_requests` may still have been accepted. `notify` then
-sets `outcome_unknown=true` on the message. The flag stays on the message in
-the retry and DLQ topics and is never cleared. Before resending a flagged
-message more than 24 hours after its event, the operator checks Resend Logs or
-confirms that a duplicate is acceptable.
-
 An operator resends a DLQ message by copying it back to the retry topic with
 `operator_approved=true`. `notify` sends it like any other retry, with the same
 body and Idempotency-Key, and exports quota usage from the response. Approved

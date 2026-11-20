@@ -347,7 +347,7 @@
         "429 rate_limit_exceeded and 409 concurrent_idempotent_requests wait and retry in place up to 3 times, then go to notify's retry topic",
         "Network errors and 5xx go to notify's retry topic, which retries with backoff until 12 hours after the event, then moves the message to its DLQ topic",
         "Quota errors and other 4xx, including invalid_idempotent_request, go to notify's DLQ topic",
-        "notify never sends an email whose event is more than 24 hours old, because Resend keeps idempotency keys for 24 hours; it moves the message to its DLQ topic instead",
+        "notify never sends an email whose event is more than 24 hours old, unless an operator approved its resend, because Resend keeps idempotency keys for 24 hours; it moves the message to its DLQ topic instead",
         "Bounces and complaints handled by the Resend suppression list"
       ]
     },
@@ -359,7 +359,7 @@
         "notify exports Resend quota usage from response headers and plan limits from its config, and resets daily usage to 0 at 00:00 UTC and monthly usage at the start of each UTC month; Grafana alerts Discord at 80% (warning) and 100% (critical) of the monthly quota, and of the daily quota only while responses carry x-resend-daily-quota",
         "notify counts Resend failures and expired emails by reason; every DLQ message raises a Grafana alert",
         "notify's DLQ topic keeps failed and expired messages with their reason for 3 days; an operator resends one by copying it back to notify's retry topic with operator_approved=true",
-        "Before resending a message with an unknown send outcome more than 24 hours after its event, the operator checks Resend Logs or confirms that a duplicate is acceptable"
+        "Before resending any message more than 24 hours after its event, the operator checks Resend Logs or confirms that a duplicate is acceptable"
       ]
     }
   ]
