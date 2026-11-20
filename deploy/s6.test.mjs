@@ -1,7 +1,7 @@
 // Run on Linux with the s6 package from deploy/Dockerfile.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -75,6 +75,54 @@ while :; do sleep 0.1; done
     assert.equal(await readFile(stoppedFile, "utf8"), "stopped\n");
   } finally {
     dashboard.kill("SIGKILL");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("stops the collector only after api and auth flush telemetry", { timeout: 20_000 }, async () => {
+  const directory = await mkdtemp(join(tmpdir(), "s6-test-"));
+  const scanDirectory = join(directory, "s6");
+  const collectorUp = join(directory, "collector-up");
+  const flushLog = join(directory, "flushes");
+  await cp(new URL("s6", import.meta.url), scanDirectory, { recursive: true });
+
+  const fakeCollector = join(directory, "otelcol");
+  await writeFile(fakeCollector, `#!/bin/sh\ntouch ${collectorUp}\ntrap 'rm ${collectorUp}; exit 0' TERM\nwhile :; do sleep 0.1; done\n`, { mode: 0o755 });
+  // Like api and auth, the fake stops serving first and sends buffered telemetry after.
+  const fakeService = (name) => `#!/bin/sh
+trap 'sleep 0.5; test -e ${collectorUp} && echo ${name}-flushed >> ${flushLog} || echo ${name}-lost >> ${flushLog}; exit 0' TERM
+while :; do sleep 0.1; done
+`;
+  const sleeper = "#!/bin/sh\nexec sleep 1000\n";
+  const replaceRun = async (service, from, to) => {
+    const runFile = join(scanDirectory, service, "run");
+    await writeFile(runFile, (await readFile(runFile, "utf8")).replace(from, to), { mode: 0o755 });
+  };
+  await replaceRun("otelcol", "/usr/local/bin/otelcol", fakeCollector);
+  for (const [service, binary] of [["api", "/usr/local/bin/keysy-api"], ["auth", "/usr/local/bin/keysy-auth"]]) {
+    const fake = join(directory, service);
+    await writeFile(fake, fakeService(service), { mode: 0o755 });
+    await replaceRun(service, binary, fake);
+  }
+  await writeFile(join(scanDirectory, "nginx/run"), sleeper, { mode: 0o755 });
+  await writeFile(join(scanDirectory, "dashboard/run"), sleeper, { mode: 0o755 });
+
+  // The image's CMD; Fly's init sends it SIGTERM on stop.
+  const svscan = spawn("s6-svscan", [scanDirectory], { stdio: "ignore" });
+  const exited = new Promise((resolve) => svscan.once("exit", resolve));
+  try {
+    const deadline = Date.now() + 10_000;
+    while (!(await readFile(collectorUp).then(() => true, () => false)) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    svscan.kill("SIGTERM");
+    assert.equal(await exited, 0);
+    const flushes = (await readFile(flushLog, "utf8")).trim().split("\n").sort();
+    assert.deepEqual(flushes, ["api-flushed", "auth-flushed"]);
+  } finally {
+    svscan.kill("SIGKILL");
     await rm(directory, { recursive: true, force: true });
   }
 });

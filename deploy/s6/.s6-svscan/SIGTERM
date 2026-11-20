@@ -1,0 +1,6 @@
+#!/bin/sh
+# s6-svscan runs this on SIGTERM, in the scan directory, instead of stopping all services at once.
+# api and auth send buffered telemetry after they stop serving, so the collector stops last.
+for service in nginx dashboard api auth; do s6-svc -d "$service"; done
+s6-svwait -d nginx dashboard api auth
+exec s6-svscanctl -t .
