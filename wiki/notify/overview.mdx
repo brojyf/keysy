@@ -15,13 +15,8 @@ through Resend. See [System design](/system-design).
 
 Email templates live in Resend, with `from` and `subject` as template defaults.
 `notify` builds each request body only from the message: `to` and `template`
-(`id` and `variables`). Automatic retries and manual resends rebuild the same
-body, so a request with the same Idempotency-Key matches the first one.
-
-An operator resends a DLQ message by copying it back to the retry topic with
-`operator_approved=true`. `notify` sends it like any other retry, with the same
-body and Idempotency-Key, and exports quota usage from the response. Approved
-messages skip the 12-hour retry limit and the 24-hour event age check.
+(`id` and `variables`). Every retry rebuilds the same body, so a request with
+the same Idempotency-Key matches the first one.
 
 Keysy has no in-app notifications: no notification center, inbox, or unread
 state.
