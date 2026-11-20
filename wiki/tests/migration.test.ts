@@ -341,6 +341,11 @@ test('the API sidebar groups member endpoints under People', async () => {
   ]);
 });
 
+test('the former Members anchor still reaches the People section', async () => {
+  const html = await Bun.file(new URL('api.html', output)).text();
+  expect(await matches(html, '#tag-people > #tag-members')).toHaveLength(1);
+});
+
 test('operation page headings show the endpoint path', async () => {
   for (const [route, path] of [
     ['api/operations/operation-v0-orgs-post', '/v0/orgs'],

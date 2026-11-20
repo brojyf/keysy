@@ -62,6 +62,7 @@ export default defineConfig({
         slug: 'api',
         source: openapi('../openapi/api.yaml'),
         navigation: endpointNavigation('../openapi/api.yaml', true),
+        anchors: { introduction: { 'tag-members': 'tag-people' } },
         reference: { split: 'operations' },
         tryIt: false,
       },
