@@ -18,6 +18,13 @@ Email templates live in Resend, with `from` and `subject` as template defaults.
 (`id` and `variables`). Automatic retries and manual resends rebuild the same
 body, so a request with the same Idempotency-Key matches the first one.
 
+A send that times out, fails on the network, returns 5xx or returns 409
+`concurrent_idempotent_requests` may still have been accepted. `notify` then
+sets `outcome_unknown=true` on the message. The flag stays on the message in
+the retry and DLQ topics and is never cleared. Before resending a flagged
+message more than 24 hours after its event, the operator checks Resend Logs or
+confirms that a duplicate is acceptable.
+
 Keysy has no in-app notifications: no notification center, inbox, or unread
 state.
 
