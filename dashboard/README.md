@@ -84,8 +84,9 @@ or `[env]` values do not change the bundle. Never put a Supabase key or cookie
 encryption key in these variables.
 
 The production application requires a Next.js server; `.next/` is not a static
-site export. `bun run start` uses port 5173 and listens on localhost for a proxy in
-the same Machine. Route `dashboard.keysy.net` to Next.js and `auth.keysy.net` to
+site export. The build uses standalone output. `bun run start` copies `public/` and
+`.next/static/` into `.next/standalone/dashboard/`, then runs its `server.js` on port 5173
+on localhost for a proxy in the same Machine. Route `dashboard.keysy.net` to Next.js and `auth.keysy.net` to
 the Go auth service. Do not proxy auth paths through the dashboard.
 Set the auth service's `AUTH_URL=https://auth.keysy.net` and
 `WEB_APP_URL=https://dashboard.keysy.net/`. Register
