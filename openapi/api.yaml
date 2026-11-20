@@ -14,7 +14,7 @@ servers:
 tags:
   - name: Account
   - name: Orgs
-  - name: Members
+  - name: People
   - name: Invitations
   - name: Health
 paths:
@@ -415,7 +415,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
-      tags: [Members]
+      tags: [People]
       security:
         - accessCookie: []
       operationId: listMembers
@@ -470,7 +470,7 @@ paths:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/UserId'
     delete:
-      tags: [Members]
+      tags: [People]
       security:
         - accessCookie: []
       operationId: removeMember
@@ -517,7 +517,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     post:
-      tags: [Members]
+      tags: [People]
       security:
         - accessCookie: []
       operationId: leaveOrg

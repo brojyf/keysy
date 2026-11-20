@@ -330,6 +330,17 @@ test('API and Auth sidebars show the introduction and list every endpoint by pat
   }
 });
 
+test('the API sidebar groups member endpoints under People', async () => {
+  const html = await Bun.file(new URL('api.html', output)).text();
+  const group = html.match(/<details[^>]*><summary><span class="nav-group-label">People<\/span>[\s\S]*?<\/details>/)?.[0] ?? '';
+  const links = await matches(group, 'a[href]');
+  expect(links.map(({ href }) => href)).toEqual([
+    '/api/operations/operation-v0-orgs-orgid-members-get',
+    '/api/operations/operation-v0-orgs-orgid-members-userid-delete',
+    '/api/operations/operation-v0-orgs-orgid-leave-post',
+  ]);
+});
+
 test('operation page headings show the endpoint path', async () => {
   for (const [route, path] of [
     ['api/operations/operation-v0-orgs-post', '/v0/orgs'],
