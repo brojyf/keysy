@@ -10,10 +10,15 @@ See [API endpoints](/notify/endpoints) for the current interface status.
 
 ## Planned integration
 
-Use Novu Cloud for your in-app notification center and email, with Resend as the
-email provider. `notify` consumes Kafka domain events and triggers Novu workflows.
-Novu manages your notification list, unread count, and read status. Keep in-app
-notifications for the most recent 30 days; do not build a separate inbox store.
+`notify` consumes `email.requested` messages from Kafka and sends each email
+through Resend. See [System design](/system-design).
 
-This integration is not implemented yet. See [Novu Inbox](https://novu.co/inbox/)
-and [retention limits](https://docs.novu.co/platform/additional-resources/security).
+Email templates live in Resend, with `from` and `subject` as template defaults.
+`notify` builds each request body only from the message: `to` and `template`
+(`id` and `variables`). Every retry rebuilds the same body, so a request with
+the same Idempotency-Key matches the first one.
+
+Keysy has no in-app notifications: no notification center, inbox, or unread
+state.
+
+This integration is not implemented yet.

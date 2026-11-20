@@ -82,7 +82,7 @@
       "id": "relay",
       "type": "backend",
       "label": "Outbox Relay",
-      "sublabel": "CDC / poller",
+      "sublabel": "polling goroutine in api",
       "pos": [
         800,
         240
@@ -110,7 +110,7 @@
       "id": "otel",
       "type": "backend",
       "label": "otel",
-      "sublabel": "OTel Collector",
+      "sublabel": "OTLP from all services",
       "pos": [
         555,
         40
@@ -191,10 +191,10 @@
       ]
     },
     {
-      "id": "cfqueue",
-      "type": "messagebus",
-      "label": "Cloudflare Queues",
-      "sublabel": "email-high / email-low",
+      "id": "resend",
+      "type": "external",
+      "label": "Resend",
+      "sublabel": "email API",
       "pos": [
         1220,
         360
@@ -203,61 +203,9 @@
         140,
         60
       ]
-    },
-    {
-      "id": "worker",
-      "type": "cloud",
-      "label": "email-worker",
-      "sublabel": "Cloudflare Worker",
-      "pos": [
-        1010,
-        360
-      ],
-      "size": [
-        140,
-        60
-      ]
-    },
-    {
-      "id": "emaildlq",
-      "type": "messagebus",
-      "label": "email-dlq",
-      "sublabel": "failed sends",
-      "pos": [
-        1010,
-        460
-      ],
-      "size": [
-        140,
-        60
-      ]
-    },
-    {
-      "id": "resend",
-      "type": "external",
-      "label": "Resend",
-      "sublabel": "email API",
-      "pos": [
-        800,
-        360
-      ],
-      "size": [
-        140,
-        60
-      ]
     }
   ],
-  "boundaries": [
-    {
-      "kind": "region",
-      "label": "Cloudflare",
-      "wraps": [
-        "cfqueue",
-        "worker",
-        "emaildlq"
-      ]
-    }
-  ],
+  "boundaries": [],
   "connections": [
     {
       "id": "sign-in",
@@ -308,15 +256,6 @@
       "toSide": "right"
     },
     {
-      "id": "api-telemetry",
-      "from": "api",
-      "to": "otel",
-      "label": "OTLP",
-      "variant": "dashed",
-      "fromSide": "top",
-      "toSide": "left"
-    },
-    {
       "id": "otel-export",
       "from": "otel",
       "to": "grafana",
@@ -327,7 +266,7 @@
       "id": "read-outbox",
       "from": "supabase",
       "to": "relay",
-      "label": "read outbox"
+      "label": "poll outbox"
     },
     {
       "id": "publish-event",
@@ -369,35 +308,10 @@
       "variant": "dashed"
     },
     {
-      "id": "enqueue-email",
-      "from": "notify",
-      "to": "cfqueue",
-      "label": "enqueue job",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "trigger-worker",
-      "from": "cfqueue",
-      "to": "worker",
-      "label": "trigger",
-      "fromSide": "left",
-      "toSide": "right"
-    },
-    {
       "id": "send-email",
-      "from": "worker",
+      "from": "notify",
       "to": "resend",
       "label": "send",
-      "fromSide": "left",
-      "toSide": "right"
-    },
-    {
-      "id": "dead-letter",
-      "from": "worker",
-      "to": "emaildlq",
-      "label": "retries exhausted",
-      "variant": "dashed",
       "fromSide": "bottom",
       "toSide": "top"
     }
@@ -409,7 +323,8 @@
       "items": [
         "Successful changes commit their outbox row in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
-        "notify commits its offset only after the enqueue succeeds"
+        "notify commits its offset only after Resend accepts the email or Kafka acknowledges the message in its retry or DLQ topic",
+        "Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at"
       ]
     },
     {
@@ -425,9 +340,12 @@
       "dot": "amber",
       "title": "Email delivery",
       "items": [
-        "notify picks recipient and template; job_id = hash(event_id + template)",
-        "email-high: security alerts and member-added notices; email-low: everything else",
-        "email-worker sends with Idempotency-Key = job_id; 429/5xx retried with delay",
+        "api writes one email.requested outbox row per recipient: template, to and variables",
+        "notify sends each email through Resend with Idempotency-Key = event_id",
+        "429 rate_limit_exceeded and 409 concurrent_idempotent_requests wait and retry in place up to 3 times, then go to notify's retry topic",
+        "Network errors and 5xx go to notify's retry topic, which retries with backoff until 12 hours after the event, then moves the message to its DLQ topic",
+        "Quota errors and other 4xx, including invalid_idempotent_request, go to notify's DLQ topic",
+        "notify never sends an email whose event is more than 24 hours old, because Resend keeps idempotency keys for 24 hours; it moves the message to its DLQ topic instead",
         "Bounces and complaints handled by the Resend suppression list"
       ]
     },
@@ -435,9 +353,10 @@
       "dot": "cyan",
       "title": "Observability",
       "items": [
-        "api, auth, Outbox Relay, audit and notify export OTLP to otel; only the api edge is drawn",
-        "email-worker exports logs and traces to Grafana via Cloudflare OTLP export; final send failures raise an alert",
-        "email-dlq keeps failed jobs for 4 days so they can be replayed"
+        "api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn",
+        "notify exports Resend quota usage from response headers and plan limits from its config, and resets daily usage to 0 at 00:00 UTC and monthly usage at the start of each UTC month; Grafana alerts Discord at 80% (warning) and 100% (critical) of the monthly quota, and of the daily quota only while responses carry x-resend-daily-quota",
+        "notify counts Resend failures and expired emails by reason; every DLQ message raises a Grafana alert",
+        "notify's DLQ topic keeps failed and expired messages with their reason for 3 days for investigation; nothing resends from it"
       ]
     }
   ]
