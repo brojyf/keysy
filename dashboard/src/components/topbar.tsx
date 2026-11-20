@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Bug, Search } from 'lucide-react'
+import { Bug, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
 import IconButton from './icon-button'
 import OrganizationMenu from './organization-menu'
@@ -49,9 +49,6 @@ export default function Topbar() {
       </IconButton>
       <IconButton aria-label="Support" data-tooltip="Support">
         <QuestionMarkIcon />
-      </IconButton>
-      <IconButton aria-label="Notifications" data-tooltip="Notifications">
-        <Bell size={15} strokeWidth={2} absoluteStrokeWidth aria-hidden />
       </IconButton>
       {organizationName && (
         <>
