@@ -2,5 +2,6 @@
 # s6-svscan runs this on SIGTERM, in the scan directory, instead of stopping all services at once.
 # api and auth send buffered telemetry after they stop serving, so the collector stops last.
 for service in nginx dashboard api auth; do s6-svc -d "$service"; done
-s6-svwait -d nginx dashboard api auth
+# Only api and auth send telemetry. 10 s is their own shutdown limit and leaves the collector 5 s of Fly's 15 s.
+s6-svwait -d -t 10000 api auth
 exec s6-svscanctl -t .
