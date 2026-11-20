@@ -1,34 +1,35 @@
+import { setRouterMock } from './setup'
 import { Window } from 'happy-dom'
 import { notifyManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
-import SignInPage, { metadata as signInMetadata } from '../src/app/signin/page'
-import AccountDeletedPage, { metadata as accountDeletedMetadata } from '../src/app/account-deleted/page'
-import { metadata as rootMetadata } from '../src/app/layout'
-import GeneralPage from '../src/app/account/page'
-import * as secretsPage from '../src/app/secrets/page'
-import * as servicesPage from '../src/app/services/page'
-import * as membersPage from '../src/app/people/page'
-import * as auditLogPage from '../src/app/audit-log/page'
-import * as settingsPage from '../src/app/settings/page'
-import * as accountLayout from '../src/app/account/layout'
+import SignInPage, { Route as signInRoute } from '../src/routes/signin'
+import AccountDeletedPage, { Route as accountDeletedRoute } from '../src/routes/account-deleted'
+import { Route as rootRoute } from '../src/routes/__root'
+import GeneralPage from '../src/routes/account/index'
+import * as secretsPage from '../src/routes/secrets'
+import * as servicesPage from '../src/routes/services'
+import * as membersPage from '../src/routes/people'
+import * as auditLogPage from '../src/routes/audit-log'
+import * as settingsPage from '../src/routes/settings'
+import * as accountLayout from '../src/routes/account'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
 import { organizationQueryOptions, useOrganizationMutations } from '../src/lib/organization-queries'
 
 let currentPathname = '/orgs/org-id/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
-mock.module('next/navigation', () => ({ usePathname: () => currentPathname, useRouter: () => router }))
+
 
 let browser: Window
 let root: Root
 let container: HTMLDivElement
 const originalFetch = globalThis.fetch
 const originalTimeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout')!
-const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
-const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
+const originalAPIURL = process.env.VITE_API_URL
+const originalAuthURL = process.env.VITE_AUTH_URL
 let sessionRequest: ReturnType<typeof mock>
 let organizationsRequest: ReturnType<typeof mock>
 let restoreTimeout: (() => void) | undefined
@@ -65,11 +66,12 @@ async function settleOrganizationRequests(action?: () => void) {
 }
 
 beforeEach(() => {
+  setRouterMock(() => currentPathname, ({ to, replace }) => replace ? router.replace(to) : router.push(to))
   notifyManager.setScheduler(queueMicrotask)
   notifyManager.setNotifyFunction((callback) => { act(callback) })
   currentPathname = '/orgs/org-id/secrets'
-  process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net/'
-  process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net/'
+  process.env.VITE_API_URL = 'https://api.keysy.net/'
+  process.env.VITE_AUTH_URL = 'https://auth.keysy.net/'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   Object.assign(browser.HTMLElement.prototype, { hidePopover() {} })
   sessionRequest = mock(() => Promise.resolve(new Response(null, { status: 401 })))
@@ -92,10 +94,10 @@ afterEach(async () => {
   globalThis.fetch = originalFetch
   restoreTimeout?.()
   restoreTimeout = undefined
-  if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
-  else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
-  if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
-  else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
+  if (originalAPIURL === undefined) delete process.env.VITE_API_URL
+  else process.env.VITE_API_URL = originalAPIURL
+  if (originalAuthURL === undefined) delete process.env.VITE_AUTH_URL
+  else process.env.VITE_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
   notifyManager.setScheduler((callback) => setTimeout(callback, 0))
   notifyManager.setNotifyFunction((callback) => callback())
@@ -210,7 +212,7 @@ test('signed-out users on /account-deleted see the account deleted page without 
   currentPathname = '/account-deleted'
   await act(async () => root.render(<SessionGate><AccountDeletedPage /></SessionGate>))
   expect(router.replace).not.toHaveBeenCalled()
-  expect(accountDeletedMetadata.title).toBe('Account deleted')
+  expect(accountDeletedRoute.options.head!({} as never).meta![0]!.title).toBe('Account deleted | Keysy')
   expect(container.querySelector('h1')?.textContent).toBe('Account deleted')
   expect(container.querySelector('.sign-in-copy p')?.textContent).toBe('Thanks for building with Keysy.Changed your mind? Sign in within 30 days to cancel.')
   const link = container.querySelector<HTMLAnchorElement>('a.button-primary')!
@@ -295,8 +297,8 @@ function dialogButton(label: string) {
 test('shows the sign-in design and links directly to the auth origin', async () => {
   currentPathname = '/signin'
   await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
-  expect(signInMetadata.title).toBe('Sign in')
-  expect(rootMetadata.title).toEqual({ template: '%s | Keysy', default: 'Keysy' })
+  expect(signInRoute.options.head!({} as never).meta![0]!.title).toBe('Sign in | Keysy')
+  expect(rootRoute.options.head!({} as never).meta![0]!.title).toBe('Keysy')
   expect(router.replace).not.toHaveBeenCalled()
   expect(container.querySelector('h1')?.textContent).toBe('Sign in to Keysy')
   expect(container.textContent).not.toContain('Use your Google account to continue.')
@@ -314,8 +316,8 @@ test('shows the sign-in design and links directly to the auth origin', async () 
 })
 
 test('development calls the separate localhost auth port without a rewrite', async () => {
-  delete process.env.NEXT_PUBLIC_AUTH_URL
-  delete process.env.NEXT_PUBLIC_API_URL
+  delete process.env.VITE_AUTH_URL
+  delete process.env.VITE_API_URL
   currentPathname = '/signin'
   await act(async () => root.render(<SessionGate><SignInPage /></SessionGate>))
   expect(container.querySelector('a.auth-button')?.getAttribute('href')).toBe('http://localhost:8080/v0/auth/google')
@@ -591,13 +593,13 @@ test('shows the top bar with the mock organization and action buttons', async ()
 
 test('exports page titles for dashboard routes', () => {
   expect([
-    secretsPage.metadata.title,
-    servicesPage.metadata.title,
-    membersPage.metadata.title,
-    auditLogPage.metadata.title,
-    settingsPage.metadata.title,
-    accountLayout.metadata.title,
-  ]).toEqual(['Secrets', 'Services', 'Members', 'Audit log', 'Settings', 'Account'])
+    secretsPage.Route.options.head!({} as never).meta![0]!.title,
+    servicesPage.Route.options.head!({} as never).meta![0]!.title,
+    membersPage.Route.options.head!({} as never).meta![0]!.title,
+    auditLogPage.Route.options.head!({} as never).meta![0]!.title,
+    settingsPage.Route.options.head!({} as never).meta![0]!.title,
+    accountLayout.Route.options.head!({} as never).meta![0]!.title,
+  ]).toEqual(['Secrets | Keysy', 'Services | Keysy', 'Members | Keysy', 'Audit log | Keysy', 'Settings | Keysy', 'Account | Keysy'])
 })
 
 test('highlights the rail item for nested paths', async () => {
@@ -758,8 +760,8 @@ test('a context user change updates the account menu name', async () => {
 })
 
 const validUser = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
-const { default: AccountLayout } = await import('../src/app/account/layout')
-const { default: OrganizationsPage } = await import('../src/app/account/organizations/page')
+const { default: AccountLayout } = await import('../src/components/account-shell')
+const { default: OrganizationsPage } = await import('../src/routes/account/organizations')
 
 async function renderEmpty(path: string, page: React.ReactNode) {
   currentPathname = path

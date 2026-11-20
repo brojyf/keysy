@@ -1,7 +1,5 @@
-'use client'
-
 import { ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../lib/api-client'
@@ -89,7 +87,7 @@ export default function DeleteAccountDialog({ ref }: { ref: Ref<HTMLDialogElemen
           <ul className="account-delete-organizations">
             {ownedOrganizations.map((organization) => (
               <li key={organization.id}>
-                <Link href={organizationPath(organization.id, '/settings')}>
+                <Link to={organizationPath(organization.id, '/settings')}>
                   <span>{organization.name}</span>
                   <span className="account-delete-role">Owner</span>
                   <ArrowRight size={16} aria-hidden />

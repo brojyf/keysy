@@ -4,28 +4,31 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev --hostname localhost --port 5173",
-    "build": "tsc --noEmit && next build",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
     "lint": "oxlint",
-    "test": "node --test tests/*.test.ts && bun test tests/button.test.tsx tests/icon-button.test.tsx tests/more-menu.test.tsx tests/dialog.test.tsx tests/session-gate.test.tsx tests/account.test.tsx tests/theme.test.tsx tests/organization-settings.test.tsx tests/members.test.tsx tests/invitations.test.tsx tests/keysy-symbol.test.tsx",
-    "start": "cp -R public .next/standalone/dashboard/ && cp -R .next/static .next/standalone/dashboard/.next/ && PORT=5173 HOSTNAME=localhost node .next/standalone/dashboard/server.js"
+    "test": "node --test tests/*.test.ts && bun test tests/button.test.tsx tests/icon-button.test.tsx tests/more-menu.test.tsx tests/dialog.test.tsx tests/session-gate.test.tsx tests/account.test.tsx tests/theme.test.tsx tests/organization-settings.test.tsx tests/members.test.tsx tests/invitations.test.tsx tests/keysy-symbol.test.tsx tests/routes.test.tsx",
+    "preview": "vite preview --host localhost --port 5173 --strictPort"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-router": "^1.170.46",
     "lucide-react": "^1.71.0",
-    "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@tanstack/router-plugin": "^1.169.0",
     "@types/bun": "1.4.4",
     "@types/node": "^26.6.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.3.0",
     "happy-dom": "^21.0.4",
     "oxlint": "^1.93.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "^8.3.8"
   }
 }

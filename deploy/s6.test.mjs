@@ -33,53 +33,7 @@ test("keeps restarting the api while it exits during startup", async () => {
   }
 });
 
-test("clears the route cache before Next starts and passes SIGTERM to Next", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "s6-test-"));
-  const routeCache = join(directory, ".next/server/route-cache");
-  const buildManifest = join(directory, ".next/build-manifest.json");
-  const startupFile = join(directory, "startup");
-  const stoppedFile = join(directory, "stopped");
-  const fakeNext = join(directory, "next");
-  await mkdir(join(routeCache, "APP_PAGE"), { recursive: true });
-  await writeFile(buildManifest, "{}");
-  await writeFile(
-    fakeNext,
-    `#!/bin/sh
-trap 'echo stopped > ${stoppedFile}; exit 0' TERM
-{ test -e ${routeCache} && echo route-cache-kept || echo route-cache-cleared; test -e ${buildManifest} && echo build-kept; } > ${startupFile}
-while :; do sleep 0.1; done
-`,
-    { mode: 0o755 },
-  );
-
-  const run = (await readFile(new URL("s6/dashboard/run", import.meta.url), "utf8"))
-    .replace("node server.js", fakeNext)
-    .replace("cd /app/dashboard", `cd ${directory}`);
-  const runFile = join(directory, "run");
-  await writeFile(runFile, run, { mode: 0o755 });
-
-  const dashboard = spawn(runFile, [], { stdio: "ignore" });
-  const exited = new Promise((resolve) => dashboard.once("exit", resolve));
-  try {
-    const deadline = Date.now() + 10_000;
-    let startup = "";
-    while (!startup.includes("build-kept") && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      startup = await readFile(startupFile, "utf8").catch(() => "");
-    }
-    assert.equal(startup, "route-cache-cleared\nbuild-kept\n");
-
-    // s6-supervise signals the process it started, so the run script must exec into Next.
-    dashboard.kill("SIGTERM");
-    await exited;
-    assert.equal(await readFile(stoppedFile, "utf8"), "stopped\n");
-  } finally {
-    dashboard.kill("SIGKILL");
-    await rm(directory, { recursive: true, force: true });
-  }
-});
-
-test("stops the collector after api and auth flush telemetry, even when the dashboard hangs", { timeout: 20_000 }, async () => {
+test("stops the collector after api and auth flush telemetry, even when nginx hangs", { timeout: 20_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "s6-test-"));
   const scanDirectory = join(directory, "s6");
   const collectorUp = join(directory, "collector-up");
@@ -103,8 +57,7 @@ while :; do sleep 0.1; done
     await writeFile(fake, fakeService(service), { mode: 0o755 });
     await replaceRun(service, binary, fake);
   }
-  await writeFile(join(scanDirectory, "nginx/run"), "#!/bin/sh\nexec sleep 1000\n", { mode: 0o755 });
-  await writeFile(join(scanDirectory, "dashboard/run"), "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 0.1; done\n", { mode: 0o755 });
+  await writeFile(join(scanDirectory, "nginx/run"), "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 0.1; done\n", { mode: 0o755 });
 
   // The image's CMD; Fly's init sends it SIGTERM on stop.
   const svscan = spawn("s6-svscan", [scanDirectory], { stdio: "ignore" });
@@ -127,7 +80,7 @@ while :; do sleep 0.1; done
     const flushes = (await readFile(flushLog, "utf8")).trim().split("\n").sort();
     assert.deepEqual(flushes, ["api-flushed", "auth-flushed"]);
   } finally {
-    execFileSync("s6-svc", ["-k", join(scanDirectory, "dashboard")]);
+    execFileSync("s6-svc", ["-k", join(scanDirectory, "nginx")]);
     svscan.kill("SIGKILL");
     await rm(directory, { recursive: true, force: true });
   }

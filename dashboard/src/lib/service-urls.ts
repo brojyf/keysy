@@ -1,6 +1,6 @@
 export function serviceURLs() {
   return {
-    apiURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
-    authURL: process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080',
+    apiURL: import.meta.env.VITE_API_URL || 'http://localhost:8081',
+    authURL: import.meta.env.VITE_AUTH_URL || 'http://localhost:8080',
   }
 }

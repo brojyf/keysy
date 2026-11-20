@@ -1,5 +1,3 @@
-'use client'
-
 import { Bug, Search } from 'lucide-react'
 import { useCurrentUser } from './current-user'
 import IconButton from './icon-button'

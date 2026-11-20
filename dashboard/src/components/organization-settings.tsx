@@ -1,5 +1,3 @@
-'use client'
-
 import { Check, Copy, Settings } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { openDialog } from '../lib/dialog-controls'

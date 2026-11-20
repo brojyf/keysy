@@ -1,3 +1,4 @@
+import { setRouterMock } from './setup'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Window } from 'happy-dom'
 import { readFileSync } from 'node:fs'
@@ -7,14 +8,14 @@ import { createRoot, type Root } from 'react-dom/client'
 
 let currentPathname = '/account'
 const routerPush = mock(() => {})
-mock.module('next/navigation', () => ({ usePathname: () => currentPathname, useRouter: () => ({ push: routerPush }) }))
+
 
 const { CurrentUserContext } = await import('../src/components/current-user')
 
-const { default: AccountLayout } = await import('../src/app/account/layout')
-const { default: GeneralPage } = await import('../src/app/account/page')
-const { default: OrganizationsPage } = await import('../src/app/account/organizations/page')
-const { default: SessionsPage } = await import('../src/app/account/sessions/page')
+const { default: AccountLayout } = await import('../src/components/account-shell')
+const { default: GeneralPage } = await import('../src/routes/account/index')
+const { default: OrganizationsPage } = await import('../src/routes/account/organizations')
+const { default: SessionsPage } = await import('../src/routes/account/sessions')
 
 let browser: Window
 let root: Root
@@ -22,16 +23,17 @@ let container: HTMLDivElement
 const organizations = [{ id: 'org-1', name: 'platform', role: 'developer' as const, memberCount: 12 }, { id: 'org-2', name: 'marketing-site', role: 'admin' as const, memberCount: 4 }, { id: 'org-3', name: 'z-owner', role: 'owner' as const, memberCount: 1 }]
 const user = { id: 'user-id', email: 'member@example.com', displayName: 'Test Member', agentAutoApply: false, memberships: [] }
 const originalFetch = globalThis.fetch
-const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
-const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
+const originalAPIURL = process.env.VITE_API_URL
+const originalAuthURL = process.env.VITE_AUTH_URL
 let request: ReturnType<typeof mock>
 let onUserChange: ReturnType<typeof mock>
 let onSignedOut: ReturnType<typeof mock>
 let onSignOutRequest: ReturnType<typeof mock>
 
 beforeEach(() => {
-  process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net'
-  process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net'
+  setRouterMock(() => currentPathname, ({ to }) => routerPush(to))
+  process.env.VITE_API_URL = 'https://api.keysy.net'
+  process.env.VITE_AUTH_URL = 'https://auth.keysy.net'
   request = mock(() => Promise.resolve(Response.json(user)))
   onUserChange = mock(() => {})
   onSignedOut = mock(() => {})
@@ -49,10 +51,10 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
-  if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
-  else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
-  if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
-  else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
+  if (originalAPIURL === undefined) delete process.env.VITE_API_URL
+  else process.env.VITE_API_URL = originalAPIURL
+  if (originalAuthURL === undefined) delete process.env.VITE_AUTH_URL
+  else process.env.VITE_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
 })
 

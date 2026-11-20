@@ -19,28 +19,21 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "allowJs": true,
     "allowImportingTsExtensions": true,
     "types": [
       "node",
       "bun",
       "react",
-      "react-dom"
+      "react-dom",
+      "vite/client"
     ]
   },
   "include": [
-    "next-env.d.ts",
-    "next.config.ts",
+    "vite.config.ts",
     "tests/*.ts",
     "src/**/*.ts",
-    "src/**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules"

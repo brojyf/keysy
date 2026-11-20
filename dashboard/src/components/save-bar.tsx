@@ -1,5 +1,3 @@
-'use client'
-
 import { Check, CircleAlert, LoaderCircle } from 'lucide-react'
 import type { RefObject } from 'react'
 import Button from './button'

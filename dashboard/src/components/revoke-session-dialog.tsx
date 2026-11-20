@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState, type MouseEvent, type Ref } from 'react'
 import { closeDialog } from '../lib/dialog-controls'
 import { useRevokeSession, type AccountSession } from '../lib/session-queries'

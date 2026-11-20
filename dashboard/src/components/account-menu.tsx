@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { UserRound } from 'lucide-react'
 import { useRef, useState } from 'react'
 import ThemeSwitch from './theme-switch'
@@ -36,7 +34,7 @@ export default function AccountMenu({ displayName, avatarUrl, email, onSignOutRe
           {email && <p className="account-menu-email">{email}</p>}
         </div>
         <hr className="account-menu-divider" />
-        <Link className="account-menu-item" href="/account" onClick={() => menu.current?.hidePopover()}>
+        <Link className="account-menu-item" to="/account" onClick={() => menu.current?.hidePopover()}>
           Account
         </Link>
         <div className="account-menu-row">

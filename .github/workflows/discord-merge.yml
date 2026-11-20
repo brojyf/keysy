@@ -25,6 +25,12 @@ on:
       cloudflare_deployed:
         type: boolean
         default: false
+      dashboard_result:
+        type: string
+        default: pending
+      dashboard_deployed:
+        type: boolean
+        default: false
     secrets:
       DISCORD_WEBHOOK_URL:
         required: true
@@ -62,6 +68,8 @@ jobs:
           DEPLOYED: ${{ inputs.deployed }}
           CLOUDFLARE_RESULT: ${{ inputs.cloudflare_result }}
           CLOUDFLARE_DEPLOYED: ${{ inputs.cloudflare_deployed }}
+          DASHBOARD_RESULT: ${{ inputs.dashboard_result }}
+          DASHBOARD_DEPLOYED: ${{ inputs.dashboard_deployed }}
         run: |
           # First path segment of each changed file, e.g. "dashboard / wiki".
           # Falls back so an API failure does not drop the whole message.
@@ -82,6 +90,8 @@ jobs:
             --arg deployed "$DEPLOYED" \
             --arg cloudflare_result "$CLOUDFLARE_RESULT" \
             --arg cloudflare_deployed "$CLOUDFLARE_DEPLOYED" \
+            --arg dashboard_result "$DASHBOARD_RESULT" \
+            --arg dashboard_deployed "$DASHBOARD_DEPLOYED" \
             'def status($result; $deployed):
               if $conclusion != "success" then "⏭️ Not run (CI did not pass)"
               elif $result == "pending" then "⏳ Pending"
@@ -95,7 +105,8 @@ jobs:
               "\nCI: " + (if $conclusion == "success" then "✅ Passed" else "❌ " + $conclusion end) +
               "\nSupabase migrations: " + status($migrations_result; $migrated) +
               "\nFly deploy: " + status($deploy_result; $deployed) +
-              "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed)),
+              "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed) +
+              "\nDashboard deploy: " + status($dashboard_result; $dashboard_deployed)),
               allowed_mentions: {parse: []}}')
 
           if [ -n "$MESSAGE_ID" ]; then

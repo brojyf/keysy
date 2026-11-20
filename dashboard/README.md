@@ -1,6 +1,6 @@
 # Keysy dashboard
 
-Next.js App Router application with React, TypeScript 7, and Bun.
+Vite and TanStack Router application with React, TypeScript 7, and Bun.
 The sign-in screen is the `/signin` route. The Go auth service remains responsible for authentication.
 
 ## Sign-in
@@ -8,14 +8,14 @@ The sign-in screen is the `/signin` route. The Go auth service remains responsib
 The screen uses [Web · Sign in › Sign in](https://www.figma.com/design/i1pA349chi1nTE88kWTR1e?node-id=112-3342)
 as its design reference.
 
-- Continue with Google navigates to `{NEXT_PUBLIC_AUTH_URL}/v0/auth/google`.
+- Continue with Google navigates to `{VITE_AUTH_URL}/v0/auth/google`.
 - The auth service handles the callback on its own origin, sets encrypted HttpOnly cookies, and redirects to the dashboard.
-- On each page load, `{NEXT_PUBLIC_API_URL}/v0/me` verifies the access token on the server.
+- On each page load, `{VITE_API_URL}/v0/me` verifies the access token on the server.
 - The dashboard shows the verified user's display name, email, and optional Google avatar. It does not read or store tokens.
 - Account General edits the display name with `PATCH /v0/me`.
-- Logout revokes the current session and clears the auth cookies through `{NEXT_PUBLIC_AUTH_URL}/v0/auth/logout`.
+- Logout revokes the current session and clears the auth cookies through `{VITE_AUTH_URL}/v0/auth/logout`.
 - Logout shows a pending state and allows retry after a failure.
-- A 401 from the API triggers one `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh redirects to `/signin`; an unavailable one shows retry.
+- A 401 from the API triggers one `{VITE_AUTH_URL}/v0/auth/refresh` call, then one retry. A rejected refresh redirects to `/signin`; an unavailable one shows retry.
 
 Session, refresh, and logout requests use `credentials: 'include'`. The API and auth services allow
 credentialed CORS only from the configured dashboard origin, including on errors.
@@ -55,9 +55,9 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-The Next.js development server uses `http://localhost:5173`. Auth requests go
-directly to `http://localhost:8080`, the default when `NEXT_PUBLIC_AUTH_URL` is unset.
-API requests go to `http://localhost:8081` when `NEXT_PUBLIC_API_URL` is unset.
+The Vite development server uses `http://localhost:5173`. Auth requests go
+directly to `http://localhost:8080`, the default when `VITE_AUTH_URL` is unset.
+API requests go to `http://localhost:8081` when `VITE_API_URL` is unset.
 Use `.env.example` as the reference for an ignored `.env.local` if you need to set
 these public URLs. Do not overwrite an existing `.env.local`.
 `bun run dev` includes Fast Refresh (HMR). Save a component or stylesheet to update
@@ -71,23 +71,20 @@ and `WEB_APP_URL=http://localhost:5173/`. Register the callback URL
 
 ```sh
 bun run build
-bun run start
+bun run preview
 ```
 
-Production builds require `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL`. `.env.production`
-sets both; a build-time environment variable overrides the file. Each must be an HTTPS origin
+`.env.production` sets `VITE_AUTH_URL` and `VITE_API_URL` for production builds. A build-time environment variable overrides the file. Each must be an HTTPS origin
 (HTTP localhost is allowed for local checks), without credentials, a path, query,
-or fragment. Next.js embeds these public values in the browser bundle at build time;
+or fragment. Vite embeds these public values in the browser bundle at build time;
 changing only the runtime environment will not change the service destinations.
 For container builds, an override must reach the image build; runtime Fly Secrets
 or `[env]` values do not change the bundle. Never put a Supabase key or cookie
 encryption key in these variables.
 
-The production application requires a Next.js server; `.next/` is not a static
-site export. The build uses standalone output. `bun run start` copies `public/` and
-`.next/static/` into `.next/standalone/dashboard/`, then runs its `server.js` on port 5173
-on localhost for a proxy in the same Machine. Route `dashboard.keysy.net` to Next.js and `auth.keysy.net` to
-the Go auth service. Do not proxy auth paths through the dashboard.
+The build writes a static SPA to `dist/`. The host must serve `index.html` for
+application routes. Route `auth.keysy.net` to the Go auth service. Do not proxy
+auth paths through the dashboard.
 Set the auth service's `AUTH_URL=https://auth.keysy.net` and
 `WEB_APP_URL=https://dashboard.keysy.net/`. Register
 `https://auth.keysy.net/v0/auth/callback` in Google.

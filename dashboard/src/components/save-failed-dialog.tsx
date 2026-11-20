@@ -1,5 +1,3 @@
-'use client'
-
 import type { RefObject } from 'react'
 import { closeDialog } from '../lib/dialog-controls'
 import Button from './button'

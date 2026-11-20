@@ -36,6 +36,8 @@ class DiscordNotificationTests(unittest.TestCase):
             "DEPLOYED": "false",
             "CLOUDFLARE_RESULT": "pending",
             "CLOUDFLARE_DEPLOYED": "false",
+            "DASHBOARD_RESULT": "pending",
+            "DASHBOARD_DEPLOYED": "false",
             "GITHUB_OUTPUT": str(self.path / "outputs"),
             "REQUEST_FILE": str(self.path / "request.json"),
         }
@@ -144,6 +146,12 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
                     CLOUDFLARE_RESULT=result, CLOUDFLARE_DEPLOYED=deployed,
                 )["payload"]["content"]
                 self.assertIn("Fly deploy: ✅ Succeeded\nCloudflare deploy: " + status, content)
+
+    def test_dashboard_result_is_reported_separately(self):
+        content = self.notify(MESSAGE_ID="987654321", DASHBOARD_RESULT="success", DASHBOARD_DEPLOYED="true")["payload"]["content"]
+        self.assertIn("Dashboard deploy: ✅ Succeeded", content)
+        content = self.notify(MESSAGE_ID="987654321", DASHBOARD_RESULT="skipped")["payload"]["content"]
+        self.assertIn("Dashboard deploy: ⏭️ Skipped", content)
 
     def test_scope_lookup_failure_keeps_notification(self):
         self.executable("gh", "#!/bin/sh\nexit 1\n")

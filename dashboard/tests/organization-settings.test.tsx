@@ -1,3 +1,4 @@
+import { setRouterMock } from './setup'
 import { Window } from 'happy-dom'
 import { notifyManager } from '@tanstack/react-query'
 import { readFileSync } from 'node:fs'
@@ -7,18 +8,18 @@ import { createRoot, type Root } from 'react-dom/client'
 
 let pathname = ''
 const router = { replace: mock(() => {}), push: mock(() => {}) }
-mock.module('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => router }))
+
 const { default: SessionGate } = await import('../src/components/session-gate')
-const { default: SettingsPage } = await import('../src/app/settings/page')
-const { default: GeneralPage } = await import('../src/app/account/page')
+const { default: SettingsPage } = await import('../src/routes/orgs/$orgId/settings')
+const { default: GeneralPage } = await import('../src/routes/account/index')
 const { useCurrentUser } = await import('../src/components/current-user')
 
 const organization = { id: '20000000-0000-0000-0000-000000000001', name: 'Platform', role: 'owner', memberCount: 2 }
 const otherOrganization = { ...organization, id: '20000000-0000-0000-0000-000000000002', name: 'Other' }
 const user = { id: 'user-id', email: 'owner@example.com', displayName: 'Owner', agentAutoApply: false }
 const originalFetch = globalThis.fetch
-const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
-const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
+const originalAPIURL = process.env.VITE_API_URL
+const originalAuthURL = process.env.VITE_AUTH_URL
 let browser: Window
 let root: Root
 let container: HTMLDivElement
@@ -50,6 +51,7 @@ async function settleOrganizationRequests(action?: () => void) {
 }
 
 beforeEach(() => {
+  setRouterMock(() => pathname, ({ to, replace }) => replace ? router.replace(to) : router.push(to))
   notifyManager.setScheduler(queueMicrotask)
   notifyManager.setNotifyFunction((callback) => { act(callback) })
   pathname = `/orgs/${organization.id}/settings`
@@ -70,8 +72,8 @@ beforeEach(() => {
   listOrganizations = mock(() => Promise.resolve(Response.json(organizations)))
   router.replace.mockClear()
   router.push.mockClear()
-  process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net'
-  process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net'
+  process.env.VITE_API_URL = 'https://api.keysy.net'
+  process.env.VITE_AUTH_URL = 'https://auth.keysy.net'
   browser = new Window({ url: 'https://dashboard.keysy.net' })
   writeClipboard = mock(() => Promise.resolve())
   Object.defineProperty(browser.navigator, 'clipboard', { configurable: true, value: { writeText: writeClipboard } })
@@ -93,10 +95,10 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
-  if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
-  else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
-  if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
-  else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
+  if (originalAPIURL === undefined) delete process.env.VITE_API_URL
+  else process.env.VITE_API_URL = originalAPIURL
+  if (originalAuthURL === undefined) delete process.env.VITE_AUTH_URL
+  else process.env.VITE_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
   notifyManager.setScheduler((callback) => setTimeout(callback, 0))
   notifyManager.setNotifyFunction((callback) => callback())

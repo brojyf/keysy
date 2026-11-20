@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useContext } from 'react'
 import type { Organization } from '../lib/organization'
 import type { SessionUser } from '../lib/session-user'

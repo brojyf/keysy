@@ -1,5 +1,3 @@
-'use client'
-
 import { CircleAlert } from 'lucide-react'
 import { useId, type ReactNode, type Ref } from 'react'
 import { closeDialog } from '../lib/dialog-controls'
