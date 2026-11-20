@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# One image runs nginx, api, auth, dashboard, and the OTel collector under supervisord.
+# One image runs nginx, api, auth, dashboard, and the OTel collector under s6.
 # Build with the repository root as the context.
 
 FROM golang:1.27.3 AS api-build
@@ -31,7 +31,7 @@ RUN rm -rf node_modules && bun install --frozen-lockfile --production
 
 FROM node:24-slim
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates nginx supervisor \
+ && apt-get install -y --no-install-recommends ca-certificates nginx s6 \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=otel/opentelemetry-collector:0.162.0 /otelcol /usr/local/bin/otelcol
 COPY otel/config.yaml /etc/otelcol/config.yaml
@@ -44,7 +44,9 @@ COPY --from=dashboard-build --chown=node:node /src/dashboard/public ./public
 COPY --from=dashboard-build --chown=node:node /src/dashboard/node_modules ./node_modules
 COPY --from=dashboard-build --chown=node:node /src/dashboard/.next ./.next
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
-COPY deploy/supervisord.conf /etc/supervisord.conf
+# s6-supervise writes its state into each service directory.
+COPY --chown=node:node deploy/s6 /etc/s6
 USER node
 EXPOSE 8000
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+# Fly's init stays pid 1, so this uses plain s6-svscan; s6-overlay refuses to run unless it is pid 1.
+CMD ["s6-svscan", "/etc/s6"]

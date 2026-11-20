@@ -1,0 +1,3 @@
+#!/bin/sh
+export PORT=8080
+exec /usr/local/bin/keysy-auth
