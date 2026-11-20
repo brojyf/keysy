@@ -171,6 +171,7 @@ class FlyDeployTests(unittest.TestCase):
         self.page_status = 200
         self.asset_status = 200
         self.health_status = 200
+        self.asset_type = None
         self.page = '<link href="/assets/app.css"><script src="/assets/app.js"></script>'
         owner = self
 
@@ -186,6 +187,8 @@ class FlyDeployTests(unittest.TestCase):
                 self.send_response(status)
                 if status == 302:
                     self.send_header("Location", "/access-login")
+                if not is_page:
+                    self.send_header("Content-Type", owner.asset_type or ("text/css" if ".css" in self.path else "text/javascript"))
                 self.end_headers()
                 self.wfile.write((owner.page if is_page else "OK").encode())
 
@@ -275,6 +278,13 @@ sys.exit(subprocess.run([os.environ["REAL_CURL"], *args]).returncode)
     def test_missing_assets_fail(self):
         self.asset_status = 404
         self.assertNotEqual(self.run_step().returncode, 0)
+
+    # Workers SPA fallback answers a missing asset with 200 and the HTML shell.
+    def test_html_fallback_for_an_asset_fails(self):
+        self.asset_type = "text/html; charset=utf-8"
+        result = self.run_step()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("/assets/app.css", result.stdout + result.stderr)
 
     def test_page_without_assets_fails(self):
         self.page = "<title>Sign in - Cloudflare Access</title>"

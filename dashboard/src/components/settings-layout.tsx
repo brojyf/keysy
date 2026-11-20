@@ -21,7 +21,7 @@ export default function SettingsLayout({ title, nav, Icon, heading, className, c
         <nav className="account-nav" aria-label={title}>
           {nav.map(({ label, href, current, count }) => href
             ? (
-              <Link key={label} className="account-nav-item" to={href} aria-current={current ? 'page' : undefined}>
+              <Link key={label} className="account-nav-item" to={href} activeOptions={{ exact: true }} aria-current={current ? 'page' : undefined}>
                 {label}
                 {count !== undefined && <span className="account-nav-count">{count}</span>}
               </Link>

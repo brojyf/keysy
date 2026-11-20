@@ -13,6 +13,7 @@ for (const [route, to] of [[root, '/secrets'], [members, '/people'], [orgMembers
     } catch (error) {
       expect((error as { options: object }).options).toMatchObject({ to, replace: true, statusCode: 307 })
       if (route === orgMembers) expect((error as { options: { params: object } }).options.params).toEqual({ orgId: 'a/b' })
+      if (route !== root) expect((error as { options: object }).options).toMatchObject({ search: true, hash: true })
     }
   })
 }

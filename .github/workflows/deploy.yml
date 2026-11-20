@@ -246,8 +246,13 @@ jobs:
           assets=$(printf '%s' "$html" | grep --only-matching --extended-regexp '/assets/[^"\\]*\.(css|js)' | sort --unique)
           printf '%s\n' "$assets" | grep -qE '\.js$'
           printf '%s\n' "$assets" | grep -qE '\.css$'
+          # The SPA fallback answers a missing asset with 200 text/html, so also check the type.
           for path in $assets; do
-            dashboard_get --output /dev/null "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+            type=$(dashboard_get --output /dev/null --write-out '%{content_type}' "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT")
+            case "$path:$type" in
+              *.css:text/css*|*.js:text/javascript*|*.js:application/javascript*) ;;
+              *) echo "$path returned ${type:-no content type}" >&2; exit 1 ;;
+            esac
           done
 
   update-notification:
