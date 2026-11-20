@@ -5,10 +5,10 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import SessionGate from '../src/components/session-gate'
-import SignInPage, { Route as signInRoute } from '../src/routes/signin'
-import AccountDeletedPage, { Route as accountDeletedRoute } from '../src/routes/account-deleted'
+import { Route as signInRoute } from '../src/routes/signin'
+import { Route as accountDeletedRoute } from '../src/routes/account-deleted'
 import { Route as rootRoute } from '../src/routes/__root'
-import GeneralPage from '../src/routes/account/index'
+import { Route as generalRoute } from '../src/routes/account/index'
 import * as secretsPage from '../src/routes/secrets'
 import * as servicesPage from '../src/routes/services'
 import * as membersPage from '../src/routes/people'
@@ -18,6 +18,10 @@ import * as accountLayout from '../src/routes/account'
 import { useCurrentUser } from '../src/components/current-user'
 import { fetchWithSessionRefresh, logoutSession } from '../src/lib/session-refresh'
 import { organizationQueryOptions, useOrganizationMutations } from '../src/lib/organization-queries'
+
+const SignInPage = signInRoute.options.component!
+const AccountDeletedPage = accountDeletedRoute.options.component!
+const GeneralPage = generalRoute.options.component!
 
 let currentPathname = '/orgs/org-id/secrets'
 const router = { replace: mock(() => {}), push: mock(() => {}) }
@@ -761,7 +765,7 @@ test('a context user change updates the account menu name', async () => {
 
 const validUser = { id: 'user-id', email: 'member@example.com', agentAutoApply: false, displayName: 'Test Member' }
 const { default: AccountLayout } = await import('../src/components/account-shell')
-const { default: OrganizationsPage } = await import('../src/routes/account/organizations')
+const OrganizationsPage = (await import('../src/routes/account/organizations')).Route.options.component!
 
 async function renderEmpty(path: string, page: React.ReactNode) {
   currentPathname = path

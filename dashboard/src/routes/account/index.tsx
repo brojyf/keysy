@@ -16,7 +16,7 @@ import { openDialog } from '../../lib/dialog-controls'
 import NameInput from '../../components/name-input'
 import { validateName } from '../../lib/name-validation'
 
-export default function GeneralPage() {
+function GeneralPage() {
   const { user, organizations, onUserChange, onSignedOut, onSignOutRequest } = useCurrentUser()
   const [draft, setDraft] = useState(user.displayName)
   const [error, setError] = useState(false)

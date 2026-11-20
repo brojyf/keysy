@@ -1,4 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import Page from './orgs/$orgId/settings'
+import OrganizationSettings from '../components/organization-settings'
 
-export const Route = createFileRoute('/settings')({ component: Page, head: () => ({ meta: [{ title: 'Settings | Keysy' }] }) })
+export const Route = createFileRoute('/settings')({ component: OrganizationSettings, head: () => ({ meta: [{ title: 'Settings | Keysy' }] }) })

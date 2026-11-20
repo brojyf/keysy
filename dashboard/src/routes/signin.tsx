@@ -4,7 +4,7 @@ import KeysySymbol from '../components/keysy-symbol'
 import { serviceURLs } from '../lib/service-urls'
 
 
-export default function SignInPage() {
+function SignInPage() {
   const { authURL } = serviceURLs()
   return (
     <main className="auth-page" aria-labelledby="sign-in-title">

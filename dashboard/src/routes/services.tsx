@@ -1,4 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import Page from './orgs/$orgId/services'
+import ServicesPage from '../pages/services'
 
-export const Route = createFileRoute('/services')({ component: Page, head: () => ({ meta: [{ title: 'Services | Keysy' }] }) })
+export const Route = createFileRoute('/services')({ component: ServicesPage, head: () => ({ meta: [{ title: 'Services | Keysy' }] }) })
