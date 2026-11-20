@@ -53,7 +53,7 @@ while :; do sleep 0.1; done
   );
 
   const run = (await readFile(new URL("s6/dashboard/run", import.meta.url), "utf8"))
-    .replace("/app/dashboard/node_modules/.bin/next", fakeNext)
+    .replace("node server.js", fakeNext)
     .replace("cd /app/dashboard", `cd ${directory}`);
   const runFile = join(directory, "run");
   await writeFile(runFile, run, { mode: 0o755 });

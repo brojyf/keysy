@@ -21,6 +21,10 @@ export default function nextConfig(phase: string): NextConfig {
     }
   }
   return {
+    // The production server runs on a 256 MB machine. Standalone loads only traced files.
+    output: 'standalone',
+    // No page reads server data, so the in-memory cache only holds memory.
+    cacheMaxMemorySize: 0,
     turbopack: { root: fileURLToPath(new URL('..', import.meta.url)) },
     devIndicators: {
       position: 'bottom-right',

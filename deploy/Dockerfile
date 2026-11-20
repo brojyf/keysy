@@ -27,7 +27,6 @@ RUN bun install --frozen-lockfile
 COPY dashboard ./
 COPY design /src/design
 RUN bun run build
-RUN rm -rf node_modules && bun install --frozen-lockfile --production
 
 FROM node:24-slim
 RUN apt-get update \
@@ -38,11 +37,10 @@ COPY otel/config.yaml /etc/otelcol/config.yaml
 COPY --from=api-build /out/api /usr/local/bin/keysy-api
 COPY --from=auth-build /out/auth /usr/local/bin/keysy-auth
 WORKDIR /app/dashboard
-COPY --from=dashboard-build --chown=node:node /src/dashboard/package.json ./
-COPY --from=dashboard-build --chown=node:node /src/dashboard/next.config.ts ./
+# Standalone output holds server.js, its traced node_modules, and the server build. It omits static files.
+COPY --from=dashboard-build --chown=node:node /src/dashboard/.next/standalone/dashboard ./
+COPY --from=dashboard-build --chown=node:node /src/dashboard/.next/static ./.next/static
 COPY --from=dashboard-build --chown=node:node /src/dashboard/public ./public
-COPY --from=dashboard-build --chown=node:node /src/dashboard/node_modules ./node_modules
-COPY --from=dashboard-build --chown=node:node /src/dashboard/.next ./.next
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 # s6-supervise writes its state into each service directory.
 COPY --chown=node:node deploy/s6 /etc/s6

@@ -1,8 +1,10 @@
 #!/bin/sh
 cd /app/dashboard || exit 1
 export NODE_ENV=production
-# V8's default heap limit is larger than the 256 MB machine.
-export NODE_OPTIONS=--max-old-space-size=96
+export PORT=5173 HOSTNAME=127.0.0.1
+# V8's default heap limit is larger than the 256 MB machine. A 1 MB semi-space trades more
+# young-generation GC for less resident memory, which suits this low traffic.
+export NODE_OPTIONS="--max-old-space-size=96 --max-semi-space-size=1"
 # Next keeps runtime page copies in route-cache without a build ID, and they can outlive a deploy.
 # Old pages then point to deleted assets. Remove this after https://github.com/vercel/next.js/issues/99680 is fixed.
-rm -rf .next/server/route-cache && exec /app/dashboard/node_modules/.bin/next start --hostname 127.0.0.1 --port 5173
+rm -rf .next/server/route-cache && exec node server.js
