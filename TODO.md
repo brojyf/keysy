@@ -34,9 +34,9 @@ This design replaces the current model, in which an added member is active immed
 ### Tasks
 
 - [ ] PRD: change "add Developers" to "invite Admins and Developers" in `wiki/prd.mdx`, and state that invitees join only after they accept an invitation that expires after 7 days.
-- [ ] API: draft the invitation endpoints, then add them to `openapi/api.yaml`. Keep `GET /v0/orgs/{orgId}/members` unchanged and list pending and expired invitations with a separate `GET /v0/orgs/{orgId}/invitations`, as GitHub, GitLab, Auth0, and Clerk do.
-- [ ] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after their current 7-day period starts (#196).
+- [ ] API: draft the invitation endpoints, then add them to `openapi/api.yaml`. Keep `GET /v0/orgs/{orgId}/members` unchanged and list pending and expired invitations with a separate `GET /v0/orgs/{orgId}/invitations`, as GitHub, GitLab, Auth0, and Clerk do. The list endpoint is done (#199); invite, resend, cancel, change role, the invitee's view, and accept remain.
+- [x] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after their current 7-day period starts (#196).
 - [ ] Auth: accept a relative `return_to` path on `/v0/auth/google`, keep it in the sealed OAuth transaction cookie, and redirect to it after the callback, so an invitee returns to the **Join {org}** page after Google sign-in. Reject absolute and protocol-relative URLs. Today the callback always redirects to the dashboard root.
-- [ ] Figma: add the **Join {org}** page. The invitation list, menu, and dialogs are in section 11 · People (11.10–11.16).
+- [ ] Figma: add the **Join {org}** page. The invitation list, menu, and dialogs are in the People · Invitations section.
 - [ ] Tests (account deletion, #193): inviting the email of a member scheduled for deletion fails with the existing-member error; accepting during the grace period returns 403 `ACCOUNT_DELETING`; the same invitation can be accepted after cancelling the deletion; after the purge, the same Google account signs in as a new user and joins an org.
-- [ ] Email: send the invitation email from `email-worker/` (Cloudflare Worker and Resend, see `wiki/tech-stack.mdx`).
+- [ ] Email: in the invite and resend transactions, write an `email.requested` outbox row; `notify` sends it through Resend (see `wiki/notify/overview.mdx`).
