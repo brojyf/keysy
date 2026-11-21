@@ -72,6 +72,8 @@ reset role;
 -- Run the scheduled command itself.
 do $$
 begin
+  assert (select schedule = '0 5 * * *' from cron.job where jobname = 'delete-old-invitations'),
+    'Invitation cleanup must run daily at 05:00 UTC';
   execute (select command from cron.job where jobname = 'delete-old-invitations');
   assert not exists (select from public.invitations where email = 'old@example.com'),
     'Invitations older than 37 days must be deleted';
