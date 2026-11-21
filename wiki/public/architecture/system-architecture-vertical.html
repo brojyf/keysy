@@ -5747,7 +5747,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>Successful changes commit their outbox row in the same transaction as business data</li>
           <li>Kafka keyed by aggregate ID; failed events go to a DLQ topic</li>
           <li>notify commits its offset only after Resend accepts the email or Kafka acknowledges the message in its retry or DLQ topic</li>
-          <li>Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at</li>
+          <li>Outbox Relay runs inside api: it locks outbox rows with SKIP LOCKED, publishes them, then deletes them</li>
         </ul>
       </div>
 

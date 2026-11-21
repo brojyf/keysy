@@ -326,7 +326,7 @@
         "Successful changes commit their outbox row in the same transaction as business data",
         "Kafka keyed by aggregate ID; failed events go to a DLQ topic",
         "notify commits its offset only after Resend accepts the email or Kafka acknowledges the message in its retry or DLQ topic",
-        "Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at"
+        "Outbox Relay runs inside api: it locks outbox rows with SKIP LOCKED, publishes them, then deletes them"
       ]
     },
     {
