@@ -8,8 +8,6 @@
     <link rel="icon" href="/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- Starts the session check while the JavaScript downloads. -->
-    <link rel="preload" as="fetch" crossorigin="use-credentials" href="%VITE_API_URL%/v0/me">
   </head>
   <body>
     <script>(function(){var v;try{v=document.cookie.split('; ').find(function(c){return c.indexOf('keysy-theme=')===0})?.slice(12)}catch(e){}var d=v==='dark'||(v!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';var m=document.createElement('meta');m.name='theme-color';m.content=getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();document.head.appendChild(m)})()</script>

@@ -1,7 +1,8 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import { resolveAPIURL } from './src/lib/service-urls.ts'
 
 export function validateServiceURLs(command: string, env: Record<string, string | undefined>) {
   for (const name of ['VITE_AUTH_URL', 'VITE_API_URL']) {
@@ -18,10 +19,20 @@ export function validateServiceURLs(command: string, env: Record<string, string 
   }
 }
 
-export default defineConfig(({ command, mode }) => {
-  validateServiceURLs(command, loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_'))
+// Starts the session check while the JavaScript downloads. Uses the same URL rule as apiFetch('/v0/me').
+export function sessionPreload(env: Record<string, string | undefined>): Plugin {
+  const href = new URL('/v0/me', resolveAPIURL(env.VITE_API_URL)).href
   return {
-    plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react()],
+    name: 'keysy-session-preload',
+    transformIndexHtml: () => [{ tag: 'link', attrs: { rel: 'preload', as: 'fetch', crossorigin: 'use-credentials', href }, injectTo: 'head' }],
+  }
+}
+
+export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_')
+  validateServiceURLs(command, env)
+  return {
+    plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), sessionPreload(env)],
     server: { host: 'localhost', port: 5173, strictPort: true, fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] } },
   }
 })
