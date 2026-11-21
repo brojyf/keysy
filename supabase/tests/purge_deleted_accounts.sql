@@ -35,10 +35,13 @@ insert into auth.users (id, email) values
   ('62000000-0000-0000-0000-000000000001', 'purged@example.com'),
   ('62000000-0000-0000-0000-000000000002', 'inside-window@example.com'),
   ('62000000-0000-0000-0000-000000000003', 'never-deleted@example.com'),
-  ('62000000-0000-0000-0000-000000000004', 'cancelled@example.com');
+  ('62000000-0000-0000-0000-000000000004', 'cancelled@example.com'),
+  ('62000000-0000-0000-0000-000000000005', 'no-org@example.com');
 
-update public.profiles set deleted_at = now() - interval '31 days'
+update public.profiles set deleted_at = now() - interval '31 days', display_name = 'Purged Member'
 where id = '62000000-0000-0000-0000-000000000001';
+update public.profiles set deleted_at = now() - interval '31 days', display_name = 'Purged Nonmember'
+where id = '62000000-0000-0000-0000-000000000005';
 update public.profiles set deleted_at = now() - interval '30 days' + interval '1 second'
 where id = '62000000-0000-0000-0000-000000000002';
 update public.profiles set deleted_at = now() - interval '31 days'
@@ -74,8 +77,8 @@ begin
     'Purging an account must delete its memberships';
   assert not exists (select from auth.sessions where user_id = '62000000-0000-0000-0000-000000000001'),
     'Purging an account must cascade to its sessions';
-  assert (select count(*) = 2 from public.outbox),
-    'Purging an account must write one outbox row per removed membership';
+  assert (select count(*) = 2 from public.outbox where type = 'audit'),
+    'Purging an account must write one audit event per removed membership';
   assert (
     select count(distinct payload ->> 'org_id') = 2
     from public.outbox
@@ -90,6 +93,16 @@ begin
         "reason": "account_deleted"
       }'::jsonb
   ), 'Both orgs must receive the account deletion audit payload without an actor';
+
+  assert not exists (select from auth.users where id = '62000000-0000-0000-0000-000000000005'),
+    'Purging must delete expired accounts without memberships';
+  assert (
+    select jsonb_agg(payload order by payload ->> 'to') = '[
+      {"to": "no-org@example.com", "template": {"id": "account-deleted", "variables": {"DISPLAY_NAME": "Purged Nonmember"}}},
+      {"to": "purged@example.com", "template": {"id": "account-deleted", "variables": {"DISPLAY_NAME": "Purged Member"}}}
+    ]'::jsonb
+    from public.outbox where type = 'email'
+  ), 'The purge must queue one email per purged account with its profile email and display name';
 
   assert (select count(*) = 3 from auth.users where id in (
     '62000000-0000-0000-0000-000000000002',
@@ -128,8 +141,10 @@ select public.purge_deleted_accounts();
 
 do $$
 begin
-  assert (select count(*) = 2 from public.outbox),
-    'Running the purge again must not write duplicate events';
+  assert (select count(*) = 2 from public.outbox where type = 'audit'),
+    'Running the purge again must not write duplicate audit events';
+  assert (select count(*) = 2 from public.outbox where type = 'email'),
+    'Running the purge again must not write duplicate email events';
 end;
 $$;
 
