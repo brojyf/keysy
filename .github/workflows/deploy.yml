@@ -52,7 +52,7 @@ jobs:
         run: |
           tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
           echo "sha=$tip" >> "$GITHUB_OUTPUT"
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v1
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         with:
           version: 3.1.0
