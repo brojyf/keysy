@@ -13,9 +13,9 @@ const routerPush = mock(() => {})
 const { CurrentUserContext } = await import('../src/components/current-user')
 
 const { default: AccountLayout } = await import('../src/components/account-shell')
-const { default: GeneralPage } = await import('../src/routes/account/index')
-const { default: OrganizationsPage } = await import('../src/routes/account/organizations')
-const { default: SessionsPage } = await import('../src/routes/account/sessions')
+const GeneralPage = (await import('../src/routes/account/index')).Route.options.component!
+const OrganizationsPage = (await import('../src/routes/account/organizations')).Route.options.component!
+const SessionsPage = (await import('../src/routes/account/sessions')).Route.options.component!
 
 let browser: Window
 let root: Root

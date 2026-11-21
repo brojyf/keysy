@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import InvitationList from '../../../../components/invitation-list'
 
-export default function InvitationsPage() {
+function InvitationsPage() {
   return <InvitationList />
 }
 

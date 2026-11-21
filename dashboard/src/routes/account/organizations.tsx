@@ -9,7 +9,7 @@ import { openDialog } from '../../lib/dialog-controls'
 import { useCurrentUser } from '../../components/current-user'
 import { organizationPath } from '../../lib/organization-route'
 
-export default function OrganizationsPage() {
+function OrganizationsPage() {
   const dialog = useRef<HTMLDialogElement>(null)
   const { organizations: allOrganizations } = useCurrentUser()
   const [query, setQuery] = useState('')

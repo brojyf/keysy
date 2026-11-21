@@ -3,7 +3,7 @@ import { Check } from 'lucide-react'
 import AuthFooter from '../components/auth-footer'
 
 
-export default function AccountDeletedPage() {
+function AccountDeletedPage() {
   return (
     <main className="auth-page" aria-labelledby="account-deleted-title">
       <section className="sign-in-card account-deleted-card">

@@ -10,8 +10,8 @@ let pathname = ''
 const router = { replace: mock(() => {}), push: mock(() => {}) }
 
 const { default: SessionGate } = await import('../src/components/session-gate')
-const { default: SettingsPage } = await import('../src/routes/orgs/$orgId/settings')
-const { default: GeneralPage } = await import('../src/routes/account/index')
+const SettingsPage = (await import('../src/routes/orgs/$orgId/settings')).Route.options.component!
+const GeneralPage = (await import('../src/routes/account/index')).Route.options.component!
 const { useCurrentUser } = await import('../src/components/current-user')
 
 const organization = { id: '20000000-0000-0000-0000-000000000001', name: 'Platform', role: 'owner', memberCount: 2 }
