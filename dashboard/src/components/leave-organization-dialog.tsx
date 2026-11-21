@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState, type MouseEvent, type Ref } from 'react'
 import type { Organization } from '../lib/organization'
 import { useCurrentUser } from './current-user'

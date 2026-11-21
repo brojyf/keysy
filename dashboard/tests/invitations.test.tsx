@@ -18,14 +18,14 @@ const apiInvitations = [
   { id: 'invitation-casey', email: 'casey@acme.dev', role: 'developer', status: 'pending' },
 ]
 const originalFetch = globalThis.fetch
-const originalAPIURL = process.env.NEXT_PUBLIC_API_URL
-const originalAuthURL = process.env.NEXT_PUBLIC_AUTH_URL
+const originalAPIURL = process.env.VITE_API_URL
+const originalAuthURL = process.env.VITE_AUTH_URL
 let request: ReturnType<typeof mock>
 let onSignedOut: ReturnType<typeof mock>
 
 beforeEach(() => {
-  process.env.NEXT_PUBLIC_API_URL = 'https://api.keysy.net'
-  process.env.NEXT_PUBLIC_AUTH_URL = 'https://auth.keysy.net'
+  process.env.VITE_API_URL = 'https://api.keysy.net'
+  process.env.VITE_AUTH_URL = 'https://auth.keysy.net'
   request = mock((url: string) => url === 'https://api.keysy.net/v0/orgs/org-1/invitations'
     ? Promise.resolve(Response.json(apiInvitations))
     : Promise.reject(new Error(`Unexpected request ${url}`)))
@@ -41,10 +41,10 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => root.unmount())
   globalThis.fetch = originalFetch
-  if (originalAPIURL === undefined) delete process.env.NEXT_PUBLIC_API_URL
-  else process.env.NEXT_PUBLIC_API_URL = originalAPIURL
-  if (originalAuthURL === undefined) delete process.env.NEXT_PUBLIC_AUTH_URL
-  else process.env.NEXT_PUBLIC_AUTH_URL = originalAuthURL
+  if (originalAPIURL === undefined) delete process.env.VITE_API_URL
+  else process.env.VITE_API_URL = originalAPIURL
+  if (originalAuthURL === undefined) delete process.env.VITE_AUTH_URL
+  else process.env.VITE_AUTH_URL = originalAuthURL
   await browser.happyDOM.close()
 })
 

@@ -6,11 +6,6 @@ kill_timeout = "15s"
 [build]
   dockerfile = "deploy/Dockerfile"
 
-  # Public origins are baked into the dashboard bundle at build time.
-  [build.args]
-    NEXT_PUBLIC_AUTH_URL = "https://auth.keysy.net"
-    NEXT_PUBLIC_API_URL = "https://api.keysy.net"
-
 # Secrets (fly secrets set): DATABASE_URL, OAUTH_COOKIE_KEY, SUPABASE_PUBLISHABLE_KEY,
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GRAFANA_CLOUD_OTLP_ENDPOINT, GRAFANA_CLOUD_OTLP_AUTH.
 [env]

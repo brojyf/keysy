@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
 test('layout links a 180x180 PNG apple touch icon', async () => {
-  const layout = await readFile(new URL('../src/app/layout.tsx', import.meta.url), 'utf8')
-  assert.match(layout, /apple: '\/apple-touch-icon\.png'/)
+  const layout = await readFile(new URL('../index.html', import.meta.url), 'utf8')
+  assert.match(layout, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/)
 
   const icon = await readFile(new URL('../public/apple-touch-icon.png', import.meta.url))
   assert.equal(icon.subarray(1, 4).toString('ascii'), 'PNG')

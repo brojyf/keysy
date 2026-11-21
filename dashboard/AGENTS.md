@@ -1,20 +1,10 @@
-<!-- BEGIN:nextjs-agent-rules -->
-
-## This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
-
 # AGENTS.md
 
 This file provides guidance to coding agents when working with code in this directory.
 
 ## Role
 
-`dashboard` is Keysy's web application (Next.js App Router, React, TypeScript 7,
+`dashboard` is Keysy's web application (Vite, TanStack Router, React, TypeScript 7,
 Bun). It is a client of the Go [auth service](../auth/AGENTS.md). It never calls
 Supabase and never reads or stores tokens.
 
@@ -26,9 +16,9 @@ Run from `dashboard/`:
 bun install --frozen-lockfile
 bun run dev        # http://localhost:5173, Fast Refresh; auth defaults to http://localhost:8080
 bun run lint       # oxlint
-bun run build      # tsc --noEmit, then next build; URLs come from .env.production
+bun run build      # tsc --noEmit, then vite build; URLs come from the build environment
 bun run test       # node --test tests/*.test.ts, then bun test on the .tsx tests
-node --test tests/next-config.test.ts                  # one Node test file
+node --test tests/vite-config.test.ts                  # one Node test file
 bun test tests/session-gate.test.tsx -t "<test name>"   # one session-gate test
 ```
 
@@ -38,25 +28,24 @@ tests, and `bun test` in `design/tokens`.
 ## Architecture
 
 - `src/lib/api-client.ts` is the entry point for API calls. Each request has a 20 second timeout.
-- `src/app/layout.tsx` wraps every route in `SessionGate`
-  (`src/components/session-gate.tsx`), a Client Component. It calls
-  `{NEXT_PUBLIC_API_URL}/v0/me` with `credentials: 'include'`.
-  On 401 it calls `{NEXT_PUBLIC_AUTH_URL}/v0/auth/refresh` once
+- `src/routes/__root.tsx` wraps every route in `SessionGate`
+  (`src/components/session-gate.tsx`), a client component. It calls
+  `{VITE_API_URL}/v0/me` with `credentials: 'include'`.
+  On 401 it calls `{VITE_AUTH_URL}/v0/auth/refresh` once
   (`src/lib/session-refresh.ts`; concurrent 401s share one refresh) and
   retries. If refresh returns 401, it redirects to `/signin`, which shows the sign-in screen without the app shell. After `/v0/me`, it loads `/v0/orgs` through an identity-scoped TanStack Query and then exposes the verified user. A QueryClient created per SessionGate instance owns the organization list across page navigation; `useQuery` reads that cache without a second state copy. Sign-out, session retry, and SessionGate unmount cancel queries and clear the cache. Signed-in users on `/signin` redirect to `/orgs/{orgId}/secrets` for their first organization if they have organizations, or `/account/organizations` otherwise. With none, `/account` and its descendants show the account-only shell, and unscoped protected paths redirect to `/account/organizations`. Explicit unavailable organization IDs show an unavailable page. With organizations, accessible paths show the full shell (`Topbar`, `Rail`, page content). Logout calls `/v0/auth/logout` and redirects to `/signin`.
-  There is no Next.js middleware or server-side session check.
+  There is no server-side session check.
 - `src/lib/organization-queries.ts` owns the organization query and identity-scoped create/delete mutations. Hook-level handlers keep cache synchronization alive after dialogs unmount. Confirmed writes invalidate the list and replace overlapping GETs; creation adds an organization only if its ID is not already cached, preserving newer list fields. Delete returns `completed` after a 204 or `unavailable` when a successful reconciliation confirms lost access after a 404 or request error. Failed reconciliation or an organization that remains available throws an error for dialog retry. Requests still use `apiFetch`. Queries and mutations do not retry automatically; focus and reconnect do not refetch. SessionGate handles successful create/delete navigation only if the original session and route have not changed. Dialogs retain their local form, pending, and error state.
 - The auth service owns the session. Its access cookie is shared with the API domain and remains HttpOnly, so
   the dashboard cannot read them. Do not add rewrites or proxies for auth paths;
   the browser calls the auth origin directly through credentialed CORS.
-- `NEXT_PUBLIC_AUTH_URL` and `NEXT_PUBLIC_API_URL` are embedded at build time. `.env.production` sets
-  both for `next build`. `next.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
+- `VITE_AUTH_URL` and `VITE_API_URL` are embedded at build time. `.env.production` sets both; a build-time environment variable overrides the file. `vite.config.ts` requires both for production builds and accepts only an HTTPS origin (or HTTP localhost)
   with no path, query, or fragment. Never put a server secret in a
-  `NEXT_PUBLIC_*` variable.
-- Route pages under `src/app/` are stubs, except `/account`, `/orgs/{orgId}/people`, and `/orgs/{orgId}/settings`: Members lists `GET /v0/orgs/{orgId}/members` through `src/lib/member-queries.ts` with local search and name sort inside the People sidebar (the rail item is labeled People), shows the Loading › Members table skeleton while it loads, and removes a member with `DELETE /v0/orgs/{orgId}/members/{userId}` after a confirmation dialog (403/404 close the dialog and refetch; other failures show an inline error); Account General uses the session user and `PATCH /v0/me`; Organizations uses `/v0/orgs` data; Sessions uses `GET /v0/me/sessions` through `src/lib/session-queries.ts`, shows the Loading › Sessions table skeleton while it loads, and revokes other sessions with `DELETE /v0/me/sessions/{sessionId}` after a confirmation dialog. Organization and session tables use local search and sort. Organization pages live under `/orgs/{orgId}/...`. SessionGate resolves the URL ID against verified memberships and shares that organization with Topbar, Rail, and Settings; an unavailable ID never falls back to another organization. Legacy unscoped page paths redirect to the first organization. `/members` and `/orgs/{orgId}/members` redirect to their `/people` equivalents. Settings lets its owner call `DELETE /v0/orgs/{orgId}` after confirming its name. Successful deletion removes it from the query cache and routes to `/orgs/{nextOrgId}/secrets` or `/account/organizations`. Settings also lets its owner rename it with `PATCH /v0/orgs/{orgId}`. Admins and developers leave it with `POST /v0/orgs/{orgId}/leave` after a confirmation dialog; 204 and 404 route like deletion, and other failures, including 409 after a stale role, refresh organizations and show an inline error. Notifications and scope controls remain unavailable. `/` redirects to `/secrets`.
+  `VITE_*` variable.
+- Route pages under `src/routes/` are stubs, except `/account`, `/orgs/{orgId}/people`, and `/orgs/{orgId}/settings`: Members lists `GET /v0/orgs/{orgId}/members` through `src/lib/member-queries.ts` with local search and name sort inside the People sidebar (the rail item is labeled People), shows the Loading › Members table skeleton while it loads, and removes a member with `DELETE /v0/orgs/{orgId}/members/{userId}` after a confirmation dialog (403/404 close the dialog and refetch; other failures show an inline error); Account General uses the session user and `PATCH /v0/me`; Organizations uses `/v0/orgs` data; Sessions uses `GET /v0/me/sessions` through `src/lib/session-queries.ts`, shows the Loading › Sessions table skeleton while it loads, and revokes other sessions with `DELETE /v0/me/sessions/{sessionId}` after a confirmation dialog. Organization and session tables use local search and sort. Organization pages live under `/orgs/{orgId}/...`. SessionGate resolves the URL ID against verified memberships and shares that organization with Topbar, Rail, and Settings; an unavailable ID never falls back to another organization. Legacy unscoped page paths redirect to the first organization. `/members` and `/orgs/{orgId}/members` redirect to their `/people` equivalents. Settings lets its owner call `DELETE /v0/orgs/{orgId}` after confirming its name. Successful deletion removes it from the query cache and routes to `/orgs/{nextOrgId}/secrets` or `/account/organizations`. Settings also lets its owner rename it with `PATCH /v0/orgs/{orgId}`. Admins and developers leave it with `POST /v0/orgs/{orgId}/leave` after a confirmation dialog; 204 and 404 route like deletion, and other failures, including 409 after a stale role, refresh organizations and show an inline error. Notifications and scope controls remain unavailable. `/` redirects to `/secrets`.
 - Styling is plain CSS. Tokens live in `design/tokens/tokens.css`, which
   `src/app/globals.css` imports. Tailwind is not installed.
   Read `design/tokens/` before any UI or styling change.
   The Figma design reference is in `design/dashboard/README.md`.
 - File names are kebab-case. Shared UI lives in `src/components/`.
-- Tests use `bun:test` with happy-dom. They mock `next/navigation` and `fetch`.
+- Tests use `bun:test` with happy-dom. They mock router navigation and `fetch`.

@@ -1,6 +1,4 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
+import { useLocation } from '@tanstack/react-router'
 import { UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import SettingsLayout from './settings-layout'
@@ -12,7 +10,7 @@ const accountPages = [
 ]
 
 export default function AccountShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname() ?? ''
+  const pathname = useLocation({ select: (location) => location.pathname })
   const currentPage = accountPages.find((page) => page.href === pathname) ?? accountPages[0]
   return (
     <SettingsLayout title="Account" nav={accountPages.map(({ href, label }) => ({ href, label, current: href === currentPage.href }))} Icon={UserRound} heading={currentPage.label}>

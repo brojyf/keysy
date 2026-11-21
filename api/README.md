@@ -70,7 +70,7 @@ CORS allows only the `Content-Type` request header.
 Never commit secrets.
 
 Production uses `https://api.keysy.net` and `https://dashboard.keysy.net/`.
-The dashboard's `.env.production` sets `NEXT_PUBLIC_API_URL`.
+The dashboard's `.env.production` sets `VITE_API_URL`.
 Local development uses `http://localhost:8081` and `http://localhost:5173/`.
 
 The API reads only the sealed `__Secure-keysy-access` cookie, or `keysy-access`

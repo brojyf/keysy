@@ -51,7 +51,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
     def test_notification_reports_the_cloudflare_result(self):
         self.assertIn("deployed: ${{ steps.sites.outcome == 'success' }}", workflow_job("cloudflare"))
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare]", notification)
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard]", notification)
         self.assertIn("cloudflare_result: ${{ needs.cloudflare.result }}", notification)
         self.assertIn("cloudflare_deployed: ${{ needs.cloudflare.outputs.deployed == 'true' }}", notification)
 

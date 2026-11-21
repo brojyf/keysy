@@ -61,8 +61,6 @@ jobs:
               - '.dockerignore'
               - 'api/**'
               - 'auth/**'
-              - 'dashboard/**'
-              - 'design/**'
               - 'otel/**'
               - '.github/**'
             wiki:
@@ -299,21 +297,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Build the image
-        run: >-
-          docker build -t keysy-ci -f deploy/Dockerfile
-          --build-arg NEXT_PUBLIC_AUTH_URL=https://auth.keysy.net
-          --build-arg NEXT_PUBLIC_API_URL=https://api.keysy.net .
+        run: docker build -t keysy-ci -f deploy/Dockerfile .
       - name: Test nginx and s6 configs
         run: docker run --rm -v "$PWD/deploy:/deploy:ro" keysy-ci node --test '/deploy/*.test.mjs'
-      # The image copies the standalone server, .next/static, and public separately; a missing copy only breaks assets.
-      - name: Serve the dashboard page and its assets
-        run: |
-          docker run -d -p 8000:8000 keysy-ci
-          fetch() { curl -fsS -H 'Host: dashboard.keysy.net' "$@"; }
-          page=$(fetch --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:8000/signin)
-          assets=$(printf '%s' "$page" | grep -o '/_next/static/[^"\\]*' | sort -u)
-          test -n "$assets"
-          for path in $assets /favicon.ico; do fetch -o /dev/null "http://127.0.0.1:8000$path"; done
 
   cli:
     name: CLI

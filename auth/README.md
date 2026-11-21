@@ -89,14 +89,14 @@ cookies must sign in again after this change.
 For local development, use `AUTH_URL=http://localhost:8080` and
 `WEB_APP_URL=http://localhost:5173/`. Register
 `http://localhost:8080/v0/auth/callback` in Google. Run the service on port 8080
-and the dashboard's Next.js development server on port 5173. The dashboard calls
+and the dashboard's Vite development server on port 5173. The dashboard calls
 the auth port directly with `credentials: 'include'`; there is no auth rewrite.
 
 For production, set `AUTH_URL=https://auth.keysy.net` and
 `WEB_APP_URL=https://dashboard.keysy.net/`. The dashboard's `.env.production`
-sets `NEXT_PUBLIC_AUTH_URL`. Route the auth hostname to this
-service and the dashboard hostname to Next.js. Both can run behind one proxy on
-the same Fly Machine; sharing a Machine does not make their browser origins equal.
+sets `VITE_AUTH_URL`.
+Route the auth hostname to this service and the dashboard hostname to
+Cloudflare Workers.
 The browser navigates to the auth origin to start login, returns to the auth
 origin for the callback, then redirects to the dashboard. The dashboard calls
 the API origin for `/v0/me` and the auth origin for refresh and logout requests.
@@ -130,7 +130,7 @@ Stop any existing service on port 8080 before starting Air.
 
 This is process reload, not in-process HMR. In-memory state is lost on restart.
 Cookies remain usable while `OAUTH_COOKIE_KEY` is unchanged. The dashboard's
-Next.js development server keeps its own Fast Refresh connection; no Air browser
+Vite development server keeps its own HMR connection; no Air browser
 proxy is needed. Air is not used in production.
 
 ## Run and verify

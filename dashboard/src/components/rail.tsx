@@ -1,7 +1,4 @@
-'use client'
-
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation } from '@tanstack/react-router'
 import { KeyRound, ScrollText, Server, Settings, Users, type LucideIcon } from 'lucide-react'
 import { Fragment } from 'react'
 import AccountMenu, { type AccountMenuProps } from './account-menu'
@@ -25,7 +22,7 @@ function isCurrentPath(pathname: string, href: string) {
 
 export default function Rail(accountMenu: AccountMenuProps) {
   const tooltipRef = useTooltipDismissal()
-  const pathname = usePathname() ?? ''
+  const pathname = useLocation({ select: (location) => location.pathname })
   const { organization } = useCurrentUser()
   if (!organization) return null
   return (
@@ -38,7 +35,7 @@ export default function Rail(accountMenu: AccountMenuProps) {
               <Link
                 key={href}
                 className="rail-item"
-                href={organizationPath(organization.id, href)}
+                to={organizationPath(organization.id, href)}
                 aria-label={label}
                 data-tooltip={label}
                 aria-current={isCurrentPath(pathname, organizationPath(organization.id, href)) ? 'page' : undefined}

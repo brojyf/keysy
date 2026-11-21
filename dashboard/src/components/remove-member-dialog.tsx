@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState, type MouseEvent, type Ref } from 'react'
 import { closeDialog } from '../lib/dialog-controls'
 import { useRemoveMember, type Member } from '../lib/member-queries'

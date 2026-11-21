@@ -1,7 +1,8 @@
 name: Deploy
 
 # Deploys main to Fly after CI and Supabase migrations pass on a push, and the
-# web and wiki sites to Cloudflare Workers after CI passes. Pull requests never deploy.
+# web and wiki sites to Cloudflare Workers after CI passes. The dashboard deploys
+# to Cloudflare Workers after Fly is healthy. Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
 # Cloudflare needs the CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable.
@@ -78,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      deployed: ${{ steps.assets.outcome == 'success' }}
+      deployed: ${{ steps.hosts.outcome == 'success' }}
     # Serialize only deploys, so CI notifications do not wait for an older deploy.
     concurrency:
       group: fly-deploy
@@ -107,35 +108,11 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       # flyctl only waits for s6-svscan to start, so a service that fails still looks deployed.
       - name: Check the public hosts
+        id: hosts
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         run: |
           for url in https://api.keysy.net/health https://auth.keysy.net/health; do
             curl --fail --silent --show-error --location --max-redirs 0 --output /dev/null --max-time 10 --retry 12 --retry-delay 5 --retry-all-errors "$url"
-          done
-      # A stale page can return 200 while its CSS or JS is gone from the origin.
-      # The unique query string skips the Cloudflare cache, so the origin answers.
-      - name: Check the dashboard assets
-        id: assets
-        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
-        env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-        run: |
-          : "${CF_ACCESS_CLIENT_ID:?Set the CF_ACCESS_CLIENT_ID repository secret}"
-          : "${CF_ACCESS_CLIENT_SECRET:?Set the CF_ACCESS_CLIENT_SECRET repository secret}"
-          origin=https://dashboard.keysy.net
-          # Never follow redirects with credentials, including Access login redirects.
-          dashboard_get() {
-            curl --fail --silent --show-error --location --max-redirs 0 --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors \
-              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
-          }
-          # The root normally redirects. Check the sign-in page directly instead.
-          html=$(dashboard_get "$origin/signin")
-          assets=$(printf '%s' "$html" | grep --only-matching --extended-regexp '/_next/static/[^"\\]*\.(css|js)' | sort --unique)
-          test -n "$assets"
-          for path in $assets; do
-            dashboard_get --output /dev/null "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
           done
 
   cloudflare:
@@ -203,8 +180,83 @@ jobs:
               --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$url"
           done
 
+  dashboard:
+    name: Dashboard
+    needs: deploy
+    if: needs.deploy.outputs.deployed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      deployed: ${{ steps.assets.outcome == 'success' }}
+    concurrency:
+      group: dashboard-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - name: Build dashboard
+        working-directory: dashboard
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+      - name: Read the tip of main
+        id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "sha=$tip" >> "$GITHUB_OUTPUT"
+      - name: Deploy dashboard
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          : "${CLOUDFLARE_API_TOKEN:?Set the CLOUDFLARE_API_TOKEN repository secret}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?Set the CLOUDFLARE_ACCOUNT_ID repository variable}"
+          bunx wrangler@latest deploy --cwd dashboard
+      # A stale page can return 200 while its CSS or JS is gone from the origin.
+      # The unique query string skips the Cloudflare cache, so the origin answers.
+      - name: Check the dashboard assets
+        id: assets
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          : "${CF_ACCESS_CLIENT_ID:?Set the CF_ACCESS_CLIENT_ID repository secret}"
+          : "${CF_ACCESS_CLIENT_SECRET:?Set the CF_ACCESS_CLIENT_SECRET repository secret}"
+          origin=https://dashboard.keysy.net
+          # Never follow redirects with credentials, including Access login redirects.
+          dashboard_get() {
+            curl --fail --silent --show-error --location --max-redirs 0 --max-time 10 --retry 3 --retry-delay 5 --retry-all-errors \
+              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
+          }
+          # Check the sign-in route and its referenced assets.
+          html=$(dashboard_get "$origin/signin")
+          assets=$(printf '%s' "$html" | grep --only-matching --extended-regexp '/assets/[^"\\]*\.(css|js)' | sort --unique)
+          printf '%s\n' "$assets" | grep -qE '\.js$'
+          printf '%s\n' "$assets" | grep -qE '\.css$'
+          # The SPA fallback answers a missing asset with 200 text/html, so also check the type.
+          for path in $assets; do
+            type=$(dashboard_get --output /dev/null --write-out '%{content_type}' "$origin$path?deploy=$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT")
+            case "$path:$type" in
+              *.css:text/css*|*.js:text/javascript*|*.js:application/javascript*) ;;
+              *) echo "$path returned ${type:-no content type}" >&2; exit 1 ;;
+            esac
+          done
+
   update-notification:
-    needs: [notify, migrations, deploy, cloudflare]
+    needs: [notify, migrations, deploy, cloudflare, dashboard]
     if: always() && needs.notify.outputs.message_id != '' && github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/discord-merge.yml
     with:
@@ -215,5 +267,7 @@ jobs:
       deployed: ${{ needs.deploy.outputs.deployed == 'true' }}
       cloudflare_result: ${{ needs.cloudflare.result }}
       cloudflare_deployed: ${{ needs.cloudflare.outputs.deployed == 'true' }}
+      dashboard_result: ${{ needs.dashboard.result }}
+      dashboard_deployed: ${{ needs.dashboard.outputs.deployed == 'true' }}
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

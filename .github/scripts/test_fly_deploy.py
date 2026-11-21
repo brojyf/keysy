@@ -50,10 +50,29 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare]", notification)
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard]", notification)
         self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
         self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)
+
+
+    def test_dashboard_deploy_follows_a_healthy_fly_deploy(self):
+        deploy = workflow_job("deploy")
+        dashboard = workflow_job("dashboard")
+        self.assertIn("deployed: ${{ steps.hosts.outcome == 'success' }}", deploy)
+        self.assertIn("needs: deploy", dashboard)
+        self.assertIn("if: needs.deploy.outputs.deployed == 'true'", dashboard)
+        self.assertIn("group: dashboard-deploy\n      cancel-in-progress: false", dashboard)
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", dashboard)
+        self.assertIn("persist-credentials: false", dashboard)
+        self.assertLess(dashboard.index("- name: Build dashboard"), dashboard.index("- name: Read the tip of main"))
+        self.assertLess(dashboard.index("- name: Read the tip of main"), dashboard.index("- name: Deploy dashboard"))
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Deploy dashboard"))
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Check the dashboard assets"))
+        self.assertIn("deployed: ${{ steps.assets.outcome == 'success' }}", dashboard)
+        notification = workflow_job("update-notification")
+        self.assertIn("dashboard_result: ${{ needs.dashboard.result }}", notification)
+        self.assertIn("dashboard_deployed: ${{ needs.dashboard.outputs.deployed == 'true' }}", notification)
 
 
 class MigrationDeploymentTests(unittest.TestCase):
@@ -152,7 +171,8 @@ class FlyDeployTests(unittest.TestCase):
         self.page_status = 200
         self.asset_status = 200
         self.health_status = 200
-        self.page = '<link href="/_next/static/app.css"><script src="/_next/static/app.js"></script>'
+        self.asset_type = None
+        self.page = '<link href="/assets/app.css"><script src="/assets/app.js"></script>'
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -167,6 +187,8 @@ class FlyDeployTests(unittest.TestCase):
                 self.send_response(status)
                 if status == 302:
                     self.send_header("Location", "/access-login")
+                if not is_page:
+                    self.send_header("Content-Type", owner.asset_type or ("text/css" if ".css" in self.path else "text/javascript"))
                 self.end_headers()
                 self.wfile.write((owner.page if is_page else "OK").encode())
 
@@ -221,7 +243,7 @@ sys.exit(subprocess.run([os.environ["REAL_CURL"], *args]).returncode)
         result = self.run_step()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([path for path, _ in self.requests], [
-            "/signin", "/_next/static/app.css?deploy=123.2", "/_next/static/app.js?deploy=123.2",
+            "/signin", "/assets/app.css?deploy=123.2", "/assets/app.js?deploy=123.2",
         ])
         for _, headers in self.requests:
             self.assertEqual(headers.get("CF-Access-Client-Id"), "test-client-id")
@@ -257,9 +279,22 @@ sys.exit(subprocess.run([os.environ["REAL_CURL"], *args]).returncode)
         self.asset_status = 404
         self.assertNotEqual(self.run_step().returncode, 0)
 
-    def test_page_without_next_assets_fails(self):
+    # Workers SPA fallback answers a missing asset with 200 and the HTML shell.
+    def test_html_fallback_for_an_asset_fails(self):
+        self.asset_type = "text/html; charset=utf-8"
+        result = self.run_step()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("/assets/app.css", result.stdout + result.stderr)
+
+    def test_page_without_assets_fails(self):
         self.page = "<title>Sign in - Cloudflare Access</title>"
         self.assertNotEqual(self.run_step().returncode, 0)
+
+    def test_page_missing_one_asset_type_fails(self):
+        for page in ('<script src="/assets/app.js"></script>', '<link href="/assets/app.css">'):
+            with self.subTest(page=page):
+                self.page = page
+                self.assertNotEqual(self.run_step().returncode, 0)
 
     def test_public_health_redirect_fails_without_following_login(self):
         self.health_status = 302

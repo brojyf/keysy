@@ -1,7 +1,4 @@
-'use client'
-
-import { usePathname, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useLocation, useNavigate, Link } from '@tanstack/react-router'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../lib/api-client'
@@ -22,8 +19,8 @@ import CancelDeletion from './cancel-deletion'
 
 function SessionGateContent({ children }: { children: ReactNode }) {
   const { authURL } = serviceURLs()
-  const pathname = usePathname() ?? ''
-  const router = useRouter()
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [user, setUser] = useState<SessionUser | null>()
   const [sessionError, setSessionError] = useState(false)
@@ -73,7 +70,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     const startedAt = navigation.current
     const organization = await addOrganization(name)
     if (organization && currentSession && !currentSession.signal.aborted && navigation.current === startedAt) {
-      router.push(organizationPath(organization.id, '/secrets'))
+      void navigate({ to: organizationPath(organization.id, '/secrets') })
     }
     return organization
   }
@@ -87,7 +84,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
     const result = await remove(organizationID)
     if (result && currentSession && !currentSession.signal.aborted && navigation.current === startedAt && !result.organizations.some((item) => item.id === organizationID)) {
       const next = recentOrganizations(result.organizations, readRecentOrganizationIDs(user!.id))[0]
-      router.replace(next ? organizationPath(next.id, '/secrets') : '/account/organizations')
+      void navigate({ to: next ? organizationPath(next.id, '/secrets') : '/account/organizations', replace: true })
     }
     return result
   }
@@ -98,17 +95,24 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   const organizationScoped = pathname === '/orgs' || pathname.startsWith('/orgs/')
   const signedOutPage = pathname === '/signin' || pathname === '/account-deleted'
   let redirect: string | null = null
+  // Legacy entries keep their query string and hash on the way to the organization page.
+  let keepSuffix = false
   if (user === null && !signedOutPage) redirect = '/signin'
   else if (user?.purgeAt) redirect = null
   else if (user && signedOutPage) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, '/secrets') : '/account/organizations'
-  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) redirect = preferredOrganization ? organizationPath(preferredOrganization.id, pathname) : '/account/organizations'
+  else if (user && /^\/(secrets|services|people|audit-log|settings)(?:\/|$)/.test(pathname)) {
+    redirect = preferredOrganization ? organizationPath(preferredOrganization.id, pathname) : '/account/organizations'
+    keepSuffix = !!preferredOrganization
+  }
   else if (route === '/account/organizations' && !organizationScoped) redirect = route
   const userID = user?.id
   const organizationID = organization?.id
   useEffect(() => {
     if (userID && organizationScoped && organizationID && organizationQuery.data) rememberOrganization(userID, organizationID, organizationQuery.data)
   }, [userID, organizationScoped, organizationID, organizationQuery.data])
-  useEffect(() => { if (redirect) router.replace(redirect) }, [redirect, router])
+  useEffect(() => {
+    if (redirect) void navigate({ to: redirect, replace: true, ...(keepSuffix && { search: true, hash: true }) })
+  }, [redirect, keepSuffix, navigate])
 
   function retrySessionCheck() {
     setSessionError(false)
@@ -117,7 +121,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
   }
 
   function deletionCancelled() {
-    router.replace('/account')
+    void navigate({ to: '/account', replace: true })
     retrySessionCheck()
   }
 
@@ -191,7 +195,7 @@ function SessionGateContent({ children }: { children: ReactNode }) {
                 <section aria-labelledby="organization-unavailable-title">
                   <h1 id="organization-unavailable-title">Organization unavailable</h1>
                   <p>This organization does not exist, was deleted, or you no longer have access.</p>
-                  <Link href="/account/organizations">View your organizations</Link>
+                  <Link to="/account/organizations">View your organizations</Link>
                 </section>
               ) : children}
             </main>

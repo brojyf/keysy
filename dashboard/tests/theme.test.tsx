@@ -4,14 +4,14 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { CurrentUserContext } from '../src/components/current-user'
-import GeneralPage from '../src/app/account/page'
+import GeneralPage from '../src/routes/account/index'
 import AccountMenu from '../src/components/account-menu'
 import { applyTheme, readTheme, setTheme } from '../src/lib/theme'
 
 const stylesheet = await Bun.file(new URL('../src/app/globals.css', import.meta.url)).text()
 const controlsCSS = await Bun.file(new URL('../src/components/dashboard.css', import.meta.url)).text()
 const tokensCSS = await Bun.file(new URL('../../design/tokens/tokens.css', import.meta.url)).text()
-const layout = await Bun.file(new URL('../src/app/layout.tsx', import.meta.url)).text()
+const layout = await Bun.file(new URL('../index.html', import.meta.url)).text()
 
 let browser: Window
 let cookie: string
@@ -95,7 +95,7 @@ for (const preference of ['light', 'dark', 'system', 'unknown'] as const) {
       document.querySelector('meta[name="theme-color"]')!.remove()
       cookie = preference === 'system' ? '' : `keysy-theme=${preference}`
       dark = systemDark
-      const script = layout.match(/__html: `([^`]+)`/)![1]!
+      const script = layout.match(/<script>([^<]+)<\/script>/)![1]!
       const initialize = new Function('document', 'matchMedia', 'getComputedStyle', script)
       initialize(document, window.matchMedia, window.getComputedStyle.bind(window))
       const expectedDark = preference === 'dark' || (preference !== 'light' && systemDark)

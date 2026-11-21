@@ -1,5 +1,3 @@
-'use client'
-
 import { useQuery } from '@tanstack/react-query'
 import { useCurrentUser } from './current-user'
 import type { SettingsNavItem } from './settings-layout'
