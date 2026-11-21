@@ -1,4 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import Page from './orgs/$orgId/people/index'
+import MemberList from '../components/member-list'
 
-export const Route = createFileRoute('/people')({ component: Page, head: () => ({ meta: [{ title: 'Members | Keysy' }] }) })
+export const Route = createFileRoute('/people')({ component: MemberList, head: () => ({ meta: [{ title: 'Members | Keysy' }] }) })

@@ -4,7 +4,7 @@ import KeysySymbol from '../components/keysy-symbol'
 import { serviceURLs } from '../lib/service-urls'
 
 
-export default function SignInPage() {
+function SignInPage() {
   const { authURL } = serviceURLs()
   return (
     <main className="auth-page" aria-labelledby="sign-in-title">
@@ -28,4 +28,5 @@ export default function SignInPage() {
   )
 }
 
-export const Route = createFileRoute('/signin')({ component: SignInPage, head: () => ({ meta: [{ title: 'Sign in | Keysy' }] }) })
+// The router loads a split page before the session check starts, so sign-in stays in the entry chunk.
+export const Route = createFileRoute('/signin')({ codeSplitGroupings: [], component: SignInPage, head: () => ({ meta: [{ title: 'Sign in | Keysy' }] }) })

@@ -4,9 +4,11 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { CurrentUserContext } from '../src/components/current-user'
-import GeneralPage from '../src/routes/account/index'
+import { Route as generalRoute } from '../src/routes/account/index'
 import AccountMenu from '../src/components/account-menu'
 import { applyTheme, readTheme, setTheme } from '../src/lib/theme'
+
+const GeneralPage = generalRoute.options.component!
 
 const stylesheet = await Bun.file(new URL('../src/app/globals.css', import.meta.url)).text()
 const controlsCSS = await Bun.file(new URL('../src/components/dashboard.css', import.meta.url)).text()

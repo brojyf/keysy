@@ -13,7 +13,7 @@ import { sessionQueryOptions, type AccountSession } from '../../lib/session-quer
 
 const clientLabels = { web: 'Web' }
 
-export default function SessionsPage() {
+function SessionsPage() {
   const { user, onSignedOut } = useCurrentUser()
   const sessionQuery = useQuery(sessionQueryOptions(user.id, onSignedOut))
   const dialog = useRef<HTMLDialogElement>(null)
