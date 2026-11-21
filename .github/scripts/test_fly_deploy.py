@@ -122,7 +122,7 @@ sys.exit(1 if command == os.environ.get("FAIL_COMMAND") else 0)
         self.assertIn("persist-credentials: false", migrations)
         self.assertIn("github.event.workflow_run.event == 'push'", migrations)
         self.assertIn("github.event.workflow_run.conclusion == 'success'", migrations)
-        self.assertIn("supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb", migrations)
+        self.assertIn("supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13", migrations)
         self.assertIn("version: 3.1.0", migrations)
 
     def test_stale_commits_skip_setup_and_migrations(self):
