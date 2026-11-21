@@ -166,6 +166,11 @@ jobs:
         run: bun run lint
       - name: Typecheck and build
         run: bun run build
+      - name: Verify route code splitting
+        # An exported page component is not code-split, and the build does not warn.
+        run: |
+          if grep -q 'Revoke session' dist/assets/index-*.js; then echo '::error::Sessions page code is in the entry chunk'; exit 1; fi
+          grep -q 'Revoke session' dist/assets/sessions-*.js
       - name: Test if configured
         run: npm run --if-present test
       - name: Verify design tokens
