@@ -63,4 +63,40 @@ $$;
 
 reset role;
 
+-- Like keysy_api, the api role has BYPASSRLS and the grant from the rollout note.
+-- The Outbox Relay needs all four privileges: FOR UPDATE requires UPDATE.
+create role outbox_test_api nologin bypassrls;
+grant select, insert, update, delete on public.outbox to outbox_test_api;
+
+set local role outbox_test_api;
+do $$
+begin
+  insert into public.outbox (type, payload) values ('audit', '{"action": "relay"}');
+  assert (select count(*) = 1
+    from (select 1 from public.outbox where payload = '{"action": "relay"}' for update skip locked) locked),
+    'The api role must lock outbox rows with FOR UPDATE SKIP LOCKED';
+  delete from public.outbox where payload = '{"action": "relay"}';
+  assert not exists (select from public.outbox where payload = '{"action": "relay"}'),
+    'The api role must delete published outbox rows';
+end;
+$$;
+
+reset role;
+
+-- Without UPDATE, the relay cannot lock rows.
+revoke update on public.outbox from outbox_test_api;
+
+set local role outbox_test_api;
+do $$
+begin
+  begin
+    perform 1 from public.outbox for update skip locked;
+    raise exception 'A role without UPDATE must not lock outbox rows';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
 rollback;
