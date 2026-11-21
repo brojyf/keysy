@@ -30,6 +30,7 @@ jobs:
       wiki: ${{ steps.filter.outputs.wiki }}
       deploy: ${{ steps.filter.outputs.deploy }}
       bun: ${{ steps.filter.outputs.bun }}
+      supabase: ${{ steps.filter.outputs.supabase }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -71,6 +72,9 @@ jobs:
             bun:
               - '**/package.json'
               - '**/bun.lock'
+              - '.github/**'
+            supabase:
+              - 'supabase/**'
               - '.github/**'
 
   secrets:
@@ -291,6 +295,19 @@ jobs:
       - name: Build
         run: go build ./...
 
+  supabase:
+    name: Supabase SQL
+    needs: changes
+    if: needs.changes.outputs.supabase == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Apply migrations and run SQL tests
+        run: bash .github/scripts/test-supabase-sql.sh
+
   deploy:
     name: Deploy Config
     needs: changes
@@ -334,7 +351,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, deploy, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, supabase, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
