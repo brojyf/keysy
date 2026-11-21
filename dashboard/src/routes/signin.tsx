@@ -28,4 +28,5 @@ function SignInPage() {
   )
 }
 
-export const Route = createFileRoute('/signin')({ component: SignInPage, head: () => ({ meta: [{ title: 'Sign in | Keysy' }] }) })
+// The router loads a split page before the session check starts, so sign-in stays in the entry chunk.
+export const Route = createFileRoute('/signin')({ codeSplitGroupings: [], component: SignInPage, head: () => ({ meta: [{ title: 'Sign in | Keysy' }] }) })
