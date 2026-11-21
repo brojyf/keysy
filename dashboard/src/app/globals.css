@@ -5,6 +5,8 @@
 
 :root {
   --visual-center-offset: 8dvh;
+  /* Second-column sidebar: 240px from a 1091px window up; shrinks to 180px as the window narrows, so the content keeps its 720px max width longer. */
+  --sidebar-width: clamp(180px, 22vw, 240px);
   font-family: var(--font-sans);
   font-weight: var(--text-body--font-weight);
   color: var(--color-muted);
