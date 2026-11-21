@@ -169,9 +169,9 @@ begin
   assert (select prosecdef and proowner = 'postgres'::regrole
     from pg_proc where oid = 'public.delete_idle_sessions()'::regprocedure),
     'Idle cleanup must run as its owner, postgres';
-  assert exists (select from cron.job where jobname = 'delete-idle-sessions'
-      and schedule = '0 3 * * *' and command = 'select public.delete_idle_sessions()'),
-    'Idle cleanup must run daily at 03:00 UTC';
+  assert (select schedule = '0 4 * * *' and command = 'select public.delete_idle_sessions()'
+    from cron.job where jobname = 'delete-idle-sessions'),
+    'Idle cleanup must run daily at 04:00 UTC';
 end;
 $$;
 
