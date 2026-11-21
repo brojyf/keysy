@@ -12,9 +12,11 @@ function widthOf(cssPath: string, selector: string) {
 }
 
 test('the second-column sidebar shrinks with the window, between 180px and 240px', () => {
-  assert.equal(widthOf('../src/components/account.css', '.account-sidebar'), fluidSidebarWidth)
+  const globals = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
+  assert.equal(globals.match(/--sidebar-width:\s*([^;]+);/)?.[1].trim(), fluidSidebarWidth)
 })
 
-test('the loading skeleton sidebar matches the real sidebar width', () => {
-  assert.equal(widthOf('../src/components/loading-skeleton.css', '.skeleton-sidebar'), fluidSidebarWidth)
+test('the real sidebar and the loading skeleton sidebar share one width', () => {
+  assert.equal(widthOf('../src/components/account.css', '.account-sidebar'), 'var(--sidebar-width)')
+  assert.equal(widthOf('../src/components/loading-skeleton.css', '.skeleton-sidebar'), 'var(--sidebar-width)')
 })
