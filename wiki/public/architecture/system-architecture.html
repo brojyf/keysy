@@ -5416,8 +5416,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="865" y="84" class="t-muted" font-size="8.8" text-anchor="middle">traces / metrics / logs</text>
         </g>
 
-        <g id="node-kafka" data-node-id="kafka" data-node-label="Kafka" tabindex="0" role="button" aria-label="Focus Kafka, Aiven, keyed + DLQ, Architecture component" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="Aiven, keyed + DLQ" data-node-context="Architecture component">
-          <title>Kafka · Aiven, keyed + DLQ · Architecture component</title>
+        <g id="node-kafka" data-node-id="kafka" data-node-label="Kafka" tabindex="0" role="button" aria-label="Focus Kafka, audit + email + DLQ, Architecture component" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="audit + email + DLQ" data-node-context="Architecture component">
+          <title>Kafka · audit + email + DLQ · Architecture component</title>
           <rect x="1010" y="240" width="140" height="60" rx="8" class="c-mask"/>
           <rect x="1010" y="240" width="140" height="60" rx="8" class="c-messagebus" data-animate="node" style="--step:9" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(1016 246) scale(0.6875)">
@@ -5427,7 +5427,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="1080" y="268" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Kafka</text>
-        <text data-detail="context" x="1080" y="284" class="t-muted" font-size="9" text-anchor="middle">Aiven, keyed + DLQ</text>
+        <text data-detail="context" x="1080" y="284" class="t-muted" font-size="9" text-anchor="middle">audit + email + DLQ</text>
         </g>
 
         <g id="node-audit" data-node-id="audit" data-node-label="audit" tabindex="0" role="button" aria-label="Focus audit, consumer + read API, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="consumer + read API" data-node-context="Architecture component">
@@ -5441,8 +5441,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="1080" y="184" class="t-muted" font-size="9" text-anchor="middle">consumer + read API</text>
         </g>
 
-        <g id="node-auditdb" data-node-id="auditdb" data-node-label="PostgreSQL" tabindex="0" role="button" aria-label="Focus PostgreSQL, Aiven, audit, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="Aiven, audit" data-node-context="Architecture component">
-          <title>PostgreSQL · Aiven, audit · Architecture component</title>
+        <g id="node-auditdb" data-node-id="auditdb" data-node-label="PostgreSQL" tabindex="0" role="button" aria-label="Focus PostgreSQL, audit, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="audit" data-node-context="Architecture component">
+          <title>PostgreSQL · audit · Architecture component</title>
           <rect x="1010" y="40" width="140" height="60" rx="8" class="c-mask"/>
           <rect x="1010" y="40" width="140" height="60" rx="8" class="c-database" data-animate="node" style="--step:12" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1016 46) scale(0.6875)">
@@ -5450,7 +5450,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="1080" y="68" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">PostgreSQL</text>
-        <text data-detail="context" x="1080" y="84" class="t-muted" font-size="9" text-anchor="middle">Aiven, audit</text>
+        <text data-detail="context" x="1080" y="84" class="t-muted" font-size="9" text-anchor="middle">audit</text>
         </g>
 
         <g id="node-notify" data-node-id="notify" data-node-label="notify" tabindex="0" role="button" aria-label="Focus notify, Kafka consumer, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Kafka consumer" data-node-context="Architecture component">
@@ -5738,59 +5738,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     </div>
     <!-- Info Cards -->
     <div class="cards">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot emerald"></div>
-          <h3>Reliability</h3>
-        </div>
-        <ul>
-          <li>Successful changes commit their outbox row in the same transaction as business data</li>
-          <li>Kafka keyed by aggregate ID; failed events go to a DLQ topic</li>
-          <li>notify commits its offset only after Resend accepts the email or Kafka acknowledges the message in its retry or DLQ topic</li>
-          <li>Outbox Relay runs inside api: it locks unpublished rows with SKIP LOCKED, publishes them, then sets published_at</li>
-        </ul>
-      </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot rose"></div>
-          <h3>Audit</h3>
-        </div>
-        <ul>
-          <li>api authorizes the user, then queries the audit read API</li>
-          <li>Only audit reads or writes the audit database</li>
-          <li>Denied or failed change attempts commit their outbox row in a separate transaction</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot amber"></div>
-          <h3>Email delivery</h3>
-        </div>
-        <ul>
-          <li>api writes one email.requested outbox row per recipient: template, to and variables</li>
-          <li>notify sends each email through Resend with Idempotency-Key = event_id</li>
-          <li>429 rate_limit_exceeded and 409 concurrent_idempotent_requests wait and retry in place up to 3 times, then go to notify&#39;s retry topic</li>
-          <li>Network errors and 5xx go to notify&#39;s retry topic, which retries with backoff until 12 hours after the event, then moves the message to its DLQ topic</li>
-          <li>Quota errors and other 4xx, including invalid_idempotent_request, go to notify&#39;s DLQ topic</li>
-          <li>notify never sends an email whose event is more than 24 hours old, because Resend keeps idempotency keys for 24 hours; it moves the message to its DLQ topic instead</li>
-          <li>Bounces and complaints handled by the Resend suppression list</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot cyan"></div>
-          <h3>Observability</h3>
-        </div>
-        <ul>
-          <li>api, auth, Outbox Relay, audit and notify export OTLP to otel; these edges are not drawn</li>
-          <li>notify exports Resend quota usage from response headers and plan limits from its config, and resets daily usage to 0 at 00:00 UTC and monthly usage at the start of each UTC month; Grafana alerts Discord at 80% (warning) and 100% (critical) of the monthly quota, and of the daily quota only while responses carry x-resend-daily-quota</li>
-          <li>notify counts Resend failures and expired emails by reason; every DLQ message raises a Grafana alert</li>
-          <li>notify&#39;s DLQ topic keeps failed and expired messages with their reason for 3 days for investigation; nothing resends from it</li>
-        </ul>
-      </div>
     </div>
     <nav class="node-outline no-print" id="node-outline" hidden aria-labelledby="node-outline-title">
       <div class="node-outline-head">

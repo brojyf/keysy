@@ -10,8 +10,8 @@ See [API endpoints](/notify/endpoints) for the current interface status.
 
 ## Planned integration
 
-`notify` consumes `email.requested` messages from Kafka and sends each email
-through Resend. See [System design](/system-design).
+`notify` consumes messages from the `keysy.email` Kafka topic and sends each
+email through Resend. See [System design](/system-design).
 
 Email templates live in Resend, with `from` and `subject` as template defaults.
 `notify` builds each request body only from the message: `to` and `template`
