@@ -108,6 +108,26 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 <rect class="diamond" x="75.5" y="759.5" width="9" height="9" rx="1.5" transform="rotate(45 80 764.0)"/>
 <text class="column" x="98" y="769.0">last_sent_at</text>
 <text class="type" x="324" y="768.0" text-anchor="end">timestamptz</text>
+<rect class="card" x="440" y="540" width="400" height="204" rx="8"/>
+<g class="icon"><rect x="456" y="554.0" width="16" height="16" rx="2"/><path d="M456 559.0 H472 M461 559.0 V570.0"/></g>
+<text class="table" x="482" y="568.0">outbox</text>
+<line class="divider" x1="440" y1="584" x2="840" y2="584"/>
+<g class="icon"><circle cx="464" cy="601.0" r="3.5"/><path d="M461.5 603.5 L455 610.0 M457 608.0 L459 610.0"/></g>
+<rect class="diamond" x="475.5" y="599.5" width="9" height="9" rx="1.5" transform="rotate(45 480 604.0)"/>
+<text class="column" x="498" y="609.0">event_id</text>
+<text class="type" x="824" y="608.0" text-anchor="end">uuid</text>
+<line class="divider" x1="440" y1="624" x2="840" y2="624"/>
+<rect class="diamond" x="475.5" y="639.5" width="9" height="9" rx="1.5" transform="rotate(45 480 644.0)"/>
+<text class="column" x="498" y="649.0">type</text>
+<text class="type" x="824" y="648.0" text-anchor="end">text</text>
+<line class="divider" x1="440" y1="664" x2="840" y2="664"/>
+<rect class="diamond" x="475.5" y="679.5" width="9" height="9" rx="1.5" transform="rotate(45 480 684.0)"/>
+<text class="column" x="498" y="689.0">payload</text>
+<text class="type" x="824" y="688.0" text-anchor="end">jsonb</text>
+<line class="divider" x1="440" y1="704" x2="840" y2="704"/>
+<rect class="diamond" x="475.5" y="719.5" width="9" height="9" rx="1.5" transform="rotate(45 480 724.0)"/>
+<text class="column" x="498" y="729.0">created_at</text>
+<text class="type" x="824" y="728.0" text-anchor="end">timestamptz</text>
 <g class="icon"><circle cx="52" cy="827" r="3.5"/><path d="M49.5 829.5 L43 836 M45 834 L47 836"/></g>
 <text class="legend" x="62" y="835">Primary key</text>
 <rect class="diamond" x="163.5" y="825.5" width="9" height="9" rx="1.5" transform="rotate(45 168 830)"/>
