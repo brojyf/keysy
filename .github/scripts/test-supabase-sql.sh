@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Apply every migration to a disposable Supabase Postgres container, then run
 # every supabase/tests/*.sql file. The same script runs locally and in CI.
-# GoTrue is absent, so function bodies that touch auth.sessions are not checked
-# at migration time. The session tests create a matching auth.sessions stub.
+# GoTrue is absent, so only migrations that mention auth.sessions skip the
+# function body check. The session tests create a matching auth.sessions stub.
 set -euo pipefail
 
 IMAGE="supabase/postgres:17.11.0.017"
@@ -13,10 +13,11 @@ docker run -d --rm --name "$CONTAINER" -e POSTGRES_PASSWORD=postgres "$IMAGE" >/
 trap 'docker rm -f "$CONTAINER" >/dev/null 2>&1 || true' EXIT
 
 # Usage: psql_in_container <role> [psql args]. Production migrations run as postgres.
+# Postgres options come from the caller's PGOPTIONS.
 psql_in_container() {
   local role="$1"
   shift
-  docker exec -i -e PGOPTIONS='-c check_function_bodies=off' "$CONTAINER" \
+  docker exec -i -e PGOPTIONS "$CONTAINER" \
     psql -U "$role" -d postgres -v ON_ERROR_STOP=1 -q "$@"
 }
 
@@ -32,7 +33,11 @@ psql_in_container supabase_admin -c 'select 1' >/dev/null
 
 for migration in "$ROOT"/supabase/migrations/*.sql; do
   echo "migrate $(basename "$migration")"
-  psql_in_container postgres -o /dev/null <"$migration"
+  if grep -q 'auth\.sessions' "$migration"; then
+    PGOPTIONS='-c check_function_bodies=off' psql_in_container postgres -o /dev/null <"$migration"
+  else
+    psql_in_container postgres -o /dev/null <"$migration"
+  fi
 done
 
 failed=0
