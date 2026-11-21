@@ -28,7 +28,8 @@ end;
 $$;
 
 insert into public.orgs (id, name) values
-  ('61000000-0000-0000-0000-000000000001', 'Purge org');
+  ('61000000-0000-0000-0000-000000000001', 'Purge org'),
+  ('61000000-0000-0000-0000-000000000002', 'Second purge org');
 
 insert into auth.users (id, email) values
   ('62000000-0000-0000-0000-000000000001', 'purged@example.com'),
@@ -47,6 +48,7 @@ where id = '62000000-0000-0000-0000-000000000004';
 
 insert into public.members (org_id, user_id, role) values
   ('61000000-0000-0000-0000-000000000001', '62000000-0000-0000-0000-000000000001', 'developer'),
+  ('61000000-0000-0000-0000-000000000002', '62000000-0000-0000-0000-000000000001', 'admin'),
   ('61000000-0000-0000-0000-000000000001', '62000000-0000-0000-0000-000000000002', 'admin'),
   ('61000000-0000-0000-0000-000000000001', '62000000-0000-0000-0000-000000000003', 'developer'),
   ('61000000-0000-0000-0000-000000000001', '62000000-0000-0000-0000-000000000004', 'developer');
@@ -72,6 +74,22 @@ begin
     'Purging an account must delete its memberships';
   assert not exists (select from auth.sessions where user_id = '62000000-0000-0000-0000-000000000001'),
     'Purging an account must cascade to its sessions';
+  assert (select count(*) = 2 from public.outbox),
+    'Purging an account must write one outbox row per removed membership';
+  assert (
+    select count(distinct payload ->> 'org_id') = 2
+    from public.outbox
+    where type = 'audit'
+      and payload ->> 'org_id' in (
+        '61000000-0000-0000-0000-000000000001',
+        '61000000-0000-0000-0000-000000000002')
+      and payload - 'org_id' = '{
+        "action": "member_removed",
+        "user_id": "62000000-0000-0000-0000-000000000001",
+        "email": "purged@example.com",
+        "reason": "account_deleted"
+      }'::jsonb
+  ), 'Both orgs must receive the account deletion audit payload without an actor';
 
   assert (select count(*) = 3 from auth.users where id in (
     '62000000-0000-0000-0000-000000000002',
@@ -103,6 +121,15 @@ begin
   assert not has_function_privilege('anon', 'public.purge_deleted_accounts()', 'execute')
     and not has_function_privilege('authenticated', 'public.purge_deleted_accounts()', 'execute'),
     'Client roles must not execute account purging';
+end;
+$$;
+
+select public.purge_deleted_accounts();
+
+do $$
+begin
+  assert (select count(*) = 2 from public.outbox),
+    'Running the purge again must not write duplicate events';
 end;
 $$;
 
