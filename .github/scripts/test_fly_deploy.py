@@ -20,7 +20,8 @@ def workflow_job(name):
 
 
 def workflow_step(name):
-    return WORKFLOW.read_text().split(f"      - name: {name}\n", 1)[1].split("\n      - ", 1)[0].split("\n\n  ", 1)[0]
+    step = WORKFLOW.read_text().split(f"\n      - name: {name}\n", 1)[1]
+    return re.split(r"\n      - |\n  \S", step, maxsplit=1)[0]
 
 
 def step_script(name):
@@ -52,7 +53,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard]", notification)
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]", notification)
         self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
         self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)
@@ -75,6 +76,94 @@ class DeploymentSchedulingTests(unittest.TestCase):
         notification = workflow_job("update-notification")
         self.assertIn("dashboard_result: ${{ needs.dashboard.result }}", notification)
         self.assertIn("dashboard_deployed: ${{ needs.dashboard.outputs.deployed == 'true' }}", notification)
+
+    def test_vercel_deploy_stays_serial_and_checks_the_tip_of_main(self):
+        vercel = workflow_job("vercel")
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", vercel)
+        self.assertIn("group: vercel-deploy\n      cancel-in-progress: false", vercel)
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", vercel)
+        self.assertLess(vercel.index("- name: Read the tip of main"), vercel.index("- name: Deploy bot"))
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Deploy bot"))
+        self.assertIn("deployed: ${{ steps.deploy.outputs.deployed == 'true' }}", vercel)
+        notification = workflow_job("update-notification")
+        self.assertIn("vercel_result: ${{ needs.vercel.result }}", notification)
+        self.assertIn("vercel_deployed: ${{ needs.vercel.outputs.deployed == 'true' }}", notification)
+
+
+class VercelDeploymentTests(unittest.TestCase):
+    def run_deploy(self, tip="tested-sha", health='{"ok":true,"status":"ready"}', promotion_exit=0):
+        commands = r"""
+bunx() {
+  case "$2" in
+    deploy)
+      echo stage >&2
+      [[ " $* " == *" --prod --skip-domain "* ]] || return 1
+      printf '%s\n' '{"deployment":{"url":"https://candidate.vercel.app"}}'
+      ;;
+    curl)
+      echo health >&2
+      [[ "$3" == https://candidate.vercel.app/eve/v1/health ]] || return 1
+      printf '%s\n' "$HEALTH"
+      ;;
+    promote)
+      echo promote >&2
+      [[ "$3" == https://candidate.vercel.app ]] || return 1
+      return "$PROMOTION_EXIT"
+      ;;
+    *) return 1 ;;
+  esac
+}
+gh() {
+  echo main >&2
+  printf '%s\n' "$MAIN_TIP"
+}
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            output.touch()
+            result = subprocess.run(
+                ["bash", "-e", "-o", "pipefail", "-c", commands + step_script("Deploy bot")],
+                env={
+                    **os.environ,
+                    "GITHUB_OUTPUT": str(output),
+                    "GITHUB_REPOSITORY": "test/keysy",
+                    "HEAD_SHA": "tested-sha",
+                    "HEALTH": health,
+                    "MAIN_TIP": tip,
+                    "PROMOTION_EXIT": str(promotion_exit),
+                    "VERCEL_TOKEN": "test-token",
+                    "VERCEL_ORG_ID": "test-org",
+                    "VERCEL_PROJECT_ID": "test-project",
+                },
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            return result, output.read_text()
+
+    def test_healthy_current_deployment_is_promoted_and_reported(self):
+        result, output = self.run_deploy()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr.splitlines(), ["stage", "health", "main", "promote"])
+        self.assertEqual(output, "deployed=true\n")
+
+    def test_commit_superseded_during_build_is_skipped(self):
+        result, output = self.run_deploy(tip="newer-sha")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr.splitlines(), ["stage", "health", "main"])
+        self.assertEqual(output, "")
+
+    def test_unhealthy_deployment_never_reaches_promotion(self):
+        result, output = self.run_deploy(health='{"ok":false}')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stderr.splitlines(), ["stage", "health"])
+        self.assertEqual(output, "")
+
+    def test_failed_promotion_is_not_reported_as_deployed(self):
+        result, output = self.run_deploy(promotion_exit=1)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stderr.splitlines(), ["stage", "health", "main", "promote"])
+        self.assertEqual(output, "")
 
 
 class MigrationDeploymentTests(unittest.TestCase):

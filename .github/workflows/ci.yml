@@ -23,6 +23,7 @@ jobs:
       pull-requests: read
     outputs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
+      bot: ${{ steps.filter.outputs.bot }}
       cli: ${{ steps.filter.outputs.cli }}
       auth: ${{ steps.filter.outputs.auth }}
       api: ${{ steps.filter.outputs.api }}
@@ -42,6 +43,9 @@ jobs:
             dashboard:
               - 'dashboard/**'
               - 'design/**'
+              - '.github/**'
+            bot:
+              - 'bot/**'
               - '.github/**'
             cli:
               - 'cli/**'
@@ -180,6 +184,34 @@ jobs:
       - name: Verify design tokens
         working-directory: design/tokens
         run: bun test
+
+  bot:
+    name: Bot
+    needs: changes
+    if: needs.changes.outputs.bot == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: bot
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Test
+        run: bun test
+      - name: Build
+        run: bun run build
 
   web:
     name: Web
@@ -355,7 +387,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, web, wiki, auth, api, supabase, deploy, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, bot, web, wiki, auth, api, supabase, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
