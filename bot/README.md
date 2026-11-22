@@ -27,6 +27,8 @@ To learn more about eve, explore these resources:
 
 Set `DEEPSEEK_API_KEY` in the Vercel Production environment. The agent uses this key to call DeepSeek directly through the AI SDK.
 
+Set `DISCORD_GUILD_ID` to the Discord server ID in the same environment. The bot accepts slash commands and interactive responses only from that server.
+
 Deploy your agent to [Vercel](https://vercel.com) from the project root:
 
 ```bash

@@ -264,7 +264,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      deployed: ${{ steps.deploy.outcome == 'success' }}
+      deployed: ${{ steps.deploy.outputs.deployed == 'true' }}
     concurrency:
       group: vercel-deploy
       cancel-in-progress: false
@@ -290,7 +290,10 @@ jobs:
       - name: Deploy bot
         id: deploy
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
@@ -298,7 +301,22 @@ jobs:
           : "${VERCEL_TOKEN:?Set the VERCEL_TOKEN repository secret}"
           : "${VERCEL_ORG_ID:?Set the VERCEL_ORG_ID repository variable}"
           : "${VERCEL_PROJECT_ID:?Set the VERCEL_PROJECT_ID repository variable}"
-          bunx vercel@latest deploy --prod --yes
+          vercel=(bunx vercel@64.0.2)
+          deployment_url=$("${vercel[@]}" deploy --prod --skip-domain --yes --non-interactive |
+            jq -er '.deployment.url | select(type == "string" and test("^https://[A-Za-z0-9-]+[.]vercel[.]app$"))')
+          echo "Staged $deployment_url"
+
+          "${vercel[@]}" curl "$deployment_url/eve/v1/health" --fail --silent --show-error --max-time 15 |
+            jq -e '.ok == true and .status == "ready"'
+
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [[ "$tip" != "$HEAD_SHA" ]]; then
+            echo "Skipping promotion because main advanced to $tip."
+            exit 0
+          fi
+
+          "${vercel[@]}" promote "$deployment_url" --yes --non-interactive
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
 
   update-notification:
     needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]
