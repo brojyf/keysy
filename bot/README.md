@@ -25,6 +25,8 @@ To learn more about eve, explore these resources:
 
 ## Deploy on Vercel
 
+Set `DEEPSEEK_API_KEY` in the Vercel Production environment. The agent uses this key to call DeepSeek directly through the AI SDK.
+
 Deploy your agent to [Vercel](https://vercel.com) from the project root:
 
 ```bash
