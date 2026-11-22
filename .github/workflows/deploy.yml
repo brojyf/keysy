@@ -9,6 +9,9 @@ name: Deploy
 # Disconnect Cloudflare Git builds to avoid duplicate production deploys.
 # Supabase needs SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD repository secrets,
 # plus the SUPABASE_PROJECT_ID variable. Disable its native Deploy to production option.
+# Vercel needs the VERCEL_TOKEN repository secret and the VERCEL_ORG_ID and
+# VERCEL_PROJECT_ID repository variables. The Vercel project Root Directory is bot.
+# Disconnect Vercel Git builds to avoid duplicate production deploys.
 # Dashboard and site checks also need CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET,
 # authorized by Cloudflare Access Service Auth policies for dashboard.keysy.net,
 # keysy.net and wiki.keysy.net.
@@ -255,8 +258,50 @@ jobs:
             esac
           done
 
+  vercel:
+    name: Vercel
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      deployed: ${{ steps.deploy.outcome == 'success' }}
+    concurrency:
+      group: vercel-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - name: Read the tip of main
+        id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "sha=$tip" >> "$GITHUB_OUTPUT"
+      # Vercel builds the bot from the uploaded source. The project Root Directory selects bot/.
+      - name: Deploy bot
+        id: deploy
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: |
+          : "${VERCEL_TOKEN:?Set the VERCEL_TOKEN repository secret}"
+          : "${VERCEL_ORG_ID:?Set the VERCEL_ORG_ID repository variable}"
+          : "${VERCEL_PROJECT_ID:?Set the VERCEL_PROJECT_ID repository variable}"
+          bunx vercel@latest deploy --prod --yes
+
   update-notification:
-    needs: [notify, migrations, deploy, cloudflare, dashboard]
+    needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]
     if: always() && needs.notify.outputs.message_id != '' && github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/discord-merge.yml
     with:
@@ -269,5 +314,7 @@ jobs:
       cloudflare_deployed: ${{ needs.cloudflare.outputs.deployed == 'true' }}
       dashboard_result: ${{ needs.dashboard.result }}
       dashboard_deployed: ${{ needs.dashboard.outputs.deployed == 'true' }}
+      vercel_result: ${{ needs.vercel.result }}
+      vercel_deployed: ${{ needs.vercel.outputs.deployed == 'true' }}
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

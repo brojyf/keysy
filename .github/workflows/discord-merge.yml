@@ -31,6 +31,12 @@ on:
       dashboard_deployed:
         type: boolean
         default: false
+      vercel_result:
+        type: string
+        default: pending
+      vercel_deployed:
+        type: boolean
+        default: false
     secrets:
       DISCORD_WEBHOOK_URL:
         required: true
@@ -70,6 +76,8 @@ jobs:
           CLOUDFLARE_DEPLOYED: ${{ inputs.cloudflare_deployed }}
           DASHBOARD_RESULT: ${{ inputs.dashboard_result }}
           DASHBOARD_DEPLOYED: ${{ inputs.dashboard_deployed }}
+          VERCEL_RESULT: ${{ inputs.vercel_result }}
+          VERCEL_DEPLOYED: ${{ inputs.vercel_deployed }}
         run: |
           # First path segment of each changed file, e.g. "dashboard / wiki".
           # Falls back so an API failure does not drop the whole message.
@@ -92,6 +100,8 @@ jobs:
             --arg cloudflare_deployed "$CLOUDFLARE_DEPLOYED" \
             --arg dashboard_result "$DASHBOARD_RESULT" \
             --arg dashboard_deployed "$DASHBOARD_DEPLOYED" \
+            --arg vercel_result "$VERCEL_RESULT" \
+            --arg vercel_deployed "$VERCEL_DEPLOYED" \
             'def status($result; $deployed):
               if $conclusion != "success" then "⏭️ Not run (CI did not pass)"
               elif $result == "pending" then "⏳ Pending"
@@ -106,7 +116,8 @@ jobs:
               "\nSupabase migrations: " + status($migrations_result; $migrated) +
               "\nFly deploy: " + status($deploy_result; $deployed) +
               "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed) +
-              "\nDashboard deploy: " + status($dashboard_result; $dashboard_deployed)),
+              "\nDashboard deploy: " + status($dashboard_result; $dashboard_deployed) +
+              "\nVercel deploy: " + status($vercel_result; $vercel_deployed)),
               allowed_mentions: {parse: []}}')
 
           if [ -n "$MESSAGE_ID" ]; then
