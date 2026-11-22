@@ -52,7 +52,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard]", notification)
+        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]", notification)
         self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
         self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)
@@ -75,6 +75,18 @@ class DeploymentSchedulingTests(unittest.TestCase):
         notification = workflow_job("update-notification")
         self.assertIn("dashboard_result: ${{ needs.dashboard.result }}", notification)
         self.assertIn("dashboard_deployed: ${{ needs.dashboard.outputs.deployed == 'true' }}", notification)
+
+    def test_vercel_deploy_stays_serial_and_checks_the_tip_of_main(self):
+        vercel = workflow_job("vercel")
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", vercel)
+        self.assertIn("group: vercel-deploy\n      cancel-in-progress: false", vercel)
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", vercel)
+        self.assertLess(vercel.index("- name: Read the tip of main"), vercel.index("- name: Deploy bot"))
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", workflow_step("Deploy bot"))
+        self.assertIn("deployed: ${{ steps.deploy.outcome == 'success' }}", vercel)
+        notification = workflow_job("update-notification")
+        self.assertIn("vercel_result: ${{ needs.vercel.result }}", notification)
+        self.assertIn("vercel_deployed: ${{ needs.vercel.outputs.deployed == 'true' }}", notification)
 
 
 class MigrationDeploymentTests(unittest.TestCase):
