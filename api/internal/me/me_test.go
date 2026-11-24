@@ -357,31 +357,30 @@ func TestProfilePurgeAtResponses(t *testing.T) {
 }
 
 func TestPatchProfileReadError(t *testing.T) {
-	for _, body := range []string{`{"displayName":"Ada"}`, `{"agentAutoApply":true}`} {
-		store := &profileUpdate{readErr: errors.New("private")}
-		r := gin.New()
-		r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
-		r.PATCH("/v0/me", Patch(store))
-		req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-		r.ServeHTTP(w, req)
-		if !store.called || store.reads != 1 || w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}` {
-			t.Fatalf("%d %s", w.Code, w.Body.String())
+	for _, tc := range []struct {
+		name    string
+		readErr error
+		status  int
+		want    string
+	}{
+		{name: "store error", readErr: errors.New("private"), status: 500, want: `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}`},
+		// A purged account keeps a valid JWT until it expires; the dashboard signs out only on 401.
+		{name: "purged account", readErr: gorm.ErrRecordNotFound, status: 401, want: `{"error":{"code":"UNAUTHENTICATED","message":"Your session is invalid or has expired. Sign in again."}}`},
+	} {
+		for _, body := range []string{`{"displayName":"Ada"}`, `{"agentAutoApply":true}`} {
+			t.Run(tc.name+" "+body, func(t *testing.T) {
+				store := &profileUpdate{readErr: tc.readErr}
+				r := gin.New()
+				r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+				r.PATCH("/v0/me", Patch(store))
+				req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(body))
+				req.Header.Set("Content-Type", "application/json")
+				w := httptest.NewRecorder()
+				r.ServeHTTP(w, req)
+				if !store.called || store.reads != 1 || w.Code != tc.status || w.Body.String() != tc.want {
+					t.Fatalf("%d %s", w.Code, w.Body.String())
+				}
+			})
 		}
-	}
-}
-
-func TestPatchProfileReadPurged(t *testing.T) {
-	store := &profileUpdate{readErr: gorm.ErrRecordNotFound}
-	r := gin.New()
-	r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
-	r.PATCH("/v0/me", Patch(store))
-	req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(`{"displayName":"Ada"}`))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	if w.Code != 401 || !strings.Contains(w.Body.String(), `"code":"UNAUTHENTICATED"`) {
-		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 }
