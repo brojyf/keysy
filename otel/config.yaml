@@ -4,7 +4,9 @@ receivers:
   otlp:
     protocols:
       http:
-        endpoint: 0.0.0.0:4318
+        # Loopback by default, so other machines on the Fly private network cannot send data.
+        # Docker needs 0.0.0.0 to publish the port; see README.md.
+        endpoint: ${env:OTLP_RECEIVER_ENDPOINT:-127.0.0.1:4318}
 
 processors:
   memory_limiter:

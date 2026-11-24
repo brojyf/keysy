@@ -19,7 +19,7 @@ The token needs write scopes for metrics, logs, and traces. Never commit it.
 
 ```sh
 docker build -t keysy-otel .
-docker run --rm --env-file .env.local -p 127.0.0.1:4318:4318 keysy-otel
+docker run --rm --env-file .env.local -e OTLP_RECEIVER_ENDPOINT=0.0.0.0:4318 -p 127.0.0.1:4318:4318 keysy-otel
 ```
 
 Then set `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` in
