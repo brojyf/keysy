@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
+	"github.com/brojyf/keysy/api/internal/naming"
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,7 +47,7 @@ func readName(c *gin.Context) (string, bool) {
 		return "", false
 	}
 	name = strings.TrimSpace(name)
-	if n := utf8.RuneCountInString(name); n < 1 || n > 32 || strings.ContainsRune(name, '\x00') {
+	if !naming.Valid(name) {
 		middleware.Error(c, http.StatusBadRequest, "INVALID_ORG_NAME", "Enter a valid name with 1 to 32 characters.")
 		return "", false
 	}
