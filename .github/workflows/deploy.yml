@@ -165,8 +165,8 @@ jobs:
         run: |
           : "${CLOUDFLARE_API_TOKEN:?Set the CLOUDFLARE_API_TOKEN repository secret}"
           : "${CLOUDFLARE_ACCOUNT_ID:?Set the CLOUDFLARE_ACCOUNT_ID repository variable}"
-          bunx wrangler@latest deploy --cwd web
-          bunx wrangler@latest deploy --cwd wiki
+          bunx wrangler@4.159.0 deploy --cwd web
+          bunx wrangler@4.159.0 deploy --cwd wiki
       # Both sites are behind Cloudflare Access. Never follow redirects, including Access login redirects.
       - name: Check the sites
         id: sites
@@ -225,7 +225,7 @@ jobs:
         run: |
           : "${CLOUDFLARE_API_TOKEN:?Set the CLOUDFLARE_API_TOKEN repository secret}"
           : "${CLOUDFLARE_ACCOUNT_ID:?Set the CLOUDFLARE_ACCOUNT_ID repository variable}"
-          bunx wrangler@latest deploy --cwd dashboard
+          bunx wrangler@4.159.0 deploy --cwd dashboard
       # A stale page can return 200 while its CSS or JS is gone from the origin.
       # The unique query string skips the Cloudflare cache, so the origin answers.
       - name: Check the dashboard assets
