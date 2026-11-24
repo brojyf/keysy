@@ -15,7 +15,8 @@ func Timeout() gin.HandlerFunc {
 		defer cancel()
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
-		if c.Writer.Written() {
+		// c.Status only records the code, so a non-default status means the handler already chose its response.
+		if c.Writer.Written() || c.Writer.Status() != http.StatusOK {
 			return
 		}
 		switch {
