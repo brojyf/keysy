@@ -7,13 +7,8 @@ const requestTimeoutMilliseconds = 20_000 // Matches the 20 second server write 
 
 function requestSignal(source?: AbortSignal | null) {
   const timeout = AbortSignal.timeout(requestTimeoutMilliseconds)
-  if (!source) return timeout
-  const controller = new AbortController()
-  for (const signal of [source, timeout]) {
-    if (signal.aborted) controller.abort(signal.reason)
-    else signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true })
-  }
-  return controller.signal
+  // AbortSignal.any drops its link to the source once the combined signal is collected.
+  return source ? AbortSignal.any([source, timeout]) : timeout
 }
 
 function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
