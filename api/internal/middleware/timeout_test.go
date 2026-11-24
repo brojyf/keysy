@@ -50,3 +50,18 @@ func TestTimeout(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 }
+
+func TestTimeoutClientCanceled(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(Timeout())
+	r.GET("/slow", func(c *gin.Context) { <-c.Request.Context().Done() })
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", "/slow", nil).WithContext(ctx))
+	// Logs and metrics must not report a canceled request as 200.
+	if w.Code != 499 || w.Body.Len() != 0 {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+}
