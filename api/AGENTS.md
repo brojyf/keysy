@@ -46,6 +46,8 @@ The outbox relay (`internal/outbox`) runs only when `KAFKA_BROKERS` is set; then
 In one transaction it locks up to 100 rows with FOR UPDATE SKIP LOCKED, publishes them, waits for every
 acknowledgment, and deletes them. Each record goes to topic `keysy.<type>` with the payload as its value,
 `created_at` as its timestamp, the `event_id` in header `id`, and no key. Never log outbox payloads.
+On Aiven, the Kafka user needs an Aiven ACL entry with `write` on topic `keysy.*`; Kafka-native ACLs
+alone were denied in testing.
 
 Register every route in `internal/router/router.go`; `main.go` only starts the service.
 
