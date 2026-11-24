@@ -255,6 +255,9 @@ func TestPatchMe(t *testing.T) {
 				if !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) || strings.Contains(w.Body.String(), "private") {
 					t.Fatal(w.Body.String())
 				}
+				if tc.code == "INVALID_DISPLAY_NAME" && !strings.Contains(w.Body.String(), `"message":"Enter a valid name with 1 to 32 characters."`) {
+					t.Fatal(w.Body.String())
+				}
 				if tc.status != 500 && store.called {
 					t.Fatal("invalid request reached store")
 				}
