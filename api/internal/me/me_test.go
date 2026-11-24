@@ -200,6 +200,7 @@ func TestPatchMe(t *testing.T) {
 		{name: "33 runes", body: `{"displayName":"` + strings.Repeat("é", 33) + `"}`, contentType: "application/json", status: 400, code: "INVALID_DISPLAY_NAME"},
 		{name: "empty", body: `{"displayName":""}`, contentType: "application/json", status: 400, code: "INVALID_DISPLAY_NAME"},
 		{name: "whitespace", body: `{"displayName":"  "}`, contentType: "application/json", status: 400, code: "INVALID_DISPLAY_NAME"},
+		{name: "NUL", body: `{"displayName":"a\u0000b"}`, contentType: "application/json", status: 400, code: "INVALID_DISPLAY_NAME"},
 		{name: "missing", body: `{}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},
 		{name: "null", body: `{"displayName":null}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},
 		{name: "number", body: `{"displayName":1}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},

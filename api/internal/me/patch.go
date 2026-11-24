@@ -44,7 +44,7 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 				return
 			}
 			name = strings.TrimSpace(name)
-			if n := utf8.RuneCountInString(name); n < 1 || n > 32 {
+			if n := utf8.RuneCountInString(name); n < 1 || n > 32 || strings.ContainsRune(name, '\x00') {
 				middleware.Error(c, http.StatusBadRequest, "INVALID_DISPLAY_NAME", "Enter a name with 1 to 32 characters.")
 				return
 			}
