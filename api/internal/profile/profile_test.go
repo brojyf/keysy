@@ -91,8 +91,22 @@ func TestScheduleDeletion(t *testing.T) {
 }
 
 func TestCancelDeletion(t *testing.T) {
-	for _, scenario := range []string{"success", "database error"} {
-		t.Run(scenario, func(t *testing.T) {
+	for _, tc := range []struct {
+		scenario  string
+		rows      int64
+		updateErr error
+		exists    *bool
+		existsErr error
+		want      error
+	}{
+		// Only a pending deletion is written; the existence check never runs.
+		{scenario: "pending", rows: 1},
+		{scenario: "active", exists: new(true)},
+		{scenario: "purged", exists: new(false), want: gorm.ErrRecordNotFound},
+		{scenario: "update error", updateErr: errors.New("update error"), want: errors.New("update error")},
+		{scenario: "exists error", existsErr: errors.New("exists error"), want: errors.New("exists error")},
+	} {
+		t.Run(tc.scenario, func(t *testing.T) {
 			db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 			if err != nil {
 				t.Fatal(err)
@@ -103,18 +117,22 @@ func TestCancelDeletion(t *testing.T) {
 				t.Fatal(err)
 			}
 			update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL").WithArgs("user")
-			if scenario == "database error" {
-				update.WillReturnError(errors.New("database error"))
+			if tc.updateErr != nil {
+				update.WillReturnError(tc.updateErr)
 			} else {
-				update.WillReturnResult(sqlmock.NewResult(0, 0))
+				update.WillReturnResult(sqlmock.NewResult(0, tc.rows))
+			}
+			if tc.exists != nil || tc.existsErr != nil {
+				query := mock.ExpectQuery("SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = $1)").WithArgs("user")
+				if tc.existsErr != nil {
+					query.WillReturnError(tc.existsErr)
+				} else {
+					query.WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(*tc.exists))
+				}
 			}
 			got := (Store{DB: gdb}).CancelDeletion(context.Background(), "user")
-			if scenario == "database error" {
-				if got == nil || got.Error() != "database error" {
-					t.Fatalf("error = %v", got)
-				}
-			} else if got != nil {
-				t.Fatal(got)
+			if (got == nil) != (tc.want == nil) || (got != nil && got.Error() != tc.want.Error()) {
+				t.Fatalf("error = %v, want %v", got, tc.want)
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Fatal(err)

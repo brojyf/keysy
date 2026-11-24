@@ -9,6 +9,7 @@ import (
 
 	"github.com/brojyf/keysy/api/internal/profile"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type cancelDeletionProfiles struct {
@@ -53,6 +54,7 @@ func TestCancelDeletion(t *testing.T) {
 		{name: "query", query: "?x=1", status: 400, code: "INVALID_REQUEST", calls: 0},
 		{name: "body", body: "x", status: 400, code: "INVALID_REQUEST", calls: 0},
 		{name: "store error", err: errors.New("private"), status: 500, calls: 1, code: "INTERNAL_ERROR", message: "Your account deletion could not be cancelled. Try again later."},
+		{name: "purged account", err: gorm.ErrRecordNotFound, status: 401, calls: 1, code: "UNAUTHENTICATED", message: "Your session is invalid or has expired. Sign in again."},
 		{name: "canceled", cancel: true, calls: 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

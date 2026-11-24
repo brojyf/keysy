@@ -18,6 +18,9 @@ func CancelDeletion(profiles Profiles) gin.HandlerFunc {
 		if c.Request.Context().Err() != nil {
 			return
 		}
+		if rejectPurgedAccount(c, err) {
+			return
+		}
 		if err != nil {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your account deletion could not be cancelled. Try again later.")
 			return

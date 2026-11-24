@@ -34,6 +34,9 @@ func Delete(profiles Profiles) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": gin.H{"code": "ORG_OWNER", "message": "Transfer or delete the organizations you own, then try again.", "organizations": organizations}})
 			return
 		}
+		if rejectPurgedAccount(c, err) {
+			return
+		}
 		if err != nil {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your account could not be deleted. Try again later.")
 			return

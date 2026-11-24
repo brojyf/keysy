@@ -4,7 +4,7 @@
 configuration, middleware, profile lookup and update, session list/revoke,
 org list/create/delete, and the org member and invitation lists.
 `DELETE /v0/me` schedules account deletion and revokes all sessions unless the user owns an org.
-`POST /v0/me/cancel-deletion` clears a pending account deletion; it returns 204 even when none is pending.
+`POST /v0/me/cancel-deletion` clears a pending account deletion; it returns 204 even when none is pending, and 401 when the account was purged.
 `PATCH /v0/me` updates the display name or agent auto-apply preference.
 `GET /v0/me/sessions` lists the current user's active web sessions from
 `auth.sessions` and marks the current one by the JWT `session_id`.

@@ -5,9 +5,9 @@ email, profile display name, agent auto-apply preference, optional Google avatar
 purge time while account deletion is pending. `PATCH /v0/me` updates the display
 name or agent auto-apply preference and returns the same profile.
 `DELETE /v0/me` schedules account deletion and revokes all sessions. Owners must first transfer or delete their orgs. Repeated requests retain the original deletion time and revoke sessions again.
-`POST /v0/me/cancel-deletion` clears a pending account deletion; it returns 204 even when none is pending.
-Neither profile response includes memberships. A missing profile row is an
-internal error. This service does not refresh sessions.
+`POST /v0/me/cancel-deletion` clears a pending account deletion; it returns 204 even when none is pending, and 401 when the account was purged.
+Neither profile response includes memberships. A missing profile row means
+the account was purged, so the `/v0/me` routes return 401. This service does not refresh sessions.
 
 `GET /v0/orgs` returns an array of `{id, name, role, memberCount}` for the
 current user's memberships in active orgs. `memberCount` counts all members in each org.
