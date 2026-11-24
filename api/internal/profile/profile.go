@@ -76,5 +76,13 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 }
 
 func (s Store) CancelDeletion(ctx context.Context, userID string) error {
-	return s.DB.WithContext(ctx).Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID).Error
+	// No deleted_at filter: cancelling an active account still matches its row, so 0 rows means the account was purged.
+	result := s.DB.WithContext(ctx).Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ?", userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

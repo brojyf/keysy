@@ -77,4 +77,8 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", other).Scan(&otherDeletedAt).Error; err != nil || !otherDeletedAt.Equal(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)) {
 		t.Fatalf("other deleted_at=%v err=%v", otherDeletedAt, err)
 	}
+	// A purged account has no profile row; cancelling must not report success.
+	if err := deletion.CancelDeletion(ctx, "10000000-0000-0000-0000-000000000009"); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("cancel purged profile: %v", err)
+	}
 }

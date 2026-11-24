@@ -75,7 +75,14 @@ func TestMe(t *testing.T) {
 				}
 				return
 			}
-			if scenario == "missing-profile" || scenario == "database-error" {
+			// A purged account keeps a valid JWT until it expires; the dashboard signs out only on 401.
+			if scenario == "missing-profile" {
+				if w.Code != 401 || w.Body.String() != `{"error":{"code":"UNAUTHENTICATED","message":"Your session is invalid or has expired. Sign in again."}}` {
+					t.Fatalf("%d %s", w.Code, w.Body.String())
+				}
+				return
+			}
+			if scenario == "database-error" {
 				if w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}` {
 					t.Fatal(w.Body.String())
 				}
@@ -214,7 +221,7 @@ func TestPatchMe(t *testing.T) {
 		{name: "missing type", body: `{}`, status: 415, code: "UNSUPPORTED_MEDIA_TYPE"},
 		{name: "query", body: `{"displayName":"Ada"}`, contentType: "application/json", query: "?x=1", status: 400, code: "INVALID_REQUEST"},
 		{name: "store error", body: `{"displayName":"Ada"}`, contentType: "application/json", status: 500, code: "INTERNAL_ERROR", storeErr: errors.New("private")},
-		{name: "not found", body: `{"displayName":"Ada"}`, contentType: "application/json", status: 500, code: "INTERNAL_ERROR", storeErr: gorm.ErrRecordNotFound},
+		{name: "not found", body: `{"displayName":"Ada"}`, contentType: "application/json", status: 401, code: "UNAUTHENTICATED", storeErr: gorm.ErrRecordNotFound},
 		{name: "canceled", body: `{"displayName":"Ada"}`, contentType: "application/json", cancel: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -253,10 +260,10 @@ func TestPatchMe(t *testing.T) {
 				if !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) || strings.Contains(w.Body.String(), "private") {
 					t.Fatal(w.Body.String())
 				}
-				if tc.status != 500 && store.called {
+				if tc.storeErr == nil && store.called {
 					t.Fatal("invalid request reached store")
 				}
-				if tc.status == 500 && !store.called {
+				if tc.storeErr != nil && !store.called {
 					t.Fatal("store was not called")
 				}
 				return
@@ -362,5 +369,19 @@ func TestPatchProfileReadError(t *testing.T) {
 		if !store.called || store.reads != 1 || w.Code != 500 || w.Body.String() != `{"error":{"code":"INTERNAL_ERROR","message":"Your profile could not be loaded. Try again later."}}` {
 			t.Fatalf("%d %s", w.Code, w.Body.String())
 		}
+	}
+}
+
+func TestPatchProfileReadPurged(t *testing.T) {
+	store := &profileUpdate{readErr: gorm.ErrRecordNotFound}
+	r := gin.New()
+	r.Use(func(c *gin.Context) { c.Set("user_id", "user-123") })
+	r.PATCH("/v0/me", Patch(store))
+	req := httptest.NewRequest("PATCH", "/v0/me", strings.NewReader(`{"displayName":"Ada"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != 401 || !strings.Contains(w.Body.String(), `"code":"UNAUTHENTICATED"`) {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 }

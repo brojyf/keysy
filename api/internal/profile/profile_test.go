@@ -91,7 +91,7 @@ func TestScheduleDeletion(t *testing.T) {
 }
 
 func TestCancelDeletion(t *testing.T) {
-	for _, scenario := range []string{"success", "database error"} {
+	for _, scenario := range []string{"success", "purged", "database error"} {
 		t.Run(scenario, func(t *testing.T) {
 			db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 			if err != nil {
@@ -102,19 +102,29 @@ func TestCancelDeletion(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL").WithArgs("user")
-			if scenario == "database error" {
+			update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = NULL WHERE id = $1").WithArgs("user")
+			switch scenario {
+			case "database error":
 				update.WillReturnError(errors.New("database error"))
-			} else {
+			case "purged":
 				update.WillReturnResult(sqlmock.NewResult(0, 0))
+			default:
+				update.WillReturnResult(sqlmock.NewResult(0, 1))
 			}
 			got := (Store{DB: gdb}).CancelDeletion(context.Background(), "user")
-			if scenario == "database error" {
+			switch scenario {
+			case "database error":
 				if got == nil || got.Error() != "database error" {
 					t.Fatalf("error = %v", got)
 				}
-			} else if got != nil {
-				t.Fatal(got)
+			case "purged":
+				if !errors.Is(got, gorm.ErrRecordNotFound) {
+					t.Fatalf("error = %v", got)
+				}
+			default:
+				if got != nil {
+					t.Fatal(got)
+				}
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Fatal(err)

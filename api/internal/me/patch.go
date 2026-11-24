@@ -63,12 +63,18 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 		if c.Request.Context().Err() != nil {
 			return
 		}
+		if rejectPurgedAccount(c, err) {
+			return
+		}
 		if err != nil {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be updated. Try again later.")
 			return
 		}
 		result, err := profiles.Profile(c.Request.Context(), c.GetString("user_id"))
 		if c.Request.Context().Err() != nil {
+			return
+		}
+		if rejectPurgedAccount(c, err) {
 			return
 		}
 		if err != nil {
