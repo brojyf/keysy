@@ -15,8 +15,16 @@ func Timeout() gin.HandlerFunc {
 		defer cancel()
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) && !c.Writer.Written() {
+		// c.Status only records the code, so a non-default status means the handler already chose its response.
+		if c.Writer.Written() || c.Writer.Status() != http.StatusOK {
+			return
+		}
+		switch {
+		case errors.Is(ctx.Err(), context.DeadlineExceeded):
 			Error(c, http.StatusServiceUnavailable, "REQUEST_TIMEOUT", "The request took too long. Try again.")
+		case errors.Is(ctx.Err(), context.Canceled):
+			// The client closed the request. 499 is the nginx convention; it keeps logs and metrics from recording 200.
+			c.Status(499)
 		}
 	}
 }

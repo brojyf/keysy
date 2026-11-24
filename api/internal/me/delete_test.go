@@ -9,6 +9,7 @@ import (
 
 	"github.com/brojyf/keysy/api/internal/profile"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type deletionProfiles struct {
@@ -42,6 +43,7 @@ func TestDeleteMe(t *testing.T) {
 		{name: "success", status: 204, calls: 2},
 		{name: "owner", status: 409, calls: 1, err: &profile.OrgOwnerError{Orgs: []profile.OwnedOrg{{ID: "org-1", Name: "platform"}, {ID: "org-2", Name: "web"}}}, want: `{"error":{"code":"ORG_OWNER","message":"Transfer or delete the organizations you own, then try again.","organizations":[{"id":"org-1","name":"platform"},{"id":"org-2","name":"web"}]}}`},
 		{name: "store error", status: 500, calls: 1, err: errors.New("private"), code: "INTERNAL_ERROR", message: "Your account could not be deleted. Try again later."},
+		{name: "purged account", status: 401, calls: 1, err: gorm.ErrRecordNotFound, code: "UNAUTHENTICATED", message: "Your session is invalid or has expired. Sign in again."},
 		{name: "query", query: "?x=1", status: 400, code: "INVALID_REQUEST"},
 		{name: "body", body: "x", status: 400, code: "INVALID_REQUEST"},
 		{name: "canceled", calls: 1, cancel: true},

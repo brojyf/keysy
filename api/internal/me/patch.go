@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
+	"github.com/brojyf/keysy/api/internal/naming"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,8 +45,8 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 				return
 			}
 			name = strings.TrimSpace(name)
-			if n := utf8.RuneCountInString(name); n < 1 || n > 32 {
-				middleware.Error(c, http.StatusBadRequest, "INVALID_DISPLAY_NAME", "Enter a name with 1 to 32 characters.")
+			if !naming.Valid(name) {
+				middleware.Error(c, http.StatusBadRequest, "INVALID_DISPLAY_NAME", "Enter a valid name with 1 to 32 characters.")
 				return
 			}
 			err = profiles.UpdateDisplayName(c.Request.Context(), c.GetString("user_id"), name)
@@ -63,12 +64,18 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 		if c.Request.Context().Err() != nil {
 			return
 		}
+		if rejectPurgedAccount(c, err) {
+			return
+		}
 		if err != nil {
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Your profile could not be updated. Try again later.")
 			return
 		}
 		result, err := profiles.Profile(c.Request.Context(), c.GetString("user_id"))
 		if c.Request.Context().Err() != nil {
+			return
+		}
+		if rejectPurgedAccount(c, err) {
 			return
 		}
 		if err != nil {

@@ -76,5 +76,22 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 }
 
 func (s Store) CancelDeletion(ctx context.Context, userID string) error {
-	return s.DB.WithContext(ctx).Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID).Error
+	db := s.DB.WithContext(ctx)
+	// Only a pending deletion is written, so a later cancellation event fires once per cancellation.
+	result := db.Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 1 {
+		return nil
+	}
+	// 0 rows: the account is already active, or it was purged.
+	var exists bool
+	if err := db.Raw("SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = ?)", userID).Scan(&exists).Error; err != nil {
+		return err
+	}
+	if !exists {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

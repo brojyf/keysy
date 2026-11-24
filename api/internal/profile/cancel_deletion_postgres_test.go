@@ -66,8 +66,16 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	if _, err := orgs.Create(ctx, user, "After cancellation"); err != nil {
 		t.Fatalf("create after cancellation: %v", err)
 	}
+	// A second cancel must not write the row, so a later cancellation event fires once.
+	var xminBefore, xminAfter string
+	if err := db.Raw("SELECT xmin::text FROM public.profiles WHERE id = ?", user).Scan(&xminBefore).Error; err != nil {
+		t.Fatal(err)
+	}
 	if err := deletion.CancelDeletion(ctx, user); err != nil {
 		t.Fatalf("cancel active profile: %v", err)
+	}
+	if err := db.Raw("SELECT xmin::text FROM public.profiles WHERE id = ?", user).Scan(&xminAfter).Error; err != nil || xminAfter != xminBefore {
+		t.Fatalf("active profile rewritten: xmin %s -> %s err=%v", xminBefore, xminAfter, err)
 	}
 	var activeDeletedAt sql.NullTime
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", user).Scan(&activeDeletedAt).Error; err != nil || activeDeletedAt.Valid {
@@ -76,5 +84,9 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	var otherDeletedAt time.Time
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", other).Scan(&otherDeletedAt).Error; err != nil || !otherDeletedAt.Equal(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)) {
 		t.Fatalf("other deleted_at=%v err=%v", otherDeletedAt, err)
+	}
+	// A purged account has no profile row; cancelling must not report success.
+	if err := deletion.CancelDeletion(ctx, "10000000-0000-0000-0000-000000000009"); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("cancel purged profile: %v", err)
 	}
 }

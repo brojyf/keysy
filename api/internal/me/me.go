@@ -2,13 +2,25 @@ package me
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/brojyf/keysy/api/internal/profile"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
+
+// rejectPurgedAccount writes 401 when the profile row is gone. A purged account keeps
+// a valid access JWT until it expires, and the dashboard signs out only on 401.
+func rejectPurgedAccount(c *gin.Context, err error) bool {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false
+	}
+	middleware.Error(c, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session is invalid or has expired. Sign in again.")
+	return true
+}
 
 type Profiles interface {
 	ScheduleDeletion(context.Context, string) error
@@ -38,6 +50,9 @@ func Get(profiles Profiles) gin.HandlerFunc {
 		result, err := profiles.Profile(c.Request.Context(), c.GetString("user_id"))
 		if c.Request.Context().Err() != nil {
 			// The timeout middleware owns the response.
+			return
+		}
+		if rejectPurgedAccount(c, err) {
 			return
 		}
 		if err != nil {
