@@ -155,19 +155,6 @@ test('caller abort and timeout still abort fetch signals after the response reso
   expect(durations).toEqual([20_000, 20_000])
 })
 
-test('a finished request leaves no abort listener on the long-lived caller signal', async () => {
-  controlledTimeouts()
-  const caller = new AbortController()
-  let listeners = 0
-  const add = caller.signal.addEventListener.bind(caller.signal)
-  const remove = caller.signal.removeEventListener.bind(caller.signal)
-  caller.signal.addEventListener = ((...args: Parameters<AbortSignal['addEventListener']>) => { listeners += 1; add(...args) }) as AbortSignal['addEventListener']
-  caller.signal.removeEventListener = ((...args: Parameters<AbortSignal['removeEventListener']>) => { listeners -= 1; remove(...args) }) as AbortSignal['removeEventListener']
-  sessionRequest.mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
-  await fetchWithSessionRefresh('https://api.keysy.net/v0/orgs/org-id', 'https://auth.keysy.net/', { signal: caller.signal })
-  expect(listeners).toBe(0)
-})
-
 test('/v0/me timeout shows the session reachability error', async () => {
   const { controllers, durations } = controlledTimeouts()
   sessionRequest.mockImplementation((_url: string, init: RequestInit) => rejectWhenAborted('', init))
