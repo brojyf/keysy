@@ -3,6 +3,7 @@ package outbox
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -22,7 +23,7 @@ type producer interface {
 }
 
 // Relay locks a batch of rows, publishes them, and deletes them in one transaction.
-// A row is deleted only after Kafka acknowledges every record of its batch.
+// A row is deleted only after Kafka acknowledges its record; rows whose records fail stay.
 // If api stops after the acknowledgment and before the commit, the rows are published
 // again with the same event_id, and consumers deduplicate by event_id.
 type Relay struct {
@@ -63,6 +64,7 @@ type outboxRow struct {
 
 func (r Relay) publishBatch(ctx context.Context) (int, error) {
 	published := 0
+	var publishErr error
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var rows []outboxRow
 		// SKIP LOCKED lets more than one api machine relay without publishing the same row twice.
@@ -74,23 +76,32 @@ func (r Relay) publishBatch(ctx context.Context) (int, error) {
 			return nil
 		}
 		records := make([]*kgo.Record, len(rows))
-		eventIDs := make([]string, len(rows))
+		eventIDs := make(map[*kgo.Record]string, len(rows))
 		for i, row := range rows {
 			records[i] = kafkaRecord(row)
-			eventIDs[i] = row.EventID
+			eventIDs[records[i]] = row.EventID
 		}
 		publishCtx, cancel := context.WithTimeout(ctx, publishTimeout)
 		defer cancel()
-		if err := r.Producer.ProduceSync(publishCtx, records...).FirstErr(); err != nil {
+		// Results come in completion order, so match them to rows by record.
+		var acknowledged []string
+		for _, result := range r.Producer.ProduceSync(publishCtx, records...) {
+			if result.Err == nil {
+				acknowledged = append(acknowledged, eventIDs[result.Record])
+			} else if publishErr == nil {
+				publishErr = result.Err
+			}
+		}
+		if len(acknowledged) == 0 {
+			return nil
+		}
+		if err := tx.Exec(`DELETE FROM public.outbox WHERE event_id IN ?`, acknowledged).Error; err != nil {
 			return err
 		}
-		if err := tx.Exec(`DELETE FROM public.outbox WHERE event_id IN ?`, eventIDs).Error; err != nil {
-			return err
-		}
-		published = len(rows)
+		published = len(acknowledged)
 		return nil
 	})
-	return published, err
+	return published, errors.Join(err, publishErr)
 }
 
 // kafkaRecord follows the Debezium outbox mapping: the payload is the value and the

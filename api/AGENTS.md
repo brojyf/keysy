@@ -44,7 +44,7 @@ all repository content. Keep `../openapi/api.yaml` in sync with implemented rout
 The outbox relay (`internal/outbox`) runs only when `KAFKA_BROKERS` is set; then `KAFKA_USERNAME`,
 `KAFKA_PASSWORD`, and `KAFKA_CA_CERT` (PEM) are required. It connects with TLS and SASL/SCRAM-SHA-512.
 In one transaction it locks up to 100 rows with FOR UPDATE SKIP LOCKED, publishes them, waits for every
-acknowledgment, and deletes them. Each record goes to topic `keysy.<type>` with the payload as its value,
+acknowledgment, and deletes the acknowledged ones. Each record goes to topic `keysy.<type>` with the payload as its value,
 `created_at` as its timestamp, the `event_id` in header `id`, and no key. Never log outbox payloads.
 
 Register every route in `internal/router/router.go`; `main.go` only starts the service.

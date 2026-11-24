@@ -15,17 +15,24 @@ import (
 )
 
 type fakeProducer struct {
-	err       error
+	err error
+	// failTopic fails only the records of this topic.
+	failTopic string
 	published []*kgo.Record
 }
 
+// ProduceSync returns results in reverse order because franz-go returns them in completion order.
 func (p *fakeProducer) ProduceSync(_ context.Context, records ...*kgo.Record) kgo.ProduceResults {
 	results := make(kgo.ProduceResults, len(records))
 	for i, record := range records {
-		results[i] = kgo.ProduceResult{Record: record, Err: p.err}
-	}
-	if p.err == nil {
-		p.published = append(p.published, records...)
+		err := p.err
+		if record.Topic == p.failTopic {
+			err = errors.New("topic authorization failed")
+		}
+		if err == nil {
+			p.published = append(p.published, record)
+		}
+		results[len(records)-1-i] = kgo.ProduceResult{Record: record, Err: err}
 	}
 	return results
 }
@@ -106,6 +113,17 @@ func TestRelayPostgres(t *testing.T) {
 		}
 		if remaining := remainingEventIDs(t, db); len(remaining) != 2 {
 			t.Fatalf("rows deleted after failed publish: %v", remaining)
+		}
+	})
+
+	t.Run("deletes only acknowledged rows", func(t *testing.T) {
+		reset(t)
+		producer := &fakeProducer{failTopic: "keysy.email"}
+		if _, err := (Relay{DB: db, Producer: producer}).publishBatch(ctx); err == nil {
+			t.Fatal("partial publish failure not returned")
+		}
+		if remaining := remainingEventIDs(t, db); !slices.Equal(remaining, []string{"30000000-0000-0000-0000-000000000002"}) {
+			t.Fatalf("unexpected rows left: %v", remaining)
 		}
 	})
 
