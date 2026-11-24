@@ -106,7 +106,7 @@ paths:
               properties:
                 displayName:
                   type: string
-                  description: 1 to 32 characters after surrounding whitespace is trimmed.
+                  description: 1 to 32 characters after surrounding whitespace is trimmed. Control characters are not allowed.
                 agentAutoApply:
                   type: boolean
       responses:
@@ -297,7 +297,7 @@ paths:
               properties:
                 name:
                   type: string
-                  description: 1 to 32 characters after surrounding whitespace is trimmed.
+                  description: 1 to 32 characters after surrounding whitespace is trimmed. Control characters are not allowed.
       responses:
         '201':
           description: The new org.
@@ -349,7 +349,7 @@ paths:
               properties:
                 name:
                   type: string
-                  description: 1 to 32 characters after surrounding whitespace is trimmed.
+                  description: 1 to 32 characters after surrounding whitespace is trimmed. Control characters are not allowed.
       responses:
         '200':
           description: The renamed org.

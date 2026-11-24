@@ -48,6 +48,8 @@ func TestCreate(t *testing.T) {
 		{name: "empty name", body: `{"name":""}`, contentType: "application/json", status: 400, code: "INVALID_ORG_NAME"},
 		{name: "whitespace name", body: `{"name":" \t\n\u2003 "}`, contentType: "application/json", status: 400, code: "INVALID_ORG_NAME"},
 		{name: "null character", body: `{"name":"Plat\u0000form"}`, contentType: "application/json", status: 400, code: "INVALID_ORG_NAME"},
+		{name: "tab", body: `{"name":"Plat\tform"}`, contentType: "application/json", status: 400, code: "INVALID_ORG_NAME"},
+		{name: "C1 control", body: `{"name":"Plat\u0085form"}`, contentType: "application/json", status: 400, code: "INVALID_ORG_NAME"},
 		{name: "missing name", body: `{}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},
 		{name: "null name", body: `{"name":null}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},
 		{name: "number name", body: `{"name":1}`, contentType: "application/json", status: 400, code: "INVALID_REQUEST"},
