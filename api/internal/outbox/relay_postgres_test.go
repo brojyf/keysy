@@ -23,14 +23,21 @@ type fakeProducer struct {
 	err error
 	// failTopic fails only the records of this topic.
 	failTopic string
+	// failCalls fails every record of the first failCalls calls.
+	failCalls int
+	calls     int
 	published []*kgo.Record
 }
 
 // ProduceSync returns results in reverse order because franz-go returns them in completion order.
 func (p *fakeProducer) ProduceSync(_ context.Context, records ...*kgo.Record) kgo.ProduceResults {
+	p.calls++
 	results := make(kgo.ProduceResults, len(records))
 	for i, record := range records {
 		err := p.err
+		if p.calls <= p.failCalls {
+			err = errors.New("broker unavailable")
+		}
 		if record.Topic == p.failTopic {
 			err = errors.New("topic authorization failed")
 		}
@@ -153,9 +160,9 @@ func TestRelayPostgres(t *testing.T) {
 		}
 	})
 
-	t.Run("run drains and stops", func(t *testing.T) {
-		reset(t)
-		producer := &fakeProducer{}
+	// runUntilDrained runs the relay until the outbox is empty, then stops it.
+	runUntilDrained := func(t *testing.T, producer *fakeProducer) {
+		t.Helper()
 		runCtx, stop := context.WithCancel(ctx)
 		done := make(chan struct{})
 		go func() {
@@ -170,5 +177,19 @@ func TestRelayPostgres(t *testing.T) {
 		}
 		stop()
 		<-done
+	}
+
+	t.Run("run drains and stops", func(t *testing.T) {
+		reset(t)
+		runUntilDrained(t, &fakeProducer{})
+	})
+
+	t.Run("run retries after a failed publish", func(t *testing.T) {
+		reset(t)
+		producer := &fakeProducer{failCalls: 1}
+		runUntilDrained(t, producer)
+		if producer.calls != 2 || len(producer.published) != 2 {
+			t.Fatalf("calls=%d published=%d, want 2 calls and 2 records", producer.calls, len(producer.published))
+		}
 	})
 }
