@@ -34,4 +34,4 @@
 - Use `wrangler` (Cloudflare's CLI) to manage Workers deployments, including `docs/` and `wiki/`.
 - Use `supabase` to manage Supabase resources.
 - Use `gcx` (Grafana's CLI) to query telemetry and manage Grafana resources.
-- Use `avn` (Aiven's CLI) to manage the Aiven Kafka service.
+- Use `avn` (Aiven's CLI) to manage Aiven resources.
