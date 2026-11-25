@@ -66,32 +66,12 @@ func (r Relay) publishBatch(ctx context.Context) (int, error) {
 	published := 0
 	var publishErr error
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var rows []outboxRow
-		// SKIP LOCKED lets more than one api machine relay without publishing the same row twice.
-		if err := tx.Raw(`SELECT event_id, type, payload, created_at FROM public.outbox
-			ORDER BY created_at LIMIT ? FOR UPDATE SKIP LOCKED`, batchSize).Scan(&rows).Error; err != nil {
+		rows, err := lockBatch(tx)
+		if err != nil || len(rows) == 0 {
 			return err
 		}
-		if len(rows) == 0 {
-			return nil
-		}
-		records := make([]*kgo.Record, len(rows))
-		eventIDs := make(map[*kgo.Record]string, len(rows))
-		for i, row := range rows {
-			records[i] = kafkaRecord(row)
-			eventIDs[records[i]] = row.EventID
-		}
-		publishCtx, cancel := context.WithTimeout(ctx, publishTimeout)
-		defer cancel()
-		// Results come in completion order, so match them to rows by record.
 		var acknowledged []string
-		for _, result := range r.Producer.ProduceSync(publishCtx, records...) {
-			if result.Err == nil {
-				acknowledged = append(acknowledged, eventIDs[result.Record])
-			} else if publishErr == nil {
-				publishErr = result.Err
-			}
-		}
+		acknowledged, publishErr = r.publish(ctx, rows)
 		if len(acknowledged) == 0 {
 			return nil
 		}
@@ -102,6 +82,38 @@ func (r Relay) publishBatch(ctx context.Context) (int, error) {
 		return nil
 	})
 	return published, errors.Join(err, publishErr)
+}
+
+// lockBatch locks the oldest rows. SKIP LOCKED lets more than one api machine relay
+// without publishing the same row twice.
+func lockBatch(tx *gorm.DB) ([]outboxRow, error) {
+	var rows []outboxRow
+	err := tx.Raw(`SELECT event_id, type, payload, created_at FROM public.outbox
+		ORDER BY created_at LIMIT ? FOR UPDATE SKIP LOCKED`, batchSize).Scan(&rows).Error
+	return rows, err
+}
+
+// publish sends rows to Kafka. It returns the event IDs Kafka acknowledged and the first error.
+func (r Relay) publish(ctx context.Context, rows []outboxRow) ([]string, error) {
+	records := make([]*kgo.Record, len(rows))
+	eventIDs := make(map[*kgo.Record]string, len(rows))
+	for i, row := range rows {
+		records[i] = kafkaRecord(row)
+		eventIDs[records[i]] = row.EventID
+	}
+	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
+	defer cancel()
+	// Results come in completion order, so match them to rows by record.
+	var acknowledged []string
+	var firstErr error
+	for _, result := range r.Producer.ProduceSync(ctx, records...) {
+		if result.Err == nil {
+			acknowledged = append(acknowledged, eventIDs[result.Record])
+		} else if firstErr == nil {
+			firstErr = result.Err
+		}
+	}
+	return acknowledged, firstErr
 }
 
 // kafkaRecord follows the Debezium outbox mapping: the payload is the value and the

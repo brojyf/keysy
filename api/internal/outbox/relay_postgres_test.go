@@ -14,6 +14,11 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+const (
+	auditEventID = "30000000-0000-0000-0000-000000000001"
+	emailEventID = "30000000-0000-0000-0000-000000000002"
+)
+
 type fakeProducer struct {
 	err error
 	// failTopic fails only the records of this topic.
@@ -74,10 +79,12 @@ func TestRelayPostgres(t *testing.T) {
 	})
 	reset := func(t *testing.T) {
 		t.Helper()
-		if err := db.Exec(`TRUNCATE public.outbox;
-			INSERT INTO public.outbox (event_id, type, payload, created_at) VALUES
-			('30000000-0000-0000-0000-000000000001', 'audit', '{"action": "member_removed"}', '2026-11-24T10:00:00Z'),
-			('30000000-0000-0000-0000-000000000002', 'email', '{"to": "ada@example.com"}', '2026-11-24T10:00:01Z')`).Error; err != nil {
+		if err := db.Exec(`TRUNCATE public.outbox`).Error; err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Exec(`INSERT INTO public.outbox (event_id, type, payload, created_at) VALUES
+			(?, 'audit', '{"action": "member_removed"}', '2026-11-24T10:00:00Z'),
+			(?, 'email', '{"to": "ada@example.com"}', '2026-11-24T10:00:01Z')`, auditEventID, emailEventID).Error; err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -94,7 +101,7 @@ func TestRelayPostgres(t *testing.T) {
 		audit := producer.published[0]
 		if audit.Topic != "keysy.audit" || string(audit.Value) != `{"action": "member_removed"}` || audit.Key != nil ||
 			!audit.Timestamp.Equal(time.Date(2026, 11, 24, 10, 0, 0, 0, time.UTC)) ||
-			len(audit.Headers) != 1 || audit.Headers[0].Key != "id" || string(audit.Headers[0].Value) != "30000000-0000-0000-0000-000000000001" {
+			len(audit.Headers) != 1 || audit.Headers[0].Key != "id" || string(audit.Headers[0].Value) != auditEventID {
 			t.Fatalf("unexpected audit record: %+v", audit)
 		}
 		if producer.published[1].Topic != "keysy.email" {
@@ -122,7 +129,7 @@ func TestRelayPostgres(t *testing.T) {
 		if _, err := (Relay{DB: db, Producer: producer}).publishBatch(ctx); err == nil {
 			t.Fatal("partial publish failure not returned")
 		}
-		if remaining := remainingEventIDs(t, db); !slices.Equal(remaining, []string{"30000000-0000-0000-0000-000000000002"}) {
+		if remaining := remainingEventIDs(t, db); !slices.Equal(remaining, []string{emailEventID}) {
 			t.Fatalf("unexpected rows left: %v", remaining)
 		}
 	})
@@ -130,16 +137,18 @@ func TestRelayPostgres(t *testing.T) {
 	t.Run("skips rows another relay holds", func(t *testing.T) {
 		reset(t)
 		other := db.WithContext(ctx).Begin()
-		if err := other.Exec(`SELECT 1 FROM public.outbox WHERE event_id = '30000000-0000-0000-0000-000000000001' FOR UPDATE`).Error; err != nil {
+		if err := other.Exec(`SELECT 1 FROM public.outbox WHERE event_id = ? FOR UPDATE`, auditEventID).Error; err != nil {
 			t.Fatal(err)
 		}
 		producer := &fakeProducer{}
 		published, err := Relay{DB: db, Producer: producer}.publishBatch(ctx)
-		other.Rollback()
-		if err != nil || published != 1 || string(producer.published[0].Headers[0].Value) != "30000000-0000-0000-0000-000000000002" {
+		if err := other.Rollback().Error; err != nil {
+			t.Fatal(err)
+		}
+		if err != nil || published != 1 || string(producer.published[0].Headers[0].Value) != emailEventID {
 			t.Fatalf("published=%d err=%v", published, err)
 		}
-		if remaining := remainingEventIDs(t, db); !slices.Equal(remaining, []string{"30000000-0000-0000-0000-000000000001"}) {
+		if remaining := remainingEventIDs(t, db); !slices.Equal(remaining, []string{auditEventID}) {
 			t.Fatalf("unexpected rows left: %v", remaining)
 		}
 	})
