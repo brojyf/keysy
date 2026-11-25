@@ -1,0 +1,44 @@
+apiVersion: rules.alerting.grafana.app/v1beta1
+kind: AlertRule
+metadata:
+  name: keysy-api-outbox-relay-failing
+  annotations:
+    grafana.app/folder: keysy
+spec:
+  title: api outbox relay failing
+  trigger:
+    interval: 1m
+  for: 5m
+  noDataState: Ok
+  execErrState: Error
+  labels:
+    severity: warning
+    service: keysy-api
+  annotations:
+    summary: Outbox relay failing
+    description: 'The outbox relay has logged errors for 5 minutes ({{ $values.A.Value }} in the last 2m)'
+  notificationSettings:
+    type: SimplifiedRouting
+    receiver: discord
+  expressions:
+    A:
+      datasourceUID: grafanacloud-logs
+      relativeTimeRange:
+        from: 10m
+        to: "0"
+      model:
+        # The relay logs one error per failed batch, at least once every 11s while it fails.
+        # The 2m window keeps a late log batch from resetting the 5m pending period.
+        expr: |
+          sum(count_over_time({service_name="keysy-api"} |= "outbox relay failed" [2m]))
+        queryType: instant
+    B:
+      datasourceUID: __expr__
+      source: true
+      model:
+        type: threshold
+        expression: A
+        conditions:
+          - evaluator:
+              type: gt
+              params: [0]
