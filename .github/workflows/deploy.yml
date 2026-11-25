@@ -9,6 +9,7 @@ name: Deploy
 # Disconnect Cloudflare Git builds to avoid duplicate production deploys.
 # Supabase needs SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD repository secrets,
 # plus the SUPABASE_PROJECT_ID variable. Disable its native Deploy to production option.
+# Audit migrations need the AUDIT_DATABASE_URL repository secret (audit Postgres URI).
 # Vercel needs the VERCEL_TOKEN repository secret and the VERCEL_ORG_ID and
 # VERCEL_PROJECT_ID repository variables. The Vercel project Root Directory is bot.
 # Disconnect Vercel Git builds to avoid duplicate production deploys.
@@ -73,6 +74,42 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_ID"
           supabase db push --remote --dry-run --skip-vault
           supabase db push --remote --yes --skip-vault
+
+  audit-migrations:
+    name: Audit migrations
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: audit-migrations
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      # An older CI run must not apply migrations after a newer main commit.
+      - name: Read the tip of main
+        id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "sha=$tip" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        with:
+          go-version: stable
+          cache: false
+      - name: Apply audit migrations
+        if: steps.main.outputs.sha == github.event.workflow_run.head_sha
+        env:
+          GOOSE_DRIVER: postgres
+          GOOSE_DBSTRING: ${{ secrets.AUDIT_DATABASE_URL }}
+          GOOSE_MIGRATION_DIR: audit/migrations
+        run: |
+          : "${GOOSE_DBSTRING:?Set the AUDIT_DATABASE_URL repository secret}"
+          go run github.com/pressly/goose/v3/cmd/goose@v3.30.2 up
 
   deploy:
     name: Deploy
