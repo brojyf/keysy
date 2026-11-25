@@ -60,4 +60,13 @@ func TestKafkaConfig(t *testing.T) {
 	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" || c.Kafka.Username != "relay" {
 		t.Fatalf("unexpected Kafka config: %+v %v", c.Kafka, err)
 	}
+	t.Setenv("KAFKA_BROKERS", "kafka-a.test:12345, kafka-b.test:12345,")
+	c, err = Load()
+	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" {
+		t.Fatalf("brokers not trimmed: %q %v", c.Kafka.Brokers, err)
+	}
+	t.Setenv("KAFKA_BROKERS", " , ")
+	if _, err := Load(); err == nil {
+		t.Fatal("accepted KAFKA_BROKERS without an address")
+	}
 }

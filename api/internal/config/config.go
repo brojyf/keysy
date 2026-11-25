@@ -68,7 +68,15 @@ func loadKafka() (Kafka, error) {
 	if brokers == "" {
 		return Kafka{}, nil
 	}
-	k := Kafka{Brokers: strings.Split(brokers, ","), Username: os.Getenv("KAFKA_USERNAME"), Password: os.Getenv("KAFKA_PASSWORD"), CACert: []byte(os.Getenv("KAFKA_CA_CERT"))}
+	k := Kafka{Username: os.Getenv("KAFKA_USERNAME"), Password: os.Getenv("KAFKA_PASSWORD"), CACert: []byte(os.Getenv("KAFKA_CA_CERT"))}
+	for _, address := range strings.Split(brokers, ",") {
+		if address = strings.TrimSpace(address); address != "" {
+			k.Brokers = append(k.Brokers, address)
+		}
+	}
+	if k.Brokers == nil {
+		return k, fmt.Errorf("KAFKA_BROKERS contains no address")
+	}
 	if k.Username == "" || k.Password == "" || len(k.CACert) == 0 {
 		return k, fmt.Errorf("KAFKA_USERNAME, KAFKA_PASSWORD, and KAFKA_CA_CERT are required when KAFKA_BROKERS is set")
 	}
