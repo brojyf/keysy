@@ -30,7 +30,7 @@ const interaction: DiscordCommandInteraction = {
   options: [],
   raw: {},
   token: "token",
-  user: { id: "user", username: "user" },
+  user: { id: "user", username: "user", isBot: false },
 };
 
 test("commands and approval responses require the configured Discord server", async () => {
