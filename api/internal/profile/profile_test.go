@@ -117,7 +117,7 @@ func TestCancelDeletion(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL").WithArgs("user")
+			update := mock.ExpectExec(strings.Replace(cancelDeletionSQL, "?", "$1", 1)).WithArgs("user")
 			if tc.updateErr != nil {
 				update.WillReturnError(tc.updateErr)
 			} else {

@@ -93,10 +93,25 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 	})
 }
 
+// One outbox row per cleared profile, so RowsAffected still counts cancelled deletions.
+const cancelDeletionSQL = `WITH cancelled AS (
+	UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL
+	RETURNING email, display_name
+)
+INSERT INTO public.outbox (type, payload)
+SELECT 'email', jsonb_build_object(
+	'to', email,
+	'template', jsonb_build_object(
+		'id', 'deletion-cancelled',
+		'variables', jsonb_build_object('DISPLAY_NAME', display_name)
+	)
+)
+FROM cancelled`
+
 func (s Store) CancelDeletion(ctx context.Context, userID string) error {
 	db := s.DB.WithContext(ctx)
-	// Only a pending deletion is written, so a later cancellation event fires once per cancellation.
-	result := db.Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID)
+	// Only a pending deletion is written, so the email is queued once per cancellation.
+	result := db.Exec(cancelDeletionSQL, userID)
 	if result.Error != nil {
 		return result.Error
 	}
