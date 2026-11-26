@@ -2,7 +2,8 @@ name: Deploy
 
 # Deploys main to Fly after CI and Supabase migrations pass on a push, and the
 # web and wiki sites to Cloudflare Workers after CI passes. The dashboard deploys
-# to Cloudflare Workers after Fly is healthy. Pull requests never deploy.
+# to Cloudflare Workers after Fly is healthy. Audit Postgres migrations apply after
+# CI passes. Pull requests never deploy.
 # Needs the Fly app "keysy" and the repository secret FLY_API_TOKEN, an app-scoped
 # deploy token: fly tokens create deploy -a keysy
 # Cloudflare needs the CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable.
