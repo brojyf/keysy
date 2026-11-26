@@ -3,8 +3,8 @@ title: "Introduction"
 description: "Audit service in the Keysy monorepo."
 ---
 
-`audit/` holds the audit service. It currently contains a minimal Gin scaffold
-that serves `/health`; the Kafka consumer is not implemented yet.
+`audit/` is reserved for the audit service. There is no service
+implementation or startup command yet.
 `audit/migrations` holds goose SQL migrations. CI applies them to a disposable
 Postgres, and the deploy workflow applies them to the audit database.
 

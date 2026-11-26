@@ -47,7 +47,7 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", audit)
         self.assertLess(audit.index("- name: Read the tip of main"), audit.index("- name: Apply audit migrations"))
         self.assertIn("migrated: ${{ steps.migrate.outcome == 'success' }}", audit)
-        self.assertIn("go-version-file: audit/go.mod", audit)
+        self.assertIn("go-version: 1.27.3", audit)
         step = workflow_step("Apply audit migrations")
         self.assertIn("id: migrate", step)
         self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", step)
