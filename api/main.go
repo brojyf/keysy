@@ -15,6 +15,7 @@ import (
 	"github.com/brojyf/keysy/api/internal/config"
 	"github.com/brojyf/keysy/api/internal/jwks"
 	"github.com/brojyf/keysy/api/internal/middleware"
+	"github.com/brojyf/keysy/api/internal/outbox"
 	"github.com/brojyf/keysy/api/internal/router"
 	"github.com/brojyf/keysy/api/internal/telemetry"
 	"github.com/gin-gonic/gin"
@@ -49,6 +50,19 @@ func main() {
 	if err != nil {
 		log.Fatal("JWKS initialization failed")
 	}
+	var relayDone chan struct{}
+	if c.Kafka.Brokers != nil {
+		kafka, err := outbox.NewKafkaClient(c.Kafka)
+		if err != nil {
+			log.Fatal("Kafka client initialization failed")
+		}
+		defer kafka.Close()
+		relayDone = make(chan struct{})
+		go func() {
+			defer close(relayDone)
+			outbox.Relay{DB: db, Producer: kafka}.Run(ctx)
+		}()
+	}
 	gin.SetMode(gin.ReleaseMode)
 	engine := router.New(router.Deps{
 		DB:        db,
@@ -73,5 +87,9 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = server.Shutdown(shutdownCtx)
+	if relayDone != nil {
+		// A canceled batch rolls back, so its rows stay in the outbox.
+		<-relayDone
+	}
 	_ = stopTelemetry(shutdownCtx)
 }

@@ -35,10 +35,18 @@ User accounts and profiles remain. Missing, deleted, and non-owner targets retur
 INSERT on `public.orgs` and `public.members`, UPDATE and DELETE on `public.orgs` and `public.members`, SELECT on `public.invitations`, and
 EXECUTE on `public.list_user_sessions(uuid)` and
 `public.revoke_user_session(uuid, uuid)` and `public.revoke_all_user_sessions(uuid)`.
+The outbox relay needs SELECT, UPDATE, and DELETE on `public.outbox`; FOR UPDATE requires UPDATE.
 Profile row locks use SELECT FOR UPDATE and SELECT FOR SHARE and require UPDATE on `public.profiles`. The backend database role must
 bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
+
+The outbox relay (`internal/outbox`) runs only when `KAFKA_BROKERS` is set; then `KAFKA_USERNAME` and
+`KAFKA_PASSWORD` are required. It connects with TLS and SASL/SCRAM-SHA-512 and trusts the embedded Aiven project CA
+(`internal/outbox/aiven-ca.pem`, a copy of `audit/aiven-ca.pem`).
+In one transaction it locks up to 100 rows with FOR UPDATE SKIP LOCKED, publishes them, waits for every
+acknowledgment, and deletes the acknowledged ones. Each record goes to topic `keysy.<type>` with the payload as its value,
+`created_at` as its timestamp, the `event_id` in header `id`, and no key. Never log outbox payloads.
 
 Register every route in `internal/router/router.go`; `main.go` only starts the service.
 

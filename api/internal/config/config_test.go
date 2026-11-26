@@ -39,3 +39,33 @@ func TestConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestKafkaConfig(t *testing.T) {
+	environment(t)
+	for _, name := range []string{"KAFKA_BROKERS", "KAFKA_USERNAME", "KAFKA_PASSWORD"} {
+		t.Setenv(name, "")
+	}
+	c, err := Load()
+	if err != nil || c.Kafka.Brokers != nil {
+		t.Fatalf("relay enabled without KAFKA_BROKERS: %v", err)
+	}
+	t.Setenv("KAFKA_BROKERS", "kafka-a.test:12345,kafka-b.test:12345")
+	if _, err := Load(); err == nil {
+		t.Fatal("accepted KAFKA_BROKERS without credentials")
+	}
+	t.Setenv("KAFKA_USERNAME", "relay")
+	t.Setenv("KAFKA_PASSWORD", "secret")
+	c, err = Load()
+	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" || c.Kafka.Username != "relay" {
+		t.Fatalf("unexpected Kafka config: %+v %v", c.Kafka, err)
+	}
+	t.Setenv("KAFKA_BROKERS", "kafka-a.test:12345, kafka-b.test:12345,")
+	c, err = Load()
+	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" {
+		t.Fatalf("brokers not trimmed: %q %v", c.Kafka.Brokers, err)
+	}
+	t.Setenv("KAFKA_BROKERS", " , ")
+	if _, err := Load(); err == nil {
+		t.Fatal("accepted KAFKA_BROKERS without an address")
+	}
+}

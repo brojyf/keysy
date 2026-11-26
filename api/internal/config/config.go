@@ -13,6 +13,13 @@ type Config struct {
 	Port, DatabaseURL, SupabaseURL, WebAppURL string
 	CookieKey                                 []byte
 	LocalHTTP                                 bool
+	// Kafka is empty until KAFKA_BROKERS is set; then api runs the outbox relay.
+	Kafka Kafka
+}
+
+type Kafka struct {
+	Brokers            []string
+	Username, Password string
 }
 
 func Load() (Config, error) {
@@ -51,5 +58,26 @@ func Load() (Config, error) {
 		return c, fmt.Errorf("OAUTH_COOKIE_KEY must be a base64-encoded 32-byte key")
 	}
 	c.SupabaseURL = strings.TrimRight(c.SupabaseURL, "/")
-	return c, nil
+	c.Kafka, err = loadKafka()
+	return c, err
+}
+
+func loadKafka() (Kafka, error) {
+	brokers := strings.TrimSpace(os.Getenv("KAFKA_BROKERS"))
+	if brokers == "" {
+		return Kafka{}, nil
+	}
+	k := Kafka{Username: os.Getenv("KAFKA_USERNAME"), Password: os.Getenv("KAFKA_PASSWORD")}
+	for _, address := range strings.Split(brokers, ",") {
+		if address = strings.TrimSpace(address); address != "" {
+			k.Brokers = append(k.Brokers, address)
+		}
+	}
+	if k.Brokers == nil {
+		return k, fmt.Errorf("KAFKA_BROKERS contains no address")
+	}
+	if k.Username == "" || k.Password == "" {
+		return k, fmt.Errorf("KAFKA_USERNAME and KAFKA_PASSWORD are required when KAFKA_BROKERS is set")
+	}
+	return k, nil
 }
