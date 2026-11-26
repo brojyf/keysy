@@ -14,7 +14,9 @@ const pages = new Map(
 );
 
 describe("built landing site", () => {
-  test("loads first-screen images eagerly and defers later image decoding and requests", () => {
+  // The landing page is hidden in src/pages/_landing.astro until launch.
+  // Restore the skipped landing tests and the footer product links with it.
+  test.skip("loads first-screen images eagerly and defers later image decoding and requests", () => {
     const { document } = pages.get("/")!;
     for (const image of document.querySelectorAll<HTMLImageElement>(
       ".site-header img, .hero img",
@@ -30,7 +32,7 @@ describe("built landing site", () => {
     }
   });
 
-  test("announces coming soon once, in the hero badge", () => {
+  test.skip("announces coming soon once, in the hero badge", () => {
     const { document } = pages.get("/")!;
     expect(document.querySelector<HTMLElement>(".hero-badge")!.textContent).toContain(
       "Coming soon",
@@ -47,7 +49,7 @@ describe("built landing site", () => {
     expect(existsSync(resolve(output, "favicon.svg"))).toBe(true);
   });
 
-  test("renders the coding-agent transcript above its command bar and status", () => {
+  test.skip("renders the coding-agent transcript above its command bar and status", () => {
     const widget = pages.get("/")!.document.querySelector<HTMLElement>(".agent-preview")!;
     expect([...widget.children].map((child) => child.className)).toEqual([
       "agent-transcript",
@@ -64,7 +66,7 @@ describe("built landing site", () => {
       "▸▸ keysy skill on · policy agent-dev",
     );
   });
-  test("renders the complete landing page and useful semantic navigation", () => {
+  test.skip("renders the complete landing page and useful semantic navigation", () => {
     const { document } = pages.get("/")!;
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelectorAll<HTMLElement>("main > section")).toHaveLength(9);
@@ -103,7 +105,7 @@ describe("built landing site", () => {
     }
   });
 
-  test("the footer product column lists the dashboard, CLI, and browser extension", () => {
+  test.skip("the footer product column lists the dashboard, CLI, and browser extension", () => {
     const { document } = pages.get("/")!;
     const product = [...document.querySelectorAll<HTMLElement>(".footer-links > div")].find(
       (column) => column.querySelector("h3")!.textContent === "Product",
@@ -118,7 +120,7 @@ describe("built landing site", () => {
     ).toBe("/#workflow");
   });
 
-  test("the workflow terminal matches the hero terminal", () => {
+  test.skip("the workflow terminal matches the hero terminal", () => {
     const { document } = pages.get("/")!;
     for (const [selector, folder, commands] of [
       [".hero-terminal", "api", 4],
@@ -142,11 +144,11 @@ describe("built landing site", () => {
     }
   });
 
-  test("section headings open with the title, without a small label above it", () => {
+  test.skip("section headings open with the title, without a small label above it", () => {
     expect(pages.get("/")!.document.querySelectorAll<HTMLElement>("main .eyebrow")).toHaveLength(0);
   });
 
-  test("availability visuals do not repeat what their card copy already says", () => {
+  test.skip("availability visuals do not repeat what their card copy already says", () => {
     const visuals = pages
       .get("/")!
       .document.querySelector<HTMLElement>("#availability")!
@@ -160,7 +162,7 @@ describe("built landing site", () => {
       expect(text).not.toContain(repeated);
   });
 
-  test("unreleased destinations are disabled and do not link to invented URLs", () => {
+  test.skip("unreleased destinations are disabled and do not link to invented URLs", () => {
     const { document } = pages.get("/")!;
     for (const item of document.querySelectorAll<HTMLElement>('[aria-disabled="true"]')) {
       expect(item.textContent).not.toContain("Coming soon");
@@ -186,6 +188,18 @@ describe("built landing site", () => {
       );
       expect(document.querySelectorAll("h1")).toHaveLength(1);
     }
+  });
+
+  test("the home page is a noindex placeholder", () => {
+    const { document } = pages.get("/")!;
+    expect(document.body.textContent.trim()).toBe("hello from keysy.net");
+    expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')!.content).toBe(
+      "noindex, nofollow",
+    );
+  });
+
+  test("serves the email logo that Resend templates load from keysy.net", () => {
+    expect(existsSync(resolve(output, "email/keysy-logo.png"))).toBe(true);
   });
 
   test("every image and stylesheet exists locally and SVG proportions match Figma exports", () => {
