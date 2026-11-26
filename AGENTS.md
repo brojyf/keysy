@@ -36,3 +36,4 @@
 - Use `supabase` to manage Supabase resources.
 - Use `gcx` (Grafana's CLI) to query telemetry and manage Grafana resources.
 - Use `avn` (Aiven's CLI) to manage Aiven resources.
+- Use `vercel` to manage Vercel resources, such as the environment variables of `bot/`.
