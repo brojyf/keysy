@@ -31,16 +31,17 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	t.Cleanup(func() { _ = conn.Close() })
 	if err := db.Exec(`CREATE SCHEMA auth;
  CREATE TABLE auth.sessions (id uuid primary key, user_id uuid not null);
- CREATE TABLE public.profiles (id uuid primary key, deleted_at timestamptz);
+ CREATE TABLE public.profiles (id uuid primary key, email text, display_name text, deleted_at timestamptz);
  CREATE TABLE public.orgs (id uuid primary key default gen_random_uuid(), name text);
  CREATE TABLE public.members (org_id uuid references public.orgs(id), user_id uuid, role text);
+ CREATE TABLE public.outbox (event_id uuid primary key default gen_random_uuid(), type text not null, payload jsonb not null, created_at timestamptz not null default now());
  CREATE FUNCTION public.revoke_all_user_sessions(target_user_id uuid) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$ DELETE FROM auth.sessions AS sessions WHERE sessions.user_id = target_user_id; $$;
  INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000001'), ('10000000-0000-0000-0000-000000000002');
  INSERT INTO public.profiles (id, deleted_at) VALUES ('10000000-0000-0000-0000-000000000003', '2026-01-02T03:04:05Z');`).Error; err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
+		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.outbox, public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
 			t.Error(err)
 		}
 	})

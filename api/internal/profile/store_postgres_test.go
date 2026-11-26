@@ -2,8 +2,10 @@ package profile_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -31,18 +33,20 @@ func TestDeletionAndOrgCreationPostgres(t *testing.T) {
 	conn.SetMaxOpenConns(8)
 	if err := db.Exec(`CREATE SCHEMA auth;
  CREATE TABLE auth.sessions (id uuid primary key, user_id uuid not null);
- CREATE TABLE public.profiles (id uuid primary key, deleted_at timestamptz);
+ CREATE TABLE public.profiles (id uuid primary key, email text, display_name text, deleted_at timestamptz);
  CREATE TABLE public.orgs (id uuid primary key default gen_random_uuid(), name text);
  CREATE TABLE public.members (org_id uuid references public.orgs(id), user_id uuid, role text);
+ CREATE TABLE public.outbox (event_id uuid primary key default gen_random_uuid(), type text not null, payload jsonb not null, created_at timestamptz not null default now());
  CREATE FUNCTION public.revoke_all_user_sessions(target_user_id uuid) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$ DELETE FROM auth.sessions AS sessions WHERE sessions.user_id = target_user_id; $$;
- INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000001'), ('10000000-0000-0000-0000-000000000002'), ('10000000-0000-0000-0000-000000000003'), ('10000000-0000-0000-0000-000000000004'), ('10000000-0000-0000-0000-000000000005');
+ INSERT INTO public.profiles (id, email, display_name) VALUES ('10000000-0000-0000-0000-000000000001', 'alice@example.com', 'Alice');
+ INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000002'), ('10000000-0000-0000-0000-000000000003'), ('10000000-0000-0000-0000-000000000004'), ('10000000-0000-0000-0000-000000000005');
  INSERT INTO public.orgs (id,name) VALUES ('20000000-0000-0000-0000-000000000001','Existing');
  INSERT INTO public.members VALUES ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','developer'), ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','owner');
  INSERT INTO auth.sessions VALUES ('30000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001'), ('30000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002');`).Error; err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
+		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.outbox, public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
 			t.Error(err)
 		}
 	})
@@ -58,6 +62,30 @@ func TestDeletionAndOrgCreationPostgres(t *testing.T) {
 	var first time.Time
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", user).Scan(&first).Error; err != nil || first.IsZero() {
 		t.Fatalf("deleted_at=%v err=%v", first, err)
+	}
+	var email struct {
+		Type    string
+		Payload string
+	}
+	if err := db.Raw("SELECT type, payload::text AS payload FROM public.outbox").Take(&email).Error; err != nil {
+		t.Fatal(err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(email.Payload), &payload); err != nil {
+		t.Fatal(err)
+	}
+	wantPayload := map[string]any{
+		"to": "alice@example.com",
+		"template": map[string]any{
+			"id": "deletion-scheduled",
+			"variables": map[string]any{
+				"DISPLAY_NAME": "Alice",
+				"PURGE_DATE":   first.UTC().AddDate(0, 0, 30).Format("January 2, 2006"),
+			},
+		},
+	}
+	if email.Type != "email" || !reflect.DeepEqual(payload, wantPayload) {
+		t.Fatalf("outbox type=%q payload=%v", email.Type, payload)
 	}
 	if err := db.Exec("INSERT INTO auth.sessions VALUES ('30000000-0000-0000-0000-000000000003', ?)", user).Error; err != nil {
 		t.Fatal(err)
@@ -83,6 +111,7 @@ func TestDeletionAndOrgCreationPostgres(t *testing.T) {
 		{"SELECT count(*) FROM auth.sessions WHERE user_id = '" + owner + "'", 1},
 		{"SELECT count(*) FROM public.profiles WHERE id = '" + owner + "' AND deleted_at IS NULL", 1},
 		{"SELECT count(*) FROM public.members", 2},
+		{"SELECT count(*) FROM public.outbox", 1},
 	} {
 		if err := db.Raw(q.sql).Scan(&n).Error; err != nil || n != q.want {
 			t.Fatalf("%s: %d err=%v", q.sql, n, err)

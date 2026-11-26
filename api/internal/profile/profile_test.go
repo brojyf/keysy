@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -43,7 +44,7 @@ func TestScheduleDeletion(t *testing.T) {
 					}
 					owner.WillReturnRows(rows)
 					if scenario != "owner" {
-						update := mock.ExpectExec("UPDATE public.profiles SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL").WithArgs("user")
+						update := mock.ExpectExec(strings.Replace(scheduleDeletionSQL, "?", "$1", 1)).WithArgs("user")
 						if scenario == "update error" {
 							update.WillReturnError(failure)
 						} else {
