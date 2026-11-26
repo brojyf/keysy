@@ -17,8 +17,9 @@ afterEach(() => {
 test("sends the LogQL query to Loki query_range, newest first, with basic auth", async () => {
   process.env.GRAFANA_LOGS_TOKEN = "glc_token";
   const result = [{ stream: { service_name: "keysy-api" }, values: [["1795731668043607349", "request"]] }];
+  const stats = { summary: { totalBytesProcessed: 1024 }, querier: {}, ingester: {}, cache: {} };
   const fetchMock = mock(async (_url: string | URL | Request, _init?: RequestInit) =>
-    Response.json({ status: "success", data: { resultType: "streams", result } }),
+    Response.json({ status: "success", data: { resultType: "streams", result, stats } }),
   );
   globalThis.fetch = fetchMock as unknown as typeof fetch;
 

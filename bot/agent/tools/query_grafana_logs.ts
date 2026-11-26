@@ -5,7 +5,7 @@ import { z } from "zod";
 const lokiQueryRangeUrl = "https://logs-prod-021.grafana.net/loki/api/v1/query_range";
 const lokiUser = "1835088";
 
-type LokiResponse = { status: "success"; data: { resultType: string; result: unknown } };
+type LokiResponse = { data: { resultType: string; result: unknown } };
 
 export default defineTool({
   description: `Run one LogQL query against Grafana Cloud Loki and return the newest matching entries.
@@ -60,7 +60,8 @@ On a query error, read the message, fix the LogQL, and call the tool again.`,
       const message = (await response.text().catch(() => "")).trim();
       throw new Error(`Loki returned HTTP ${response.status}: ${message}`);
     }
-    const body = (await response.json()) as LokiResponse;
-    return body.data;
+    // Drop data.stats: it is several KB of query engine statistics the model does not need.
+    const { resultType, result } = ((await response.json()) as LokiResponse).data;
+    return { resultType, result };
   },
 });

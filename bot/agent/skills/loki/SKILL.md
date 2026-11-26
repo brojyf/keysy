@@ -8,6 +8,8 @@ description: >
   Use when writing LogQL queries, configuring Loki, troubleshooting log pipelines, or analyzing logs.
 ---
 
+<!-- Modified from grafana/skills skills/grafana-lgtm/loki/SKILL.md at 5e8293b51b1ffab949261015500a6a9a5195b072. Removed the Sending Logs to Loki, Architecture, and References sections. -->
+
 # Grafana Loki - Log Aggregation
 
 > **Docs**: https://grafana.com/docs/loki/latest/
@@ -178,71 +180,3 @@ sum(rate({env="prod"}[5m])) by (service)
 ```logql
 {namespace="prod"} |~ `https?://\w+:\w+@`
 ```
-
-## Sending Logs to Loki
-
-### Via Grafana Alloy
-
-```alloy
-loki.source.file "app" {
-  targets    = [{__path__ = "/var/log/app/*.log", job = "app"}]
-  forward_to = [loki.process.parse.receiver]
-}
-
-loki.process "parse" {
-  forward_to = [loki.write.cloud.receiver]
-  stage.json {
-    expressions = { level = "level", msg = "message" }
-  }
-  stage.labels {
-    values = { level = "" }
-  }
-  stage.drop {
-    expression = ".*healthcheck.*"
-  }
-}
-
-loki.write "cloud" {
-  endpoint {
-    url = "https://logs-xxx.grafana.net/loki/api/v1/push"
-    basic_auth {
-      username = sys.env("LOKI_USER")
-      password = sys.env("GRAFANA_API_KEY")
-    }
-  }
-  external_labels = { cluster = "prod" }
-}
-```
-
-### Via Kubernetes (Alloy DaemonSet)
-
-```alloy
-discovery.kubernetes "pods" {
-  role = "pod"
-}
-
-loki.source.kubernetes "pods" {
-  targets    = discovery.kubernetes.pods.targets
-  forward_to = [loki.write.cloud.receiver]
-}
-```
-
-## Architecture
-
-```
-Push path:  Client → Distributor → Ingester (WAL) → Object Storage (chunks)
-Read path:  Query → Query Frontend → Querier → Ingester + Store (chunks)
-```
-
-**Components:**
-- **Distributor**: Validates and hashes incoming log streams
-- **Ingester**: Buffers chunks in memory, flushes to object storage
-- **Querier**: Executes LogQL queries
-- **Query Frontend**: Caches, splits, and parallelizes queries
-- **Compactor**: Manages retention and deduplication
-
-## References
-
-- [LogQL Reference](references/logql.md)
-- [Configuration](references/configuration.md)
-- [Sending Data](references/send-data.md)
