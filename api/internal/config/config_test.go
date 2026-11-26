@@ -42,7 +42,7 @@ func TestConfig(t *testing.T) {
 
 func TestKafkaConfig(t *testing.T) {
 	environment(t)
-	for _, name := range []string{"KAFKA_BROKERS", "KAFKA_USERNAME", "KAFKA_PASSWORD", "KAFKA_CA_CERT"} {
+	for _, name := range []string{"KAFKA_BROKERS", "KAFKA_USERNAME", "KAFKA_PASSWORD"} {
 		t.Setenv(name, "")
 	}
 	c, err := Load()
@@ -55,7 +55,6 @@ func TestKafkaConfig(t *testing.T) {
 	}
 	t.Setenv("KAFKA_USERNAME", "relay")
 	t.Setenv("KAFKA_PASSWORD", "secret")
-	t.Setenv("KAFKA_CA_CERT", "-----BEGIN CERTIFICATE-----")
 	c, err = Load()
 	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" || c.Kafka.Username != "relay" {
 		t.Fatalf("unexpected Kafka config: %+v %v", c.Kafka, err)
