@@ -42,7 +42,7 @@ func TestConfig(t *testing.T) {
 
 func TestKafkaConfig(t *testing.T) {
 	environment(t)
-	for _, name := range []string{"KAFKA_BROKERS", "KAFKA_USERNAME", "KAFKA_PASSWORD"} {
+	for _, name := range []string{"KAFKA_BROKERS", "KAFKA_USERNAME", "KAFKA_PASSWORD", "KAFKA_CA_FILE"} {
 		t.Setenv(name, "")
 	}
 	c, err := Load()
@@ -55,8 +55,12 @@ func TestKafkaConfig(t *testing.T) {
 	}
 	t.Setenv("KAFKA_USERNAME", "relay")
 	t.Setenv("KAFKA_PASSWORD", "secret")
+	if _, err := Load(); err == nil {
+		t.Fatal("accepted KAFKA_BROKERS without KAFKA_CA_FILE")
+	}
+	t.Setenv("KAFKA_CA_FILE", "/etc/keysy/aiven-ca.pem")
 	c, err = Load()
-	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" || c.Kafka.Username != "relay" {
+	if err != nil || len(c.Kafka.Brokers) != 2 || c.Kafka.Brokers[1] != "kafka-b.test:12345" || c.Kafka.Username != "relay" || c.Kafka.CAFile != "/etc/keysy/aiven-ca.pem" {
 		t.Fatalf("unexpected Kafka config: %+v %v", c.Kafka, err)
 	}
 	t.Setenv("KAFKA_BROKERS", "kafka-a.test:12345, kafka-b.test:12345,")
