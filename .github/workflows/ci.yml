@@ -33,6 +33,7 @@ jobs:
       bun: ${{ steps.filter.outputs.bun }}
       supabase: ${{ steps.filter.outputs.supabase }}
       audit: ${{ steps.filter.outputs.audit }}
+      notify: ${{ steps.filter.outputs.notify }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,6 +68,7 @@ jobs:
               - '.dockerignore'
               - 'api/**'
               - 'auth/**'
+              - 'notify/**'
               - 'otel/**'
               - '.github/**'
             wiki:
@@ -83,6 +85,9 @@ jobs:
               - '.github/**'
             audit:
               - 'audit/**'
+              - '.github/**'
+            notify:
+              - 'notify/**'
               - '.github/**'
 
   secrets:
@@ -293,6 +298,30 @@ jobs:
       - name: Build
         run: go build ./...
 
+  notify:
+    name: Notify
+    needs: changes
+    if: needs.changes.outputs.notify == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: notify
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: notify/go.mod
+          cache-dependency-path: notify/go.sum
+      - name: Test
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build ./...
+
   api:
     name: API
     needs: changes
@@ -432,7 +461,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, bot, web, wiki, auth, api, supabase, audit, deploy, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, bot, web, wiki, auth, api, notify, supabase, audit, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
