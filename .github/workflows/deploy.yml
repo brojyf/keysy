@@ -10,7 +10,8 @@ name: Deploy
 # Disconnect Cloudflare Git builds to avoid duplicate production deploys.
 # Supabase needs SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD repository secrets,
 # plus the SUPABASE_PROJECT_ID variable. Disable its native Deploy to production option.
-# Audit migrations need the AUDIT_DATABASE_URL repository secret (audit Postgres URI).
+# Audit migrations need the AUDIT_DATABASE_URL repository secret (audit Postgres URI
+# with sslmode=verify-full&sslrootcert=audit/aiven-ca.pem, the Aiven project CA).
 # Vercel needs the VERCEL_TOKEN repository secret and the VERCEL_ORG_ID and
 # VERCEL_PROJECT_ID repository variables. The Vercel project Root Directory is bot.
 # Disconnect Vercel Git builds to avoid duplicate production deploys.
