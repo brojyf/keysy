@@ -29,7 +29,23 @@ test("sends the PromQL query to Fly's Prometheus API with the token as is", asyn
     "https://api.fly.io/prometheus/personal/api/v1/query?query=fly_instance_memory_mem_total%7Bapp%3D%22keysy%22%7D",
   );
   expect(new Headers(init?.headers).get("Authorization")).toBe("FlyV1 fm2_token");
-  expect(output).toEqual({ resultType: "vector", result });
+  expect(output).toEqual({
+    resultType: "vector",
+    result: [{ metric: { app: "keysy" }, value: ["2026-11-26T06:16:29.000Z", "0.57"] }],
+  });
+});
+
+test("returns a scalar timestamp as a UTC time", async () => {
+  process.env.FLY_API_TOKEN = "FlyV1 fm2_token";
+  globalThis.fetch = (async () =>
+    Response.json({
+      status: "success",
+      data: { resultType: "scalar", result: [1795673789, "1"] },
+    })) as unknown as typeof fetch;
+
+  const output = await execute({ query: 'scalar(fly_instance_up{app="keysy"})' }, ctx);
+
+  expect(output).toEqual({ resultType: "scalar", result: ["2026-11-26T06:16:29.000Z", "1"] });
 });
 
 test("passes Prometheus errors to the model so it can fix the query", async () => {

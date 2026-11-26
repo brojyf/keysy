@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { withUtcTimes } from "../lib/utc_times";
 
 // Grafana Cloud stack earnestsalad2096. The user is the Loki instance ID, not a secret.
 const lokiQueryRangeUrl = "https://logs-prod-021.grafana.net/loki/api/v1/query_range";
@@ -21,8 +22,8 @@ Streams:
 
 How to query:
 - since is how far back to look, such as 15m, 1h, or 24h. Start short and widen only when the result is empty.
-- Results come newest first. Each value is [unix_timestamp_in_nanoseconds, "line"]. Convert timestamps to UTC times.
-- For counts, use a metric query such as count_over_time with instant: true instead of reading many lines. The range in brackets, such as [1h], sets the window, and since is ignored. Each result has one value: [unix_timestamp_in_seconds, "number"].
+- Results come newest first. Each value is [UTC time, "line"].
+- For counts, use a metric query such as count_over_time with instant: true instead of reading many lines. The range in brackets, such as [1h], sets the window, and since is ignored. Each result has one value: [UTC time, "number"].
 - The skill "loki" has the full LogQL reference.
 
 Examples:
@@ -67,6 +68,6 @@ On a query error, read the message, fix the LogQL, and call the tool again.`,
     }
     // Drop data.stats: it is several KB of query engine statistics the model does not need.
     const { resultType, result } = ((await response.json()) as LokiResponse).data;
-    return { resultType, result };
+    return { resultType, result: withUtcTimes(resultType, result) };
   },
 });
