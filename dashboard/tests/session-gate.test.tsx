@@ -115,6 +115,14 @@ test('each API attempt, refresh, retry, and logout gets a 20 second timeout', as
   expect(durations).toEqual([20_000, 20_000, 20_000, 20_000])
 })
 
+// Safari served a cached /v0/me 401 from memory despite no-store, so sign-in looped.
+test('each API attempt, refresh, retry, and logout bypasses the browser cache', async () => {
+  sessionRequest.mockImplementation((url: string) => Promise.resolve(new Response(null, { status: url.endsWith('/v0/me') ? 401 : 204 })))
+  await fetchWithSessionRefresh('https://api.keysy.net/v0/me', 'https://auth.keysy.net/')
+  await logoutSession('https://auth.keysy.net/')
+  expect(sessionRequest.mock.calls.map(([, init]) => init.cache)).toEqual(['no-store', 'no-store', 'no-store', 'no-store'])
+})
+
 test('a caller abort cancels the fetch signal', async () => {
   controlledTimeouts()
   const caller = new AbortController()
