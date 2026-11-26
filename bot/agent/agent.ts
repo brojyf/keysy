@@ -6,4 +6,5 @@ const deepseek = createDeepSeek();
 export default defineAgent({
   model: deepseek("deepseek-flash"),
   reasoning: "high",
+  defaultTools: false,
 });

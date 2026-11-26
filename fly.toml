@@ -8,7 +8,8 @@ kill_timeout = "15s"
 
 # Secrets (fly secrets set): DATABASE_URL, OAUTH_COOKIE_KEY, SUPABASE_PUBLISHABLE_KEY,
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GRAFANA_CLOUD_OTLP_ENDPOINT, GRAFANA_CLOUD_OTLP_AUTH,
-# KAFKA_BROKERS, KAFKA_USERNAME, KAFKA_PASSWORD.
+# KAFKA_BROKERS, KAFKA_USERNAME, KAFKA_PASSWORD, NOTIFY_KAFKA_USERNAME,
+# NOTIFY_KAFKA_PASSWORD, RESEND_API_KEY.
 [env]
   AUTH_URL = "https://auth.keysy.net"
   WEB_APP_URL = "https://dashboard.keysy.net/"
@@ -22,7 +23,7 @@ kill_timeout = "15s"
   force_https = true
   auto_stop_machines = "suspend"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
 [[vm]]
   size = "shared-cpu-1x"

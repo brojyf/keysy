@@ -1,0 +1,3 @@
+#!/bin/sh
+# notify exits at startup when a setting is missing. s6 restarts it every second.
+exec /usr/local/bin/keysy-notify
