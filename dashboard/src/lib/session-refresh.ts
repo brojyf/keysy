@@ -11,8 +11,9 @@ function requestSignal(source?: AbortSignal | null) {
   return source ? AbortSignal.any([source, timeout]) : timeout
 }
 
+// Safari reused a no-store 401 from its memory cache, so every request skips the cache.
 function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
-  return fetch(url, { ...init, signal: requestSignal(init.signal) })
+  return fetch(url, { ...init, cache: 'no-store', signal: requestSignal(init.signal) })
 }
 
 // Concurrent 401s share one refresh: Supabase rotates the refresh token on each use.
