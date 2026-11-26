@@ -18,8 +18,8 @@ type Config struct {
 }
 
 type Kafka struct {
-	Brokers            []string
-	Username, Password string
+	Brokers                    []string
+	Username, Password, CAFile string
 }
 
 func Load() (Config, error) {
@@ -67,7 +67,7 @@ func loadKafka() (Kafka, error) {
 	if brokers == "" {
 		return Kafka{}, nil
 	}
-	k := Kafka{Username: os.Getenv("KAFKA_USERNAME"), Password: os.Getenv("KAFKA_PASSWORD")}
+	k := Kafka{Username: os.Getenv("KAFKA_USERNAME"), Password: os.Getenv("KAFKA_PASSWORD"), CAFile: os.Getenv("KAFKA_CA_FILE")}
 	for _, address := range strings.Split(brokers, ",") {
 		if address = strings.TrimSpace(address); address != "" {
 			k.Brokers = append(k.Brokers, address)
@@ -76,8 +76,8 @@ func loadKafka() (Kafka, error) {
 	if k.Brokers == nil {
 		return k, fmt.Errorf("KAFKA_BROKERS contains no address")
 	}
-	if k.Username == "" || k.Password == "" {
-		return k, fmt.Errorf("KAFKA_USERNAME and KAFKA_PASSWORD are required when KAFKA_BROKERS is set")
+	if k.Username == "" || k.Password == "" || k.CAFile == "" {
+		return k, fmt.Errorf("KAFKA_USERNAME, KAFKA_PASSWORD, and KAFKA_CA_FILE are required when KAFKA_BROKERS is set")
 	}
 	return k, nil
 }

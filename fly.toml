@@ -15,6 +15,7 @@ kill_timeout = "15s"
   COOKIE_DOMAIN = "keysy.net"
   SUPABASE_URL = "https://fwlaxjslfaqarfxiuskd.supabase.co"
   OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318"
+  KAFKA_CA_FILE = "/etc/keysy/aiven-ca.pem"
 
 [http_service]
   internal_port = 8000
