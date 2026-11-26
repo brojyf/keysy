@@ -40,7 +40,7 @@ On a query error, read the message, fix the PromQL, and call the tool again.`,
   inputSchema: z.object({
     query: z.string().min(1).describe("A PromQL expression."),
   }),
-  label: { start: ({ query }) => `Query Fly metrics: ${query}` },
+  label: { start: () => "Query Fly metrics" },
   async execute({ query }, ctx) {
     // The value is the full output of `fly tokens create readonly`, including the "FlyV1 " scheme.
     const token = process.env.FLY_API_TOKEN;
