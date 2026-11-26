@@ -4,11 +4,11 @@ license: Apache-2.0
 description: >
   Grafana Loki log aggregation and LogQL query language. Covers LogQL syntax (log queries, metric queries,
   label matchers, line filters, parsers: json/logfmt/pattern/regexp/unpack, label filters, line_format),
-  Loki architecture, log ingestion via Alloy/Promtail/Fluent Bit, structured metadata, and Logs Drilldown.
-  Use when writing LogQL queries, configuring Loki, troubleshooting log pipelines, or analyzing logs.
+  structured metadata, and Logs Drilldown.
+  Use when writing LogQL queries or analyzing logs.
 ---
 
-<!-- Modified from grafana/skills skills/grafana-lgtm/loki/SKILL.md at 5e8293b51b1ffab949261015500a6a9a5195b072. Removed the Sending Logs to Loki, Architecture, and References sections. -->
+<!-- Modified from grafana/skills skills/grafana-lgtm/loki/SKILL.md at 5e8293b51b1ffab949261015500a6a9a5195b072. Removed the Sending Logs to Loki, Architecture, and References sections, and their topics from the description. -->
 
 # Grafana Loki - Log Aggregation
 
