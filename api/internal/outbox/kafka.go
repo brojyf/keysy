@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/brojyf/keysy/api/internal/config"
@@ -16,7 +17,7 @@ import (
 func NewKafkaClient(k config.Kafka) (*kgo.Client, error) {
 	pem, err := os.ReadFile(k.CAFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read KAFKA_CA_FILE: %w", err)
 	}
 	ca := x509.NewCertPool()
 	if !ca.AppendCertsFromPEM(pem) {

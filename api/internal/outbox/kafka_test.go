@@ -3,6 +3,7 @@ package outbox
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/brojyf/keysy/api/internal/config"
@@ -17,10 +18,10 @@ func TestNewKafkaClientLoadsCAFile(t *testing.T) {
 	client.Close()
 
 	k.CAFile = filepath.Join(t.TempDir(), "missing.pem")
-	if _, err := NewKafkaClient(k); err == nil {
-		t.Fatal("accepted a missing CA file")
+	if _, err := NewKafkaClient(k); err == nil || !strings.Contains(err.Error(), "KAFKA_CA_FILE") {
+		t.Fatalf("missing CA file error does not name KAFKA_CA_FILE: %v", err)
 	}
-	k.CAFile = filepath.Join(t.TempDir(), "empty.pem")
+	k.CAFile = filepath.Join(t.TempDir(), "invalid.pem")
 	if err := os.WriteFile(k.CAFile, []byte("not a certificate"), 0o600); err != nil {
 		t.Fatal(err)
 	}
