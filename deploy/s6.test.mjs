@@ -33,7 +33,7 @@ test("keeps restarting the api while it exits during startup", async () => {
   }
 });
 
-test("stops the collector after api and auth flush telemetry, even when nginx hangs", { timeout: 20_000 }, async () => {
+test("stops the collector after api, auth, and notify flush telemetry, even when nginx hangs", { timeout: 20_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "s6-test-"));
   const scanDirectory = join(directory, "s6");
   const collectorUp = join(directory, "collector-up");
@@ -42,7 +42,7 @@ test("stops the collector after api and auth flush telemetry, even when nginx ha
 
   const fakeCollector = join(directory, "otelcol");
   await writeFile(fakeCollector, `#!/bin/sh\ntouch ${collectorUp}\ntrap 'rm ${collectorUp}; exit 0' TERM\nwhile :; do sleep 0.1; done\n`, { mode: 0o755 });
-  // Like api and auth, the fake stops serving first and sends buffered telemetry after.
+  // Like api, auth, and notify, the fake stops serving first and sends buffered telemetry after.
   const fakeService = (name) => `#!/bin/sh
 trap 'sleep 0.5; test -e ${collectorUp} && echo ${name}-flushed >> ${flushLog} || echo ${name}-lost >> ${flushLog}; exit 0' TERM
 while :; do sleep 0.1; done
@@ -52,7 +52,7 @@ while :; do sleep 0.1; done
     await writeFile(runFile, (await readFile(runFile, "utf8")).replace(from, to), { mode: 0o755 });
   };
   await replaceRun("otelcol", "/usr/local/bin/otelcol", fakeCollector);
-  for (const [service, binary] of [["api", "/usr/local/bin/keysy-api"], ["auth", "/usr/local/bin/keysy-auth"]]) {
+  for (const [service, binary] of [["api", "/usr/local/bin/keysy-api"], ["auth", "/usr/local/bin/keysy-auth"], ["notify", "/usr/local/bin/keysy-notify"]]) {
     const fake = join(directory, service);
     await writeFile(fake, fakeService(service), { mode: 0o755 });
     await replaceRun(service, binary, fake);
@@ -78,7 +78,7 @@ while :; do sleep 0.1; done
     }
     assert.equal(await collectorRunning(), false, "the collector did not stop within the shutdown window");
     const flushes = (await readFile(flushLog, "utf8")).trim().split("\n").sort();
-    assert.deepEqual(flushes, ["api-flushed", "auth-flushed"]);
+    assert.deepEqual(flushes, ["api-flushed", "auth-flushed", "notify-flushed"]);
   } finally {
     execFileSync("s6-svc", ["-k", join(scanDirectory, "nginx")]);
     svscan.kill("SIGKILL");

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# One image runs nginx, api, auth, and the OTel collector under s6.
+# One image runs nginx, api, auth, notify, and the OTel collector under s6.
 # Build with the repository root as the context.
 
 FROM golang:1.27.3 AS api-build
@@ -8,6 +8,13 @@ COPY api/go.mod api/go.sum ./
 RUN go mod download
 COPY api ./
 RUN CGO_ENABLED=0 go build -trimpath -o /out/api .
+
+FROM golang:1.27.3 AS notify-build
+WORKDIR /src/notify
+COPY notify/go.mod notify/go.sum ./
+RUN go mod download
+COPY notify ./
+RUN CGO_ENABLED=0 go build -trimpath -o /out/notify .
 
 FROM golang:1.27.3 AS auth-build
 WORKDIR /src/auth
@@ -26,6 +33,7 @@ COPY otel/config.yaml /etc/otelcol/config.yaml
 COPY deploy/aiven-ca.pem /etc/keysy/aiven-ca.pem
 COPY --from=api-build /out/api /usr/local/bin/keysy-api
 COPY --from=auth-build /out/auth /usr/local/bin/keysy-auth
+COPY --from=notify-build /out/notify /usr/local/bin/keysy-notify
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 # s6-supervise writes its state into each service directory.
 COPY --chown=node:node deploy/s6 /etc/s6

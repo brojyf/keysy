@@ -1,0 +1,42 @@
+apiVersion: rules.alerting.grafana.app/v1beta1
+kind: AlertRule
+metadata:
+  name: keysy-notify-email-dropped
+  annotations:
+    grafana.app/folder: keysy
+spec:
+  title: notify email dropped
+  trigger:
+    interval: 1m
+  for: 0s
+  noDataState: Ok
+  execErrState: Error
+  labels:
+    severity: warning
+    service: keysy-notify
+  annotations:
+    summary: notify email dropped
+    description: 'A notify email was dropped ({{ $values.A.Value }} in the last 5m)'
+  notificationSettings:
+    type: SimplifiedRouting
+    receiver: discord
+  expressions:
+    A:
+      datasourceUID: grafanacloud-logs
+      relativeTimeRange:
+        from: 5m
+        to: "0"
+      model:
+        expr: |
+          sum(count_over_time({service_name="keysy-notify"} |= "notify email dropped" [5m]))
+        queryType: instant
+    B:
+      datasourceUID: __expr__
+      source: true
+      model:
+        type: threshold
+        expression: A
+        conditions:
+          - evaluator:
+              type: gt
+              params: [0]
