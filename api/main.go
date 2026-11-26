@@ -54,7 +54,7 @@ func main() {
 	if c.Kafka.Brokers != nil {
 		kafka, err := outbox.NewKafkaClient(c.Kafka)
 		if err != nil {
-			log.Fatal("Kafka client initialization failed")
+			log.Fatalf("Kafka client initialization failed: %v", err)
 		}
 		defer kafka.Close()
 		relayDone = make(chan struct{})

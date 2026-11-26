@@ -22,6 +22,8 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=otel/opentelemetry-collector:0.162.0 /otelcol /usr/local/bin/otelcol
 COPY otel/config.yaml /etc/otelcol/config.yaml
+# The public Aiven project CA; KAFKA_CA_FILE in fly.toml points here.
+COPY deploy/aiven-ca.pem /etc/keysy/aiven-ca.pem
 COPY --from=api-build /out/api /usr/local/bin/keysy-api
 COPY --from=auth-build /out/auth /usr/local/bin/keysy-auth
 COPY deploy/nginx.conf /etc/nginx/nginx.conf

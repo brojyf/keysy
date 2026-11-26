@@ -41,9 +41,9 @@ bypass RLS; direct client access remains blocked. CORS allows GET, POST,
 PATCH, and DELETE with only the `Content-Type` request header. Use English for
 all repository content. Keep `../openapi/api.yaml` in sync with implemented routes.
 
-The outbox relay (`internal/outbox`) runs only when `KAFKA_BROKERS` is set; then `KAFKA_USERNAME` and
-`KAFKA_PASSWORD` are required. It connects with TLS and SASL/SCRAM-SHA-512 and trusts the embedded Aiven project CA
-(`internal/outbox/aiven-ca.pem`, a copy of `audit/aiven-ca.pem`).
+The outbox relay (`internal/outbox`) runs only when `KAFKA_BROKERS` is set; then `KAFKA_USERNAME`,
+`KAFKA_PASSWORD`, and `KAFKA_CA_FILE` are required. It connects with TLS and SASL/SCRAM-SHA-512 and trusts the Aiven
+project CA in `KAFKA_CA_FILE` (`../deploy/aiven-ca.pem`, copied into the image at `/etc/keysy/aiven-ca.pem`).
 In one transaction it locks up to 100 rows with FOR UPDATE SKIP LOCKED, publishes them, waits for every
 acknowledgment, and deletes the acknowledged ones. Each record goes to topic `keysy.<type>` with the payload as its value,
 `created_at` as its timestamp, the `event_id` in header `id`, and no key. Never log outbox payloads.
