@@ -55,15 +55,15 @@ export function Footer() {
           <nav className="footer-links" aria-label="Footer">
             <div>
               <h3>Product</h3>
-              <a href="/#dashboard">Dashboard</a>
-              <a href="/#workflow">CLI</a>
+              <ComingSoon>Dashboard</ComingSoon>
+              <ComingSoon>CLI</ComingSoon>
               <ComingSoon>Browser extension</ComingSoon>
             </div>
             <div>
               <h3>Developers</h3>
               <ComingSoon>Documentation</ComingSoon>
               <ComingSoon>Agent skill</ComingSoon>
-              <a href="/#sdks">SDKs</a>
+              <ComingSoon>SDKs</ComingSoon>
               <a href="https://github.com/brojyf/keysy">GitHub</a>
             </div>
             <div>
