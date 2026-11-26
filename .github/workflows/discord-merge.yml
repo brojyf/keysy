@@ -13,6 +13,12 @@ on:
       migrated:
         type: boolean
         default: false
+      audit_migrations_result:
+        type: string
+        default: pending
+      audit_migrated:
+        type: boolean
+        default: false
       deploy_result:
         type: string
         default: pending
@@ -70,6 +76,8 @@ jobs:
           MESSAGE_ID: ${{ inputs.message_id }}
           MIGRATIONS_RESULT: ${{ inputs.migrations_result }}
           MIGRATED: ${{ inputs.migrated }}
+          AUDIT_MIGRATIONS_RESULT: ${{ inputs.audit_migrations_result }}
+          AUDIT_MIGRATED: ${{ inputs.audit_migrated }}
           DEPLOY_RESULT: ${{ inputs.deploy_result }}
           DEPLOYED: ${{ inputs.deployed }}
           CLOUDFLARE_RESULT: ${{ inputs.cloudflare_result }}
@@ -94,6 +102,8 @@ jobs:
             --arg conclusion "$CI_CONCLUSION" \
             --arg migrations_result "$MIGRATIONS_RESULT" \
             --arg migrated "$MIGRATED" \
+            --arg audit_migrations_result "$AUDIT_MIGRATIONS_RESULT" \
+            --arg audit_migrated "$AUDIT_MIGRATED" \
             --arg deploy_result "$DEPLOY_RESULT" \
             --arg deployed "$DEPLOYED" \
             --arg cloudflare_result "$CLOUDFLARE_RESULT" \
@@ -114,6 +124,7 @@ jobs:
               "\nBy: " + $author +
               "\nCI: " + (if $conclusion == "success" then "✅ Passed" else "❌ " + $conclusion end) +
               "\nSupabase migrations: " + status($migrations_result; $migrated) +
+              "\nAudit migrations: " + status($audit_migrations_result; $audit_migrated) +
               "\nFly deploy: " + status($deploy_result; $deployed) +
               "\nCloudflare deploy: " + status($cloudflare_result; $cloudflare_deployed) +
               "\nDashboard deploy: " + status($dashboard_result; $dashboard_deployed) +

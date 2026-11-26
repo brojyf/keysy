@@ -32,6 +32,7 @@ jobs:
       deploy: ${{ steps.filter.outputs.deploy }}
       bun: ${{ steps.filter.outputs.bun }}
       supabase: ${{ steps.filter.outputs.supabase }}
+      audit: ${{ steps.filter.outputs.audit }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -79,6 +80,9 @@ jobs:
               - '.github/**'
             supabase:
               - 'supabase/**'
+              - '.github/**'
+            audit:
+              - 'audit/**'
               - '.github/**'
 
   secrets:
@@ -340,6 +344,38 @@ jobs:
       - name: Apply migrations and run SQL tests
         run: bash .github/scripts/test-supabase-sql.sh
 
+  audit:
+    name: Audit migrations
+    needs: changes
+    if: needs.changes.outputs.audit == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: 1.27.3
+          cache: false
+      # Same goose version as the production job in deploy.yml.
+      - name: Apply migrations
+        env:
+          GOOSE_DRIVER: postgres
+          GOOSE_DBSTRING: postgres://postgres@localhost:5432/postgres?sslmode=disable
+          GOOSE_MIGRATION_DIR: audit/migrations
+        run: go run github.com/pressly/goose/v3/cmd/goose@v3.30.2 up
+
   deploy:
     name: Deploy Config
     needs: changes
@@ -387,7 +423,7 @@ jobs:
   # A skipped required job counts as passed, so always() keeps this job running.
   ci-passed:
     name: CI Passed
-    needs: [changes, secrets, dependency-review, bun-audit, dashboard, bot, web, wiki, auth, api, supabase, deploy, cli]
+    needs: [changes, secrets, dependency-review, bun-audit, dashboard, bot, web, wiki, auth, api, supabase, audit, deploy, cli]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

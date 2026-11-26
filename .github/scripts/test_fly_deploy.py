@@ -37,6 +37,23 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertNotIn("\nconcurrency:", WORKFLOW.read_text())
         self.assertNotIn("Supabase%20Preview", WORKFLOW.read_text())
 
+    def test_audit_migrations_are_serial_and_check_the_tip_of_main(self):
+        audit = workflow_job("audit-migrations")
+        self.assertIn(
+            "if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'",
+            audit,
+        )
+        self.assertIn("group: audit-migrations\n      cancel-in-progress: false", audit)
+        self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", audit)
+        self.assertLess(audit.index("- name: Read the tip of main"), audit.index("- name: Apply audit migrations"))
+        self.assertIn("migrated: ${{ steps.migrate.outcome == 'success' }}", audit)
+        self.assertIn("go-version: 1.27.3", audit)
+        step = workflow_step("Apply audit migrations")
+        self.assertIn("id: migrate", step)
+        self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", step)
+        self.assertIn("GOOSE_DBSTRING: ${{ secrets.AUDIT_DATABASE_URL }}", step)
+        self.assertIn("GOOSE_MIGRATION_DIR: audit/migrations", step)
+
     def test_deployment_requires_successful_migrations(self):
         deploy = workflow_job("deploy")
         self.assertIn("needs: [notify, migrations]", deploy)
@@ -53,7 +70,9 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]", notification)
+        self.assertIn("needs: [notify, migrations, audit-migrations, deploy, cloudflare, dashboard, vercel]", notification)
+        self.assertIn("audit_migrations_result: ${{ needs.audit-migrations.result }}", notification)
+        self.assertIn("audit_migrated: ${{ needs.audit-migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
         self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)
