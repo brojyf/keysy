@@ -46,7 +46,10 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertIn("group: audit-migrations\n      cancel-in-progress: false", audit)
         self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", audit)
         self.assertLess(audit.index("- name: Read the tip of main"), audit.index("- name: Apply audit migrations"))
+        self.assertIn("migrated: ${{ steps.migrate.outcome == 'success' }}", audit)
+        self.assertIn("go-version-file: audit/go.mod", audit)
         step = workflow_step("Apply audit migrations")
+        self.assertIn("id: migrate", step)
         self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", step)
         self.assertIn("GOOSE_DBSTRING: ${{ secrets.AUDIT_DATABASE_URL }}", step)
         self.assertIn("GOOSE_MIGRATION_DIR: audit/migrations", step)
@@ -67,7 +70,9 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_notification_reports_migration_and_fly_results_separately(self):
         notification = workflow_job("update-notification")
-        self.assertIn("needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]", notification)
+        self.assertIn("needs: [notify, migrations, audit-migrations, deploy, cloudflare, dashboard, vercel]", notification)
+        self.assertIn("audit_migrations_result: ${{ needs.audit-migrations.result }}", notification)
+        self.assertIn("audit_migrated: ${{ needs.audit-migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("migrations_result: ${{ needs.migrations.result }}", notification)
         self.assertIn("migrated: ${{ needs.migrations.outputs.migrated == 'true' }}", notification)
         self.assertIn("deploy_result: ${{ needs.deploy.result }}", notification)

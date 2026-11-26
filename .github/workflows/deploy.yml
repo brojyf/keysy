@@ -80,6 +80,8 @@ jobs:
     if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      migrated: ${{ steps.migrate.outcome == 'success' }}
     concurrency:
       group: audit-migrations
       cancel-in-progress: false
@@ -99,9 +101,10 @@ jobs:
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         with:
-          go-version: stable
+          go-version-file: audit/go.mod
           cache: false
       - name: Apply audit migrations
+        id: migrate
         if: steps.main.outputs.sha == github.event.workflow_run.head_sha
         env:
           GOOSE_DRIVER: postgres
@@ -356,13 +359,15 @@ jobs:
           echo "deployed=true" >> "$GITHUB_OUTPUT"
 
   update-notification:
-    needs: [notify, migrations, deploy, cloudflare, dashboard, vercel]
+    needs: [notify, migrations, audit-migrations, deploy, cloudflare, dashboard, vercel]
     if: always() && needs.notify.outputs.message_id != '' && github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/discord-merge.yml
     with:
       message_id: ${{ needs.notify.outputs.message_id }}
       migrations_result: ${{ needs.migrations.result }}
       migrated: ${{ needs.migrations.outputs.migrated == 'true' }}
+      audit_migrations_result: ${{ needs.audit-migrations.result }}
+      audit_migrated: ${{ needs.audit-migrations.outputs.migrated == 'true' }}
       deploy_result: ${{ needs.deploy.result }}
       deployed: ${{ needs.deploy.outputs.deployed == 'true' }}
       cloudflare_result: ${{ needs.cloudflare.result }}
