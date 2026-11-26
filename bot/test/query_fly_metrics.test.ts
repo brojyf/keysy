@@ -35,6 +35,19 @@ test("sends the PromQL query to Fly's Prometheus API with the token as is", asyn
   });
 });
 
+test("returns a scalar timestamp as a UTC time", async () => {
+  process.env.FLY_API_TOKEN = "FlyV1 fm2_token";
+  globalThis.fetch = (async () =>
+    Response.json({
+      status: "success",
+      data: { resultType: "scalar", result: [1795673789, "1"] },
+    })) as unknown as typeof fetch;
+
+  const output = await execute({ query: 'scalar(fly_instance_up{app="keysy"})' }, ctx);
+
+  expect(output).toEqual({ resultType: "scalar", result: ["2026-11-26T06:16:29.000Z", "1"] });
+});
+
 test("passes Prometheus errors to the model so it can fix the query", async () => {
   process.env.FLY_API_TOKEN = "FlyV1 fm2_token";
   globalThis.fetch = (async () =>
