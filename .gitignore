@@ -2,11 +2,10 @@
 /supabase/.temp/
 node_modules/
 dist/
-/auth/.env.local
+.env.local
 /auth/tmp/
-/api/.env.local
 /api/tmp/
-/otel/.env.local
+/audit/tmp/
 /.claude/
 
 # iCloud sync duplicates

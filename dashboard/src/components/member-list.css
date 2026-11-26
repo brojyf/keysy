@@ -3,10 +3,6 @@
   gap: 18px;
 }
 
-.member-page .account-table {
-  max-width: 720px;
-}
-
 .member-table th:first-child {
   width: 240px;
 }

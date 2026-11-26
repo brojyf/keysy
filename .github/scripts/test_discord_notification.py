@@ -32,6 +32,8 @@ class DiscordNotificationTests(unittest.TestCase):
             "MESSAGE_ID": "",
             "MIGRATIONS_RESULT": "pending",
             "MIGRATED": "false",
+            "AUDIT_MIGRATIONS_RESULT": "pending",
+            "AUDIT_MIGRATED": "false",
             "DEPLOY_RESULT": "pending",
             "DEPLOYED": "false",
             "CLOUDFLARE_RESULT": "pending",
@@ -76,7 +78,7 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
         self.assertEqual(request["method"], "POST")
         self.assertEqual(request["url"], self.environment["WEBHOOK_URL"] + "?wait=true")
         self.assertEqual((self.path / "outputs").read_text(), "message_id=987654321\n")
-        self.assertIn("Supabase migrations: ⏳ Pending\nFly deploy: ⏳ Pending\nCloudflare deploy: ⏳ Pending", request["payload"]["content"])
+        self.assertIn("Supabase migrations: ⏳ Pending\nAudit migrations: ⏳ Pending\nFly deploy: ⏳ Pending\nCloudflare deploy: ⏳ Pending", request["payload"]["content"])
 
     def test_commit_details_and_mentions_are_preserved_safely(self):
         payload = self.notify()["payload"]
@@ -129,9 +131,23 @@ print(os.environ.get("DISCORD_RESPONSE", '{"id":"987654321"}'))
                 )
                 self.assertEqual(request["method"], "PATCH")
                 self.assertIn(
-                    "Supabase migrations: " + status + "\nFly deploy: ⏭️ Skipped\nCloudflare deploy: ✅ Succeeded",
+                    "Supabase migrations: " + status + "\nAudit migrations: ⏳ Pending\nFly deploy: ⏭️ Skipped\nCloudflare deploy: ✅ Succeeded",
                     request["payload"]["content"],
                 )
+
+    def test_update_reports_each_audit_migrations_result(self):
+        for result, migrated, status in [
+            ("success", "true", "✅ Succeeded"),
+            ("failure", "false", "❌ Failed"),
+            ("cancelled", "false", "🚫 Cancelled"),
+            ("success", "false", "⏭️ Skipped"),
+        ]:
+            with self.subTest(result=result, migrated=migrated):
+                content = self.notify(
+                    MESSAGE_ID="987654321", MIGRATIONS_RESULT="success", MIGRATED="true",
+                    AUDIT_MIGRATIONS_RESULT=result, AUDIT_MIGRATED=migrated,
+                )["payload"]["content"]
+                self.assertIn("Supabase migrations: ✅ Succeeded\nAudit migrations: " + status + "\nFly deploy:", content)
 
     def test_update_reports_each_cloudflare_result(self):
         for result, deployed, status in [

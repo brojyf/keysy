@@ -24,9 +24,10 @@
 ## CI/CD
 
 - GitHub Actions applies production Supabase migrations after CI passes on the same `main` commit. Set the `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` repository secrets and the `SUPABASE_PROJECT_ID` repository variable. Scope the token to the production project with Read access to Project Settings, API Keys, API Key Secrets, and Connection Pooling. Keep preview branches enabled, but disable Supabase's native Deploy to production option to avoid duplicate migration runners.
+- GitHub Actions applies audit Postgres migrations (`audit/migrations`, goose) after CI passes on the same `main` commit, one at a time, and skips commits that are no longer the tip of `main`. Set the `AUDIT_DATABASE_URL` repository secret.
 - GitHub Actions deploys `web/`, `wiki/`, and `dashboard/` to Cloudflare Workers after CI passes on the same `main` commit. The dashboard deploys after the same commit's Fly deployment succeeds. Each deployment job runs one at a time and skips commits that are no longer the tip of `main`. Set the `CLOUDFLARE_API_TOKEN` repository secret and `CLOUDFLARE_ACCOUNT_ID` repository variable. Disable Cloudflare Git builds to prevent duplicate production deployments. See `.github/workflows/deploy.yml`.
 - GitHub Actions deploys `bot/` (an eve agent) to Vercel after CI passes on the same `main` commit, with the same one-at-a-time and tip-of-`main` checks. Set the `VERCEL_TOKEN` repository secret and the `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` repository variables. Set the Vercel project Root Directory to `bot` and disconnect Vercel Git builds. See `.github/workflows/deploy.yml`.
-- Fly CD deploys the Fly app `keysy` (api, auth, and OTel collector in one machine) after CI and the same commit's Supabase migration job pass on `main`. Migrations and Fly deployments each run one at a time and check the tip of `main` before making changes. Migration failure blocks Fly deployment. Discord reports Supabase, Fly, Cloudflare, dashboard, and Vercel results separately. See `.github/workflows/deploy.yml`.
+- Fly CD deploys the Fly app `keysy` (api, auth, and OTel collector in one machine) after CI and the same commit's Supabase migration job pass on `main`. Migrations and Fly deployments each run one at a time and check the tip of `main` before making changes. Migration failure blocks Fly deployment. Discord reports Supabase, audit migration, Fly, Cloudflare, dashboard, and Vercel results separately. See `.github/workflows/deploy.yml`.
 
 ## CLI tools
 
@@ -34,3 +35,4 @@
 - Use `wrangler` (Cloudflare's CLI) to manage Workers deployments, including `docs/` and `wiki/`.
 - Use `supabase` to manage Supabase resources.
 - Use `gcx` (Grafana's CLI) to query telemetry and manage Grafana resources.
+- Use `avn` (Aiven's CLI) to manage Aiven resources.
