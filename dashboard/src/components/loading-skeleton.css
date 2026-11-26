@@ -28,19 +28,19 @@
 .skeleton-header-bone { background: var(--color-line); }
 .skeleton-table-row { border-top: 1px solid var(--color-line); }
 .skeleton-table-cell { display: flex; flex-direction: column; gap: 11px; }
-.skeleton-member-table { max-width: 720px; }
+.skeleton-member-table { max-width: 700px; }
 .skeleton-member-search { margin-bottom: 18px; }
 .skeleton-caption { margin: 2px 0 22px; }
-.skeleton-form { max-width: 784px; }
+.skeleton-form { max-width: 764px; }
 .skeleton-form .skeleton-page-header { gap: 25px; margin-bottom: 33px; }
 .skeleton-section + .skeleton-section { margin-top: 33px; }
 .skeleton-card { border: 1px solid var(--color-line); border-radius: 8px; overflow: hidden; margin-top: 15px; }
 .skeleton-card-row { min-height: 56px; display: grid; grid-template-columns: 38.2% minmax(0, 1fr); align-items: center; gap: 0; padding: 0 14px; }
 .skeleton-card-row + .skeleton-card-row { border-top: 1px solid var(--color-line); }
 .skeleton-card-end { justify-self: end; }
-.skeleton-account-table { max-width: 784px; }
+.skeleton-account-table { max-width: 764px; }
 .skeleton-account-table .skeleton-page-header { gap: 25px; }
-.skeleton-sessions { display: flex; flex-direction: column; gap: 18px; max-width: 720px; }
+.skeleton-sessions { display: flex; flex-direction: column; gap: 18px; max-width: 700px; }
 .skeleton-sessions .skeleton-table-cell:last-child { align-items: flex-end; }
 @media (prefers-reduced-motion: no-preference) {
   .skeleton-bone { animation: skeleton-pulse 1.6s ease-in-out infinite; }

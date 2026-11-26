@@ -109,7 +109,7 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 720px;
+  max-width: 700px;
 }
 
 .account-sections h2 {
@@ -208,7 +208,7 @@
 
 /* Organizations and Sessions */
 .account-table {
-  max-width: 720px;
+  max-width: 700px;
   overflow: hidden;
   border: 1px solid var(--color-line);
   border-radius: 16px;
@@ -293,7 +293,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  max-width: 720px;
+  max-width: 700px;
 }
 
 .account-search {
@@ -673,7 +673,7 @@ th[aria-sort='descending'] .account-sort svg {
 
 
 .account-organizations-empty {
-  max-width: 720px;
+  max-width: 700px;
   border: 1px solid var(--color-line);
   border-radius: 16px;
   padding: 56px 32px;
