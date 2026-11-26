@@ -6,6 +6,7 @@ dist/
 /auth/tmp/
 /api/.env.local
 /api/tmp/
+/audit/.env.local
 /audit/tmp/
 /otel/.env.local
 /.claude/

@@ -345,7 +345,7 @@ jobs:
         run: bash .github/scripts/test-supabase-sql.sh
 
   audit:
-    name: Audit migrations
+    name: Audit
     needs: changes
     if: needs.changes.outputs.audit == 'true'
     runs-on: ubuntu-latest
