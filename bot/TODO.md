@@ -17,6 +17,10 @@ Order: most useful first.
   - Answers: errors in the last hour, and the logs of one request ID (the save failure dialog shows it).
   - Source: Loki `query_range`. Credential: Grafana Cloud access policy token with `logs:read`.
   - Open: confirm that production api and auth logs reach Loki through the collector on Fly.
+- [ ] **`query_fly_machine`**: Fly Machines API.
+  - Answers: machine state, recent events (OOM kills, exits, restarts), and the running image and when it was deployed. An OOM-killed process cannot log, and when otelcol stops, Grafana gets nothing. Machine events still show what happened.
+  - Source: Machines API `GET /v1/apps/keysy/machines` with events. Credential: the existing `FLY_API_TOKEN`.
+  - Open: confirm that the read-only token can call this API. Find out whether a process crash inside s6 shows in machine events, or needs Fly logs (a separate `query_fly_logs` tool).
 - [ ] **`query_grafana_metrics`**: PromQL against Grafana Cloud Prometheus.
   - Answers: request rate, latency, and 5xx ratio of api and auth.
   - Source: Prometheus `query`. Credential: access policy token with `metrics:read`.
