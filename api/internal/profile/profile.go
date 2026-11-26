@@ -51,6 +51,23 @@ type OrgOwnerError struct{ Orgs []OwnedOrg }
 
 func (*OrgOwnerError) Error() string { return "user owns an organization" }
 
+const scheduleDeletionSQL = `WITH scheduled AS (
+	UPDATE public.profiles SET deleted_at = now() WHERE id = ? AND deleted_at IS NULL
+	RETURNING email, display_name, deleted_at + interval '30 days' AS purge_at
+)
+INSERT INTO public.outbox (type, payload)
+SELECT 'email', jsonb_build_object(
+	'to', email,
+	'template', jsonb_build_object(
+		'id', 'deletion-scheduled',
+		'variables', jsonb_build_object(
+			'DISPLAY_NAME', display_name,
+			'PURGE_DATE', to_char(purge_at AT TIME ZONE 'UTC', 'FMMonth FMDD, YYYY')
+		)
+	)
+)
+FROM scheduled`
+
 func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var locked int
@@ -68,17 +85,33 @@ func (s Store) ScheduleDeletion(ctx context.Context, userID string) error {
 		if len(owned) > 0 {
 			return &OrgOwnerError{Orgs: owned}
 		}
-		if err := tx.Exec("UPDATE public.profiles SET deleted_at = now() WHERE id = ? AND deleted_at IS NULL", userID).Error; err != nil {
+		// Only the first scheduling queues the email, so a repeated request sends none.
+		if err := tx.Exec(scheduleDeletionSQL, userID).Error; err != nil {
 			return err
 		}
 		return tx.Exec("SELECT public.revoke_all_user_sessions(?)", userID).Error
 	})
 }
 
+// One outbox row per cleared profile, so RowsAffected still counts cancelled deletions.
+const cancelDeletionSQL = `WITH cancelled AS (
+	UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL
+	RETURNING email, display_name
+)
+INSERT INTO public.outbox (type, payload)
+SELECT 'email', jsonb_build_object(
+	'to', email,
+	'template', jsonb_build_object(
+		'id', 'deletion-cancelled',
+		'variables', jsonb_build_object('DISPLAY_NAME', display_name)
+	)
+)
+FROM cancelled`
+
 func (s Store) CancelDeletion(ctx context.Context, userID string) error {
 	db := s.DB.WithContext(ctx)
-	// Only a pending deletion is written, so a later cancellation event fires once per cancellation.
-	result := db.Exec("UPDATE public.profiles SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL", userID)
+	// Only a pending deletion is written, so the email is queued once per cancellation.
+	result := db.Exec(cancelDeletionSQL, userID)
 	if result.Error != nil {
 		return result.Error
 	}
