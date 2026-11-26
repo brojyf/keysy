@@ -3,22 +3,21 @@ title: "Introduction"
 description: "Notification service in the Keysy monorepo."
 ---
 
-`notify/` is reserved for the notification service. It currently contains only a
-placeholder; there is no service implementation or startup command yet.
+`notify/` is a Go process with no HTTP server or endpoints. It joins Kafka
+consumer group `notify` on topic `keysy.email` using Aiven TLS and
+SASL/SCRAM-SHA-512, with the CA from `KAFKA_CA_FILE`.
 
-See [API endpoints](/notify/endpoints) for the current interface status.
+It sends each message through Resend `POST /emails`. The body contains `to` and
+`template` (`id` or alias, `variables`). Templates in Resend hold `from` and
+`subject` defaults. The `Idempotency-Key` is the record's `id` header
+(`event_id`). Every retry rebuilds the same body.
 
-## Planned integration
-
-`notify` consumes messages from the `keysy.email` Kafka topic and sends each
-email through Resend. See [System design](/system-design).
-
-Email templates live in Resend, with `from` and `subject` as template defaults.
-`notify` builds each request body only from the message: `to` and `template`
-(`id` and `variables`). Every retry rebuilds the same body, so a request with
-the same Idempotency-Key matches the first one.
+The service retries network errors, 5xx, 429 `rate_limit_exceeded`, and 409
+`concurrent_idempotent_requests` up to three times with 1s, 2s, and 4s delays.
+It drops other failures, messages older than 24 hours, and malformed messages.
+Each drop logs "notify email dropped" with event_id, template, reason, and
+offset, never the address, then commits the offset. There is no dead-letter
+topic. `OTEL_EXPORTER_OTLP_ENDPOINT` is optional and enables logging only.
 
 Keysy has no in-app notifications: no notification center, inbox, or unread
 state.
-
-This integration is not implemented yet.

@@ -1,6 +1,6 @@
 # OpenTelemetry Collector
 
-api and auth send OTLP/HTTP to this collector on port 4318. The collector
+api, auth, and notify send OTLP/HTTP to this collector on port 4318. The collector
 forwards traces, metrics, and logs to Grafana Cloud.
 
 ## Configuration
@@ -23,14 +23,15 @@ docker run --rm --env-file .env.local -e OTLP_RECEIVER_ENDPOINT=0.0.0.0:4318 -p 
 ```
 
 Then set `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` in
-`api/.env.local` and `auth/.env.local`.
+`api/.env.local`, `auth/.env.local`, and `notify/.env.local`.
 
 ## Alerts
 
 `alerts/` holds Grafana-managed alert rules. Each service gets a warning when
 more than 1% of its requests return 5xx over 5 minutes, and when its p99
 latency is above 1s or its p95 latency is above 500ms for 5 minutes. api also
-gets a warning when the outbox relay logs errors for 5 minutes. They notify the `discord`
+gets a warning when the outbox relay logs errors for 5 minutes. notify gets a
+warning for every email it drops. They notify the `discord`
 contact point, which holds the Discord webhook URL and lives only in Grafana.
 It is a webhook integration, not the Discord one, so messages carry no embed
 link or footer. Its custom payload is `{{ template "keysy.discord.payload" . }}`

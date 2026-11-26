@@ -12,7 +12,7 @@ and infrastructure files live in a single Git repository.
 | --- | --- |
 | `api/` | Reserved for the application API service. |
 | `auth/` | Reserved for the authentication service. |
-| `notify/` | Reserved for the notification service. |
+| `notify/` | Go process that consumes email requests from Kafka and sends them through Resend. |
 | `audit/` | Reserved for the audit service. |
 | `status/` | Reserved for health checks that report whether the services are up. |
 | `cli/` | Go CLI, built with Cobra. |
