@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { withUtcTimes } from "../lib/utc_times";
 
 // Grafana Cloud stack earnestsalad2096. The user is the Loki instance ID, not a secret.
 const lokiQueryRangeUrl = "https://logs-prod-021.grafana.net/loki/api/v1/query_range";
@@ -7,22 +8,6 @@ const lokiInstantQueryUrl = "https://logs-prod-021.grafana.net/loki/api/v1/query
 const lokiUser = "1835088";
 
 type LokiResponse = { data: { resultType: string; result: unknown } };
-type LokiSample = [string | number, ...unknown[]];
-type LokiSeries = { values?: LokiSample[]; value?: LokiSample };
-
-// The model cannot convert unix timestamps reliably, so return UTC times.
-// Log lines carry nanosecond strings; metric samples carry seconds.
-function withUtcTimes(resultType: string, result: unknown) {
-  if (!["streams", "matrix", "vector"].includes(resultType)) return result;
-  const toUtc = (time: string | number) =>
-    new Date(resultType === "streams" ? Number(BigInt(time) / 1_000_000n) : Number(time) * 1000).toISOString();
-  const withUtc = ([time, ...rest]: LokiSample): LokiSample => [toUtc(time), ...rest];
-  return (result as LokiSeries[]).map((series) => ({
-    ...series,
-    ...(series.values && { values: series.values.map(withUtc) }),
-    ...(series.value && { value: withUtc(series.value) }),
-  }));
-}
 
 export default defineTool({
   description: `Run one LogQL query against Grafana Cloud Loki and return the newest matching entries.

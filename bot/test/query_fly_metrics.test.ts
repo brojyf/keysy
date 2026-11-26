@@ -29,7 +29,10 @@ test("sends the PromQL query to Fly's Prometheus API with the token as is", asyn
     "https://api.fly.io/prometheus/personal/api/v1/query?query=fly_instance_memory_mem_total%7Bapp%3D%22keysy%22%7D",
   );
   expect(new Headers(init?.headers).get("Authorization")).toBe("FlyV1 fm2_token");
-  expect(output).toEqual({ resultType: "vector", result });
+  expect(output).toEqual({
+    resultType: "vector",
+    result: [{ metric: { app: "keysy" }, value: ["2026-11-26T06:16:29.000Z", "0.57"] }],
+  });
 });
 
 test("passes Prometheus errors to the model so it can fix the query", async () => {

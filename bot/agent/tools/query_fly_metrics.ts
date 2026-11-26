@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { withUtcTimes } from "../lib/utc_times";
 
 const prometheusQueryUrl = "https://api.fly.io/prometheus/personal/api/v1/query";
 
@@ -26,7 +27,7 @@ How to query:
 - The query is evaluated at the current time and returns one value per series.
 - The machine auto-stops when idle. Then a plain query returns an empty result. This is not an error. Retry with last_over_time(<metric>[1d]) to get the last known value.
 - For a peak or low over a period, use max_over_time / min_over_time. For an expression, use a subquery such as (<expr>)[1d:5m].
-- Each result value is [unix_timestamp, "string number"]. Convert bytes to MB and ratios to percent. Report the timestamp when the value is not current.
+- Each result value is [UTC time, "string number"]. Convert bytes to MB and ratios to percent. Report the timestamp when the value is not current.
 
 Examples:
 - Memory used, as a ratio: 1 - last_over_time(fly_instance_memory_mem_available{app="keysy"}[1d]) / last_over_time(fly_instance_memory_mem_total{app="keysy"}[1d])
@@ -55,6 +56,7 @@ On a query error, read the message, fix the PromQL, and call the tool again.`,
     const body = (await response.json().catch(() => null)) as PrometheusResponse | null;
     if (body?.status === "error") throw new Error(`${body.errorType}: ${body.error}`);
     if (body?.status !== "success") throw new Error(`Fly Prometheus returned HTTP ${response.status}`);
-    return body.data;
+    const { resultType, result } = body.data;
+    return { resultType, result: withUtcTimes(resultType, result) };
   },
 });
