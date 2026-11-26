@@ -30,13 +30,14 @@ describe("built landing site", () => {
     }
   });
 
-  test("announces coming soon once, in the hero badge", () => {
-    const { document } = pages.get("/")!;
-    expect(document.querySelector<HTMLElement>(".hero-badge")!.textContent).toContain(
-      "Coming soon",
-    );
-    expect(document.body.textContent.match(/Coming soon/g)).toHaveLength(1);
-  });
+  // Hidden with the landing page until launch; restore together with src/pages/index.astro.
+  // test("announces coming soon once, in the hero badge", () => {
+  //   const { document } = pages.get("/")!;
+  //   expect(document.querySelector<HTMLElement>(".hero-badge")!.textContent).toContain(
+  //     "Coming soon",
+  //   );
+  //   expect(document.body.textContent.match(/Coming soon/g)).toHaveLength(1);
+  // });
 
   test("links the Keysy mark as an SVG favicon on every page", () => {
     for (const [route, { document }] of pages) {
@@ -47,130 +48,130 @@ describe("built landing site", () => {
     expect(existsSync(resolve(output, "favicon.svg"))).toBe(true);
   });
 
-  test("renders the coding-agent transcript above its command bar and status", () => {
-    const widget = pages.get("/")!.document.querySelector<HTMLElement>(".agent-preview")!;
-    expect([...widget.children].map((child) => child.className)).toEqual([
-      "agent-transcript",
-      "agent-command",
-      "agent-status",
-    ]);
-    expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
-      "Skill(keysy)",
-    );
-    expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
-      "Bash(keysy ls production/api)",
-    );
-    expect(widget.querySelector<HTMLElement>(".agent-status")!.textContent).toBe(
-      "▸▸ keysy skill on · policy agent-dev",
-    );
-  });
-  test("renders the complete landing page and useful semantic navigation", () => {
-    const { document } = pages.get("/")!;
-    expect(document.querySelectorAll("h1")).toHaveLength(1);
-    expect(document.querySelectorAll<HTMLElement>("main > section")).toHaveLength(9);
-    for (const title of [
-      "One vault. Four ways in.",
-      "Room to breathe.",
-      "Opened by policy.",
-      "No single point of failure.",
-      "to protected.",
-      "first retrieval.",
-      "from your code.",
-      "More forward.",
-    ]) {
-      expect(document.body.textContent).toContain(title);
-    }
-    expect(document.querySelector<HTMLElement>(".skip-link")!.getAttribute("href")).toBe(
-      "#main-content",
-    );
-  });
+  // test("renders the coding-agent transcript above its command bar and status", () => {
+  //   const widget = pages.get("/")!.document.querySelector<HTMLElement>(".agent-preview")!;
+  //   expect([...widget.children].map((child) => child.className)).toEqual([
+  //     "agent-transcript",
+  //     "agent-command",
+  //     "agent-status",
+  //   ]);
+  //   expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
+  //     "Skill(keysy)",
+  //   );
+  //   expect(widget.querySelector<HTMLElement>(".agent-transcript")!.textContent).toContain(
+  //     "Bash(keysy ls production/api)",
+  //   );
+  //   expect(widget.querySelector<HTMLElement>(".agent-status")!.textContent).toBe(
+  //     "▸▸ keysy skill on · policy agent-dev",
+  //   );
+  // });
+  // test("renders the complete landing page and useful semantic navigation", () => {
+  //   const { document } = pages.get("/")!;
+  //   expect(document.querySelectorAll("h1")).toHaveLength(1);
+  //   expect(document.querySelectorAll<HTMLElement>("main > section")).toHaveLength(9);
+  //   for (const title of [
+  //     "One vault. Four ways in.",
+  //     "Room to breathe.",
+  //     "Opened by policy.",
+  //     "No single point of failure.",
+  //     "to protected.",
+  //     "first retrieval.",
+  //     "from your code.",
+  //     "More forward.",
+  //   ]) {
+  //     expect(document.body.textContent).toContain(title);
+  //   }
+  //   expect(document.querySelector<HTMLElement>(".skip-link")!.getAttribute("href")).toBe(
+  //     "#main-content",
+  //   );
+  // });
 
-  test("all local links resolve to a generated page and an existing anchor", () => {
-    for (const [route, { document }] of pages) {
-      for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[href]")) {
-        const href = anchor.getAttribute("href")!;
-        expect(href).not.toBe("#");
-        const url = new URL(href, `https://keysy.example${route}`);
-        if (url.origin !== "https://keysy.example") continue;
-        const target = pages.get(url.pathname)!;
-        expect(target, `${route}: ${href}`).toBeDefined();
-        if (url.hash)
-          expect(
-            target.document.getElementById(url.hash.slice(1)),
-            href,
-          ).not.toBeNull();
-      }
-    }
-  });
+  // test("all local links resolve to a generated page and an existing anchor", () => {
+  //   for (const [route, { document }] of pages) {
+  //     for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+  //       const href = anchor.getAttribute("href")!;
+  //       expect(href).not.toBe("#");
+  //       const url = new URL(href, `https://keysy.example${route}`);
+  //       if (url.origin !== "https://keysy.example") continue;
+  //       const target = pages.get(url.pathname)!;
+  //       expect(target, `${route}: ${href}`).toBeDefined();
+  //       if (url.hash)
+  //         expect(
+  //           target.document.getElementById(url.hash.slice(1)),
+  //           href,
+  //         ).not.toBeNull();
+  //     }
+  //   }
+  // });
 
-  test("the footer product column lists the dashboard, CLI, and browser extension", () => {
-    const { document } = pages.get("/")!;
-    const product = [...document.querySelectorAll<HTMLElement>(".footer-links > div")].find(
-      (column) => column.querySelector("h3")!.textContent === "Product",
-    )!;
-    expect(
-      [...product.children].slice(1).map((item) => item.textContent),
-    ).toEqual(["Dashboard", "CLI", "Browser extension"]);
-    expect(
-      [...product.querySelectorAll("a")]
-        .find((a) => a.textContent === "CLI")!
-        .getAttribute("href"),
-    ).toBe("/#workflow");
-  });
+  // test("the footer product column lists the dashboard, CLI, and browser extension", () => {
+  //   const { document } = pages.get("/")!;
+  //   const product = [...document.querySelectorAll<HTMLElement>(".footer-links > div")].find(
+  //     (column) => column.querySelector("h3")!.textContent === "Product",
+  //   )!;
+  //   expect(
+  //     [...product.children].slice(1).map((item) => item.textContent),
+  //   ).toEqual(["Dashboard", "CLI", "Browser extension"]);
+  //   expect(
+  //     [...product.querySelectorAll("a")]
+  //       .find((a) => a.textContent === "CLI")!
+  //       .getAttribute("href"),
+  //   ).toBe("/#workflow");
+  // });
 
-  test("the workflow terminal matches the hero terminal", () => {
-    const { document } = pages.get("/")!;
-    for (const [selector, folder, commands] of [
-      [".hero-terminal", "api", 4],
-      [".workflow-terminal", "acme", 3],
-    ] as const) {
-      const terminal = document.querySelector(selector)!;
-      const bar = terminal.querySelector<HTMLElement>(".terminal-bar")!;
-      expect(bar.querySelectorAll<HTMLElement>(".terminal-lights img")).toHaveLength(3);
-      // Like the Figma terminals: a macOS Terminal title with a folder icon.
-      expect(bar.querySelector<HTMLElement>(".terminal-title img")).not.toBeNull();
-      expect(bar.textContent).toBe(`${folder} — -zsh — 80×24`);
-      const lines = terminal.querySelector("pre")!.textContent!.split("\n");
-      expect(lines.filter((line) => line.startsWith("$"))).toEqual([]);
-      expect(lines.at(-1)).toBe(`alice@mbp ${folder} % ▍`);
-      expect(
-        lines.filter((line) => line.startsWith(`alice@mbp ${folder} % keysy `)),
-      ).toHaveLength(commands);
-      expect(terminal.querySelector<HTMLElement>(".terminal-tab, .terminal-footer")).toBeNull();
-      expect(terminal.querySelector<HTMLElement>("pre em")!.textContent).toStartWith("✓");
-      expect(terminal.querySelector<HTMLElement>(".code-keyword, .code-string")).toBeNull();
-    }
-  });
+  // test("the workflow terminal matches the hero terminal", () => {
+  //   const { document } = pages.get("/")!;
+  //   for (const [selector, folder, commands] of [
+  //     [".hero-terminal", "api", 4],
+  //     [".workflow-terminal", "acme", 3],
+  //   ] as const) {
+  //     const terminal = document.querySelector(selector)!;
+  //     const bar = terminal.querySelector<HTMLElement>(".terminal-bar")!;
+  //     expect(bar.querySelectorAll<HTMLElement>(".terminal-lights img")).toHaveLength(3);
+  //     // Like the Figma terminals: a macOS Terminal title with a folder icon.
+  //     expect(bar.querySelector<HTMLElement>(".terminal-title img")).not.toBeNull();
+  //     expect(bar.textContent).toBe(`${folder} — -zsh — 80×24`);
+  //     const lines = terminal.querySelector("pre")!.textContent!.split("\n");
+  //     expect(lines.filter((line) => line.startsWith("$"))).toEqual([]);
+  //     expect(lines.at(-1)).toBe(`alice@mbp ${folder} % ▍`);
+  //     expect(
+  //       lines.filter((line) => line.startsWith(`alice@mbp ${folder} % keysy `)),
+  //     ).toHaveLength(commands);
+  //     expect(terminal.querySelector<HTMLElement>(".terminal-tab, .terminal-footer")).toBeNull();
+  //     expect(terminal.querySelector<HTMLElement>("pre em")!.textContent).toStartWith("✓");
+  //     expect(terminal.querySelector<HTMLElement>(".code-keyword, .code-string")).toBeNull();
+  //   }
+  // });
 
   test("section headings open with the title, without a small label above it", () => {
     expect(pages.get("/")!.document.querySelectorAll<HTMLElement>("main .eyebrow")).toHaveLength(0);
   });
 
-  test("availability visuals do not repeat what their card copy already says", () => {
-    const visuals = pages
-      .get("/")!
-      .document.querySelector<HTMLElement>("#availability")!
-      .querySelectorAll<HTMLElement>(".feature-visual");
-    const text = [...visuals].map((visual) => visual.textContent).join(" ");
-    for (const repeated of [
-      "Reads keep working when one instance fails",
-      "All systems operational",
-      "Monthly uptime commitment",
-    ])
-      expect(text).not.toContain(repeated);
-  });
+  // test("availability visuals do not repeat what their card copy already says", () => {
+  //   const visuals = pages
+  //     .get("/")!
+  //     .document.querySelector<HTMLElement>("#availability")!
+  //     .querySelectorAll<HTMLElement>(".feature-visual");
+  //   const text = [...visuals].map((visual) => visual.textContent).join(" ");
+  //   for (const repeated of [
+  //     "Reads keep working when one instance fails",
+  //     "All systems operational",
+  //     "Monthly uptime commitment",
+  //   ])
+  //     expect(text).not.toContain(repeated);
+  // });
 
-  test("unreleased destinations are disabled and do not link to invented URLs", () => {
-    const { document } = pages.get("/")!;
-    for (const item of document.querySelectorAll<HTMLElement>('[aria-disabled="true"]')) {
-      expect(item.textContent).not.toContain("Coming soon");
-      expect(item.hasAttribute("href")).toBe(false);
-    }
-    expect(document.querySelectorAll<HTMLAnchorElement>('a[href^="https:"]')).toHaveLength(1);
-    expect(document.querySelector<HTMLAnchorElement>('a[href^="https:"]')!.href).toBe(
-      "https://github.com/brojyf/keysy",
-    );
-  });
+  // test("unreleased destinations are disabled and do not link to invented URLs", () => {
+  //   const { document } = pages.get("/")!;
+  //   for (const item of document.querySelectorAll<HTMLElement>('[aria-disabled="true"]')) {
+  //     expect(item.textContent).not.toContain("Coming soon");
+  //     expect(item.hasAttribute("href")).toBe(false);
+  //   }
+  //   expect(document.querySelectorAll<HTMLAnchorElement>('a[href^="https:"]')).toHaveLength(1);
+  //   expect(document.querySelector<HTMLAnchorElement>('a[href^="https:"]')!.href).toBe(
+  //     "https://github.com/brojyf/keysy",
+  //   );
+  // });
 
   test("legal routes are clear placeholders with noindex and working return links", () => {
     for (const route of ["/policy/", "/terms/"]) {
