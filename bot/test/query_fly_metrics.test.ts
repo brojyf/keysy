@@ -40,9 +40,28 @@ test("passes Prometheus errors to the model so it can fix the query", async () =
       { status: 400 },
     )) as unknown as typeof fetch;
 
-  expect(execute({ query: "bad{" }, ctx)).rejects.toThrow("bad_data: parse error at char 5");
+  await expect(execute({ query: "bad{" }, ctx)).rejects.toThrow("bad_data: parse error at char 5");
+});
+
+test("reports the HTTP status when the token is rejected", async () => {
+  process.env.FLY_API_TOKEN = "FlyV1 wrong";
+  globalThis.fetch = (async () =>
+    new Response("something went wrong resolving organization", {
+      status: 401,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    })) as unknown as typeof fetch;
+
+  await expect(execute({ query: "up" }, ctx)).rejects.toThrow("Fly Prometheus returned HTTP 401");
+});
+
+test("reports the HTTP status when the JSON body is not a Prometheus response", async () => {
+  process.env.FLY_API_TOKEN = "FlyV1 fm2_token";
+  globalThis.fetch = (async () =>
+    Response.json({ error: "bad gateway" }, { status: 502 })) as unknown as typeof fetch;
+
+  await expect(execute({ query: "up" }, ctx)).rejects.toThrow("Fly Prometheus returned HTTP 502");
 });
 
 test("fails without FLY_API_TOKEN", async () => {
-  expect(execute({ query: "up" }, ctx)).rejects.toThrow("FLY_API_TOKEN is not set");
+  await expect(execute({ query: "up" }, ctx)).rejects.toThrow("FLY_API_TOKEN is not set");
 });

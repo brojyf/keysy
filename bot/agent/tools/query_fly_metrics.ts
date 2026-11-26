@@ -12,7 +12,7 @@ export default defineTool({
 Use it for live health questions about the Keysy Fly app: memory, CPU, load, uptime.
 
 Target:
-- App "keysy": one shared-cpu-1x machine (256 MB) in sjc that runs api, auth, and the OTel collector.
+- App "keysy": runs api, auth, and the OTel collector.
 - Always filter with {app="keysy"}. Series also carry the labels instance (machine ID) and region.
 
 Metrics:
@@ -53,8 +53,8 @@ On a query error, read the message, fix the PromQL, and call the tool again.`,
       signal: ctx.abortSignal,
     });
     const body = (await response.json().catch(() => null)) as PrometheusResponse | null;
-    if (!body) throw new Error(`Fly Prometheus returned HTTP ${response.status}`);
-    if (body.status === "error") throw new Error(`${body.errorType}: ${body.error}`);
+    if (body?.status === "error") throw new Error(`${body.errorType}: ${body.error}`);
+    if (body?.status !== "success") throw new Error(`Fly Prometheus returned HTTP ${response.status}`);
     return body.data;
   },
 });
