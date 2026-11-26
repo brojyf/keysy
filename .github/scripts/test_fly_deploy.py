@@ -53,6 +53,8 @@ class DeploymentSchedulingTests(unittest.TestCase):
         self.assertIn("if: steps.main.outputs.sha == github.event.workflow_run.head_sha", step)
         self.assertIn("GOOSE_DBSTRING: ${{ secrets.AUDIT_DATABASE_URL }}", step)
         self.assertIn("GOOSE_MIGRATION_DIR: audit/migrations", step)
+        self.assertIn("PGSSLMODE: verify-full", step)
+        self.assertIn("PGSSLROOTCERT: deploy/aiven-ca.pem", step)
 
     def test_deployment_requires_successful_migrations(self):
         deploy = workflow_job("deploy")

@@ -11,7 +11,7 @@ name: Deploy
 # Supabase needs SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD repository secrets,
 # plus the SUPABASE_PROJECT_ID variable. Disable its native Deploy to production option.
 # Audit migrations need the AUDIT_DATABASE_URL repository secret (audit Postgres URI
-# with sslmode=verify-full&sslrootcert=deploy/aiven-ca.pem, the Aiven project CA).
+# without sslmode or sslrootcert; the job verifies TLS with deploy/aiven-ca.pem).
 # Vercel needs the VERCEL_TOKEN repository secret and the VERCEL_ORG_ID and
 # VERCEL_PROJECT_ID repository variables. The Vercel project Root Directory is bot.
 # Disconnect Vercel Git builds to avoid duplicate production deploys.
@@ -112,6 +112,8 @@ jobs:
           GOOSE_DRIVER: postgres
           GOOSE_DBSTRING: ${{ secrets.AUDIT_DATABASE_URL }}
           GOOSE_MIGRATION_DIR: audit/migrations
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: deploy/aiven-ca.pem
         run: |
           : "${GOOSE_DBSTRING:?Set the AUDIT_DATABASE_URL repository secret}"
           go run github.com/pressly/goose/v3/cmd/goose@v3.30.2 up
