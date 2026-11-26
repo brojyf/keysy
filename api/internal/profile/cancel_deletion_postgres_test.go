@@ -3,8 +3,10 @@ package profile_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -31,16 +33,18 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	t.Cleanup(func() { _ = conn.Close() })
 	if err := db.Exec(`CREATE SCHEMA auth;
  CREATE TABLE auth.sessions (id uuid primary key, user_id uuid not null);
- CREATE TABLE public.profiles (id uuid primary key, deleted_at timestamptz);
+ CREATE TABLE public.profiles (id uuid primary key, email text, display_name text, deleted_at timestamptz);
  CREATE TABLE public.orgs (id uuid primary key default gen_random_uuid(), name text);
  CREATE TABLE public.members (org_id uuid references public.orgs(id), user_id uuid, role text);
+ CREATE TABLE public.outbox (event_id uuid primary key default gen_random_uuid(), type text not null, payload jsonb not null, created_at timestamptz not null default now());
  CREATE FUNCTION public.revoke_all_user_sessions(target_user_id uuid) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$ DELETE FROM auth.sessions AS sessions WHERE sessions.user_id = target_user_id; $$;
- INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000001'), ('10000000-0000-0000-0000-000000000002');
+ INSERT INTO public.profiles (id, email, display_name) VALUES ('10000000-0000-0000-0000-000000000001', 'alice@example.com', 'Alice');
+ INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000002');
  INSERT INTO public.profiles (id, deleted_at) VALUES ('10000000-0000-0000-0000-000000000003', '2026-01-02T03:04:05Z');`).Error; err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
+		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.outbox, public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
 			t.Error(err)
 		}
 	})
@@ -66,6 +70,24 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	if _, err := orgs.Create(ctx, user, "After cancellation"); err != nil {
 		t.Fatalf("create after cancellation: %v", err)
 	}
+	var cancelled string
+	if err := db.Raw("SELECT payload::text FROM public.outbox WHERE type = 'email' AND payload #>> '{template,id}' = 'deletion-cancelled'").Scan(&cancelled).Error; err != nil {
+		t.Fatal(err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(cancelled), &payload); err != nil {
+		t.Fatalf("cancelled payload %q: %v", cancelled, err)
+	}
+	wantPayload := map[string]any{
+		"to": "alice@example.com",
+		"template": map[string]any{
+			"id":        "deletion-cancelled",
+			"variables": map[string]any{"DISPLAY_NAME": "Alice"},
+		},
+	}
+	if !reflect.DeepEqual(payload, wantPayload) {
+		t.Fatalf("cancelled payload=%v", payload)
+	}
 	// A second cancel must not write the row, so a later cancellation event fires once.
 	var xminBefore, xminAfter string
 	if err := db.Raw("SELECT xmin::text FROM public.profiles WHERE id = ?", user).Scan(&xminBefore).Error; err != nil {
@@ -80,6 +102,10 @@ func TestCancelDeletionPostgres(t *testing.T) {
 	var activeDeletedAt sql.NullTime
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", user).Scan(&activeDeletedAt).Error; err != nil || activeDeletedAt.Valid {
 		t.Fatalf("active deleted_at=%v err=%v", activeDeletedAt, err)
+	}
+	var outboxRows int64
+	if err := db.Raw("SELECT count(*) FROM public.outbox").Scan(&outboxRows).Error; err != nil || outboxRows != 2 {
+		t.Fatalf("outbox rows=%d err=%v", outboxRows, err)
 	}
 	var otherDeletedAt time.Time
 	if err := db.Raw("SELECT deleted_at FROM public.profiles WHERE id = ?", other).Scan(&otherDeletedAt).Error; err != nil || !otherDeletedAt.Equal(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)) {
