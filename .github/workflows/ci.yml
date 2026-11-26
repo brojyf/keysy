@@ -352,7 +352,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:

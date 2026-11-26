@@ -39,6 +39,10 @@ class DeploymentSchedulingTests(unittest.TestCase):
 
     def test_audit_migrations_are_serial_and_check_the_tip_of_main(self):
         audit = workflow_job("audit-migrations")
+        self.assertIn(
+            "if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'",
+            audit,
+        )
         self.assertIn("group: audit-migrations\n      cancel-in-progress: false", audit)
         self.assertIn("ref: ${{ github.event.workflow_run.head_sha }}", audit)
         self.assertLess(audit.index("- name: Read the tip of main"), audit.index("- name: Apply audit migrations"))
