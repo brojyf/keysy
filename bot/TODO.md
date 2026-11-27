@@ -23,8 +23,8 @@ Order: most useful first.
   - Not Machines API events: they show only machine lifecycle. A process that s6 restarts never creates an event.
 - [ ] **`query_grafana_metrics`**: PromQL against Grafana Cloud Prometheus.
   - Answers: request rate, latency, and 5xx ratio of api and auth.
-  - Source: Prometheus `query`. Credential: access policy token with `metrics:read`.
-  - Open: use one token with both scopes, or one token per tool.
+  - Source: Prometheus `query`. Credential: `GRAFANA_TOKEN`.
+  - Token: one `keysy-bot` access policy token with `logs:read` and `metrics:read`, in `GRAFANA_TOKEN`, shared with `query_grafana_logs`.
 - [ ] **`query_cloudflare_analytics`**: Cloudflare GraphQL Analytics.
   - Answers: requests and 5xx/52x per host. api.keysy.net and auth.keysy.net are proxied, so this shows errors that never reach Fly (machine down or stopped). Also Worker errors of web, wiki, and dashboard.
   - Source: GraphQL API. Credential: API token with zone Analytics Read and account Analytics Read.
