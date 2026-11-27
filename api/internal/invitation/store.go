@@ -13,7 +13,11 @@ type Invitation struct {
 	Status string `json:"status"`
 }
 
-type Store struct{ DB *gorm.DB }
+// WebAppURL is the dashboard origin. Invitation emails link to its /invitations/{id} page.
+type Store struct {
+	DB        *gorm.DB
+	WebAppURL string
+}
 
 // List reports visibility separately so an authorized empty org returns an empty array.
 // The order is not specified; clients sort the list.

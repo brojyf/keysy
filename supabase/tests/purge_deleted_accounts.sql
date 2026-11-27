@@ -62,8 +62,8 @@ insert into auth.sessions (id, user_id) values
   ('63000000-0000-0000-0000-000000000003', '62000000-0000-0000-0000-000000000003'),
   ('63000000-0000-0000-0000-000000000004', '62000000-0000-0000-0000-000000000004');
 
-insert into public.invitations (org_id, email, role, started_at) values
-  ('61000000-0000-0000-0000-000000000001', 'purged@example.com', 'developer', now());
+insert into public.invitations (org_id, email, role, started_at, invited_by_email) values
+  ('61000000-0000-0000-0000-000000000001', 'purged@example.com', 'developer', now(), 'owner@example.com');
 
 select public.purge_deleted_accounts();
 
