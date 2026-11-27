@@ -21,7 +21,7 @@ Order: most useful first.
   - Answers: what happened on the machine that Loki does not show: kernel OOM kills, s6 and init output, nginx and otelcol output, machine start and stop. An OOM-killed process cannot log, and when otelcol stops, Grafana gets nothing. Fly logs still show what happened.
   - Source: `GET https://api.fly.io/api/v1/apps/keysy/logs` (about 7 days of history; flyctl uses it, but it is not officially supported). Credential: the existing `FLY_API_TOKEN` (a read-only token can read it).
   - Not Machines API events: they show only machine lifecycle. A process that s6 restarts never creates an event.
-- [ ] **`query_grafana_metrics`**: PromQL against Grafana Cloud Prometheus.
+- [x] **`query_grafana_metrics`**: PromQL against Grafana Cloud Prometheus.
   - Answers: request rate, latency, and 5xx ratio of api and auth.
   - Source: Prometheus `query`. Credential: `GRAFANA_TOKEN`.
   - Token: one `keysy-bot` access policy token with `logs:read` and `metrics:read`, in `GRAFANA_TOKEN`, shared with `query_grafana_logs`.
