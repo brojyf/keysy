@@ -9,8 +9,8 @@ const execute = queryFlyLogs.execute as (
 const ctx = { abortSignal: new AbortController().signal };
 const originalFetch = globalThis.fetch;
 
-function logLine(timestamp: string, message: string, provider = "app") {
-  return { attributes: { timestamp, message, meta: { event: { provider } } } };
+function logLine(timestamp: string, message: string, provider = "app", instance = "850e47c42353d8") {
+  return { attributes: { timestamp, message, instance, meta: { event: { provider } } } };
 }
 
 afterEach(() => {
@@ -25,7 +25,7 @@ test("pages forward from since and drops HTTP request lines and ANSI codes", asy
   const fullPage = Array.from({ length: 99 }, (_, i) =>
     logLine(`2026-11-27T07:01:${String(i % 60).padStart(2, "0")}Z`, '{"time":"x","level":"INFO","msg":"request","status":200}'),
   );
-  fullPage.push(logLine("2026-11-27T07:30:00Z", "Machine created and started in 3.241s", "runner"));
+  fullPage.push(logLine("2026-11-27T07:30:00Z", "Machine created and started in 3.241s", "runner", "1781951b4d7d89"));
   const lastPage = [logLine("2026-11-27T07:40:00Z", "\x1b[32m INFO\x1b[0m Main child exited normally with code: 0")];
   const fetchMock = mock(async (url: string | URL | Request, _init?: RequestInit) =>
     Response.json(
@@ -48,8 +48,18 @@ test("pages forward from since and drops HTTP request lines and ANSI codes", asy
   expect(output).toEqual({
     complete: true,
     lines: [
-      { time: "2026-11-27T07:30:00Z", provider: "runner", message: "Machine created and started in 3.241s" },
-      { time: "2026-11-27T07:40:00Z", provider: "app", message: " INFO Main child exited normally with code: 0" },
+      {
+        time: "2026-11-27T07:30:00Z",
+        provider: "runner",
+        machine: "1781951b4d7d89",
+        message: "Machine created and started in 3.241s",
+      },
+      {
+        time: "2026-11-27T07:40:00Z",
+        provider: "app",
+        machine: "850e47c42353d8",
+        message: " INFO Main child exited normally with code: 0",
+      },
     ],
   });
 });
@@ -67,7 +77,14 @@ test("keeps only lines that contain the text, ignoring case, and the newest up t
 
   expect(output).toEqual({
     complete: true,
-    lines: [{ time: "2026-11-27T07:20:00Z", provider: "app", message: "Out of memory: Killed process 720 (api)" }],
+    lines: [
+      {
+        time: "2026-11-27T07:20:00Z",
+        provider: "app",
+        machine: "850e47c42353d8",
+        message: "Out of memory: Killed process 720 (api)",
+      },
+    ],
   });
 });
 

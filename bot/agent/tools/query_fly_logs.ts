@@ -14,7 +14,7 @@ function sinceToMs(since: string) {
 }
 
 type FlyLogsResponse = {
-  data: { attributes: { timestamp: string; message: string; meta: { event: { provider: string } } } }[];
+  data: { attributes: { timestamp: string; message: string; instance: string; meta: { event: { provider: string } } } }[];
   meta: { next_token: string };
 };
 
@@ -40,7 +40,8 @@ How to query:
 - HTTP request lines of api and auth are left out. Use query_grafana_logs for requests, errors of a request, and request IDs.
 - since is how far back to look, such as 1h, 24h, or 7d. Fly keeps about 7 days, so 7d is the maximum.
 - contains keeps only lines that include this text, ignoring case. Use it for long periods, such as "out of memory" or "exited".
-- Lines come oldest first. Each line has time (UTC), provider (app or runner), and message.
+- Lines come oldest first. Each line has time (UTC), provider (app or runner), machine (Fly Machine ID), and message.
+- The machine can be replaced. A different machine ID means a different machine.
 - complete is false when the period had too many lines to read, and the newest lines are missing. Then use a shorter since.`,
   inputSchema: z.object({
     since: z
@@ -61,7 +62,7 @@ How to query:
     // The API pages forward from next_token, a start time in nanoseconds.
     let nextToken = String(BigInt(Date.now() - sinceMs) * 1_000_000n);
     const needle = contains?.toLowerCase();
-    const lines: { time: string; provider: string; message: string }[] = [];
+    const lines: { time: string; provider: string; machine: string; message: string }[] = [];
 
     for (let page = 0; page < maxPages; page++) {
       const url = new URL(flyLogsUrl);
@@ -75,7 +76,12 @@ How to query:
         const message = attributes.message.replace(/\x1b\[[0-9;]*m/g, "");
         if (isRequestLine(message)) continue;
         if (needle && !message.toLowerCase().includes(needle)) continue;
-        lines.push({ time: attributes.timestamp, provider: attributes.meta.event.provider, message });
+        lines.push({
+          time: attributes.timestamp,
+          provider: attributes.meta.event.provider,
+          machine: attributes.instance,
+          message,
+        });
       }
       if (body.data.length < pageSize) return { complete: true, lines: lines.slice(-limit) };
       nextToken = body.meta.next_token;
