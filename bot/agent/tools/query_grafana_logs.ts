@@ -49,8 +49,8 @@ On a query error, read the message, fix the LogQL, and call the tool again.`,
   }),
   label: { start: () => "Query Grafana logs" },
   async execute({ query, since, limit, instant }, ctx) {
-    const token = process.env.GRAFANA_LOGS_TOKEN;
-    if (!token) throw new Error("GRAFANA_LOGS_TOKEN is not set");
+    const token = process.env.GRAFANA_TOKEN;
+    if (!token) throw new Error("GRAFANA_TOKEN is not set");
 
     const url = new URL(instant ? lokiInstantQueryUrl : lokiQueryRangeUrl);
     url.searchParams.set("query", query);

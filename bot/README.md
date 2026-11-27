@@ -31,7 +31,7 @@ Set `DISCORD_GUILD_ID` to the Discord server ID in the same environment. The bot
 
 Set `FLY_API_TOKEN` to the full output of `fly tokens create readonly -o personal`, including the `FlyV1 ` prefix. The `query_fly_metrics` and `query_fly_logs` tools use it to read Fly.io metrics and logs.
 
-Set `GRAFANA_LOGS_TOKEN` to a Grafana Cloud access policy token with only the `logs:read` scope on the `earnestsalad2096` stack. The `query_grafana_logs` tool uses it to read Loki logs.
+Set `GRAFANA_TOKEN` to a token of the `keysy-bot` Grafana Cloud access policy, which has only the `logs:read` and `metrics:read` scopes on the `earnestsalad2096` stack. The `query_grafana_logs` and `query_grafana_metrics` tools use it to read Loki logs and Prometheus metrics.
 
 Deploy your agent to [Vercel](https://vercel.com) from the project root:
 
