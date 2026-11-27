@@ -18,6 +18,7 @@ Metrics:
 - http_server_request_duration_seconds: histogram of HTTP request durations, in seconds. Use its _count, _sum, and _bucket series.
 - Labels: job (keysy-api or keysy-auth), http_route, http_request_method, http_response_status_code.
 - Always filter with job, such as {job="keysy-api"} or {job=~"keysy-api|keysy-auth"}.
+- Always aggregate with sum by (...). Never return raw series: one raw _bucket query returns hundreds of series.
 - Requests that match no route, such as 404s for unknown paths, have no http_route.
 
 How to query:
