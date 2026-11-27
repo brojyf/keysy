@@ -13,7 +13,7 @@ The bot has one tool: `query_fly_metrics`. Fly metrics show how busy the machine
 
 Order: most useful first.
 
-- [ ] **`query_grafana_logs`**: LogQL against Grafana Cloud Loki.
+- [x] **`query_grafana_logs`**: LogQL against Grafana Cloud Loki.
   - Answers: errors in the last hour, and the logs of one request ID (the save failure dialog shows it).
   - Source: Loki `query_range`. Credential: Grafana Cloud access policy token with `logs:read`.
   - Open: confirm that production api and auth logs reach Loki through the collector on Fly.
