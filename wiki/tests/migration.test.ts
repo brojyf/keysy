@@ -264,8 +264,8 @@ test('PRD requirements and endpoint callout content are published', async () => 
   expect(prd).toContain('Each org has exactly one Owner and any number of Admins and Developers.');
   expect(prd).toContain('Only the Owner can rename or delete the org or transfer the Owner role.');
   expect(prd).toContain('The Owner can change members between Admin and Developer and remove either role.');
-  expect(prd).toContain('Admins can promote Developers to Admin, remove Developers, and change their scopes.');
-  expect(prd).toContain('Admins cannot change or remove Admins or the Owner.');
+  expect(prd).toContain('Admins can remove Developers and change their scopes.');
+  expect(prd).toContain('Admins cannot make anyone an Admin, or change or remove Admins or the Owner.');
   expect(prd).not.toContain('The Owner and Admins can add or remove Admins and Developers');
   expect(prd).toContain('Every member can view the member list, which shows each member’s name, email, and role');
   expect(prd).toContain('Developers cannot see other members’ scopes and cannot change members.');
