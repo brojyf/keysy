@@ -3,54 +3,69 @@ import { z } from "zod";
 
 const graphqlUrl = "https://api.cloudflare.com/client/v4/graphql";
 
+const unitMs: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 };
+// RFC3339 UTC without milliseconds, such as 2026-11-27T10:00:00Z.
+const toRfc3339 = (time: Date) => time.toISOString().replace(/\.\d{3}Z$/, "Z");
+
 type GraphqlResponse = { data?: unknown; errors?: { message: string }[] | null };
 
 export default defineTool({
   description: `Run one GraphQL query against the Cloudflare GraphQL Analytics API and return its data.
 Use it to see what users see at the Cloudflare edge, which the Fly tools and Grafana cannot see:
-- HTTP requests per host for the proxied hosts api.keysy.net and auth.keysy.net: request counts and status codes. A 521, 522, or 524 means the origin was down or too slow, and the request never reached Fly.
-- Worker invocations, errors, and CPU time of the Worker scripts web, wiki, and dashboard.
+- Status codes and errors of HTTP requests, per host. A 521, 522, or 524 means the origin was down or too slow, and the request never reached Fly.
+- Page views per host and per path, from Cloudflare Web Analytics.
+
+Hosts of keysy.net: keysy.net (the web site), dashboard.keysy.net, wiki.keysy.net, api.keysy.net, auth.keysy.net.
 
 Scopes (fixed values, not secrets):
 - Zone keysy.net: zoneTag "f293f4e988347da58cfaa9fd3a782280", Free plan. Query it as viewer { zones(filter: {zoneTag: "..."}) { ... } }.
 - Account: accountTag "0f6bb93052fe9383f322cdb99ca0421f". Query it as viewer { accounts(filter: {accountTag: "..."}) { ... } }.
 
 Datasets:
-- httpRequestsAdaptiveGroups (zone): HTTP requests, grouped.
-  - Fields: count (estimated requests, adjusted for sampling), dimensions { datetimeHour datetimeMinute clientRequestHTTPHost edgeResponseStatus }.
+- httpRequestsAdaptiveGroups (zone): every HTTP request to the zone, including assets and bots. Use it for status codes and errors of all hosts: 5xx, 52x, 404 spikes, and requests that drop to 0.
+  - Fields: count (estimated requests, adjusted for sampling), sum { visits }, dimensions { date datetimeHour clientRequestHTTPHost edgeResponseStatus }.
   - Filter fields: datetime_geq, datetime_lt, requestSource: "eyeball" (real client requests), clientRequestHTTPHost (or clientRequestHTTPHost_in: [...]), edgeResponseStatus (or edgeResponseStatus_geq and edgeResponseStatus_lt).
-  - Always set limit and orderBy: [count_DESC].
-  - Requests are sampled, so counts are estimates.
-- workersInvocationsAdaptive (account): Worker invocations.
-  - Fields: sum { requests errors subrequests }, quantiles { cpuTimeP50 cpuTimeP99 }, dimensions { datetime scriptName status }.
-  - Filter fields: datetime_geq, datetime_leq, scriptName.
-  - Always set limit. Rows are grouped by second, so keep windows short or sum the rows yourself.
+  - One query covers up to 30 days, and data goes back 31 days.
+- rumPageloadEventsAdaptiveGroups (account): page loads measured in the browser by Web Analytics. Use it for "how much traffic does a site get". It has no JS or CSS assets and few bots.
+  - Fields: count (page loads), sum { visits }, dimensions { date requestHost requestPath }.
+  - Filter fields: datetime_geq, datetime_lt, requestHost.
+  - One query covers up to 93 days, and data goes back 184 days.
+- Always set limit and orderBy: [count_DESC] or [date_ASC].
+- count vs visits: count is page loads or requests. visits counts only those whose referer is another host, so it is the entries from outside. Neither is a unique visitor count. Unique visitors are not available.
 
 How to query:
-- Every query needs an absolute UTC datetime range, such as "2026-11-27T00:00:00Z". GraphQL has no relative times. If you do not know the current UTC time, take it from another tool: query_grafana_metrics with the query time() returns it as UTC.
-- Pass times as variables ($start: Time, $end: Time) in variables, or write them in the query.
-- Start with a window of 1 day or less. Free-plan limits are not documented for these datasets. On a limit error, narrow the window. To read the limits, query zones(filter: {zoneTag: "..."}) { settings { httpRequestsAdaptiveGroups { enabled availableFields maxDuration maxPageSize notOlderThan } } }.
+- The tool sets $start and $end for you from since (UTC, end = now). Declare them as ($start: Time, $end: Time) and use them in datetime_geq and datetime_lt. Do not write datetimes yourself.
+- since is how far back to look, such as 1h, 24h, or 7d. Start with the shortest window that answers the question.
 - Traffic is low. An empty list means no matching requests in the window, such as no 52x responses. It is not an error.
-- Convert nothing: datetimes in the result are already ISO UTC strings.
+- Datetimes in the result are already ISO UTC strings.
 
-Examples (send the query string, and the variables object when the query uses variables):
-- Requests per host and status code in a window, variables {"start": "2026-11-27T00:00:00Z", "end": "2026-11-28T00:00:00Z"}:
-  query($start: Time, $end: Time) { viewer { zones(filter: {zoneTag: "f293f4e988347da58cfaa9fd3a782280"}) { httpRequestsAdaptiveGroups(limit: 100, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestSource: "eyeball", clientRequestHTTPHost_in: ["api.keysy.net", "auth.keysy.net"]}) { count dimensions { clientRequestHTTPHost edgeResponseStatus } } } } }
-- 52x responses per hour and host (origin down or timeout), same variables:
+Examples:
+- Requests per host and status code:
+  query($start: Time, $end: Time) { viewer { zones(filter: {zoneTag: "f293f4e988347da58cfaa9fd3a782280"}) { httpRequestsAdaptiveGroups(limit: 100, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestSource: "eyeball"}) { count dimensions { clientRequestHTTPHost edgeResponseStatus } } } } }
+- 52x responses per hour and host (origin down or timeout):
   query($start: Time, $end: Time) { viewer { zones(filter: {zoneTag: "f293f4e988347da58cfaa9fd3a782280"}) { httpRequestsAdaptiveGroups(limit: 100, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestSource: "eyeball", edgeResponseStatus_geq: 520, edgeResponseStatus_lt: 530}) { count dimensions { datetimeHour clientRequestHTTPHost edgeResponseStatus } } } } }
-- Worker requests, errors, and CPU time of one script, variables {"start": "2026-11-27T00:00:00Z", "end": "2026-11-27T06:00:00Z"}:
-  query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { workersInvocationsAdaptive(limit: 1000, filter: {scriptName: "dashboard", datetime_geq: $start, datetime_leq: $end}) { sum { requests errors } quantiles { cpuTimeP50 cpuTimeP99 } dimensions { datetime scriptName status } } } } }
+- Page loads and visits per day and host:
+  query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { rumPageloadEventsAdaptiveGroups(limit: 100, orderBy: [date_ASC], filter: {datetime_geq: $start, datetime_lt: $end}) { count sum { visits } dimensions { date requestHost } } } } }
+- Top paths by page loads for one host:
+  query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { rumPageloadEventsAdaptiveGroups(limit: 20, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestHost: "dashboard.keysy.net"}) { count sum { visits } dimensions { requestPath } } } } }
 
-On an error, read the message, fix the GraphQL, and call the tool again.`,
+On an error, read the message, fix the GraphQL, and call the tool again. A time range error means since is too long: use a shorter one.`,
   inputSchema: z.object({
-    query: z.string().min(1).describe("A GraphQL query."),
-    variables: z.record(z.string(), z.unknown()).optional().describe("Variables of the query, such as the datetime range."),
+    query: z.string().min(1).describe("A GraphQL query that declares ($start: Time, $end: Time)."),
+    since: z
+      .string()
+      .regex(/^\d+[mhd]$/)
+      .default("24h")
+      .describe("How far back to look, such as 1h, 24h, or 7d."),
   }),
   label: { start: () => "Query Cloudflare analytics" },
-  async execute({ query, variables }, ctx) {
+  async execute({ query, since }, ctx) {
     const token = process.env.CLOUDFLARE_TOKEN;
     if (!token) throw new Error("CLOUDFLARE_TOKEN is not set");
 
+    const end = new Date();
+    const start = new Date(end.getTime() - Number(since.slice(0, -1)) * unitMs[since.slice(-1)]!);
+    const variables = { start: toRfc3339(start), end: toRfc3339(end) };
     const response = await fetch(graphqlUrl, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
