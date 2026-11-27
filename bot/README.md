@@ -29,7 +29,7 @@ Set `DEEPSEEK_API_KEY` in the Vercel Production environment. The agent uses this
 
 Set `DISCORD_GUILD_ID` to the Discord server ID in the same environment. The bot accepts slash commands and interactive responses only from that server.
 
-Set `FLY_API_TOKEN` to the full output of `fly tokens create readonly -o personal`, including the `FlyV1 ` prefix. The `query_fly_metrics` tool uses it to read Fly.io metrics.
+Set `FLY_API_TOKEN` to the full output of `fly tokens create readonly -o personal`, including the `FlyV1 ` prefix. The `query_fly_metrics` and `query_fly_logs` tools use it to read Fly.io metrics and logs.
 
 Set `GRAFANA_LOGS_TOKEN` to a Grafana Cloud access policy token with only the `logs:read` scope on the `earnestsalad2096` stack. The `query_grafana_logs` tool uses it to read Loki logs.
 
