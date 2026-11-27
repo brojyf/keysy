@@ -11,11 +11,11 @@ const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  delete process.env.GRAFANA_LOGS_TOKEN;
+  delete process.env.GRAFANA_TOKEN;
 });
 
 test("sends the LogQL query to Loki query_range, newest first, with basic auth", async () => {
-  process.env.GRAFANA_LOGS_TOKEN = "glc_token";
+  process.env.GRAFANA_TOKEN = "glc_token";
   const result = [{ stream: { service_name: "keysy-api" }, values: [["1795731668043607349", "request"]] }];
   const stats = { summary: { totalBytesProcessed: 1024 }, querier: {}, ingester: {}, cache: {} };
   const fetchMock = mock(async (_url: string | URL | Request, _init?: RequestInit) =>
@@ -42,7 +42,7 @@ test("sends the LogQL query to Loki query_range, newest first, with basic auth",
 });
 
 test("sends an instant query to Loki query, without since", async () => {
-  process.env.GRAFANA_LOGS_TOKEN = "glc_token";
+  process.env.GRAFANA_TOKEN = "glc_token";
   const result = [{ metric: { route: "/v0/me" }, value: [1795731668.043, "3"] }];
   const fetchMock = mock(async (_url: string | URL | Request, _init?: RequestInit) =>
     Response.json({ status: "success", data: { resultType: "vector", result } }),
@@ -62,7 +62,7 @@ test("sends an instant query to Loki query, without since", async () => {
 });
 
 test("returns matrix timestamps as UTC times", async () => {
-  process.env.GRAFANA_LOGS_TOKEN = "glc_token";
+  process.env.GRAFANA_TOKEN = "glc_token";
   const result = [{ metric: {}, values: [[1795731668, "1"]] }];
   globalThis.fetch = (async () =>
     Response.json({ status: "success", data: { resultType: "matrix", result } })) as unknown as typeof fetch;
@@ -73,7 +73,7 @@ test("returns matrix timestamps as UTC times", async () => {
 });
 
 test("passes Loki query errors to the model so it can fix the query", async () => {
-  process.env.GRAFANA_LOGS_TOKEN = "glc_token";
+  process.env.GRAFANA_TOKEN = "glc_token";
   globalThis.fetch = (async () =>
     new Response("parse error at line 1, col 2: syntax error: unexpected IDENTIFIER\n", {
       status: 400,
@@ -85,7 +85,7 @@ test("passes Loki query errors to the model so it can fix the query", async () =
 });
 
 test("reports the HTTP status when the token is rejected", async () => {
-  process.env.GRAFANA_LOGS_TOKEN = "glc_wrong";
+  process.env.GRAFANA_TOKEN = "glc_wrong";
   globalThis.fetch = (async () =>
     new Response("authentication error: invalid token", { status: 401 })) as unknown as typeof fetch;
 
@@ -94,8 +94,8 @@ test("reports the HTTP status when the token is rejected", async () => {
   ).rejects.toThrow("Loki returned HTTP 401: authentication error: invalid token");
 });
 
-test("fails without GRAFANA_LOGS_TOKEN", async () => {
+test("fails without GRAFANA_TOKEN", async () => {
   await expect(
     execute({ query: '{service_name="keysy-api"}', since: "1h", limit: 20, instant: false }, ctx),
-  ).rejects.toThrow("GRAFANA_LOGS_TOKEN is not set");
+  ).rejects.toThrow("GRAFANA_TOKEN is not set");
 });
