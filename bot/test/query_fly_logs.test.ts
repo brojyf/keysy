@@ -83,6 +83,19 @@ test("stops after 100 pages and reports the result as incomplete", async () => {
   expect(output.complete).toBe(false);
 });
 
+test("accepts since only within the 7 days Fly keeps", () => {
+  const inputSchema = queryFlyLogs.inputSchema as unknown as { safeParse(input: unknown): { success: boolean } };
+  const accepts = (since: string) => inputSchema.safeParse({ since }).success;
+
+  expect(accepts("1m")).toBe(true);
+  expect(accepts("7d")).toBe(true);
+  expect(accepts("168h")).toBe(true);
+  expect(accepts("0m")).toBe(false);
+  expect(accepts("169h")).toBe(false);
+  expect(accepts("30d")).toBe(false);
+  expect(accepts(`${"9".repeat(400)}d`)).toBe(false);
+});
+
 test("reports the HTTP status when the token is rejected", async () => {
   process.env.FLY_API_TOKEN = "FlyV1 fm2_wrong";
   globalThis.fetch = (async () => new Response("unauthorized", { status: 401 })) as unknown as typeof fetch;
