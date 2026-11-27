@@ -4,6 +4,9 @@ import { z } from "zod";
 const graphqlUrl = "https://api.cloudflare.com/client/v4/graphql";
 
 const unitMs: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 };
+// No dataset accepts a longer query window, so a longer since can only fail.
+const maxSinceMs = 93 * unitMs.d!;
+const sinceToMs = (since: string) => Number(since.slice(0, -1)) * unitMs[since.slice(-1)]!;
 // RFC3339 UTC without milliseconds, such as 2026-11-27T10:00:00Z.
 const toRfc3339 = (time: Date) => time.toISOString().replace(/\.\d{3}Z$/, "Z");
 
@@ -12,7 +15,7 @@ type GraphqlResponse = { data?: unknown; errors?: { message: string }[] | null }
 export default defineTool({
   description: `Run one GraphQL query against the Cloudflare GraphQL Analytics API and return its data.
 Use it to see what users see at the Cloudflare edge, which the Fly tools and Grafana cannot see:
-- Status codes and errors of HTTP requests, per host. A 521, 522, or 524 means the origin was down or too slow, and the request never reached Fly.
+- Status codes and errors of HTTP requests, per host. A 521 or 522 means Cloudflare could not connect to the origin, so the request never reached Fly. A 524 means Cloudflare connected, but the origin did not respond in time, so the request reached Fly: check the Fly and app logs.
 - Page views per host and per path, from Cloudflare Web Analytics.
 
 Hosts of keysy.net: keysy.net (the web site), dashboard.keysy.net, wiki.keysy.net, api.keysy.net, auth.keysy.net.
@@ -55,6 +58,7 @@ On an error, read the message, fix the GraphQL, and call the tool again. A time 
     since: z
       .string()
       .regex(/^\d+[mhd]$/)
+      .refine((since) => sinceToMs(since) > 0 && sinceToMs(since) <= maxSinceMs, "since must be between 1m and 93d")
       .default("24h")
       .describe("How far back to look, such as 1h, 24h, or 7d."),
   }),
@@ -64,7 +68,7 @@ On an error, read the message, fix the GraphQL, and call the tool again. A time 
     if (!token) throw new Error("CLOUDFLARE_TOKEN is not set");
 
     const end = new Date();
-    const start = new Date(end.getTime() - Number(since.slice(0, -1)) * unitMs[since.slice(-1)]!);
+    const start = new Date(end.getTime() - sinceToMs(since));
     const variables = { start: toRfc3339(start), end: toRfc3339(end) };
     const response = await fetch(graphqlUrl, {
       method: "POST",

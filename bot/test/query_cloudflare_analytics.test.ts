@@ -86,7 +86,8 @@ test("accepts only a count and a unit m, h, or d for since", () => {
   };
   expect(schema.safeParse({ query: "q", since: "90m" }).data).toEqual({ query: "q", since: "90m" });
   expect(schema.safeParse({ query: "q" }).data).toEqual({ query: "q", since: "24h" });
-  for (const since of ["", "24", "1w", "-1h", "1h30m"]) {
+  expect(schema.safeParse({ query: "q", since: "93d" }).success).toBe(true);
+  for (const since of ["", "24", "1w", "-1h", "1h30m", "0h", "94d", "999999999999d"]) {
     expect(schema.safeParse({ query: "q", since }).success).toBe(false);
   }
 });
