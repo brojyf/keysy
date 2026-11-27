@@ -41,6 +41,7 @@ How to query:
 - since is how far back to look, such as 1h, 24h, or 7d. Start with the shortest window that answers the question.
 - Traffic is low. An empty list means no matching requests in the window, such as no 52x responses. It is not an error.
 - Datetimes in the result are already ISO UTC strings.
+- A list with as many items as limit may be cut, and the rest is missing. Then raise limit or use a shorter since, or say in the answer that the result is incomplete.
 
 Examples:
 - Requests per host and status code:
@@ -48,7 +49,7 @@ Examples:
 - 52x responses per hour and host (origin down or timeout):
   query($start: Time, $end: Time) { viewer { zones(filter: {zoneTag: "f293f4e988347da58cfaa9fd3a782280"}) { httpRequestsAdaptiveGroups(limit: 100, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestSource: "eyeball", edgeResponseStatus_geq: 520, edgeResponseStatus_lt: 530}) { count dimensions { datetimeHour clientRequestHTTPHost edgeResponseStatus } } } } }
 - Page loads and visits per day and host:
-  query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { rumPageloadEventsAdaptiveGroups(limit: 100, orderBy: [date_ASC], filter: {datetime_geq: $start, datetime_lt: $end}) { count sum { visits } dimensions { date requestHost } } } } }
+  query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { rumPageloadEventsAdaptiveGroups(limit: 1000, orderBy: [date_ASC], filter: {datetime_geq: $start, datetime_lt: $end}) { count sum { visits } dimensions { date requestHost } } } } }
 - Top paths by page loads for one host:
   query($start: Time, $end: Time) { viewer { accounts(filter: {accountTag: "0f6bb93052fe9383f322cdb99ca0421f"}) { rumPageloadEventsAdaptiveGroups(limit: 20, orderBy: [count_DESC], filter: {datetime_geq: $start, datetime_lt: $end, requestHost: "dashboard.keysy.net"}) { count sum { visits } dimensions { requestPath } } } } }
 
