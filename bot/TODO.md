@@ -17,7 +17,7 @@ Order: most useful first.
   - Answers: errors in the last hour, and the logs of one request ID (the save failure dialog shows it).
   - Source: Loki `query_range`. Credential: Grafana Cloud access policy token with `logs:read`.
   - Open: confirm that production api and auth logs reach Loki through the collector on Fly.
-- [ ] **`query_fly_logs`**: Fly.io app logs.
+- [x] **`query_fly_logs`**: Fly.io app logs.
   - Answers: what happened on the machine that Loki does not show: kernel OOM kills, s6 and init output, nginx and otelcol output, machine start and stop. An OOM-killed process cannot log, and when otelcol stops, Grafana gets nothing. Fly logs still show what happened.
   - Source: `GET https://api.fly.io/api/v1/apps/keysy/logs` (about 7 days of history; flyctl uses it, but it is not officially supported). Credential: the existing `FLY_API_TOKEN` (a read-only token can read it).
   - Not Machines API events: they show only machine lifecycle. A process that s6 restarts never creates an event.
