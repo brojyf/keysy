@@ -6,7 +6,7 @@ This design replaces the current model, in which an added member is active immed
 
 ### Rules
 
-- The Owner and Admins invite by email and role. Admins can invite Admins.
+- The Owner invites Admins and Developers by email and role. Admins invite only Developers and cannot change an invitation's role to Admin.
 - Every invitee accepts, with or without an account: email link, Google sign-in, **Join {org}**, then **Join**. A new user creates an account inside this flow.
 - The email link is the only entry for now. An in-app notification entry is tracked in #189.
 - The invitee must sign in with a Google account whose email matches the invitation, ignoring case. Emails are stored in lowercase.
@@ -38,7 +38,6 @@ This design replaces the current model, in which an added member is active immed
 
 ### Tasks
 
-- [ ] PRD: change "add Developers" to "invite Admins and Developers" in `wiki/prd.mdx`, and state that invitees join only after they accept an invitation that expires after 7 days.
 - [ ] API: draft the invitation endpoints, then add them to `openapi/api.yaml`. Keep `GET /v0/orgs/{orgId}/members` unchanged and list pending and expired invitations with a separate `GET /v0/orgs/{orgId}/invitations`, as GitHub, GitLab, Auth0, and Clerk do. The list endpoint is done (#199); invite, resend, cancel, change role, the invitee's view, and accept remain.
 - [x] Database: in a migration, add the invitations table with one invitation per email per org, the two invitation-window columns on `orgs`, and a `pg_cron` job that deletes invitations 37 days after their current 7-day period starts (#196).
 - [ ] Database: add `invited_by_email` to `invitations` in a migration and update the implemented schema diagram.
