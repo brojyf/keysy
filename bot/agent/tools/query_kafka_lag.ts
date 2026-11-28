@@ -41,20 +41,19 @@ How to read it:
       const partitionCount = metadata.topics.get(topic)?.partitionsCount ?? 0;
       const partitionIndexes = Array.from({ length: partitionCount }, (_, i) => i);
 
-      const [ends, commits] = await Promise.all([
-        admin.listOffsets({
-          topics: [
-            {
-              name: topic,
-              partitions: partitionIndexes.map((partitionIndex) => ({
-                partitionIndex,
-                timestamp: ListOffsetTimestamps.LATEST,
-              })),
-            },
-          ],
-        }),
-        admin.listConsumerGroupOffsets({ groups: [group] }),
-      ]);
+      // Commits first, then end offsets: the end offset only grows, so it is never below a commit read before it.
+      const commits = await admin.listConsumerGroupOffsets({ groups: [group] });
+      const ends = await admin.listOffsets({
+        topics: [
+          {
+            name: topic,
+            partitions: partitionIndexes.map((partitionIndex) => ({
+              partitionIndex,
+              timestamp: ListOffsetTimestamps.LATEST,
+            })),
+          },
+        ],
+      });
 
       const endOffsets = new Map(
         ends.find((t) => t.name === topic)?.partitions.map((p) => [p.partitionIndex, p.offset]) ?? [],

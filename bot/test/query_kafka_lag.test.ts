@@ -6,6 +6,8 @@ type Committed = { partitionIndex: number; committedOffset: bigint }[];
 const adminOptions: unknown[] = [];
 const closed: boolean[] = [];
 let committed: Committed = [];
+// Simulates notify committing between two Kafka reads.
+let afterEndOffsetsRead: (() => void) | undefined;
 
 mock.module("@platformatic/kafka", () => ({
   ListOffsetTimestamps: { LATEST: -1n },
@@ -17,6 +19,7 @@ mock.module("@platformatic/kafka", () => ({
       return { topics: new Map([["keysy.email", { partitionsCount: 2 }]]) };
     }
     async listOffsets() {
+      afterEndOffsetsRead?.();
       return [
         {
           name: "keysy.email",
@@ -28,6 +31,7 @@ mock.module("@platformatic/kafka", () => ({
       ];
     }
     async listConsumerGroupOffsets() {
+      await Promise.resolve();
       return [{ groupId: "notify", topics: [{ name: "keysy.email", partitions: committed }] }];
     }
     async close() {
@@ -42,6 +46,7 @@ const execute = queryKafkaLag.execute as (input: object) => Promise<unknown>;
 afterEach(() => {
   adminOptions.length = 0;
   closed.length = 0;
+  afterEndOffsetsRead = undefined;
   delete process.env.KAFKA_PASSWORD;
 });
 
@@ -88,6 +93,30 @@ test("reports a null committed offset when notify never committed on a partition
       { partition: 1, committedOffset: null, endOffset: 5, lag: 5 },
     ],
     totalLag: 13,
+  });
+});
+
+test("reads the committed offsets before the end offsets so a commit between reads cannot give a negative lag", async () => {
+  process.env.KAFKA_PASSWORD = "kafka_password";
+  committed = [
+    { partitionIndex: 0, committedOffset: 8n },
+    { partitionIndex: 1, committedOffset: 2n },
+  ];
+  afterEndOffsetsRead = () => {
+    committed = [
+      { partitionIndex: 0, committedOffset: 10n },
+      { partitionIndex: 1, committedOffset: 2n },
+    ];
+  };
+
+  const output = await execute({});
+
+  expect(output).toMatchObject({
+    partitions: [
+      { partition: 0, committedOffset: 8, endOffset: 8, lag: 0 },
+      { partition: 1, committedOffset: 2, endOffset: 5, lag: 3 },
+    ],
+    totalLag: 3,
   });
 });
 
