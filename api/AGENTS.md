@@ -50,11 +50,13 @@ acknowledgment, and deletes the acknowledged ones. Each record goes to topic `ke
 
 Register every route in `internal/router/router.go`; `main.go` only starts the service.
 
-Run `gofmt -l .`, `go vet ./...`, `go test -race -cover -p 1 ./...`, and
+Run `gofmt -l .`, `go vet ./...`, `bash ../.github/scripts/test-api-postgres.sh`, and
 `go build ./...`. Air loads ignored `.env.local` and serves on port 8081.
-CI's API job runs race tests, vet, and build. Tests must not call live services.
-Set `KEYSY_TEST_DATABASE_URL` to an empty, isolated PostgreSQL database to run the
-store integration tests. They share that database, so use `-p 1`. CI supplies this database through its PostgreSQL service.
+CI's API job runs the same script, vet, and build. Tests must not call live services.
+The script applies the Supabase migrations to a Docker container and runs
+`go test -race -cover -p 1 ./...` against it. Store integration tests use the real
+schema through `internal/pgtest`; never create tables in a test. They share one
+database, so packages run one at a time.
 
 Keep telemetry → recovery → requestid → log → timeout → CORS → session → handler order.
 Telemetry spans and metrics follow the same rule as logs: method, route template,

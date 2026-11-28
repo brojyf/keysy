@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"maps"
-	"os"
 	"sync"
 	"testing"
 	"time"
 
-	"gorm.io/driver/postgres"
+	"github.com/brojyf/keysy/api/internal/pgtest"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 const (
@@ -21,50 +19,34 @@ const (
 	doomedID = "20000000-0000-0000-0000-000000000003"
 	renewID  = "30000000-0000-0000-0000-000000000001"
 	webApp   = "https://app.keysy.test/"
+
+	ownerID    = "10000000-0000-0000-0000-000000000001"
+	adminID    = "10000000-0000-0000-0000-000000000002"
+	devID      = "10000000-0000-0000-0000-000000000003"
+	goneID     = "10000000-0000-0000-0000-000000000004"
+	mixedID    = "10000000-0000-0000-0000-000000000005"
+	leavingID  = "10000000-0000-0000-0000-000000000006"
+	newbieID   = "10000000-0000-0000-0000-000000000007"
+	outsiderID = "10000000-0000-0000-0000-000000000008"
 )
 
 func TestStoreCreatePostgres(t *testing.T) {
-	databaseURL := os.Getenv("KEYSY_TEST_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
+	db := pgtest.Open(t)
+	if err := db.Exec(`INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
+			(?, 'alex@example.com', '{"full_name": "Alex Chen"}'),
+			(?, 'jordan@example.com', '{"full_name": "Jordan Lee"}'),
+			(?, 'riley@example.com', '{"full_name": "Riley Park"}'),
+			(?, 'gone@example.com', NULL),
+			(?, 'Mixed.Case@Example.com', NULL),
+			(?, 'leaving@example.com', NULL),
+			(?, 'newbie@example.com', NULL),
+			(?, 'outsider@example.com', NULL)`,
+		ownerID, adminID, devID, goneID, mixedID, leavingID, newbieID, outsiderID).Error; err != nil {
 		t.Fatal(err)
 	}
-	connection, err := db.DB()
-	if err != nil {
+	if err := db.Exec(`UPDATE public.profiles SET deleted_at = now() WHERE id IN (?, ?)`, goneID, leavingID).Error; err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = connection.Close() })
-	// The same columns and constraints as the migrations, without RLS and pg_cron.
-	if err := db.Exec(`CREATE TABLE public.orgs (id uuid PRIMARY KEY, name text NOT NULL,
-			invitation_window_started_at timestamptz, invitation_window_sends integer NOT NULL DEFAULT 0);
-		CREATE TABLE public.profiles (id text PRIMARY KEY, display_name text NOT NULL, email text NOT NULL, deleted_at timestamptz);
-		CREATE TABLE public.members (org_id uuid REFERENCES public.orgs(id) ON DELETE CASCADE, user_id text REFERENCES public.profiles(id),
-			role text NOT NULL, PRIMARY KEY (org_id, user_id));
-		CREATE TABLE public.invitations (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-			org_id uuid NOT NULL REFERENCES public.orgs(id) ON DELETE CASCADE, email text NOT NULL, role text NOT NULL,
-			started_at timestamptz NOT NULL DEFAULT now(), last_sent_at timestamptz NOT NULL DEFAULT now(), invited_by_email text NOT NULL,
-			UNIQUE (org_id, email), CHECK (email = lower(email)), CHECK (role IN ('admin', 'developer')));
-		CREATE TABLE public.outbox (event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), type text NOT NULL, payload jsonb NOT NULL,
-			created_at timestamptz NOT NULL DEFAULT now());
-		INSERT INTO public.profiles VALUES
-			('owner', 'Alex Chen', 'alex@example.com', NULL),
-			('admin', 'Jordan Lee', 'jordan@example.com', NULL),
-			('dev', 'Riley Park', 'riley@example.com', NULL),
-			('gone', 'Gone', 'gone@example.com', now()),
-			('mixed', 'Mixed', 'Mixed.Case@Example.com', NULL),
-			('leaving', 'Leaving', 'leaving@example.com', now()),
-			('newbie', 'Newbie', 'newbie@example.com', NULL),
-			('outsider', 'Outsider', 'outsider@example.com', NULL)`).Error; err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := db.Exec(`DROP TABLE public.outbox, public.invitations, public.members, public.profiles, public.orgs`).Error; err != nil {
-			t.Error(err)
-		}
-	})
 	reset := func(t *testing.T, setup string) {
 		t.Helper()
 		// Statements with parameters cannot share one Exec.
@@ -74,9 +56,9 @@ func TestStoreCreatePostgres(t *testing.T) {
 		}{
 			{`DELETE FROM public.outbox; DELETE FROM public.invitations; DELETE FROM public.members; DELETE FROM public.orgs`, nil},
 			{`INSERT INTO public.orgs (id, name) VALUES (?, 'Acme'), (?, 'Other'), (?, 'Doomed')`, []any{acmeID, otherID, doomedID}},
-			{`INSERT INTO public.members VALUES (?, 'owner', 'owner'), (?, 'admin', 'admin'), (?, 'dev', 'developer'), (?, 'gone', 'admin'),
-				(?, 'mixed', 'developer'), (?, 'leaving', 'developer'), (?, 'outsider', 'owner'), (?, 'owner', 'owner')`,
-				[]any{acmeID, acmeID, acmeID, acmeID, acmeID, acmeID, otherID, doomedID}},
+			{`INSERT INTO public.members (org_id, user_id, role) VALUES (?, ?, 'owner'), (?, ?, 'admin'), (?, ?, 'developer'), (?, ?, 'admin'),
+				(?, ?, 'developer'), (?, ?, 'developer'), (?, ?, 'owner'), (?, ?, 'owner')`,
+				[]any{acmeID, ownerID, acmeID, adminID, acmeID, devID, acmeID, goneID, acmeID, mixedID, acmeID, leavingID, otherID, outsiderID, doomedID, ownerID}},
 		} {
 			if err := db.Exec(statement.sql, statement.args...).Error; err != nil {
 				t.Fatal(err)
@@ -135,7 +117,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 
 	t.Run("owner invites an admin", func(t *testing.T) {
 		reset(t, "")
-		got, err := store.Create(ctx, "owner", acmeID, "sam@example.com", "admin")
+		got, err := store.Create(ctx, ownerID, acmeID, "sam@example.com", "admin")
 		if err != nil || got.ID == "" || got.Email != "sam@example.com" || got.Role != "admin" || got.Status != "pending" {
 			t.Fatalf("got=%+v err=%v", got, err)
 		}
@@ -169,24 +151,24 @@ func TestStoreCreatePostgres(t *testing.T) {
 		name, setup, caller, org, email, role string
 		want                                  error
 	}{
-		{name: "admin invites a developer", caller: "admin", org: acmeID, email: "sam@example.com", role: "developer"},
-		{name: "admin cannot invite an admin", caller: "admin", org: acmeID, email: "sam@example.com", role: "admin", want: ErrForbidden},
-		{name: "developer cannot invite", caller: "dev", org: acmeID, email: "sam@example.com", role: "developer", want: ErrForbidden},
-		{name: "nonmember", caller: "outsider", org: acmeID, email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
-		{name: "caller scheduled for deletion", caller: "gone", org: acmeID, email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
-		{name: "missing org", caller: "owner", org: "20000000-0000-0000-0000-000000000009", email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
-		{name: "member email in another case", caller: "owner", org: acmeID, email: "mixed.case@example.com", role: "developer", want: ErrAlreadyMember},
-		{name: "member scheduled for deletion", caller: "owner", org: acmeID, email: "leaving@example.com", role: "developer", want: ErrAlreadyMember},
-		{name: "own email", caller: "owner", org: acmeID, email: "alex@example.com", role: "admin", want: ErrAlreadyMember},
-		{name: "pending invitation", caller: "owner", org: acmeID, email: "sam@example.com", role: "developer", want: ErrInvitationExists,
+		{name: "admin invites a developer", caller: adminID, org: acmeID, email: "sam@example.com", role: "developer"},
+		{name: "admin cannot invite an admin", caller: adminID, org: acmeID, email: "sam@example.com", role: "admin", want: ErrForbidden},
+		{name: "developer cannot invite", caller: devID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrForbidden},
+		{name: "nonmember", caller: outsiderID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
+		{name: "caller scheduled for deletion", caller: goneID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
+		{name: "missing org", caller: ownerID, org: "20000000-0000-0000-0000-000000000009", email: "sam@example.com", role: "developer", want: ErrOrgNotFound},
+		{name: "member email in another case", caller: ownerID, org: acmeID, email: "mixed.case@example.com", role: "developer", want: ErrAlreadyMember},
+		{name: "member scheduled for deletion", caller: ownerID, org: acmeID, email: "leaving@example.com", role: "developer", want: ErrAlreadyMember},
+		{name: "own email", caller: ownerID, org: acmeID, email: "alex@example.com", role: "admin", want: ErrAlreadyMember},
+		{name: "pending invitation", caller: ownerID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrInvitationExists,
 			setup: `INSERT INTO public.invitations (org_id, email, role, started_at, last_sent_at, invited_by_email)
 				VALUES ('` + acmeID + `', 'sam@example.com', 'developer', now() - interval '7 days' + interval '1 minute', now() - interval '1 day', 'alex@example.com')`},
-		{name: "admin and a pending admin invitation", caller: "admin", org: acmeID, email: "sam@example.com", role: "developer", want: ErrInvitationExists,
+		{name: "admin and a pending admin invitation", caller: adminID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrInvitationExists,
 			setup: `INSERT INTO public.invitations (org_id, email, role, invited_by_email) VALUES ('` + acmeID + `', 'sam@example.com', 'admin', 'alex@example.com')`},
-		{name: "admin cannot renew an expired admin invitation", caller: "admin", org: acmeID, email: "sam@example.com", role: "developer", want: ErrForbidden,
+		{name: "admin cannot renew an expired admin invitation", caller: adminID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrForbidden,
 			setup: `INSERT INTO public.invitations (org_id, email, role, started_at, last_sent_at, invited_by_email)
 				VALUES ('` + acmeID + `', 'sam@example.com', 'admin', now() - interval '8 days', now() - interval '8 days', 'alex@example.com')`},
-		{name: "limit reached", caller: "owner", org: acmeID, email: "sam@example.com", role: "developer", want: ErrLimitReached,
+		{name: "limit reached", caller: ownerID, org: acmeID, email: "sam@example.com", role: "developer", want: ErrLimitReached,
 			setup: `UPDATE public.orgs SET invitation_window_started_at = now() - interval '23 hours', invitation_window_sends = 50 WHERE id = '` + acmeID + `'`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -225,7 +207,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 	t.Run("expired invitation is renewed in place", func(t *testing.T) {
 		reset(t, `INSERT INTO public.invitations (id, org_id, email, role, started_at, last_sent_at, invited_by_email)
 			VALUES ('`+renewID+`', '`+acmeID+`', 'sam@example.com', 'admin', now() - interval '7 days', now() - interval '7 days', 'old@example.com')`)
-		got, err := store.Create(ctx, "owner", acmeID, "sam@example.com", "developer")
+		got, err := store.Create(ctx, ownerID, acmeID, "sam@example.com", "developer")
 		if err != nil || got.ID != renewID || got.Role != "developer" {
 			t.Fatalf("got=%+v err=%v", got, err)
 		}
@@ -241,14 +223,14 @@ func TestStoreCreatePostgres(t *testing.T) {
 	t.Run("admin renews an expired developer invitation", func(t *testing.T) {
 		reset(t, `INSERT INTO public.invitations (id, org_id, email, role, started_at, last_sent_at, invited_by_email)
 			VALUES ('`+renewID+`', '`+acmeID+`', 'sam@example.com', 'developer', now() - interval '8 days', now() - interval '8 days', 'alex@example.com')`)
-		if got, err := store.Create(ctx, "admin", acmeID, "sam@example.com", "developer"); err != nil || got.ID != renewID {
+		if got, err := store.Create(ctx, adminID, acmeID, "sam@example.com", "developer"); err != nil || got.ID != renewID {
 			t.Fatalf("got=%+v err=%v", got, err)
 		}
 	})
 
 	t.Run("window counts up, then restarts after 24 hours", func(t *testing.T) {
 		reset(t, `UPDATE public.orgs SET invitation_window_started_at = now() - interval '1 hour', invitation_window_sends = 49 WHERE id = '`+acmeID+`'`)
-		if _, err := store.Create(ctx, "owner", acmeID, "a@example.com", "developer"); err != nil {
+		if _, err := store.Create(ctx, ownerID, acmeID, "a@example.com", "developer"); err != nil {
 			t.Fatal(err)
 		}
 		if sends, _ := window(t); sends != 50 {
@@ -257,7 +239,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 		if err := db.Exec(`UPDATE public.orgs SET invitation_window_started_at = now() - interval '24 hours' WHERE id = ?`, acmeID).Error; err != nil {
 			t.Fatal(err)
 		}
-		if _, err := store.Create(ctx, "owner", acmeID, "b@example.com", "developer"); err != nil {
+		if _, err := store.Create(ctx, ownerID, acmeID, "b@example.com", "developer"); err != nil {
 			t.Fatal(err)
 		}
 		if sends, started := window(t); sends != 1 || started == nil || time.Since(*started) > time.Minute {
@@ -303,8 +285,8 @@ func TestStoreCreatePostgres(t *testing.T) {
 	t.Run("same email invited twice at the same time", func(t *testing.T) {
 		reset(t, "")
 		results := overlap(t,
-			func() error { _, err := store.Create(ctx, "owner", acmeID, "sam@example.com", "developer"); return err },
-			func() error { _, err := store.Create(ctx, "admin", acmeID, "sam@example.com", "developer"); return err },
+			func() error { _, err := store.Create(ctx, ownerID, acmeID, "sam@example.com", "developer"); return err },
+			func() error { _, err := store.Create(ctx, adminID, acmeID, "sam@example.com", "developer"); return err },
 		)
 		if !(results[0] == nil && errors.Is(results[1], ErrInvitationExists) || results[1] == nil && errors.Is(results[0], ErrInvitationExists)) {
 			t.Fatalf("results: %v, %v", results[0], results[1])
@@ -320,8 +302,8 @@ func TestStoreCreatePostgres(t *testing.T) {
 	t.Run("the last send of a window at the same time", func(t *testing.T) {
 		reset(t, `UPDATE public.orgs SET invitation_window_started_at = now() - interval '1 hour', invitation_window_sends = 49 WHERE id = '`+acmeID+`'`)
 		results := overlap(t,
-			func() error { _, err := store.Create(ctx, "owner", acmeID, "a@example.com", "developer"); return err },
-			func() error { _, err := store.Create(ctx, "owner", acmeID, "b@example.com", "developer"); return err },
+			func() error { _, err := store.Create(ctx, ownerID, acmeID, "a@example.com", "developer"); return err },
+			func() error { _, err := store.Create(ctx, ownerID, acmeID, "b@example.com", "developer"); return err },
 		)
 		if !(results[0] == nil && errors.Is(results[1], ErrLimitReached) || results[1] == nil && errors.Is(results[0], ErrLimitReached)) {
 			t.Fatalf("results: %v, %v", results[0], results[1])
@@ -345,7 +327,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 			accept.Rollback()
 			t.Fatal(err)
 		}
-		if err := accept.Exec(`INSERT INTO public.members VALUES (?, 'newbie', 'developer')`, acmeID).Error; err != nil {
+		if err := accept.Exec(`INSERT INTO public.members (org_id, user_id, role) VALUES (?, ?, 'developer')`, acmeID, newbieID).Error; err != nil {
 			accept.Rollback()
 			t.Fatal(err)
 		}
@@ -353,7 +335,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			_, createErr = store.Create(ctx, "admin", acmeID, "newbie@example.com", "developer")
+			_, createErr = store.Create(ctx, adminID, acmeID, "newbie@example.com", "developer")
 		}()
 		waitForLockWaiters(t, accept, 1)
 		if err := accept.Commit().Error; err != nil {
@@ -380,7 +362,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			_, createErr = store.Create(ctx, "owner", doomedID, "sam@example.com", "developer")
+			_, createErr = store.Create(ctx, ownerID, doomedID, "sam@example.com", "developer")
 		}()
 		waitForLockWaiters(t, deletion, 1)
 		if err := deletion.Commit().Error; err != nil {
@@ -408,7 +390,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 		created, deleted := make(chan struct{}), make(chan struct{})
 		go func() {
 			defer close(created)
-			_, createErr = store.Create(ctx, "owner", doomedID, "sam@example.com", "developer")
+			_, createErr = store.Create(ctx, ownerID, doomedID, "sam@example.com", "developer")
 		}()
 		waitForLockWaiters(t, blocker, 1)
 		go func() {
