@@ -1,33 +1,6 @@
 -- Run as a superuser against a disposable database after applying migrations.
 -- All fixtures and assertions are rolled back.
--- GoTrue creates auth.sessions, so a bare supabase/postgres image lacks it.
--- Apply migrations there with check_function_bodies off; this file then adds
--- a stub that matches the production names, types, owner, and grants.
 begin;
-
-do $$
-begin
-  if to_regclass('auth.sessions') is null then
-    create table auth.sessions (
-      id uuid primary key,
-      user_id uuid not null references auth.users (id) on delete cascade,
-      created_at timestamptz,
-      updated_at timestamptz,
-      factor_id uuid,
-      not_after timestamptz,
-      refreshed_at timestamp,
-      user_agent text,
-      ip inet,
-      tag text
-    );
-    alter table auth.sessions owner to supabase_auth_admin;
-    alter table auth.sessions enable row level security;
-    grant select, delete on auth.sessions to postgres;
-    alter table auth.refresh_tokens
-      add column session_id uuid references auth.sessions (id) on delete cascade;
-  end if;
-end;
-$$;
 
 insert into auth.users (id, email) values
   ('10000000-0000-0000-0000-000000000001', 'owner@example.com'),

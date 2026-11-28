@@ -3,15 +3,13 @@ package outbox
 import (
 	"context"
 	"errors"
-	"os"
 	"slices"
 	"testing"
 	"time"
 
+	"github.com/brojyf/keysy/api/internal/pgtest"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 const (
@@ -59,31 +57,7 @@ func remainingEventIDs(t *testing.T, db *gorm.DB) []string {
 }
 
 func TestRelayPostgres(t *testing.T) {
-	databaseURL := os.Getenv("KEYSY_TEST_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
-		t.Fatal(err)
-	}
-	connection, err := db.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = connection.Close() })
-	if err := db.Exec(`CREATE TABLE public.outbox (
-		event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-		type text NOT NULL CHECK (type IN ('audit', 'email')),
-		payload jsonb NOT NULL,
-		created_at timestamptz NOT NULL DEFAULT now())`).Error; err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := db.Exec(`DROP TABLE public.outbox`).Error; err != nil {
-			t.Error(err)
-		}
-	})
+	db := pgtest.Open(t)
 	reset := func(t *testing.T) {
 		t.Helper()
 		if err := db.Exec(`TRUNCATE public.outbox`).Error; err != nil {

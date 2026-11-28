@@ -5,49 +5,25 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/brojyf/keysy/api/internal/org"
+	"github.com/brojyf/keysy/api/internal/pgtest"
 	"github.com/brojyf/keysy/api/internal/profile"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func TestCancelDeletionPostgres(t *testing.T) {
-	url := os.Getenv("KEYSY_TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("KEYSY_TEST_DATABASE_URL must point to an empty, isolated PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(url), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
+	db := pgtest.Open(t)
+	if err := db.Exec(`INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
+		('10000000-0000-0000-0000-000000000001', 'alice@example.com', '{"full_name": "Alice"}'),
+		('10000000-0000-0000-0000-000000000002', 'bob@example.com', NULL),
+		('10000000-0000-0000-0000-000000000003', 'carol@example.com', NULL);
+	UPDATE public.profiles SET deleted_at = '2026-01-02T03:04:05Z' WHERE id = '10000000-0000-0000-0000-000000000003'`).Error; err != nil {
 		t.Fatal(err)
 	}
-	conn, err := db.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = conn.Close() })
-	if err := db.Exec(`CREATE SCHEMA auth;
- CREATE TABLE auth.sessions (id uuid primary key, user_id uuid not null);
- CREATE TABLE public.profiles (id uuid primary key, email text, display_name text, deleted_at timestamptz);
- CREATE TABLE public.orgs (id uuid primary key default gen_random_uuid(), name text);
- CREATE TABLE public.members (org_id uuid references public.orgs(id), user_id uuid, role text);
- CREATE TABLE public.outbox (event_id uuid primary key default gen_random_uuid(), type text not null, payload jsonb not null, created_at timestamptz not null default now());
- CREATE FUNCTION public.revoke_all_user_sessions(target_user_id uuid) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$ DELETE FROM auth.sessions AS sessions WHERE sessions.user_id = target_user_id; $$;
- INSERT INTO public.profiles (id, email, display_name) VALUES ('10000000-0000-0000-0000-000000000001', 'alice@example.com', 'Alice');
- INSERT INTO public.profiles (id) VALUES ('10000000-0000-0000-0000-000000000002');
- INSERT INTO public.profiles (id, deleted_at) VALUES ('10000000-0000-0000-0000-000000000003', '2026-01-02T03:04:05Z');`).Error; err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := db.Exec(`DROP FUNCTION public.revoke_all_user_sessions(uuid); DROP TABLE public.outbox, public.members, public.orgs, public.profiles, auth.sessions; DROP SCHEMA auth`).Error; err != nil {
-			t.Error(err)
-		}
-	})
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	deletion := profile.Store{DB: db}
