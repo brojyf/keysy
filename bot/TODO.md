@@ -29,14 +29,15 @@ Order: most useful first.
   - Answers: requests and 5xx/52x per host. api.keysy.net and auth.keysy.net are proxied, so this shows errors that never reach Fly (machine down or stopped). Also page views per host and path from Web Analytics.
   - Source: GraphQL API (`httpRequestsAdaptiveGroups`, `rumPageloadEventsAdaptiveGroups`). Credential: `CLOUDFLARE_TOKEN`, an API token with only Zone Analytics Read and Account Analytics Read.
   - Not Worker errors: web, wiki, and dashboard are assets-only Workers, so `workersInvocationsAdaptive` is empty for them.
-- [ ] **`query_kafka_status`**: Aiven Kafka.
-  - Answers: service state, and consumer lag of notify on `keysy.email` (are emails stuck?).
-  - Source: Aiven API. Credential: Aiven token.
-  - Open: which API returns consumer lag, and whether an Aiven token can be read-only.
-- [ ] **`query_audit_db_status`**: Aiven Postgres (audit database).
-  - Answers: service state, disk use, and connections.
-  - Source: Aiven service metrics API. Not SQL: the bot does not connect to the database.
-  - Open: share one Aiven token with `query_kafka_status`.
+- [x] **`query_kafka_lag`**: Aiven Kafka consumer lag.
+  - Answers: consumer lag of notify on `keysy.email` (are emails stuck?).
+  - Source: Kafka admin requests (Metadata, ListOffsets, OffsetFetch) over SASL. Credential: `KAFKA_PASSWORD` of the Kafka user `keysy-bot`, with only the Kafka-native ACLs Describe on topic `keysy.email` and Describe on group `notify`. It can read offsets, not records.
+  - Not the Aiven API: a read-only Aiven token gets 403 on topic offsets (`ServiceKafkaTopicGet`). The Aiven docs give topic access only with `service:data:write`, which can also create and delete topics.
+- [ ] **`query_aiven_services`**: Aiven service state and metrics of `keysy-kafka` and `keysy-audit`.
+  - Answers: service and node state, CPU, disk, load, and memory.
+  - Source: Aiven API (`GET /project/keysy/service/{service}` and `POST .../metrics`). Not SQL: the bot does not connect to the database.
+  - Credential: token of the Aiven application user `keysy-bot`, with only `project:services:read` and `service:metrics:read` on the `keysy` project. Tested: service and metrics reads return 200, topic reads and writes return 403, and service user passwords and keys are redacted.
+  - Not connections: the metrics API returns only CPU, disk, load, memory, and network.
 - [ ] **`query_supabase_status`**: Supabase production project.
   - Answers: project health, database CPU, memory, disk, and connections.
   - Source: Supabase Management API or the project metrics endpoint.

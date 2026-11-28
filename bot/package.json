@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^3.0.89",
+    "@platformatic/kafka": "^2.20.0",
     "@vercel/connect": ">=2.9.5",
     "ai": "^7.0.181",
     "eve": "^1.4.0",

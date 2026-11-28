@@ -35,6 +35,8 @@ Set `GRAFANA_TOKEN` to a token of the `keysy-bot` Grafana Cloud access policy, w
 
 Set `CLOUDFLARE_TOKEN` to a Cloudflare API token that has only the `Account Analytics: Read` and `Zone Analytics: Read` permissions, scoped to the Keysy account and the `keysy.net` zone. The `query_cloudflare_analytics` tool uses it to read HTTP request analytics and Web Analytics page loads through the GraphQL Analytics API.
 
+Set `KAFKA_PASSWORD` to the password of the `keysy-bot` user on the `keysy-kafka` Aiven service. Its only permissions are the Kafka-native ACLs Describe on the `keysy.email` topic and Describe on the `notify` group, so it can read offsets but not records. The `query_kafka_lag` tool uses it to read the consumer lag of keysy-notify.
+
 Deploy your agent to [Vercel](https://vercel.com) from the project root:
 
 ```bash
