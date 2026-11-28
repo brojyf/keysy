@@ -223,6 +223,12 @@ jobs:
         run: bun test
       - name: Build
         run: bun run build
+      # Copy the output outside the repo so Node cannot fall back to bot/node_modules.
+      - name: Load the Kafka client from the build output
+        run: |
+          cp -R .output "$RUNNER_TEMP/bot-output"
+          cd "$RUNNER_TEMP/bot-output/server"
+          node --input-type=module -e "await import('@platformatic/kafka')"
 
   web:
     name: Web
