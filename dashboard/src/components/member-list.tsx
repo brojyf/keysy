@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { SortableHeader, TableSearch } from './account-table-controls'
+import Button from './button'
 import { useCurrentUser } from './current-user'
+import InviteMemberDialog from './invite-member-dialog'
 import MoreMenu from './more-menu'
 import { MemberTableSkeleton } from './loading-skeleton'
 import { usePeopleNav } from './people-nav'
@@ -26,6 +28,7 @@ export default function MemberList() {
   const memberQuery = useQuery({ ...memberQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
   const nav = usePeopleNav('Members')
   const dialog = useRef<HTMLDialogElement>(null)
+  const inviteDialog = useRef<HTMLDialogElement>(null)
   const [removing, setRemoving] = useState<Member>()
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
@@ -46,9 +49,19 @@ export default function MemberList() {
     if (dialog.current) openDialog(dialog.current)
   }
 
+  function openInviteDialog() {
+    if (inviteDialog.current) {
+      openDialog(inviteDialog.current)
+      inviteDialog.current.querySelector<HTMLInputElement>('input.account-name')?.focus()
+    }
+  }
+
   return (
     <SettingsLayout title="People" className="member-page" Icon={Users} heading="Members" nav={nav}>
-      <TableSearch label="Search members" value={query} onChange={setQuery} />
+      <div className="account-toolbar">
+        <TableSearch label="Search members" value={query} onChange={setQuery} />
+        {hasActions && <Button variant="primary" onClick={openInviteDialog}>Invite member</Button>}
+      </div>
       {memberQuery.isPending ? (
         <>
           <p role="status" className="visually-hidden">Loading members...</p>
@@ -100,6 +113,7 @@ export default function MemberList() {
         </div>
       )}
       <RemoveMemberDialog ref={dialog} member={removing} />
+      <InviteMemberDialog ref={inviteDialog} owner={viewerRole === 'owner'} />
     </SettingsLayout>
   )
 }
