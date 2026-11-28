@@ -13,7 +13,8 @@ type Invitation struct {
 	Status string `json:"status"`
 }
 
-// The SQL and Go code use these values. The migrations, the OpenAPI spec, and api/README.md state them in words.
+// The SQL and Go code use these values. The migrations and the OpenAPI spec state both in words;
+// api/README.md states the 7 days.
 const (
 	expiryDays  = 7  // An invitation expires 7 days after started_at.
 	windowSends = 50 // An org sends at most 50 invitation emails per 24-hour window.
