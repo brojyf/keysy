@@ -6,13 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"mime"
 	"net/http"
 	"net/mail"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/gin-gonic/gin"
@@ -57,15 +54,8 @@ func readInvitation(c *gin.Context) (string, string, bool) {
 		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Remove the query string and try again.")
 		return "", "", false
 	}
-	mediaType, _, err := mime.ParseMediaType(c.GetHeader("Content-Type"))
-	if err != nil || mediaType != "application/json" {
-		middleware.Error(c, http.StatusUnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "Send the request body as JSON.")
-		return "", "", false
-	}
-	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 1<<10))
-	var fields map[string]json.RawMessage
-	if err != nil || !utf8.Valid(body) || json.Unmarshal(body, &fields) != nil || len(fields) != 2 {
-		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
+	fields, ok := middleware.ReadJSONFields(c, 2)
+	if !ok {
 		return "", "", false
 	}
 	var email, role string
