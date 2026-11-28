@@ -15,7 +15,7 @@ Use it to answer whether emails are stuck.
 
 Output:
 - checkedAt: the UTC time of the check.
-- partitions: for each partition, committedOffset (the next record keysy-notify will read; null if keysy-notify never committed), endOffset (the offset after the last record), and lag (records that keysy-notify has not read yet).
+- partitions: for each partition, earliestOffset (the first record Kafka still keeps; older records were deleted), committedOffset (the next record keysy-notify will read; null if keysy-notify never committed), endOffset (the offset after the last record), and lag (records that keysy-notify has not read yet, counted from earliestOffset when committedOffset is null or below it, because keysy-notify then starts at earliestOffset).
 - totalLag: the sum of lag over all partitions.
 
 How to read it:
@@ -41,23 +41,18 @@ How to read it:
       const partitionCount = metadata.topics.get(topic)?.partitionsCount ?? 0;
       const partitionIndexes = Array.from({ length: partitionCount }, (_, i) => i);
 
-      // Commits first, then end offsets: the end offset only grows, so it is never below a commit read before it.
-      const commits = await admin.listConsumerGroupOffsets({ groups: [group] });
-      const ends = await admin.listOffsets({
-        topics: [
-          {
-            name: topic,
-            partitions: partitionIndexes.map((partitionIndex) => ({
-              partitionIndex,
-              timestamp: ListOffsetTimestamps.LATEST,
-            })),
-          },
-        ],
-      });
+      const readOffsets = async (timestamp: bigint) => {
+        const offsets = await admin.listOffsets({
+          topics: [{ name: topic, partitions: partitionIndexes.map((partitionIndex) => ({ partitionIndex, timestamp })) }],
+        });
+        return new Map(offsets.find((t) => t.name === topic)?.partitions.map((p) => [p.partitionIndex, p.offset]) ?? []);
+      };
 
-      const endOffsets = new Map(
-        ends.find((t) => t.name === topic)?.partitions.map((p) => [p.partitionIndex, p.offset]) ?? [],
-      );
+      // Commits before end offsets: the end offset only grows, so it is never below a commit read before it.
+      const earliestOffsets = await readOffsets(ListOffsetTimestamps.EARLIEST);
+      const commits = await admin.listConsumerGroupOffsets({ groups: [group] });
+      const endOffsets = await readOffsets(ListOffsetTimestamps.LATEST);
+
       const committedOffsets = new Map(
         commits
           .find((g) => g.groupId === group)
@@ -67,13 +62,18 @@ How to read it:
       );
 
       const partitions = partitionIndexes.map((partition) => {
+        const earliestOffset = earliestOffsets.get(partition) ?? 0n;
         const endOffset = endOffsets.get(partition) ?? 0n;
         const committedOffset = committedOffsets.get(partition);
+        // notify starts at the earliest offset when it has no commit or its commit was deleted.
+        const nextOffset =
+          committedOffset === undefined || committedOffset < earliestOffset ? earliestOffset : committedOffset;
         return {
           partition,
+          earliestOffset: Number(earliestOffset),
           committedOffset: committedOffset === undefined ? null : Number(committedOffset),
           endOffset: Number(endOffset),
-          lag: Number(endOffset - (committedOffset ?? 0n)),
+          lag: Number(endOffset - nextOffset),
         };
       });
       return {

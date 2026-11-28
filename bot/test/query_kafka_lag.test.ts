@@ -6,11 +6,12 @@ type Committed = { partitionIndex: number; committedOffset: bigint }[];
 const adminOptions: unknown[] = [];
 const closed: boolean[] = [];
 let committed: Committed = [];
+let earliest = [0n, 0n];
 // Simulates notify committing between two Kafka reads.
 let afterEndOffsetsRead: (() => void) | undefined;
 
 mock.module("@platformatic/kafka", () => ({
-  ListOffsetTimestamps: { LATEST: -1n },
+  ListOffsetTimestamps: { LATEST: -1n, EARLIEST: -2n },
   Admin: class {
     constructor(options: unknown) {
       adminOptions.push(options);
@@ -18,7 +19,15 @@ mock.module("@platformatic/kafka", () => ({
     async metadata() {
       return { topics: new Map([["keysy.email", { partitionsCount: 2 }]]) };
     }
-    async listOffsets() {
+    async listOffsets(options: { topics: { partitions: { timestamp: bigint }[] }[] }) {
+      if (options.topics[0].partitions[0].timestamp === -2n) {
+        return [
+          {
+            name: "keysy.email",
+            partitions: earliest.map((offset, partitionIndex) => ({ partitionIndex, offset })),
+          },
+        ];
+      }
       afterEndOffsetsRead?.();
       return [
         {
@@ -47,6 +56,7 @@ afterEach(() => {
   adminOptions.length = 0;
   closed.length = 0;
   afterEndOffsetsRead = undefined;
+  earliest = [0n, 0n];
   delete process.env.KAFKA_PASSWORD;
 });
 
@@ -117,6 +127,25 @@ test("reads the committed offsets before the end offsets so a commit between rea
       { partition: 1, committedOffset: 2, endOffset: 5, lag: 3 },
     ],
     totalLag: 3,
+  });
+});
+
+test("counts the lag from the earliest offset when records before it were deleted", async () => {
+  process.env.KAFKA_PASSWORD = "kafka_password";
+  committed = [
+    { partitionIndex: 0, committedOffset: -1n },
+    { partitionIndex: 1, committedOffset: 1n },
+  ];
+  earliest = [3n, 4n];
+
+  const output = await execute({});
+
+  expect(output).toMatchObject({
+    partitions: [
+      { partition: 0, earliestOffset: 3, committedOffset: null, endOffset: 8, lag: 5 },
+      { partition: 1, earliestOffset: 4, committedOffset: 1, endOffset: 5, lag: 1 },
+    ],
+    totalLag: 6,
   });
 });
 
