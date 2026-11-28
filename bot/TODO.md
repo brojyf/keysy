@@ -1,6 +1,6 @@
 # Bot tools TODO
 
-The bot has one tool: `query_fly_metrics`. Fly metrics show how busy the machine is. They do not show why a request failed, or what happens outside the Fly machine. These tools close that gap.
+Fly metrics (`query_fly_metrics`) show how busy the machine is. They do not show why a request failed, or what happens outside the Fly machine. These tools close that gap.
 
 ## Rules for every tool
 
@@ -25,9 +25,10 @@ Order: most useful first.
   - Answers: request rate, latency, and 5xx ratio of api and auth.
   - Source: Prometheus `query`. Credential: `GRAFANA_TOKEN`.
   - Token: one `keysy-bot` access policy token with `logs:read` and `metrics:read`, in `GRAFANA_TOKEN`, shared with `query_grafana_logs`.
-- [ ] **`query_cloudflare_analytics`**: Cloudflare GraphQL Analytics.
-  - Answers: requests and 5xx/52x per host. api.keysy.net and auth.keysy.net are proxied, so this shows errors that never reach Fly (machine down or stopped). Also Worker errors of web, wiki, and dashboard.
-  - Source: GraphQL API. Credential: API token with zone Analytics Read and account Analytics Read.
+- [x] **`query_cloudflare_analytics`**: Cloudflare GraphQL Analytics.
+  - Answers: requests and 5xx/52x per host. api.keysy.net and auth.keysy.net are proxied, so this shows errors that never reach Fly (machine down or stopped). Also page views per host and path from Web Analytics.
+  - Source: GraphQL API (`httpRequestsAdaptiveGroups`, `rumPageloadEventsAdaptiveGroups`). Credential: `CLOUDFLARE_TOKEN`, an API token with only Zone Analytics Read and Account Analytics Read.
+  - Not Worker errors: web, wiki, and dashboard are assets-only Workers, so `workersInvocationsAdaptive` is empty for them.
 - [ ] **`query_kafka_status`**: Aiven Kafka.
   - Answers: service state, and consumer lag of notify on `keysy.email` (are emails stuck?).
   - Source: Aiven API. Credential: Aiven token.
