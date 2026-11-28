@@ -121,6 +121,9 @@ func TestCreate(t *testing.T) {
 		{name: "no at sign", body: `{"email":"sam.example.com","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
 		{name: "display name", body: `{"email":"Sam <sam@example.com>","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
 		{name: "two addresses", body: `{"email":"sam@example.com, ada@example.com","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
+		// Go and Postgres lowercase some non-ASCII letters differently, for example İ.
+		{name: "non-ASCII local part", body: `{"email":"İsam@example.com","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
+		{name: "non-ASCII domain", body: `{"email":"sam@exämple.com","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
 		{name: "longer than 254", body: `{"email":"` + strings.Repeat("a", 64) + "@" + strings.Repeat("b", 190) + `.com","role":"developer"}`, status: 400, code: "INVALID_EMAIL"},
 		{name: "not a member", body: `{"email":"sam@example.com","role":"developer"}`, wantEmail: "sam@example.com", storeErr: ErrOrgNotFound, status: 404, code: "ORG_NOT_FOUND"},
 		{name: "forbidden", body: `{"email":"sam@example.com","role":"admin"}`, wantEmail: "sam@example.com", storeErr: ErrForbidden, status: 403, code: "INVITATION_FORBIDDEN"},

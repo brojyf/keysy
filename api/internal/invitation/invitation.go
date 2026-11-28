@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
@@ -74,10 +75,14 @@ func readInvitation(c *gin.Context) (string, string, bool) {
 		middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
 		return "", "", false
 	}
-	email = strings.ToLower(strings.TrimSpace(email))
+	email = strings.TrimSpace(email)
+	// Only ASCII is allowed, checked before lowercasing: Go and Postgres lowercase some other letters
+	// differently, and Go lowercases İ to the ASCII i.
+	nonASCII := strings.ContainsFunc(email, func(r rune) bool { return r > unicode.MaxASCII })
+	email = strings.ToLower(email)
 	// ParseAddress also accepts display names and comments, so the parsed address must equal the input.
 	address, err := mail.ParseAddress(email)
-	if len(email) > 254 || err != nil || address.Address != email {
+	if len(email) > 254 || nonASCII || err != nil || address.Address != email {
 		middleware.Error(c, http.StatusBadRequest, "INVALID_EMAIL", "Enter a valid email address.")
 		return "", "", false
 	}

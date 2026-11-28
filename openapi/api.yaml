@@ -638,7 +638,7 @@ paths:
                   type: string
                   format: email
                   maxLength: 254
-                  description: One email address, without a display name. Surrounding whitespace is trimmed and the address is stored in lowercase.
+                  description: One email address in ASCII, without a display name. Surrounding whitespace is trimmed and the address is stored in lowercase.
                 role:
                   type: string
                   enum: [admin, developer]
