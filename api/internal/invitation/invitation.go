@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -115,7 +116,7 @@ func Create(invitations Creator) gin.HandlerFunc {
 		case errors.Is(err, ErrInvitationExists):
 			middleware.Error(c, http.StatusConflict, "INVITATION_EXISTS", "This email address already has a pending invitation.")
 		case errors.Is(err, ErrLimitReached):
-			middleware.Error(c, http.StatusTooManyRequests, "INVITATION_LIMIT_REACHED", "Your organization reached its limit of 50 invitation emails per 24 hours. Try again later.")
+			middleware.Error(c, http.StatusTooManyRequests, "INVITATION_LIMIT_REACHED", fmt.Sprintf("Your organization reached its limit of %d invitation emails per 24 hours. Try again later.", windowSends))
 		case err != nil:
 			middleware.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "The invitation could not be sent. Try again later.")
 		default:

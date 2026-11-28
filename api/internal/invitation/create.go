@@ -66,16 +66,16 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 			VALUES (?, ?, ?, ?)
 			ON CONFLICT (org_id, email) DO UPDATE
 			SET role = excluded.role, started_at = now(), last_sent_at = now(), invited_by_email = excluded.invited_by_email
-			WHERE invitations.started_at + interval '7 days' <= now()
+			WHERE invitations.started_at + make_interval(days => ?) <= now()
 			AND (? = 'owner' OR invitations.role = 'developer')
-			RETURNING invitations.id, invitations.started_at`, orgID, email, role, caller.Email, caller.Role).Scan(&row).Error; err != nil {
+			RETURNING invitations.id, invitations.started_at`, orgID, email, role, caller.Email, expiryDays, caller.Role).Scan(&row).Error; err != nil {
 			return err
 		}
 		if row.ID == "" {
 			// ON CONFLICT locked the existing row, so this read sees the row that blocked the write.
 			var expired bool
-			if err := tx.Raw(`SELECT started_at + interval '7 days' <= now() FROM public.invitations
-				WHERE org_id = ? AND email = ?`, orgID, email).Scan(&expired).Error; err != nil {
+			if err := tx.Raw(`SELECT started_at + make_interval(days => ?) <= now() FROM public.invitations
+				WHERE org_id = ? AND email = ?`, expiryDays, orgID, email).Scan(&expired).Error; err != nil {
 				return err
 			}
 			if expired {
@@ -96,7 +96,7 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 			return ErrAlreadyMember
 		}
 
-		// Last, so rejected requests do not use the org's 50 emails per 24-hour window.
+		// Last, so rejected requests do not use the org's email window.
 		result := tx.Exec(`UPDATE public.orgs SET
 			invitation_window_started_at = CASE WHEN invitation_window_started_at IS NULL
 				OR invitation_window_started_at + interval '24 hours' <= now() THEN now() ELSE invitation_window_started_at END,
@@ -104,7 +104,7 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 				OR invitation_window_started_at + interval '24 hours' <= now() THEN 1 ELSE invitation_window_sends + 1 END
 			WHERE id = ? AND (invitation_window_started_at IS NULL
 				OR invitation_window_started_at + interval '24 hours' <= now()
-				OR invitation_window_sends < 50)`, orgID)
+				OR invitation_window_sends < ?)`, orgID, windowSends)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -118,7 +118,7 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 			"ORG_NAME":       caller.OrgName,
 			"INVITER_NAME":   caller.DisplayName,
 			"INVITATION_URL": strings.TrimRight(s.WebAppURL, "/") + "/invitations/" + row.ID,
-			"EXPIRY_DATE":    row.StartedAt.Add(7 * 24 * time.Hour).UTC().Format("January 2, 2006"),
+			"EXPIRY_DATE":    row.StartedAt.Add(expiryDays * 24 * time.Hour).UTC().Format("January 2, 2006"),
 		}
 		payload, err := json.Marshal(message)
 		if err != nil {
