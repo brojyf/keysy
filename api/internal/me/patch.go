@@ -3,11 +3,8 @@ package me
 import (
 	"bytes"
 	"encoding/json"
-	"io"
-	"mime"
 	"net/http"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/brojyf/keysy/api/internal/middleware"
 	"github.com/brojyf/keysy/api/internal/naming"
@@ -21,22 +18,11 @@ func Patch(profiles Profiles) gin.HandlerFunc {
 			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Remove the query string and try again.")
 			return
 		}
-		mediaType, _, err := mime.ParseMediaType(c.GetHeader("Content-Type"))
-		if err != nil || mediaType != "application/json" {
-			middleware.Error(c, http.StatusUnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "Send the request body as JSON.")
+		fields, ok := middleware.ReadJSONFields(c, 1)
+		if !ok {
 			return
 		}
-		body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 1<<10))
-		if err != nil || !utf8.Valid(body) {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
-			return
-		}
-		decoder := json.NewDecoder(bytes.NewReader(body))
-		var fields map[string]json.RawMessage
-		if decoder.Decode(&fields) != nil || decoder.Decode(&struct{}{}) != io.EOF || len(fields) != 1 {
-			middleware.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "Check your request body and try again.")
-			return
-		}
+		var err error
 		var name string
 		var autoApply bool
 		if raw, ok := fields["displayName"]; ok {
