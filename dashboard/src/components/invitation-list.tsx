@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SortableHeader, TableSearch } from './account-table-controls'
 import Button from './button'
 import { useCurrentUser } from './current-user'
@@ -8,7 +8,9 @@ import InviteMemberDialog from './invite-member-dialog'
 import { InvitationTableSkeleton } from './loading-skeleton'
 import MoreMenu from './more-menu'
 import { usePeopleNav } from './people-nav'
+import ResendFailedDialog from './resend-failed-dialog'
 import SettingsLayout from './settings-layout'
+import { apiFetch } from '../lib/api-client'
 import { openDialog } from '../lib/dialog-controls'
 import { invitationQueryOptions } from '../lib/invitation-queries'
 
@@ -16,12 +18,21 @@ const roleLabels = { admin: 'Admin', developer: 'Developer' }
 const statusLabels = { pending: 'Pending', expired: 'Expired' }
 
 // Figma People · Invitations. Every member sees the list; the Owner and Admins get a row menu.
-// The row menu items do nothing until their APIs exist.
+// Resend renews expired invitations; the other actions wait for their APIs.
 export default function InvitationList() {
   const { user, organization, onSignedOut } = useCurrentUser()
   const invitationQuery = useQuery({ ...invitationQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
+  const client = useQueryClient()
   const nav = usePeopleNav('Invitations')
   const inviteDialog = useRef<HTMLDialogElement>(null)
+  const failedDialog = useRef<HTMLDialogElement>(null)
+  const submitting = useRef(false)
+  const mounted = useRef(false)
+  const [failure, setFailure] = useState<{ email: string; role: 'admin' | 'developer'; message: string; requestId: string | null } | null>(null)
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
@@ -32,6 +43,44 @@ export default function InvitationList() {
   const invitations = (invitationQuery.isError ? [] : invitationQuery.data ?? [])
     .filter(({ email }) => email.includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.email.localeCompare(b.email))
+
+  async function renew(email: string, role: 'admin' | 'developer') {
+    if (!organization || submitting.current) return
+    submitting.current = true
+    let message = `Keysy couldn't send the invitation to ${email}. Try again in a moment.`
+    let requestId: string | null = null
+    try {
+      const response = await apiFetch(`/v0/orgs/${encodeURIComponent(organization.id)}/invitations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role }),
+      })
+      if (response.status === 401) {
+        onSignedOut()
+        return
+      }
+      if (response.status === 404) void client.invalidateQueries({ queryKey: ['organizations', user.id], exact: true })
+      if (response.status === 201) {
+        void client.invalidateQueries({ queryKey: ['invitations', user.id, organization.id] })
+        return
+      }
+      requestId = response.headers.get('X-Request-ID') || null
+      if (response.status === 429) {
+        const body = await response.json().catch(() => null)
+        if (body?.error?.code === 'INVITATION_LIMIT_REACHED' && typeof body.error.message === 'string') {
+          message = body.error.message
+        }
+      }
+    } catch {
+      // Network failures use the generic message.
+    } finally {
+      submitting.current = false
+    }
+    if (mounted.current) {
+      setFailure({ email, role, message, requestId })
+      if (failedDialog.current) openDialog(failedDialog.current)
+    }
+  }
 
   function openInviteDialog() {
     if (inviteDialog.current) {
@@ -72,7 +121,17 @@ export default function InvitationList() {
                     <td className="account-table-actions">
                       {(organization?.role === 'owner' || role === 'developer') && <MoreMenu id={`invitation-menu-${id}`} label={`More actions for ${email}`}>
                         {organization?.role === 'owner' && <button className="account-menu-item" type="button">Change role</button>}
-                        <button className="account-menu-item" type="button">Resend invitation</button>
+                        <button
+                          className="account-menu-item"
+                          type="button"
+                          onClick={() => {
+                            if (status !== 'expired') return
+                            document.getElementById(`invitation-menu-${id}`)?.hidePopover()
+                            void renew(email, role)
+                          }}
+                        >
+                          Resend invitation
+                        </button>
                         <hr className="account-menu-divider" />
                         <button className="account-menu-item account-menu-sign-out" type="button">Cancel invitation</button>
                       </MoreMenu>}
@@ -89,6 +148,12 @@ export default function InvitationList() {
         </div>
       )}
       <InviteMemberDialog ref={inviteDialog} owner={organization?.role === 'owner'} />
+      <ResendFailedDialog
+        dialogRef={failedDialog}
+        message={failure?.message ?? ''}
+        requestId={failure?.requestId ?? null}
+        onRetry={() => { if (failure) void renew(failure.email, failure.role) }}
+      />
     </SettingsLayout>
   )
 }

@@ -273,3 +273,69 @@ for (const kind of ['limit', 'server', 'network', 'signed out'] as const)
         kind === 'limit' ? 'Limit reached' : 'Could not send the invitation. Try again.',
       )
   })
+
+async function resend(email = 'morgan@acme.dev') {
+  const row = [...container.querySelectorAll('tbody tr')].find((item) => item.textContent?.includes(email))!
+  const menu = row.querySelector<HTMLElement>('[popover]')!
+  menu.hidePopover = () => {}
+  await act(async () => {
+    [...row.querySelectorAll('button')].find((button) => button.textContent === 'Resend invitation')!.click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+}
+
+for (const role of ['owner', 'admin'] as const) {
+  test(`${role} renews an expired invitation and refetches`, async () => {
+    request.mockImplementation((_url: string, init?: RequestInit) => init?.method === 'POST'
+      ? Promise.resolve(new Response(null, { status: 201 }))
+      : Promise.resolve(Response.json(apiInvitations)))
+    await renderInvitations(role)
+    await resend()
+    const post = request.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'POST')!
+    expect(post[0]).toBe('https://api.keysy.net/v0/orgs/org-1/invitations')
+    expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({ email: 'morgan@acme.dev', role: 'developer' })
+    expect(request.mock.calls.length).toBeGreaterThan(2)
+    expect(container.querySelector('dialog[open]')).toBeNull()
+  })
+}
+
+test('resending a pending invitation does nothing', async () => {
+  await renderInvitations('owner')
+  await resend('casey@acme.dev')
+  expect(request).toHaveBeenCalledTimes(1)
+})
+
+for (const kind of ['server', 'limit', 'network', 'signed out'] as const) {
+  test(`resend handles ${kind} failure`, async () => {
+    request.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/refresh')) return Promise.resolve(new Response(null, { status: 401 }))
+      if (init?.method !== 'POST') return Promise.resolve(Response.json(apiInvitations))
+      if (kind === 'network') return Promise.reject(new Error('offline'))
+      if (kind === 'signed out') return Promise.resolve(new Response(null, { status: 401 }))
+      return Promise.resolve(Response.json({ error: { code: 'INVITATION_LIMIT_REACHED', message: 'Limit reached' } }, {
+        status: kind === 'limit' ? 429 : 500,
+        headers: { 'X-Request-ID': 'req-1' },
+      }))
+    })
+    await renderInvitations('owner')
+    await resend()
+    const dialog = container.querySelector<HTMLDialogElement>('dialog[open]')
+    if (kind === 'signed out') {
+      expect(onSignedOut).toHaveBeenCalledTimes(1)
+      expect(dialog).toBeNull()
+      return
+    }
+    expect(dialog?.querySelector('h2')?.textContent).toBe("Couldn't resend invitation")
+    expect(dialog?.querySelector('.save-failed-body p')?.textContent).toBe(kind === 'limit'
+      ? 'Limit reached'
+      : "Keysy couldn't send the invitation to morgan@acme.dev. Try again in a moment.")
+    expect(dialog?.querySelector('code')?.textContent ?? null).toBe(kind === 'network' ? null : 'req-1')
+    if (kind === 'server') {
+      await act(async () => {
+        [...dialog!.querySelectorAll('button')].find((button) => button.textContent === 'Retry')!.click()
+        await new Promise((resolve) => setTimeout(resolve, 700))
+      })
+      expect(request.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === 'POST')).toHaveLength(2)
+    }
+  })
+}
