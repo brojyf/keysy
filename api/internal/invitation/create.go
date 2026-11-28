@@ -19,6 +19,7 @@ var (
 )
 
 // The Owner invites Admins and Developers. Admins invite only Developers.
+// The upsert in Create repeats this rule for renewals: Admins cannot renew an Admin invitation.
 func canInvite(callerRole, role string) bool {
 	return callerRole == "owner" || callerRole == "admin" && role == "developer"
 }
