@@ -278,8 +278,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 			}
 		}
 	}
-	// blockOrg holds the org row so every request stops at the invitation's foreign key check,
-	// then releases them together.
+	// The blocker holds the org row so every request stops at the org lock, then releases them together.
 	overlap := func(t *testing.T, requests ...func() error) []error {
 		t.Helper()
 		blocker := db.Begin()
@@ -370,7 +369,7 @@ func TestStoreCreatePostgres(t *testing.T) {
 		unchanged(t)
 	})
 
-	t.Run("org deleted after the caller is read", func(t *testing.T) {
+	t.Run("org deleted during the invite", func(t *testing.T) {
 		reset(t, "")
 		deletion := db.Begin()
 		if err := deletion.Exec(`DELETE FROM public.orgs WHERE id = ?`, doomedID).Error; err != nil {
@@ -392,5 +391,41 @@ func TestStoreCreatePostgres(t *testing.T) {
 			t.Fatalf("create: %v", createErr)
 		}
 		unchanged(t)
+	})
+
+	// The renewal holds the invitation row and needs the org row. The deletion holds the org row
+	// and cascades to the invitation row. Neither may deadlock.
+	t.Run("expired invitation renewed while the org is deleted", func(t *testing.T) {
+		reset(t, `INSERT INTO public.invitations (id, org_id, email, role, started_at, last_sent_at, invited_by_email)
+			VALUES ('`+renewID+`', '`+doomedID+`', 'sam@example.com', 'developer', now() - interval '8 days', now() - interval '8 days', 'alex@example.com')`)
+		// The blocker holds the invitation row, so the renewal waits at the upsert until the deletion starts.
+		blocker := db.Begin()
+		if err := blocker.Exec(`SELECT 1 FROM public.invitations WHERE id = ? FOR UPDATE`, renewID).Error; err != nil {
+			blocker.Rollback()
+			t.Fatal(err)
+		}
+		var createErr, deleteErr error
+		created, deleted := make(chan struct{}), make(chan struct{})
+		go func() {
+			defer close(created)
+			_, createErr = store.Create(ctx, "owner", doomedID, "sam@example.com", "developer")
+		}()
+		waitForLockWaiters(t, blocker, 1)
+		go func() {
+			defer close(deleted)
+			deleteErr = db.WithContext(ctx).Exec(`DELETE FROM public.orgs WHERE id = ?`, doomedID).Error
+		}()
+		waitForLockWaiters(t, blocker, 2)
+		if err := blocker.Commit().Error; err != nil {
+			t.Fatal(err)
+		}
+		<-created
+		<-deleted
+		if createErr != nil || deleteErr != nil {
+			t.Fatalf("create: %v, delete: %v", createErr, deleteErr)
+		}
+		if n := count(t, `SELECT count(*) FROM public.invitations WHERE org_id = ?`, doomedID); n != 0 {
+			t.Fatalf("invitations of the deleted org = %d", n)
+		}
 	})
 }

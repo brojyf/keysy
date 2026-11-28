@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -33,8 +32,10 @@ type invitationEmail struct {
 }
 
 // Create invites email to the org, or renews its expired invitation, and queues the invitation email.
-// It takes no explicit locks. The unique (org_id, email) key and the conditional window update
-// make concurrent requests wait for each other, and READ COMMITTED gives each statement a new snapshot.
+// Its only explicit lock is FOR KEY SHARE on the org row, taken first: org deletion waits for the invite,
+// so the two never lock the org and invitation rows in opposite orders. The unique (org_id, email) key and
+// the conditional window update make concurrent requests wait for each other, and READ COMMITTED gives each
+// statement a new snapshot.
 func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) (Invitation, error) {
 	var created Invitation
 	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -43,7 +44,8 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 			FROM public.members AS members
 			JOIN public.orgs AS orgs ON orgs.id = members.org_id
 			JOIN public.profiles AS profiles ON profiles.id = members.user_id AND profiles.deleted_at IS NULL
-			WHERE members.org_id = ? AND members.user_id = ?`, orgID, callerID).Scan(&caller).Error; err != nil {
+			WHERE members.org_id = ? AND members.user_id = ?
+			FOR KEY SHARE OF orgs`, orgID, callerID).Scan(&caller).Error; err != nil {
 			return err
 		}
 		if caller.Role == "" {
@@ -127,10 +129,5 @@ func (s Store) Create(ctx context.Context, callerID, orgID, email, role string) 
 		created = Invitation{ID: row.ID, Email: email, Role: role, Status: "pending"}
 		return nil
 	})
-	// The org was deleted after the caller row was read.
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-		return Invitation{}, ErrOrgNotFound
-	}
 	return created, err
 }
