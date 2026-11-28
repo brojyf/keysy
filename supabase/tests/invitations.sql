@@ -6,14 +6,14 @@ insert into public.orgs (id, name) values
   ('60000000-0000-0000-0000-000000000001', 'Invite org'),
   ('60000000-0000-0000-0000-000000000002', 'Other org');
 
-insert into public.invitations (org_id, email, role, started_at) values
-  ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'developer', now()),
-  ('60000000-0000-0000-0000-000000000001', 'old@example.com', 'admin', now() - interval '38 days'),
-  ('60000000-0000-0000-0000-000000000001', 'expired@example.com', 'developer', now() - interval '8 days'),
-  ('60000000-0000-0000-0000-000000000001', 'before-cutoff@example.com', 'developer', now() - interval '37 days' + interval '1 second'),
-  ('60000000-0000-0000-0000-000000000001', 'at-cutoff@example.com', 'developer', now() - interval '37 days'),
-  ('60000000-0000-0000-0000-000000000001', 'after-cutoff@example.com', 'developer', now() - interval '37 days' - interval '1 second'),
-  ('60000000-0000-0000-0000-000000000002', 'fresh@example.com', 'admin', now());
+insert into public.invitations (org_id, email, role, started_at, invited_by_email) values
+  ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'developer', now(), 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000001', 'old@example.com', 'admin', now() - interval '38 days', 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000001', 'expired@example.com', 'developer', now() - interval '8 days', 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000001', 'before-cutoff@example.com', 'developer', now() - interval '37 days' + interval '1 second', 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000001', 'at-cutoff@example.com', 'developer', now() - interval '37 days', 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000001', 'after-cutoff@example.com', 'developer', now() - interval '37 days' - interval '1 second', 'owner@example.com'),
+  ('60000000-0000-0000-0000-000000000002', 'fresh@example.com', 'admin', now(), 'owner@example.com');
 
 do $$
 begin
@@ -26,24 +26,31 @@ begin
     'A new org must start without an invitation window';
 
   begin
-    insert into public.invitations (org_id, email, role)
-    values ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'admin');
+    insert into public.invitations (org_id, email, role, invited_by_email)
+    values ('60000000-0000-0000-0000-000000000001', 'fresh@example.com', 'admin', 'owner@example.com');
     raise exception 'A second invitation for the same email and org must fail';
   exception when unique_violation then null;
   end;
 
   begin
-    insert into public.invitations (org_id, email, role)
-    values ('60000000-0000-0000-0000-000000000001', 'Mixed@example.com', 'admin');
+    insert into public.invitations (org_id, email, role, invited_by_email)
+    values ('60000000-0000-0000-0000-000000000001', 'Mixed@example.com', 'admin', 'owner@example.com');
     raise exception 'An email with uppercase letters must fail';
   exception when check_violation then null;
   end;
 
   begin
-    insert into public.invitations (org_id, email, role)
-    values ('60000000-0000-0000-0000-000000000001', 'owner@example.com', 'owner');
+    insert into public.invitations (org_id, email, role, invited_by_email)
+    values ('60000000-0000-0000-0000-000000000001', 'owner@example.com', 'owner', 'owner@example.com');
     raise exception 'An owner invitation must fail';
   exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.invitations (org_id, email, role)
+    values ('60000000-0000-0000-0000-000000000001', 'no-inviter@example.com', 'developer');
+    raise exception 'An invitation without the inviter email must fail';
+  exception when not_null_violation then null;
   end;
 end;
 $$;

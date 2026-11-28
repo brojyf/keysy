@@ -615,6 +615,132 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+    post:
+      tags: [Invitations]
+      security:
+        - accessCookie: []
+      operationId: createInvitation
+      summary: Invite someone to an org
+      description: Invites an email address to the org and queues the invitation email. The Owner can invite Admins and Developers. Admins can invite only Developers. Developers cannot invite. If the email has an expired invitation, the invitation is renewed with the same ID, the new role, and a new 7-day period. Admins cannot renew an Admin invitation. The email is trimmed and stored in lowercase. Each org can send 50 invitation emails per 24-hour window, which starts at the first send.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, role]
+              example:
+                email: grace@example.com
+                role: developer
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: One email address in ASCII, without a display name. Surrounding whitespace is trimmed and the address is stored in lowercase.
+                role:
+                  type: string
+                  enum: [admin, developer]
+      responses:
+        '201':
+          description: The new or renewed invitation. Its status is always `pending`.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+        '400':
+          description: INVALID_REQUEST, or INVALID_EMAIL when the email address is not valid.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: INVALID_ORIGIN, or INVITATION_FORBIDDEN when the caller's role cannot invite this role or renew this invitation.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ORG_NOT_FOUND. The org is missing or deleted, the caller is not a member, or the caller's account is scheduled for deletion.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: ALREADY_MEMBER when the email belongs to a member, including a member whose account is scheduled for deletion. INVITATION_EXISTS when the email has a pending invitation.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          description: INVITATION_LIMIT_REACHED. The org sent 50 invitation emails in the current 24-hour window.
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestID'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AllowOrigin'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AllowCredentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /health:
     get:
       tags: [Health]

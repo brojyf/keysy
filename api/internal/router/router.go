@@ -47,7 +47,7 @@ func New(d Deps) *gin.Engine {
 	sessions := session.Store{DB: d.DB}
 	orgs := org.Store{DB: d.DB}
 	members := member.Store{DB: d.DB}
-	invitations := invitation.Store{DB: d.DB}
+	invitations := invitation.Store{DB: d.DB, WebAppURL: d.WebAppURL}
 
 	// CORS answers every preflight, so routes need no OPTIONS handler.
 	v0 := router.Group("/v0", d.Session)
@@ -65,5 +65,6 @@ func New(d Deps) *gin.Engine {
 	v0.DELETE("/orgs/:orgId/members/:userId", member.Remove(members))
 	v0.POST("/orgs/:orgId/leave", member.Leave(members))
 	v0.GET("/orgs/:orgId/invitations", invitation.List(invitations))
+	v0.POST("/orgs/:orgId/invitations", invitation.Create(invitations))
 	return router
 }

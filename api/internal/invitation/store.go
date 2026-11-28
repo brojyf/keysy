@@ -13,19 +13,30 @@ type Invitation struct {
 	Status string `json:"status"`
 }
 
-type Store struct{ DB *gorm.DB }
+// The SQL and Go code use these values. The migrations and the OpenAPI spec state both in words;
+// api/README.md states the 7 days.
+const (
+	expiryDays  = 7  // An invitation expires 7 days after started_at.
+	windowSends = 50 // An org sends at most 50 invitation emails per 24-hour window.
+)
+
+// WebAppURL is the dashboard origin. Invitation emails link to its /invitations/{id} page.
+type Store struct {
+	DB        *gorm.DB
+	WebAppURL string
+}
 
 // List reports visibility separately so an authorized empty org returns an empty array.
 // The order is not specified; clients sort the list.
 func (s Store) List(ctx context.Context, userID, orgID string) ([]Invitation, bool, error) {
 	invitations := make([]Invitation, 0)
 	err := s.DB.WithContext(ctx).Raw(`SELECT invitations.id, invitations.email, invitations.role,
-		CASE WHEN invitations.started_at + interval '7 days' <= now() THEN 'expired' ELSE 'pending' END AS status
+		CASE WHEN invitations.started_at + make_interval(days => ?) <= now() THEN 'expired' ELSE 'pending' END AS status
 		FROM public.orgs AS orgs
 		JOIN public.members AS caller ON caller.org_id = orgs.id
 		JOIN public.profiles AS caller_profile ON caller_profile.id = caller.user_id AND caller_profile.deleted_at IS NULL
 		LEFT JOIN public.invitations AS invitations ON invitations.org_id = orgs.id
-		WHERE orgs.id = ? AND caller.user_id = ?`, orgID, userID).Scan(&invitations).Error
+		WHERE orgs.id = ? AND caller.user_id = ?`, expiryDays, orgID, userID).Scan(&invitations).Error
 	if err != nil || len(invitations) == 0 {
 		return nil, false, err
 	}

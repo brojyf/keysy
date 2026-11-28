@@ -30,7 +30,7 @@ func TestStoreListFailure(t *testing.T) {
 				cancel()
 				failure = context.Canceled
 			} else {
-				mock.ExpectQuery("SELECT").WithArgs("org-123", "user-123").WillReturnError(failure)
+				mock.ExpectQuery("SELECT").WithArgs(expiryDays, "org-123", "user-123").WillReturnError(failure)
 			}
 			got, visible, err := (Store{DB: db}).List(ctx, "user-123", "org-123")
 			if !errors.Is(err, failure) || visible || len(got) != 0 {

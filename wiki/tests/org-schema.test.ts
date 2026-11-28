@@ -8,7 +8,7 @@ const diagrams = await Promise.all(['implemented-schema.svg', 'implemented-schem
 test('the implemented schema shows the diagram of the implemented tables', () => {
   expect(schema).toContain('<ThemedImage src="/architecture/implemented-schema.svg" darkSrc="/architecture/implemented-schema-dark.svg" alt="Implemented Supabase tables" />');
   for (const name of ['profiles', 'orgs', 'members', 'org_id', 'user_id', 'role', 'display_name', 'agent_auto_apply', 'deleted_at', 'auth.users.id',
-    'invitations', 'started_at', 'last_sent_at', 'invitation_window_started_at', 'invitation_window_sends',
+    'invitations', 'started_at', 'last_sent_at', 'invited_by_email', 'invitation_window_started_at', 'invitation_window_sends',
     'outbox', 'event_id', 'type', 'payload', 'created_at']) {
     for (const diagram of diagrams) expect(diagram).toContain(`>${name}</text>`);
   }
