@@ -1,16 +1,19 @@
 // Figma People · Invitations: 12.5 Owner, 12.8 Admin, errors 12.6 / 12.9–12.11.
 import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import Button from './button'
 import Dialog from './dialog'
 import { useCurrentUser } from './current-user'
 import { apiFetch } from '../lib/api-client'
 import { closeDialog } from '../lib/dialog-controls'
+import { organizationPath } from '../lib/organization-route'
 import './invite-member-dialog.css'
 
 export default function InviteMemberDialog({ ref, owner }: { ref: Ref<HTMLDialogElement>; owner: boolean }) {
   const { user, organization, onSignedOut } = useCurrentUser()
   const client = useQueryClient()
+  const navigate = useNavigate()
   const formId = useId()
   const emailId = useId()
   const [email, setEmail] = useState('')
@@ -50,6 +53,7 @@ export default function InviteMemberDialog({ ref, owner }: { ref: Ref<HTMLDialog
       if (response.status === 201) {
         void client.invalidateQueries({ queryKey: ['invitations', user.id, organization.id] })
         if (mounted.current && dialog) void closeDialog(dialog)
+        void navigate({ to: organizationPath(organization.id, '/people/invitations') })
         return
       }
       const body = await response.json().catch(() => null)

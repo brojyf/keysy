@@ -335,3 +335,27 @@ for (const role of ['owner', 'admin', 'developer'] as const) test(`Members invit
   await renderMembers(role)
   expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Invite member')).toBe(role !== 'developer')
 })
+
+test('a sent invitation opens the Invitations page', async () => {
+  const { setRouterMock } = await import('./setup')
+  const navigate = mock((_options: { to: string; replace?: boolean }) => {})
+  setRouterMock(() => '/orgs/org-1/people', navigate)
+  const listInvitations = globalThis.fetch
+  globalThis.fetch = ((url: string, init?: RequestInit) => init?.method === 'POST'
+    ? Promise.resolve(new Response(null, { status: 201 }))
+    : listInvitations(url, init)) as typeof fetch
+  respondWithMembers({ 'user-id': 'owner' })
+  await renderMembers('owner')
+  await act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Invite member')!.click())
+  const dialog = [...container.querySelectorAll('dialog')].find((item) => item.querySelector('input[type="email"]'))!
+  const input = dialog.querySelector<HTMLInputElement>('input[type="email"]')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input, 'casey@acme.dev')
+    input.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+  await act(async () => {
+    dialog.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  expect(navigate).toHaveBeenCalledWith({ to: '/orgs/org-1/people/invitations' })
+})
