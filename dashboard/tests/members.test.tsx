@@ -329,3 +329,9 @@ test('an expired session during removal signs out', async () => {
   await act(async () => dialogButton('Remove').click())
   expect(onSignedOut).toHaveBeenCalledTimes(1)
 })
+
+for (const role of ['owner', 'admin', 'developer'] as const) test(`Members invite button follows ${role} role`, async () => {
+  respondWithMembers({ 'user-id': role })
+  await renderMembers(role)
+  expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Invite member')).toBe(role !== 'developer')
+})

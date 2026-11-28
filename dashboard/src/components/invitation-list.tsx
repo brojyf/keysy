@@ -1,23 +1,27 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { SortableHeader, TableSearch } from './account-table-controls'
+import Button from './button'
 import { useCurrentUser } from './current-user'
+import InviteMemberDialog from './invite-member-dialog'
 import { InvitationTableSkeleton } from './loading-skeleton'
 import MoreMenu from './more-menu'
 import { usePeopleNav } from './people-nav'
 import SettingsLayout from './settings-layout'
+import { openDialog } from '../lib/dialog-controls'
 import { invitationQueryOptions } from '../lib/invitation-queries'
 
 const roleLabels = { admin: 'Admin', developer: 'Developer' }
 const statusLabels = { pending: 'Pending', expired: 'Expired' }
 
 // Figma People · Invitations. Every member sees the list; the Owner and Admins get a row menu.
-// The row menu items do nothing and the Invite member button is left out until their APIs exist.
+// The row menu items do nothing until their APIs exist.
 export default function InvitationList() {
   const { user, organization, onSignedOut } = useCurrentUser()
   const invitationQuery = useQuery({ ...invitationQueryOptions(user.id, organization?.id ?? '', onSignedOut), enabled: !!organization })
   const nav = usePeopleNav('Invitations')
+  const inviteDialog = useRef<HTMLDialogElement>(null)
   const [query, setQuery] = useState('')
   const [direction, setDirection] = useState<'ascending' | 'descending'>('ascending')
 
@@ -29,9 +33,19 @@ export default function InvitationList() {
     .filter(({ email }) => email.includes(search))
     .sort((a, b) => (direction === 'ascending' ? 1 : -1) * a.email.localeCompare(b.email))
 
+  function openInviteDialog() {
+    if (inviteDialog.current) {
+      openDialog(inviteDialog.current)
+      inviteDialog.current.querySelector<HTMLInputElement>('input.account-name')?.focus()
+    }
+  }
+
   return (
     <SettingsLayout title="People" className="member-page" Icon={Users} heading="Invitations" nav={nav}>
-      <TableSearch label="Search invitations" value={query} onChange={setQuery} />
+      <div className="account-toolbar">
+        <TableSearch label="Search invitations" value={query} onChange={setQuery} />
+        {hasActions && <Button variant="primary" onClick={openInviteDialog}>Invite member</Button>}
+      </div>
       {invitationQuery.isPending ? (
         <>
           <p role="status" className="visually-hidden">Loading invitations...</p>
@@ -56,12 +70,12 @@ export default function InvitationList() {
                   <td>{roleLabels[role]}</td>
                   {hasActions && (
                     <td className="account-table-actions">
-                      <MoreMenu id={`invitation-menu-${id}`} label={`More actions for ${email}`}>
-                        <button className="account-menu-item" type="button">Change role</button>
+                      {(organization?.role === 'owner' || role === 'developer') && <MoreMenu id={`invitation-menu-${id}`} label={`More actions for ${email}`}>
+                        {organization?.role === 'owner' && <button className="account-menu-item" type="button">Change role</button>}
                         <button className="account-menu-item" type="button">Resend invitation</button>
                         <hr className="account-menu-divider" />
                         <button className="account-menu-item account-menu-sign-out" type="button">Cancel invitation</button>
-                      </MoreMenu>
+                      </MoreMenu>}
                     </td>
                   )}
                 </tr>
@@ -74,6 +88,7 @@ export default function InvitationList() {
           </table>
         </div>
       )}
+      <InviteMemberDialog ref={inviteDialog} owner={organization?.role === 'owner'} />
     </SettingsLayout>
   )
 }

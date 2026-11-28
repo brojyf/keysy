@@ -1,0 +1,80 @@
+/* Figma People · Invitations › Invite member. */
+
+.invite-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.invite-email-error {
+  color: var(--color-danger);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.invite-role {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.invite-role legend {
+  padding: 0;
+  margin-bottom: 6px;
+  color: var(--color-text);
+  font: var(--text-label--font-weight) var(--text-label)/var(--text-label--line-height) var(--font-sans);
+}
+
+.invite-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invite-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 20px;
+}
+
+.invite-options input {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+}
+
+.invite-options input:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.invite-options input:checked::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-on-button);
+}
+
+.invite-options input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
+}
+
+.dialog .invite-fields .account-name[aria-invalid="true"] {
+  padding-inline-end: 10px;
+  border-color: var(--color-line-strong);
+  box-shadow: none;
+}
+
+.dialog .invite-fields .account-name[aria-invalid="true"]:focus {
+  border-color: transparent;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px color-mix(in srgb, var(--color-accent) 65%, transparent);
+}

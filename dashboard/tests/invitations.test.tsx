@@ -122,16 +122,16 @@ test('the Email header reverses the invitations', async () => {
 })
 
 for (const role of ['owner', 'admin'] as const) {
-  test(`the ${role} gets a row menu on every invitation`, async () => {
+  test(`the ${role} gets the permitted invitation menus`, async () => {
     await renderInvitations(role)
     expect([...container.querySelectorAll('th')].map((cell) => cell.textContent)).toEqual(['Email', 'Status', 'Role', ''])
     const menus = [...container.querySelectorAll('tbody tr')].map((row) => [
       row.querySelector('button')?.getAttribute('aria-label'),
       [...row.querySelectorAll('[popover] button')].map((item) => item.textContent),
     ])
-    expect(menus).toEqual(['casey', 'morgan', 'taylor'].map((name) => [
-      `More actions for ${name}@acme.dev`, ['Change role', 'Resend invitation', 'Cancel invitation'],
-    ]))
+    expect(menus).toEqual(['casey', 'morgan', 'taylor'].map((name) => role === 'admin' && name === 'taylor'
+      ? [undefined, []]
+      : [`More actions for ${name}@acme.dev`, [...(role === 'owner' ? ['Change role'] : []), 'Resend invitation', 'Cancel invitation']]))
   })
 }
 
@@ -173,3 +173,103 @@ test('Invitations signs out when the session has expired', async () => {
   await renderInvitations()
   expect(onSignedOut).toHaveBeenCalledTimes(1)
 })
+
+for (const role of ['owner', 'admin', 'developer'] as const)
+  test(`Invitations invite button follows ${role} role`, async () => {
+    await renderInvitations(role)
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'Invite member')).toBe(
+      role !== 'developer',
+    )
+  })
+
+async function openInvite(role: 'owner' | 'admin' = 'owner') {
+  await renderInvitations(role)
+  await act(() =>
+    [...container.querySelectorAll('button')].find((button) => button.textContent === 'Invite member')!.click(),
+  )
+  return container.querySelector<HTMLDialogElement>('dialog')!
+}
+async function enterInviteEmail(dialog: HTMLDialogElement, value: string) {
+  const input = dialog.querySelector<HTMLInputElement>('input[type="email"]')!
+  await act(() => {
+    Object.getOwnPropertyDescriptor(browser.HTMLInputElement.prototype, 'value')!.set!.call(input, value)
+    input.dispatchEvent(new browser.Event('input', { bubbles: true }))
+  })
+}
+async function submitInvite(dialog: HTMLDialogElement) {
+  await act(async () => {
+    dialog.querySelector('form')!.dispatchEvent(new browser.Event('submit', { bubbles: true, cancelable: true }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+}
+for (const role of ['owner', 'admin'] as const)
+  test(`${role} invites with the permitted role and refetches`, async () => {
+    request.mockImplementation((url: string, init?: RequestInit) =>
+      init?.method === 'POST'
+        ? Promise.resolve(Response.json({ id: 'new' }, { status: 201 }))
+        : Promise.resolve(Response.json(apiInvitations)),
+    )
+    const dialog = await openInvite(role)
+    expect(dialog.querySelector('h2')?.textContent).toBe(role === 'owner' ? 'Invite member' : 'Invite developer')
+    expect(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true)
+    if (role === 'owner') {
+      expect(dialog.querySelector<HTMLInputElement>('input[value="developer"]')!.checked).toBe(true)
+      await act(() => dialog.querySelector<HTMLInputElement>('input[value="admin"]')!.click())
+    } else expect(dialog.querySelector('fieldset')).toBeNull()
+    await enterInviteEmail(dialog, ' casey@acme.dev ')
+    await submitInvite(dialog)
+    const post = request.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'POST')!
+    expect(post[0]).toBe('https://api.keysy.net/v0/orgs/org-1/invitations')
+    expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({
+      email: 'casey@acme.dev',
+      role: role === 'owner' ? 'admin' : 'developer',
+    })
+    expect(dialog.open).toBe(false)
+    expect(request.mock.calls.filter(([, init]) => !(init as RequestInit | undefined)?.method).length).toBeGreaterThan(
+      1,
+    )
+  })
+for (const [status, code, message, expected] of [
+  [409, 'ALREADY_MEMBER', '', 'casey@acme.dev is already a member.'],
+  [409, 'INVITATION_EXISTS', '', 'casey@acme.dev already has a pending invitation.'],
+  [400, 'INVALID_EMAIL', 'Enter a valid email address.', 'Enter a valid email address.'],
+] as const)
+  test(`${code} shows and clears an email error`, async () => {
+    request.mockImplementation((url: string, init?: RequestInit) =>
+      init?.method === 'POST'
+        ? Promise.resolve(Response.json({ error: { code, message } }, { status }))
+        : Promise.resolve(Response.json(apiInvitations)),
+    )
+    const dialog = await openInvite()
+    await enterInviteEmail(dialog, 'casey@acme.dev')
+    await submitInvite(dialog)
+    expect(dialog.querySelector('.invite-email-error')?.textContent).toBe(expected)
+    expect(dialog.querySelector('input[type="email"]')?.getAttribute('aria-invalid')).toBe('true')
+    await enterInviteEmail(dialog, 'new@acme.dev')
+    expect(dialog.querySelector('.invite-email-error')).toBeNull()
+  })
+for (const kind of ['limit', 'server', 'network', 'signed out'] as const)
+  test(`${kind} invitation failure is handled`, async () => {
+    request.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/refresh')) return Promise.resolve(new Response(null, { status: 401 }))
+      if (init?.method !== 'POST') return Promise.resolve(Response.json(apiInvitations))
+      if (kind === 'network') return Promise.reject(new Error('offline'))
+      if (kind === 'signed out') return Promise.resolve(new Response(null, { status: 401 }))
+      return Promise.resolve(
+        Response.json(
+          {
+            error: { code: kind === 'limit' ? 'INVITATION_LIMIT_REACHED' : 'INTERNAL_ERROR', message: 'Limit reached' },
+          },
+          { status: kind === 'limit' ? 429 : 500 },
+        ),
+      )
+    })
+    const dialog = await openInvite()
+    await enterInviteEmail(dialog, 'casey@acme.dev')
+    await submitInvite(dialog)
+    if (kind === 'signed out') expect(onSignedOut).toHaveBeenCalledTimes(1)
+    else
+      expect(dialog.querySelector('[role="alert"]')?.textContent).toBe(
+        kind === 'limit' ? 'Limit reached' : 'Could not send the invitation. Try again.',
+      )
+  })
